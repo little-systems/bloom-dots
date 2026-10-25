@@ -91,36 +91,8 @@ Singleton {
 	}
 
 	function _get(url, done) {
-		const xhr = new XMLHttpRequest();
-		let finished = false;
-		const finish = json => {
-			if (finished)
-				return;
-			finished = true;
-			done(json);
-		};
-		xhr.timeout = 10000;
-		xhr.onreadystatechange = () => {
-			if (xhr.readyState !== XMLHttpRequest.DONE)
-				return;
-			let json = null;
-			if (xhr.status === 200) {
-				try {
-					json = JSON.parse(xhr.responseText);
-				} catch (e) {
-					json = null;
-				}
-			}
-			finish(json);
-		};
-		xhr.onerror = () => finish(null);
-		xhr.ontimeout = () => finish(null);
-		try {
-			xhr.open("GET", url);
-			xhr.send();
-		} catch (e) {
-			finish(null);
-		}
+		// Http ends stalled requests; QML's own XHR timeout never fires.
+		Http.get(url, done, 10000);
 	}
 
 	StateFile {
