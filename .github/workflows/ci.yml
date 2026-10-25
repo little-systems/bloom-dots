@@ -1,0 +1,14 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg nodejs npm jq shellcheck systemd
+      - uses: actions/checkout@v4
+      - name: Run all checks
+        run: CI=true tests/run-all.sh
