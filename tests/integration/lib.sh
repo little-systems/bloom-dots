@@ -31,6 +31,9 @@ fail() {
 	if [[ -f "$TEST_TMP/shell.log" ]]; then
 		sed 's/^/  log: /' "$TEST_TMP/shell.log" >&2
 	fi
+	if [[ -f "$TEST_TMP/sway.log" ]]; then
+		sed 's/^/  sway: /' "$TEST_TMP/sway.log" >&2
+	fi
 	exit 1
 }
 
@@ -77,6 +80,7 @@ start_shell() {
 # is reachable it runs as a transient unit.
 SWAY_UNIT=""
 SWAY_PID=""
+SWAY_RUNTIME_DIR=""
 
 start_sway() {
 	local rt
@@ -89,6 +93,7 @@ start_sway() {
 		rt="$(mktemp -d)"
 	fi
 	chmod 700 "$rt"
+	SWAY_RUNTIME_DIR="$rt"
 	export XDG_RUNTIME_DIR="$rt"
 	if systemctl --user show-environment >/dev/null 2>&1; then
 		SWAY_UNIT="bloom-test-sway-$$"
@@ -113,5 +118,8 @@ stop_sway() {
 		kill "$SWAY_PID" 2>/dev/null || true
 		wait "$SWAY_PID" 2>/dev/null || true
 	fi
-	[[ "$XDG_RUNTIME_DIR" == */bt.* ]] && rm -rf "$XDG_RUNTIME_DIR"
+	if [[ -n "$SWAY_RUNTIME_DIR" ]]; then
+		rm -rf "$SWAY_RUNTIME_DIR"
+		SWAY_RUNTIME_DIR=""
+	fi
 }

@@ -8,7 +8,14 @@ jobs:
     container: archlinux:latest
     steps:
       - name: Install tools
-        run: pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg nodejs npm jq shellcheck systemd sway
+        run: |
+          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg nodejs npm jq shellcheck systemd sway
+          # Arch's sway binary asks for cap_sys_nice, which the CI container
+          # cannot grant. Headless pixman tests do not need that capability.
+          setcap -r /usr/bin/sway
       - uses: actions/checkout@v4
       - name: Run all checks
-        run: CI=true tests/run-all.sh
+        run: |
+          useradd -m -s /bin/bash ci
+          chown -R ci:ci "$GITHUB_WORKSPACE"
+          runuser -u ci -- env CI=true GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
