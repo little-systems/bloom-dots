@@ -53,6 +53,12 @@ if [[ -f "$ROOT/tools/gen-settings-doc.mjs" ]] && need node; then
 	node "$ROOT/tools/gen-settings-doc.mjs" --check
 fi
 
+step "icons are up to date"
+if [[ -f "$ROOT/tools/gen-icons.mjs" ]] && need node; then
+	[[ -d "$ROOT/tools/node_modules" ]] || (cd "$ROOT/tools" && npm ci --silent)
+	node "$ROOT/tools/gen-icons.mjs" --check
+fi
+
 step "integration tests (real shell, offscreen)"
 for t in "$ROOT"/tests/integration/test_*.sh; do
 	[[ -e "$t" ]] || continue

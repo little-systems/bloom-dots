@@ -1,0 +1,8 @@
+{
+	"name": "bloom-tools",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"lucide-static": "1.47.0"
+	}
+}
