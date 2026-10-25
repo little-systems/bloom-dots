@@ -181,6 +181,17 @@ Item {
 			compare(last, false);
 		}
 
+		// A fullscreen app on this monitor: the reveal band must not take the
+		// top edge from it (Bloom drops edge input while fullscreen is in front).
+		function test_fullscreenSuppressesTheBand() {
+			const v = make({ mode: "smart", overlapped: true });
+			settle(v);
+			verify(v.hidden);
+			verify(v.bandActive);
+			v.suppressed = true;
+			verify(!v.bandActive);
+		}
+
 		function test_stateObject() {
 			const v = make({ mode: "smart" });
 			settle(v);

@@ -23,9 +23,11 @@ PanelWindow {
 	implicitHeight: Tokens.notch.surface.height
 	color: "transparent"
 	WlrLayershell.namespace: "bloom:notch"
-	// ii's full-width top bar also uses Top and takes pointer input over this
-	// surface. Overlay keeps the notch's narrow input region hoverable.
-	WlrLayershell.layer: WlrLayer.Overlay
+	// Overlay keeps the narrow input region above full-width Top-layer bars
+	// (ii's bar takes pointer input over the notch otherwise). Overlay also
+	// draws over fullscreen windows, so while one is in front the notch drops
+	// to Top, which Hyprland keeps under fullscreen windows.
+	WlrLayershell.layer: win._fullscreen ? WlrLayer.Top : WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
 	mask: Region {
@@ -37,14 +39,18 @@ PanelWindow {
 		&& Logic.overlaps(Logic.focusedWindow(HyprState.clients, win._monitor),
 			Logic.notchRect(win._monitor, Logic.statusWidth(false, view.widgetCount, 0, view.use24h), view.uiScale))
 
-	readonly property bool _wantsHypr: view.mode === "smart"
-	on_WantsHyprChanged: HyprState.hold(win._key, win._wantsHypr)
+	readonly property bool _fullscreen: win._monitor !== null && Logic.fullscreenOn(HyprState.clients, win._monitor)
+
+	// Smart mode needs window positions every second (moving a floating window
+	// sends no event); otherwise Hyprland's events are enough to follow fullscreen.
+	readonly property string _hyprNeed: view.mode === "smart" ? "poll" : "events"
+	on_HyprNeedChanged: HyprState.hold(win._key, win._hyprNeed)
 	Component.onCompleted: {
-		HyprState.hold(win._key, win._wantsHypr);
+		HyprState.hold(win._key, win._hyprNeed);
 		readyTimer.start();
 	}
 	Component.onDestruction: {
-		HyprState.hold(win._key, false);
+		HyprState.hold(win._key, "");
 		SystemStats.hold(win._key, false);
 	}
 
@@ -71,6 +77,7 @@ PanelWindow {
 		use24h: Settings.values["bloom-time-format-24h"]
 		uiScale: Settings.values["bloom-scale"]
 		overlapped: win._overlapped
+		suppressed: win._fullscreen
 		bg: Theme.bg
 		bgExpanded: Theme.bgExpanded
 		textColor: Theme.text

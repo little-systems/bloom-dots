@@ -57,6 +57,14 @@ function focusedWindow(clients, monitor) {
 	return best ? { x: best.at[0], y: best.at[1], width: best.size[0], height: best.size[1], fullscreen: best.fullscreen } : null;
 }
 
+// True when the monitor's active workspace shows a fullscreen window
+// (Hyprland fullscreen state 2, or 3 = maximised and fullscreen). Maximised
+// alone leaves the top layer visible, so it doesn't count.
+function fullscreenOn(clients, monitor) {
+	return clients.some(c => c.mapped && !c.hidden && c.monitor === monitor.id && c.workspace
+		&& c.workspace.id === monitor.activeWorkspace.id && (c.fullscreen & 2) !== 0);
+}
+
 // The resting notch in global layout coordinates. Hyprland reports monitor
 // width in physical pixels; the layout works in logical ones.
 function notchRect(monitor, restWidth, uiScale) {

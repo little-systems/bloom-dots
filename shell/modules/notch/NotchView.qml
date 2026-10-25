@@ -52,7 +52,10 @@ Item {
 
 	readonly property Item hitItem: pillArea
 	readonly property Item bandItem: band
-	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.userVisible
+	// A fullscreen app on this monitor: the top edge is the app's (Bloom drops
+	// its edge input while a fullscreen window is in front).
+	property bool suppressed: false
+	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.userVisible && !root.suppressed
 
 	readonly property bool _statsShown: root.statusHover && ["cpu", "ram", "disk", "net"].some(w => root.widgets.left.indexOf(w) >= 0 || root.widgets.right.indexOf(w) >= 0)
 	property bool _statsHeld: false

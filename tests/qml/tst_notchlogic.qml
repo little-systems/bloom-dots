@@ -98,6 +98,16 @@ TestCase {
 		verify(!Notch.overlaps(null, rect));
 	}
 
+	// Hyprland fullscreen states: 0 none, 1 maximised, 2 fullscreen, 3 both.
+	function test_fullscreenOn() {
+		verify(!Notch.fullscreenOn([], monitor()));
+		verify(!Notch.fullscreenOn([client({ fullscreen: 1 })], monitor()), "maximised is not fullscreen");
+		verify(Notch.fullscreenOn([client({ fullscreen: 2 })], monitor()));
+		verify(Notch.fullscreenOn([client({ fullscreen: 3 })], monitor()));
+		verify(!Notch.fullscreenOn([client({ fullscreen: 2, workspace: { id: 5 } })], monitor()), "another workspace");
+		verify(!Notch.fullscreenOn([client({ fullscreen: 2, monitor: 1 })], monitor()), "another monitor");
+	}
+
 	function test_clockText() {
 		compare(Notch.clockText(new Date(2026, 9, 25, 13, 5), false), "01:05 PM");
 		compare(Notch.clockText(new Date(2026, 9, 25, 0, 30), false), "12:30 AM");
