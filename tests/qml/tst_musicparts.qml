@@ -80,5 +80,22 @@ Item {
 			tryCompare(art, "flipping", false, 1000);
 			compare(art.shown.toString(), "file:///nonexistent-a.png");
 		}
+			// A skip from one long title to another must restart the scroll with the
+		// new distance, not slide the new title out of view.
+		function test_marqueeRestartsOnRetitle() {
+			longTitle.text = "Another very long title that also cannot fit in a hundred pixels at all, really, truly";
+			const label = findChild(longTitle, "marqueeLabel");
+			verify(label !== null, "marquee label");
+			const oldCycle = longTitle.cycleMs;
+			// Retitle early in the cycle, before the slide-out starts.
+			wait(100);
+			longTitle.text = "A second long title, a bit too wide";
+			const overflow = longTitle.overflow;
+			verify(overflow > 0);
+			for (let i = 0; i < 40; i++) {
+				wait(oldCycle * 0.5 / 40);
+				verify(label.x >= -overflow - 1, `scrolled to ${label.x}, past the new overflow ${overflow}`);
+			}
+		}
 	}
 }

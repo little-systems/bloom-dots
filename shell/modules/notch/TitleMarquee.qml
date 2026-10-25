@@ -30,6 +30,7 @@ Item {
 
 	Text {
 		id: label
+		objectName: "marqueeLabel"
 		text: root.text
 		color: root.color
 		font.family: Tokens.type.family
@@ -39,7 +40,18 @@ Item {
 		lineHeight: root.lineHeight
 	}
 
+	// A running animation keeps the distances it started with, so a new title
+	// (or width) restarts the scroll from the start, as Bloom re-keys it.
+	function _restart() {
+		label.x = 0;
+		if (scroll.running)
+			scroll.restart();
+	}
+	onTextChanged: root._restart()
+	onOverflowChanged: root._restart()
+
 	SequentialAnimation {
+		id: scroll
 		running: root.scrolling && root.visible
 		loops: Animation.Infinite
 		onRunningChanged: if (!running) label.x = 0
