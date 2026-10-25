@@ -32,9 +32,17 @@ pass "hand edits apply live"
 printf '{ "bloom-theme-opacity": 0.3, \n' >"$SETTINGS"
 wait_for "the parse warning" log_has "is not valid JSON"
 assert_eq "$(ipc settings get bloom-theme-opacity)" "0.4" "opacity after a bad edit"
-assert_eq "$(ipc settings set bloom-theme-opacity 0.6)" "settings.json has a syntax error; fix it before changing settings" "set while the file is broken"
+assert_eq "$(ipc settings set bloom-theme-opacity 0.6)" "settings.json is invalid; fix it before changing settings" "set while the file is broken"
 grep -qF '"bloom-theme-opacity": 0.3, ' "$SETTINGS" || fail "the broken settings.json was overwritten"
 pass "a broken file keeps the last good settings and is never overwritten"
+
+# Valid JSON that isn't an object must be treated like a broken file, not rewritten.
+printf '"abc"\n' >"$SETTINGS"
+wait_for "the non-object warning" log_has "is not a JSON object"
+assert_eq "$(ipc settings get bloom-theme-opacity)" "0.4" "opacity after a non-object file"
+assert_eq "$(ipc settings set bloom-theme-opacity 0.6)" "settings.json is invalid; fix it before changing settings" "set while the file is not an object"
+assert_eq "$(cat "$SETTINGS")" '"abc"' "non-object settings.json left untouched"
+pass "a non-object file is refused like a broken one and never rewritten"
 
 printf '{ "bloom-theme-opacity": 1.5, "bloom-theme-mode": "neon", "x-future-key": 1 }\n' >"$SETTINGS"
 wait_for "invalid values to fall back" ipc_equals 0.8 settings get bloom-theme-opacity

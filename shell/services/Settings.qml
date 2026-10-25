@@ -33,7 +33,7 @@ Singleton {
 	// Validates and saves one setting. Returns "" on success, else the error.
 	function set(key, value) {
 		if (!root._fileValid)
-			return "settings.json has a syntax error; fix it before changing settings";
+			return "settings.json is invalid; fix it before changing settings";
 		const r = Logic.validateOne(key, value);
 		if (!r.ok)
 			return `${key}: ${r.error}`;
@@ -70,9 +70,14 @@ Singleton {
 		onLoaded: {
 			root._seenFile = true;
 			const r = Logic.parse(text());
-			root._fileValid = r.ok;
-			if (r.ok)
+			// Valid JSON that isn't an object (a string, a list) is treated like a
+			// syntax error, so a write never builds on it or replaces it.
+			const isObject = r.ok && r.value !== null && typeof r.value === "object" && !Array.isArray(r.value);
+			root._fileValid = isObject;
+			if (isObject)
 				root._apply(r.value);
+			else if (r.ok)
+				console.warn(`bloom settings: ${root.path} is not a JSON object; keeping the last good settings`);
 			else
 				console.warn(`bloom settings: ${root.path} is not valid JSON (${r.error}); keeping the last good settings`);
 		}

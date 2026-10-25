@@ -13,7 +13,7 @@ stub() {
 	printf '#!/usr/bin/env bash\nprintf "%%s %%s\\n" "%s" "$*" >>"$STUB_LOG"\n%s\n' "$1" "$2" >"$TMP/stub/$1"
 	chmod +x "$TMP/stub/$1"
 }
-stub qs 'if [[ "$1" == --version ]]; then echo "Quickshell 0.3.2 (stub)"; exit 0; fi; if [[ "$*" == *"ipc call settings"* ]]; then echo "{}"; fi; exit "${STUB_QS_EXIT:-0}"'
+stub qs 'if [[ "$1" == --version ]]; then echo "Quickshell 0.3.2 (stub)"; exit 0; fi; if [[ -n "${STUB_QS_SLEEP:-}" ]]; then sleep "$STUB_QS_SLEEP"; fi; if [[ -n "${STUB_QS_OUT:-}" ]]; then echo "$STUB_QS_OUT"; elif [[ "$*" == *"ipc call settings"* ]]; then echo "{}"; fi; exit "${STUB_QS_EXIT:-0}"'
 stub systemctl 'echo "bloom-shell.service (stub)"'
 stub journalctl 'echo "journal line (stub)"'
 stub hyprctl 'case "$1" in version) echo "{\"tag\":\"v0.56.2\"}";; getoption) echo "bool: true";; esac'
@@ -42,6 +42,16 @@ code=$?
 set -e
 [[ $code -eq 255 ]] || fail "ipc exit code: $code"
 pass "ipc forwards to qs and keeps its exit code"
+
+# settings set must fail visibly when the shell rejects the value, so scripts can rely on it.
+set +e
+out="$(STUB_QS_OUT="bloom-theme-opacity: expected a number from 0 to 1" "$BLOOM" ipc settings set bloom-theme-opacity 9 2>&1)"
+code=$?
+set -e
+[[ $code -ne 0 ]] || fail "settings set reported success for a rejected value"
+grep -qF "expected a number from 0 to 1" <<<"$out" || fail "settings set error text missing: $out"
+STUB_QS_OUT=ok "$BLOOM" ipc settings set bloom-theme-opacity 0.5 >/dev/null || fail "settings set ok should exit 0"
+pass "settings set exits non-zero when the value is rejected"
 
 # dev install / status / uninstall
 "$BLOOM" dev install >/dev/null
@@ -74,3 +84,9 @@ for want in "## Versions" "Quickshell 0.3.2 (stub)" "v0.56.2" "## Lock screen" "
 	grep -qF "$want" <<<"$out" || fail "doctor output missing: $want"
 done
 pass "doctor reports versions, lock safety and logs"
+
+# doctor is for when the shell is in trouble, so a hung shell must not hang it (spec §6 timeouts).
+start=$SECONDS
+STUB_QS_SLEEP=30 timeout 20 "$BLOOM" doctor >/dev/null || fail "doctor failed or hung with a hung shell"
+(( SECONDS - start < 15 )) || fail "doctor took $((SECONDS - start)) s with a hung shell"
+pass "doctor does not hang when the shell is hung"

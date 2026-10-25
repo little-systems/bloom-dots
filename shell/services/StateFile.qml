@@ -17,9 +17,24 @@ Scope {
 	property bool loaded: false
 	readonly property string path: Paths.stateFile(Quickshell.env("XDG_STATE_HOME"), Quickshell.env("HOME"), root.name)
 
+	// A save is held until the file has loaded (so a stale file can't
+	// overwrite it) and until a corrupt file has been moved aside (so the
+	// move can't take the new file with it).
+	property var _pendingValue
+	property bool _hasPending: false
+
 	function save(v) {
 		root.value = v;
-		file.setText(Logic.serialize(v));
+		root._pendingValue = v;
+		root._hasPending = true;
+		root._flush();
+	}
+
+	function _flush() {
+		if (!root._hasPending || !root.loaded || backup.running)
+			return;
+		root._hasPending = false;
+		file.setText(Logic.serialize(root._pendingValue));
 	}
 
 	FileView {
@@ -30,26 +45,30 @@ Scope {
 
 		onLoaded: {
 			const r = Logic.parse(text());
-			if (r.ok) {
-				root.value = r.value;
-			} else {
+			if (!r.ok) {
 				console.warn(`bloom state: ${root.path} is corrupt (${r.error}); moved to ${root.path}.bak`);
 				backup.running = true;
-				root.value = root.defaultValue;
 			}
+			if (!root._hasPending)
+				root.value = r.ok ? r.value : root.defaultValue;
 			root.loaded = true;
+			root._flush();
 		}
 
 		onLoadFailed: error => {
 			if (error !== FileViewError.FileNotFound)
 				console.warn(`bloom state: cannot read ${root.path} (error ${error}); using the default`);
-			root.value = root.defaultValue;
+			if (!root._hasPending)
+				root.value = root.defaultValue;
 			root.loaded = true;
+			root._flush();
 		}
 	}
 
 	Process {
 		id: backup
-		command: ["mv", "-f", root.path, root.path + ".bak"]
+		// Numbered backups keep any earlier .bak instead of replacing it.
+		command: ["mv", "-f", "--backup=numbered", root.path, root.path + ".bak"]
+		onExited: root._flush()
 	}
 }
