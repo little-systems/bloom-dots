@@ -10,10 +10,16 @@ vm.createContext(ctx);
 vm.runInContext(readFileSync(new URL("shell/services/settings.js", root), "utf8"), ctx);
 
 const allowed = s => {
-	if (s.type === "enum" || s.type === "list") return s.values.map(v => `\`${v}\``).join(", ");
-	if (s.type === "number") return `${s.min} to ${s.max}`;
+	if (s.type === "enum") {
+		const aliases = s.aliases ? Object.keys(s.aliases).map(a => ` (\`${a}\` = \`${s.aliases[a]}\`)`).join("") : "";
+		return s.values.map(v => `\`${v}\``).join(", ") + aliases;
+	}
+	if (s.type === "list") return s.values.map(v => `\`${v}\``).join(", ");
+	if (s.type === "widgets") return `\`{"left": [...], "right": [...]}\` of ${s.values.map(v => `\`${v}\``).join(", ")}`;
+	if (s.type === "number") return `${s.min} to ${s.max}${s.nullable ? ", or `null`" : ""}`;
 	if (s.type === "color") return "`#rgb` or `#rrggbb`";
 	if (s.type === "bool") return "`true`, `false`";
+	if (s.type === "string") return `text, up to ${s.maxLength} characters`;
 	return "";
 };
 

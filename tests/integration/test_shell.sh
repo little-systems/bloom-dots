@@ -54,7 +54,7 @@ assert_eq "$(ipc settings set bloom-theme-mode light)" "ok" "set mode"
 assert_eq "$(jq -r '."bloom-theme-mode"' "$SETTINGS")" "light" "mode written to the file"
 assert_eq "$(jq -r '."x-future-key"' "$SETTINGS")" "1" "unknown key kept"
 assert_eq "$(ipc theme mode)" "light" "theme follows settings"
-assert_eq "$(ipc settings set bloom-theme-opacity 2)" "bloom-theme-opacity: expected a number from 0 to 1" "invalid set rejected"
+assert_eq "$(ipc settings set bloom-theme-opacity 2)" "bloom-theme-opacity: expected a number from 0.1 to 1" "invalid set rejected"
 pass "set validates, writes the file, keeps unknown keys, and the theme follows"
 
 assert_eq "$(ipc settings set bloom-theme-mode adaptive)" "ok" "set adaptive"
