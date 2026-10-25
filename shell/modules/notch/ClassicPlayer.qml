@@ -110,6 +110,7 @@ Item {
 
 					Visualizer {
 						visible: root.visualizer
+						active: visible && root.visible
 						playing: root.media.isPlaying
 						levels: root.levels
 						barHeight: root._c.vizHeight

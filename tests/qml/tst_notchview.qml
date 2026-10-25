@@ -34,6 +34,16 @@ Item {
 		}
 	}
 
+	// Simulated cava: new levels 30 times a second for frame-count tests.
+	Timer {
+		id: fakeCava
+		property var target: null
+		interval: 33
+		repeat: true
+		running: target !== null
+		onTriggered: target.levels = [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()]
+	}
+
 	TestCase {
 		name: "NotchView"
 		when: windowShown
@@ -395,6 +405,62 @@ Item {
 			mouseMove(v, 500, 60);
 			wait(5000);
 			verify(v.open, "the pointer reached the player, so it stays open");
+		}
+			// The collapsed visualizer sits behind the open player and a hidden
+		// notch; it must stop animating there (CPU, measured 2026-10-25).
+		function test_collapsedVisualizerOnlyAnimatesOnScreen() {
+			const v = make({ media: playing() });
+			settle(v);
+			const viz = findChild(v, "collapsedVisualizer");
+			verify(viz.active, "on screen while collapsed");
+			v.openMusic();
+			verify(!viz.active, "behind the open player");
+			v.open = false;
+			verify(viz.active);
+			v.visualizerEnabled = false;
+			verify(!viz.active, "visualizer turned off");
+			v.visualizerEnabled = true;
+			v.userVisible = false;
+			verify(!viz.active, "notch hidden by the user");
+		}
+			// Frames the window draws in `ms`: the cost that matters on the
+		// owner's UHD 620 is how often the surface redraws, not what's on it.
+		function framesIn(ms) {
+			let n = 0;
+			const count = () => n++;
+			host.Window.window.afterRendering.connect(count);
+			wait(ms);
+			host.Window.window.afterRendering.disconnect(count);
+			return n;
+		}
+
+		function test_idleNotchDrawsNoFrames() {
+			const v = make();
+			settle(v);
+			wait(800);
+			compare(framesIn(1000), 0);
+		}
+
+		function test_hiddenNotchWithMusicDrawsNoFrames() {
+			const v = make({ mode: "peek", media: playing() });
+			settle(v);
+			tryCompare(v, "hidden", true, 4000);
+			wait(800);
+			fakeCava.target = v;
+			const n = framesIn(1000);
+			fakeCava.target = null;
+			compare(n, 0, "the hidden visualizer must not animate");
+		}
+
+		function test_visualizerDrawsAtItsDataRate() {
+			const v = make({ media: playing() });
+			settle(v);
+			wait(800);
+			fakeCava.target = v;
+			const n = framesIn(1000);
+			fakeCava.target = null;
+			verify(n > 10, `the visualizer animates (${n} frames)`);
+			verify(n <= 40, `${n} frames in 1 s; the bars step at 30 Hz, not every display frame`);
 		}
 	}
 }

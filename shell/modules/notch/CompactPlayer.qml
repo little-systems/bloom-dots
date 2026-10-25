@@ -98,6 +98,7 @@ Item {
 
 			Visualizer {
 				visible: root.visualizer
+				active: visible && root.visible
 				y: (root._c.art - height) / 2
 				opacity: 0.7
 				playing: root.media.isPlaying

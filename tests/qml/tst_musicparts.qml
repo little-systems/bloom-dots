@@ -8,6 +8,7 @@ Item {
 	height: 300
 
 	Visualizer { id: viz; levels: [0.05, 0.5, 1, 0.3, 0.9] }
+	Visualizer { id: idleViz; x: 200; active: false; playing: true; levels: [0.5, 0.5, 0.5, 0.5, 0.5] }
 	TitleMarquee { id: shortTitle; y: 40; width: 300; text: "Short" }
 	TitleMarquee { id: longTitle; y: 70; width: 100; text: "A very long title that cannot possibly fit in a hundred pixels" }
 	TitleMarquee { id: emptyTitle; y: 100; width: 100; text: "" }
@@ -96,6 +97,19 @@ Item {
 				wait(oldCycle * 0.5 / 40);
 				verify(label.x >= -overflow - 1, `scrolled to ${label.x}, past the new overflow ${overflow}`);
 			}
+		}
+			// A visualizer that isn't on screen must not animate: a running spring
+		// redraws the whole surface every frame (about 12 % of a core here).
+		function test_inactiveVisualizerDoesNotAnimate() {
+			const spring = findChild(idleViz, "barScale0");
+			verify(spring !== null, "bar spring");
+			compare(spring.autoRun, false);
+			idleViz.levels = [0.9, 0.9, 0.9, 0.9, 0.9];
+			wait(100);
+			verify(spring.settled || !spring.autoRun);
+			const before = spring.value;
+			wait(100);
+			compare(spring.value, before, "no movement while inactive");
 		}
 	}
 }
