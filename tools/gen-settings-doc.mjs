@@ -25,7 +25,8 @@ const allowed = s => {
 
 const rows = ctx.keys().map(k => {
 	const s = ctx.SCHEMA[k];
-	return `| \`${k}\` | ${s.type} | \`${JSON.stringify(s.default)}\` | ${allowed(s)} | ${s.doc} |`;
+	const legacy = s.legacyKey ? ` Also read from \`${s.legacyKey}\`.` : "";
+	return `| \`${k}\` | ${s.type} | \`${JSON.stringify(s.default)}\` | ${allowed(s)} | ${s.doc}${legacy} |`;
 });
 
 const doc = `# Bloom settings

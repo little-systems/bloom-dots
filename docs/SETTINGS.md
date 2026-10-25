@@ -23,3 +23,10 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-time-format-24h` | bool | `false` | `true`, `false` | 24-hour clock in the notch; otherwise 12-hour with AM/PM. |
 | `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red. |
 | `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
+| `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
+| `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |
+| `bloom-media-layout` | enum | `"classic"` | `classic`, `compact` | Music player layout: classic = large album art; compact = small art with a progress bar. |
+| `bloom-media-visualizer-enabled` | bool | `true` | `true`, `false` | Audio visualizer bars in music mode (needs cava). Also read from `bloom-visualizer-enabled`. |
+| `bloom-media-album-art-enabled` | bool | `true` | `true`, `false` | Album artwork in the collapsed notch. |
+| `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
+| `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

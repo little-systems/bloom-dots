@@ -118,6 +118,43 @@ var SCHEMA = {
 		max: 1.3,
 		default: 1,
 		doc: "Size of Bloom's surfaces."
+	},
+	"bloom-music-mode-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Show playing media in the notch: album art, visualizer and the music player."
+	},
+	"bloom-music-compact-notch": {
+		type: "bool",
+		default: true,
+		doc: "Show playing media in the collapsed notch. When off, music appears only when you hover the notch."
+	},
+	"bloom-media-layout": {
+		type: "enum",
+		values: ["classic", "compact"],
+		default: "classic",
+		doc: "Music player layout: classic = large album art; compact = small art with a progress bar."
+	},
+	"bloom-media-visualizer-enabled": {
+		type: "bool",
+		default: true,
+		legacyKey: "bloom-visualizer-enabled",
+		doc: "Audio visualizer bars in music mode (needs cava)."
+	},
+	"bloom-media-album-art-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Album artwork in the collapsed notch."
+	},
+	"bloom-media-ambience-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Coloured glow from the album art behind the open player."
+	},
+	"bloom-media-compact-glow-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Glow around the album art in the collapsed notch."
 	}
 };
 
@@ -230,9 +267,27 @@ function validate(obj) {
 	const warnings = [];
 	if (obj === null || typeof obj !== "object" || Array.isArray(obj))
 		return { values: values, warnings: ["settings file is not a JSON object; using defaults"] };
+	// Keys Bloom used to store under another name: legacy -> modern.
+	const legacy = {};
+	keys().forEach(k => {
+		if (SCHEMA[k].legacyKey)
+			legacy[SCHEMA[k].legacyKey] = k;
+	});
 	Object.keys(obj).forEach(k => {
 		if (!SCHEMA[k]) {
-			warnings.push(k + ": unknown setting, ignored");
+			const modern = legacy[k];
+			if (!modern) {
+				warnings.push(k + ": unknown setting, ignored");
+				return;
+			}
+			// The modern key wins when both are present.
+			if (Object.prototype.hasOwnProperty.call(obj, modern))
+				return;
+			const r = validateOne(modern, obj[k]);
+			if (r.ok)
+				values[modern] = r.value;
+			else
+				warnings.push(`${k}: ${r.error}; using default ${JSON.stringify(SCHEMA[modern].default)}`);
 			return;
 		}
 		const r = validateOne(k, obj[k]);
@@ -241,6 +296,7 @@ function validate(obj) {
 		else
 			warnings.push(`${k}: ${r.error}; using default ${JSON.stringify(SCHEMA[k].default)}`);
 	});
+
 	return { values: values, warnings: warnings };
 }
 

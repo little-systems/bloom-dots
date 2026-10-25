@@ -134,4 +134,28 @@ TestCase {
 		compare(Settings.nonDefaults(v), { "bloom-theme-mode": "light", "bloom-status-widgets": { left: [], right: ["battery"] } });
 		compare(Settings.changedKeys(Settings.defaults(), v).sort(), ["bloom-status-widgets", "bloom-theme-mode"]);
 	}
-}
+
+	function test_musicDefaults() {
+		const d = Settings.defaults();
+		compare(d["bloom-music-mode-enabled"], true);
+		compare(d["bloom-music-compact-notch"], true);
+		compare(d["bloom-media-layout"], "classic");
+		compare(d["bloom-media-visualizer-enabled"], true);
+		compare(d["bloom-media-album-art-enabled"], true);
+		compare(d["bloom-media-ambience-enabled"], true);
+		compare(d["bloom-media-compact-glow-enabled"], true);
+		verify(!Settings.validateOne("bloom-media-layout", "grid").ok);
+	}
+
+	// Bloom read the visualizer switch from an older key too.
+	function test_legacyVisualizerKey() {
+		const old = Settings.validate({ "bloom-visualizer-enabled": "false" });
+		compare(old.values["bloom-media-visualizer-enabled"], false);
+		compare(old.warnings, [], "the legacy key is not an unknown setting");
+		const both = Settings.validate({ "bloom-visualizer-enabled": false, "bloom-media-visualizer-enabled": true });
+		compare(both.values["bloom-media-visualizer-enabled"], true, "the modern key wins");
+		compare(both.warnings, []);
+		const bad = Settings.validate({ "bloom-visualizer-enabled": "maybe" });
+		compare(bad.values["bloom-media-visualizer-enabled"], true);
+		compare(bad.warnings.length, 1);
+	}}
