@@ -43,11 +43,19 @@ ShellRoot {
 
 		// `value` is JSON (0.6, true, "\"light\""); a bare word is taken as a string.
 		function set(key: string, value: string): string {
-			let parsed;
-			try {
-				parsed = JSON.parse(value);
-			} catch (e) {
-				parsed = value;
+			let parsed = value;
+			if (typeof value === "string") {
+				try {
+					parsed = JSON.parse(value);
+				} catch (e) {}
+			}
+			// Quickshell IPC expands JSON arrays as positional arguments. The
+			// bloom CLI wraps them as a JSON string; decode that second layer only
+			// for list settings so ordinary text remains text.
+			if (Settings.inputType(key) === "list" && typeof parsed === "string") {
+				try {
+					parsed = JSON.parse(parsed);
+				} catch (e) {}
 			}
 			return Settings.set(key, parsed) || "ok";
 		}

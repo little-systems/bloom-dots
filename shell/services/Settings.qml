@@ -30,6 +30,10 @@ Singleton {
 		return root.values[key];
 	}
 
+	function inputType(key) {
+		return Logic.SCHEMA[key]?.type ?? "";
+	}
+
 	// Validates and saves one setting. Returns "" on success, else the error.
 	function set(key, value) {
 		if (!root._fileValid)

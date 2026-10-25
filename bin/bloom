@@ -40,9 +40,15 @@ cmd_version() {
 cmd_ipc() {
 	[[ $# -ge 2 ]] || die "usage: bloom ipc <target> <function> [args...]"
 	if [[ "$1" == settings && "$2" == set ]]; then
+		[[ $# -eq 4 ]] || die "usage: bloom ipc settings set <key> <value>"
 		# The shell answers "ok" or the reason it refused; turn a refusal into
 		# a failing exit so scripts can rely on it.
 		local out
+		# qs ipc call expands JSON arrays into multiple positional arguments.
+		# Wrap one as a JSON string so the shell receives it as one value.
+		if [[ "${4:-}" == \[* ]]; then
+			set -- "$1" "$2" "$3" "$(jq -n --arg value "$4" '$value')"
+		fi
 		out="$(qs -c bloom ipc call "$@")" || exit $?
 		printf '%s\n' "$out"
 		[[ "$out" == ok ]] || exit 1

@@ -23,6 +23,14 @@ state_is() { [[ "$(state "$1")" == "$2" ]]; }
 wait_for "the notch to settle after the drop-in" state_is "hidden,width" '{"hidden":false,"width":140}'
 pass "notch surface loads and settles at 140 px"
 
+# Quickshell expands a JSON array into positional IPC arguments unless the
+# CLI quotes it as one string. Exercise both removal and re-creation live.
+ipc settings set bloom-enabled-modules '[]' >/dev/null
+wait_for "disabling the notch to remove its surface" ipc_equals '[]' notch state
+ipc settings set bloom-enabled-modules '["notch"]' >/dev/null
+wait_for "re-enabling the notch to restore its surface" state_is "hidden,width" '{"hidden":false,"width":140}'
+pass "CLI list setting removes and restores the notch"
+
 ipc settings set bloom-notch-mode peek >/dev/null
 wait_for "peek mode to hide the notch" state_is "hidden,y" '{"hidden":true,"y":-100}'
 pass "peek mode hides the notch"

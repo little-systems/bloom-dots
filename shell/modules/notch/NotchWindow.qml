@@ -23,12 +23,13 @@ PanelWindow {
 	implicitHeight: Tokens.notch.surface.height
 	color: "transparent"
 	WlrLayershell.namespace: "bloom:notch"
-	WlrLayershell.layer: WlrLayer.Top
+	// ii's full-width top bar also uses Top and takes pointer input over this
+	// surface. Overlay keeps the notch's narrow input region hoverable.
+	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
 	mask: Region {
-		item: view.hidden ? null : view.hitItem
-		Region { item: view.bandActive ? view.bandItem : null }
+		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
 	}
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
