@@ -116,8 +116,19 @@ Item {
 		peekTimer.restart();
 	}
 	function openMusic() {
-		if (root.musicEnabled && root.media.hasMedia)
-			root.open = true;
+		if (!(root.musicEnabled && root.media.hasMedia))
+			return;
+		root.open = true;
+		// Opened without the pointer (a script or keybind): close it again if
+		// the pointer never comes to it, so it can't stay open unseen.
+		if (!root.pillHovered)
+			scriptedClose.restart();
+	}
+
+	Timer {
+		id: scriptedClose
+		interval: Tokens.music.scriptedOpenMs
+		onTriggered: root.open = false
 	}
 
 	// Bloom: a session shows as the live activity, and a paused one lingers
@@ -164,7 +175,9 @@ Item {
 
 	onOpenChanged: if (!root.open) root.volumeExpanded = false
 
-	readonly property bool _watching: root.open || (root._musicIcons && root.visualizerEnabled && root.media.isPlaying)
+	// The collapsed visualizer only counts while the notch is actually shown.
+	readonly property bool _watching: root.open || (root._musicIcons && root.visualizerEnabled && root.media.isPlaying
+		&& root.expanded && !root.hidden && root.userVisible)
 	property bool _watchHeld: false
 	on_WatchingChanged: {
 		root._watchHeld = root._watching;
@@ -227,7 +240,8 @@ Item {
 	}
 
 	// Bloom interactionState: active while hovered, then an 800 ms grace.
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed
+	// An open player counts too, so a hidden notch shows while it is open.
+	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.open
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -256,6 +270,7 @@ Item {
 	onPillHoveredChanged: {
 		if (root.pillHovered) {
 			handoff.stop();
+			scriptedClose.stop();
 			root.edgeArmed = false;
 		} else {
 			root.open = false;

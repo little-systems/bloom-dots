@@ -96,9 +96,13 @@ ShellRoot {
 			return "ok";
 		}
 
-		// Opens Bloom's music player on every screen that has media (as a click on the art).
+		// Opens Bloom's music player (as a click on the art) on the focused
+		// monitor, or the first screen when Hyprland can't say which that is.
 		function openMusic(): string {
-			_windows().forEach(w => w.view.openMusic());
+			const windows = _windows();
+			const focused = HyprState.monitors.find(m => m.focused)?.name ?? "";
+			const onFocused = windows.filter(w => w.modelData.name === focused);
+			(onFocused.length ? onFocused : windows.slice(0, 1)).forEach(w => w.view.openMusic());
 			return "ok";
 		}
 

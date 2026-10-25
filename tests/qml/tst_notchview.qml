@@ -361,7 +361,40 @@ Item {
 		function test_watchAnnouncedAtCreation() {
 			mouseMove(host, 0, 400);
 			const v = createTemporaryObject(watchingComponent, host);
-			verify(v.sawWatch);
+			v.ready = true;
+			// The collapsed visualizer counts once the notch is shown (after the drop-in).
+			tryCompare(v, "sawWatch", true, 2000);
+		}
+			// The collapsed visualizer is only "shown" while the notch is: a hidden
+		// notch must not keep cava and the position timer running.
+		function test_hiddenNotchStopsWatching() {
+			const v = make({ mode: "peek", media: playing() });
+			let last = null;
+			v.musicWatched.connect(w => last = w);
+			settle(v);
+			tryCompare(v, "hidden", true, 4000);
+			compare(last, false);
+		}
+
+		// Opened from a script or keybind, the panel must not stay open forever
+		// if the pointer never comes to it, and a hidden notch shows while open.
+		function test_scriptedOpenClosesWithoutThePointer() {
+			const v = make({ mode: "peek", media: playing() });
+			settle(v);
+			tryCompare(v, "hidden", true, 4000);
+			v.openMusic();
+			verify(v.open);
+			verify(!v.hidden, "a hidden notch shows while the player is open");
+			tryCompare(v, "open", false, 6000);
+		}
+
+		function test_scriptedOpenStaysWhileHovered() {
+			const v = make({ media: playing() });
+			settle(v);
+			v.openMusic();
+			mouseMove(v, 500, 60);
+			wait(5000);
+			verify(v.open, "the pointer reached the player, so it stays open");
 		}
 	}
 }

@@ -96,6 +96,8 @@ var statusStrip = {
 // Music mode (Bloom App.tsx, App.css, CompactMediaPlayer.tsx @ b5fb962).
 var music = {
 	activityLingerMs: 5000,
+	// A player opened by script or keybind closes if the pointer never reaches it.
+	scriptedOpenMs: 4000,
 	peekMs: 3000,
 	flipCurve: [0.42, 0, 0.58, 1], // framer easeInOut
 	flipMs: 300,
