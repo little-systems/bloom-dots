@@ -91,3 +91,19 @@ var statusStrip = {
 	fadeMs: 200,
 	tooltip: { delayMs: 400, gap: 8, fadeMs: 150, slide: 4, paddingV: 8, paddingH: 11, radius: 11, size: 11, lineHeight: 1.5 }
 };
+
+
+// Music mode (Bloom App.tsx, App.css, CompactMediaPlayer.tsx @ b5fb962).
+var music = {
+	activityLingerMs: 5000,
+	peekMs: 3000,
+	flipCurve: [0.42, 0, 0.58, 1], // framer easeInOut
+	flipMs: 300,
+	collapsedArt: { size: 24, pausedSize: 20, radius: 6, sizeMs: 200, flipMs: 250, appearMs: 120, glowInset: 4, glowHoverInset: 6 },
+	visualizer: { bars: 5, barWidth: 3, gap: 2.5, height: 20, idleLevel: 0.18 },
+	classic: { art: 96, artRadius: 12, gap: 22, columnGap: 5, controlsGap: 24, buttonPadding: 8, playBox: 44, playIcon: 26, skipWidth: 32, skipHeight: 16, volumeRow: 12, track: 5, vizHeight: 18 },
+	compact: { padding: 3, art: 50, artRadius: 10, infoGap: 8, infoBelow: 6, progressGap: 6, progressPad: 3, controlsAbove: 8, sideIcon: 22, skipBox: 32, skipIcon: 30, playBox: 44, playIcon: 26, mainGap: 4, buttonPadding: 5, bar: 3, barHover: 6, volumeTrack: 4, volumeTrackHover: 5, time: 11, timeWidth: 30, vizHeight: 16, volumeHeight: 36 },
+	marquee: { speed: 30, minSeconds: 5, fade: 8 },
+	slide: { distance: 30, ms: 180, curve: [0.4, 0, 0.2, 1] },
+	ambience: { blur: 52, scale: 1.8, opacity: 0.85, fadeMs: 600 }
+};
