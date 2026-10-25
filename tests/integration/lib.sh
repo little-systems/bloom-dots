@@ -45,8 +45,7 @@ log_has() { grep -qF -- "$1" "$TEST_TMP/shell.log"; }
 wait_for() {
 	local what="$1"
 	shift
-	local i
-	for i in $(seq 1 60); do
+	for _ in $(seq 1 60); do
 		if "$@" >/dev/null 2>&1; then return 0; fi
 		sleep 0.1
 	done
