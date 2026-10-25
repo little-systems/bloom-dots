@@ -22,6 +22,7 @@ bloom_cleanup() {
 		kill "$SHELL_PID" 2>/dev/null || true
 		wait "$SHELL_PID" 2>/dev/null || true
 	fi
+	if [[ -n "${SWAY_UNIT:-}${SWAY_PID:-}" ]]; then stop_sway; fi
 	rm -rf "$TEST_TMP"
 }
 
@@ -67,4 +68,50 @@ start_shell() {
 	qs --no-color -c bloom >"$TEST_TMP/shell.log" 2>&1 &
 	SHELL_PID=$!
 	wait_for "the shell to answer ping" ipc_equals pong shell ping
+}
+
+
+# Headless sway hosts the real layer surfaces. Its socket path must stay
+# under 108 bytes, so it gets its own short runtime dir. Launched as a plain
+# background job from some sandboxes sway is killed, so where a user systemd
+# is reachable it runs as a transient unit.
+SWAY_UNIT=""
+SWAY_PID=""
+
+start_sway() {
+	local rt
+	# The test compositor must not inherit the host Hyprland session. Its
+	# signature would make HyprState query a socket outside this runtime dir.
+	unset HYPRLAND_INSTANCE_SIGNATURE
+	if [[ -d "/run/user/$UID" ]]; then
+		rt="$(mktemp -d "/run/user/$UID/bt.XXXX")"
+	else
+		rt="$(mktemp -d)"
+	fi
+	chmod 700 "$rt"
+	export XDG_RUNTIME_DIR="$rt"
+	if systemctl --user show-environment >/dev/null 2>&1; then
+		SWAY_UNIT="bloom-test-sway-$$"
+		systemd-run --user --quiet --unit="$SWAY_UNIT" \
+			-E XDG_RUNTIME_DIR="$rt" -E WLR_BACKENDS=headless -E WLR_RENDERER=pixman -E WLR_LIBINPUT_NO_DEVICES=1 \
+			/usr/bin/sway -c "$ROOT/tests/integration/sway.conf"
+	else
+		WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
+			sway -c "$ROOT/tests/integration/sway.conf" >"$TEST_TMP/sway.log" 2>&1 &
+		SWAY_PID=$!
+	fi
+	wait_for "sway's Wayland socket" test -S "$rt/wayland-1"
+	export WAYLAND_DISPLAY=wayland-1 QT_QPA_PLATFORM=wayland
+}
+
+stop_sway() {
+	if [[ -n "$SWAY_UNIT" ]]; then
+		systemctl --user stop "$SWAY_UNIT" 2>/dev/null || true
+		systemctl --user reset-failed "$SWAY_UNIT" 2>/dev/null || true
+	fi
+	if [[ -n "$SWAY_PID" ]]; then
+		kill "$SWAY_PID" 2>/dev/null || true
+		wait "$SWAY_PID" 2>/dev/null || true
+	fi
+	[[ "$XDG_RUNTIME_DIR" == */bt.* ]] && rm -rf "$XDG_RUNTIME_DIR"
 }

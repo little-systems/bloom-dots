@@ -4,11 +4,26 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+import "modules/notch"
 
-// Bloom shell root. Phase 1 has no surfaces yet: it loads the core services
-// and exposes the IPC interface used by `bloom ipc` and keybinds.
+// Bloom shell root: loads the core services, the surfaces enabled in
+// bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
 ShellRoot {
 	Component.onCompleted: console.log(`bloom: shell started (theme ${Theme.mode}, settings ${Settings.path})`)
+
+	readonly property var _modules: Settings.values["bloom-enabled-modules"]
+
+	LazyLoader {
+		id: notchLoader
+		active: _modules.indexOf("notch") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/notch/NotchWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
 
 	IpcHandler {
 		target: "shell"
@@ -51,6 +66,32 @@ ShellRoot {
 
 		function mode(): string {
 			return Theme.mode;
+		}
+	}
+
+	IpcHandler {
+		target: "notch"
+
+		function _windows() {
+			const variants = notchLoader.item;
+			return variants ? variants.instances.map(loader => loader.item).filter(Boolean) : [];
+		}
+
+		// One state object per screen, in screen order.
+		function state(): string {
+			return JSON.stringify(_windows().map(w => w.view.stateObject()));
+		}
+
+		// Shows a hidden notch for `ms` milliseconds, as Bloom's event peek.
+		function peek(ms: int): string {
+			_windows().forEach(w => w.view.peek(ms));
+			return "ok";
+		}
+
+		// Bloom's visibility toggle.
+		function setVisible(visible: bool): string {
+			_windows().forEach(w => w.view.userVisible = visible);
+			return "ok";
 		}
 	}
 }
