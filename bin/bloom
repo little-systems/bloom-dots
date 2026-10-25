@@ -2,9 +2,39 @@
 # bloom: command-line entry point for the Bloom shell.
 set -euo pipefail
 
+BLOOM_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+QS_LINK="$CONFIG_HOME/quickshell/bloom"
+UNIT_DIR="$CONFIG_HOME/systemd/user"
+UNITS=(bloom-shell.service bloom-shell-failed.service)
+
 die() {
 	printf 'bloom: %s\n' "$*" >&2
 	exit 1
+}
+
+usage() {
+	cat <<'EOF'
+Usage: bloom <command> [args]
+
+  ipc <target> <function> [args...]  Call a shell IPC function; fails if the shell isn't running
+  doctor                             Print a diagnostic report
+  dev install                        Link this checkout into ~/.config (shell config + systemd units)
+  dev uninstall                      Remove the links made by dev install
+  dev status                         Show what dev install linked
+  version                            Print the Bloom version
+  help                               Show this help
+EOF
+}
+
+cmd_version() {
+	local v
+	v="$(cat "$BLOOM_ROOT/VERSION")"
+	if git -C "$BLOOM_ROOT" rev-parse --short HEAD >/dev/null 2>&1; then
+		printf '%s (%s)\n' "$v" "$(git -C "$BLOOM_ROOT" rev-parse --short HEAD)"
+	else
+		printf '%s\n' "$v"
+	fi
 }
 
 cmd_ipc() {
@@ -12,12 +42,120 @@ cmd_ipc() {
 	exec qs -c bloom ipc call "$@"
 }
 
+# Pairs of "target link" that dev install manages.
+dev_links() {
+	printf '%s %s\n' "$BLOOM_ROOT/shell" "$QS_LINK"
+	local u
+	for u in "${UNITS[@]}"; do
+		printf '%s %s\n' "$BLOOM_ROOT/systemd/$u" "$UNIT_DIR/$u"
+	done
+}
+
+dev_install() {
+	local target link
+	# Check every link first so a refusal leaves nothing half-installed.
+	while read -r target link; do
+		if [[ -L "$link" ]]; then
+			[[ "$(readlink "$link")" == "$target" ]] || die "$link already links to $(readlink "$link"); remove it first"
+		elif [[ -e "$link" ]]; then
+			die "$link already exists; move it away first"
+		fi
+	done < <(dev_links)
+	while read -r target link; do
+		[[ -L "$link" ]] && continue
+		mkdir -p "$(dirname "$link")"
+		ln -s "$target" "$link"
+		printf 'linked %s -> %s\n' "$link" "$target"
+	done < <(dev_links)
+	systemctl --user daemon-reload
+	echo "Not enabled. Start with: systemctl --user start bloom-shell"
+}
+
+dev_uninstall() {
+	systemctl --user stop bloom-shell.service >/dev/null 2>&1 || true
+	local target link
+	while read -r target link; do
+		if [[ -L "$link" && "$(readlink "$link")" == "$target" ]]; then
+			rm "$link"
+			printf 'removed %s\n' "$link"
+		elif [[ -e "$link" || -L "$link" ]]; then
+			printf 'left %s (not a bloom link)\n' "$link"
+		fi
+	done < <(dev_links)
+	systemctl --user daemon-reload
+}
+
+dev_status() {
+	local target link
+	while read -r target link; do
+		if [[ -L "$link" && "$(readlink "$link")" == "$target" ]]; then
+			printf 'linked     %s\n' "$link"
+		elif [[ -e "$link" || -L "$link" ]]; then
+			printf 'foreign    %s\n' "$link"
+		else
+			printf 'missing    %s\n' "$link"
+		fi
+	done < <(dev_links)
+}
+
+cmd_dev() {
+	case "${1:-}" in
+	install) dev_install ;;
+	uninstall) dev_uninstall ;;
+	status) dev_status ;;
+	*) die "usage: bloom dev install|uninstall|status" ;;
+	esac
+}
+
+cmd_doctor() {
+	section() { printf '\n## %s\n' "$1"; }
+
+	section "Versions"
+	printf 'bloom: %s\n' "$(cmd_version)"
+	printf 'quickshell: %s\n' "$(qs --version 2>/dev/null | head -n 1 || echo 'not found')"
+	printf 'hyprland: %s\n' "$(hyprctl version -j 2>/dev/null | jq -r '.tag // "unknown"' 2>/dev/null || echo 'not running')"
+
+	section "Install"
+	dev_status
+
+	section "Service"
+	systemctl --user status bloom-shell.service --no-pager --lines 0 2>&1 | head -n 5 || true
+
+	section "Settings"
+	printf 'file: %s\n' "$CONFIG_HOME/bloom/settings.json"
+	if qs -c bloom ipc call shell ping >/dev/null 2>&1; then
+		printf 'changed from defaults: %s\n' "$(qs -c bloom ipc call settings nonDefaults)"
+		printf 'warnings: %s\n' "$(qs -c bloom ipc call settings warnings)"
+	else
+		echo "shell not running; settings not checked"
+	fi
+
+	section "Lock screen"
+	printf 'misc:allow_session_lock_restore = %s\n' "$(hyprctl getoption misc:allow_session_lock_restore 2>/dev/null | head -n 1 || echo 'unknown')"
+	cat <<'EOF'
+If the lock screen crashes the session stays locked. To recover:
+  1. Press Ctrl+Alt+F3 and log in on the text console.
+  2. Run: hyprctl --instance 0 eval 'hl.config({ misc = { allow_session_lock_restore = true } })'
+  3. Run: systemctl --user restart bloom-shell
+     (or: hyprctl --instance 0 dispatch 'hl.dsp.exec_cmd("hyprlock")')
+  4. Press Ctrl+Alt+F1 (or F2) to return and unlock.
+EOF
+
+	section "Recent log"
+	journalctl --user -u bloom-shell.service -n 50 --no-pager 2>&1 || true
+}
+
 main() {
 	local cmd="${1:-}"
 	shift || true
 	case "$cmd" in
 	ipc) cmd_ipc "$@" ;;
-	*) die "unknown command: ${cmd:-<none>}" ;;
+	doctor) cmd_doctor ;;
+	dev) cmd_dev "$@" ;;
+	version) cmd_version ;;
+	help | -h | --help) usage ;;
+	"") usage >&2; exit 1 ;;
+	*) die "unknown command: $cmd (see: bloom help)" ;;
 	esac
 }
 

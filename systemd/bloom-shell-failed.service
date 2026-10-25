@@ -1,0 +1,8 @@
+[Unit]
+Description=Report that the Bloom shell stopped after repeated crashes
+
+[Service]
+Type=oneshot
+# Hyprland's own notification works while the shell (and its notification
+# server) is down.
+ExecStart=/bin/sh -c 'hyprctl notify 3 15000 0 "Bloom shell stopped after repeated crashes. Run: bloom doctor" || true'
