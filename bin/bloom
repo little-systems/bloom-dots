@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# bloom: command-line entry point for the Bloom shell.
+set -euo pipefail
+
+die() {
+	printf 'bloom: %s\n' "$*" >&2
+	exit 1
+}
+
+cmd_ipc() {
+	[[ $# -ge 2 ]] || die "usage: bloom ipc <target> <function> [args...]"
+	exec qs -c bloom ipc call "$@"
+}
+
+main() {
+	local cmd="${1:-}"
+	shift || true
+	case "$cmd" in
+	ipc) cmd_ipc "$@" ;;
+	*) die "unknown command: ${cmd:-<none>}" ;;
+	esac
+}
+
+main "$@"
