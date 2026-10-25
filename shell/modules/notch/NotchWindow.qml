@@ -52,6 +52,7 @@ PanelWindow {
 	Component.onDestruction: {
 		HyprState.hold(win._key, "");
 		SystemStats.hold(win._key, false);
+		music.item?.hold(win._key, false, false);
 	}
 
 	// Let the surface map before the drop-in starts.
@@ -66,6 +67,20 @@ PanelWindow {
 		repeat: true
 		running: true
 		onTriggered: view.now = new Date()
+	}
+
+	readonly property bool _musicOn: Settings.values["bloom-music-mode-enabled"]
+
+	Loader {
+		id: music
+		active: win._musicOn
+		source: "MusicData.qml"
+	}
+
+	Loader {
+		id: audio
+		active: view.open
+		source: "AudioData.qml"
 	}
 
 	NotchView {
@@ -86,5 +101,26 @@ PanelWindow {
 		battery: ({ available: Battery.available, level: Battery.level, charging: Battery.charging, threshold: Battery.threshold, tooltip: Battery.tooltip })
 		stats: ({ cpu: SystemStats.cpu, ram: SystemStats.ram, disk: SystemStats.disk, up: SystemStats.up, down: SystemStats.down })
 		onStatsWanted: wanted => SystemStats.hold(win._key, wanted)
+		musicEnabled: win._musicOn
+		compactNotch: Settings.values["bloom-music-compact-notch"]
+		visualizerEnabled: Settings.values["bloom-media-visualizer-enabled"] && (music.item?.visualizerAvailable ?? false)
+		albumArtEnabled: Settings.values["bloom-media-album-art-enabled"]
+		ambienceEnabled: Settings.values["bloom-media-ambience-enabled"]
+		glowEnabled: Settings.values["bloom-media-compact-glow-enabled"]
+		layout: Settings.values["bloom-media-layout"]
+		media: music.item?.media ?? ({ hasMedia: false, isPlaying: false, title: "", artist: "", artUrl: "", lengthMs: 0, canSeek: false })
+		positionMs: music.item?.positionMs ?? 0
+		levels: music.item?.levels ?? [0.18, 0.18, 0.18, 0.18, 0.18]
+		volume: audio.item?.volume ?? 0
+		muted: audio.item?.muted ?? false
+		mixerAvailable: audio.item?.mixerAvailable ?? false
+		onTogglePlay: music.item?.togglePlay()
+		onPreviousTrack: music.item?.previousTrack()
+		onNextTrack: music.item?.nextTrack()
+		onSeekTo: ms => music.item?.seekTo(ms)
+		onSetVolume: v => audio.item?.setVolume(v)
+		onOpenMixer: audio.item?.openMixer()
+		onLayoutChosen: layout => Settings.set("bloom-media-layout", layout)
+		onMusicWatched: watched => music.item?.hold(win._key, watched, view.visualizerEnabled)
 	}
 }

@@ -96,6 +96,12 @@ ShellRoot {
 			return "ok";
 		}
 
+		// Opens Bloom's music player on every screen that has media (as a click on the art).
+		function openMusic(): string {
+			_windows().forEach(w => w.view.openMusic());
+			return "ok";
+		}
+
 		// Bloom's visibility toggle.
 		function setVisible(visible: bool): string {
 			_windows().forEach(w => w.view.userVisible = visible);

@@ -3,7 +3,10 @@
 # private session bus, so the owner's real players never interfere).
 set -euo pipefail
 if [[ -z "${BLOOM_IN_DBUS:-}" ]]; then
-	exec dbus-run-session -- env BLOOM_IN_DBUS=1 bash "$0" "$@"
+	# A private bus that can't auto-start anything, and no route to the host
+	# display or Hyprland, so nothing on it reaches the real session.
+	exec env -u WAYLAND_DISPLAY -u DISPLAY -u HYPRLAND_INSTANCE_SIGNATURE BLOOM_IN_DBUS=1 QT_NO_XDG_DESKTOP_PORTAL=1 \
+		dbus-run-session --config-file="$(dirname "${BASH_SOURCE[0]}")/dbus-session.conf" -- bash "$0" "$@"
 fi
 # shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"

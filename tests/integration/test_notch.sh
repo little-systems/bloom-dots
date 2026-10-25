@@ -14,7 +14,7 @@ start_sway
 
 mkdir -p "$XDG_CONFIG_HOME/bloom"
 # No network in tests: weather off.
-printf '{ "bloom-enabled-modules": ["notch"], "bloom-weather-enabled": false }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
+printf '{ "bloom-enabled-modules": ["notch"], "bloom-weather-enabled": false, "bloom-music-mode-enabled": false }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
 start_shell
 
 state() { ipc notch state | jq -c ".[0] | {$1}"; }
