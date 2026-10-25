@@ -67,6 +67,9 @@ Singleton {
 		path: root.path
 		watchChanges: true
 		atomicWrites: true
+		// "ok" from set() must mean the value is on disk; settings writes are
+		// rare and tiny, so a blocking write costs nothing noticeable.
+		blockWrites: true
 		printErrors: false
 
 		onFileChanged: reload()
