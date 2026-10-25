@@ -452,15 +452,15 @@ Item {
 			compare(n, 0, "the hidden visualizer must not animate");
 		}
 
-		function test_visualizerDrawsAtItsDataRate() {
+		// The owner chose Bloom's 60 fps motion for the bars.
+		function test_visibleVisualizerAnimates() {
 			const v = make({ media: playing() });
 			settle(v);
 			wait(800);
 			fakeCava.target = v;
 			const n = framesIn(1000);
 			fakeCava.target = null;
-			verify(n > 10, `the visualizer animates (${n} frames)`);
-			verify(n <= 40, `${n} frames in 1 s; the bars step at 30 Hz, not every display frame`);
+			verify(n > 40, `the visualizer animates every display frame (${n} frames)`);
 		}
 	}
 }

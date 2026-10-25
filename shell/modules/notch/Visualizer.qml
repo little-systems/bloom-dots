@@ -19,25 +19,19 @@ Row {
 	spacing: Tokens.music.visualizer.gap
 	height: root.barHeight
 
-	// One shared ticker steps every bar together at cava's 30 Hz, so the
-	// surface redraws once per data frame instead of every display frame
-	// (measured on the UHD 620: 60 fps redraws cost ~15 % of a core). Springs
-	// are exact for any step, so the motion follows the same curve.
+	// One shared per-frame ticker steps every bar together (Bloom's 60 fps
+	// motion), and only while the visualizer is on screen and moving: a
+	// running animation redraws the whole surface every frame.
 	property bool _moving: false
-	property real _last: 0
 	onLevelsChanged: root._moving = true
 	onPlayingChanged: root._moving = true
 	onActiveChanged: if (root.active) root._moving = true
 
-	Timer {
-		interval: Tokens.music.visualizer.frameMs
-		repeat: true
+	FrameAnimation {
 		running: root.active && root._moving
-		onRunningChanged: root._last = Date.now()
 		onTriggered: {
-			const now = Date.now();
-			const dt = Math.min((now - root._last) / 1000, 0.064);
-			root._last = now;
+			// Cap long frames (e.g. after a stall) so the bars never jump.
+			const dt = Math.min(frameTime, 0.064);
 			let moving = false;
 			for (let i = 0; i < bars.count; i++) {
 				const b = bars.itemAt(i);
