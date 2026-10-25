@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Install tools
         run: |
-          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg nodejs npm jq shellcheck systemd sway
+          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg nodejs npm jq shellcheck systemd sway python-gobject dbus
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
