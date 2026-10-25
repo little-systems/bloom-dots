@@ -6,6 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SHELL_PID=""
 
 bloom_env() {
+	# systemd --user is reached through the session's own runtime dir.
+	HOST_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}"
 	TEST_TMP="$(mktemp -d)"
 	export XDG_CONFIG_HOME="$TEST_TMP/config"
 	export XDG_STATE_HOME="$TEST_TMP/state"
@@ -80,6 +82,7 @@ start_shell() {
 # is reachable it runs as a transient unit.
 SWAY_UNIT=""
 SWAY_PID=""
+HOST_RUNTIME_DIR=""
 SWAY_RUNTIME_DIR=""
 
 start_sway() {
@@ -95,9 +98,9 @@ start_sway() {
 	chmod 700 "$rt"
 	SWAY_RUNTIME_DIR="$rt"
 	export XDG_RUNTIME_DIR="$rt"
-	if systemctl --user show-environment >/dev/null 2>&1; then
+	if [[ -n "$HOST_RUNTIME_DIR" ]] && XDG_RUNTIME_DIR="$HOST_RUNTIME_DIR" systemctl --user show-environment >/dev/null 2>&1; then
 		SWAY_UNIT="bloom-test-sway-$$"
-		systemd-run --user --quiet --unit="$SWAY_UNIT" \
+		XDG_RUNTIME_DIR="$HOST_RUNTIME_DIR" systemd-run --user --quiet --unit="$SWAY_UNIT" \
 			-E XDG_RUNTIME_DIR="$rt" -E WLR_BACKENDS=headless -E WLR_RENDERER=pixman -E WLR_LIBINPUT_NO_DEVICES=1 \
 			/usr/bin/sway -c "$ROOT/tests/integration/sway.conf"
 	else
@@ -111,8 +114,8 @@ start_sway() {
 
 stop_sway() {
 	if [[ -n "$SWAY_UNIT" ]]; then
-		systemctl --user stop "$SWAY_UNIT" 2>/dev/null || true
-		systemctl --user reset-failed "$SWAY_UNIT" 2>/dev/null || true
+		XDG_RUNTIME_DIR="$HOST_RUNTIME_DIR" systemctl --user stop "$SWAY_UNIT" 2>/dev/null || true
+		XDG_RUNTIME_DIR="$HOST_RUNTIME_DIR" systemctl --user reset-failed "$SWAY_UNIT" 2>/dev/null || true
 	fi
 	if [[ -n "$SWAY_PID" ]]; then
 		kill "$SWAY_PID" 2>/dev/null || true
