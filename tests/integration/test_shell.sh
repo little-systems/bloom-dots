@@ -51,7 +51,9 @@ assert_eq "$(ipc settings warnings | jq length)" "3" "warning count"
 pass "invalid values fall back to defaults with warnings"
 
 assert_eq "$(ipc settings set bloom-theme-mode light)" "ok" "set mode"
-assert_eq "$(jq -r '."bloom-theme-mode"' "$SETTINGS")" "light" "mode written to the file"
+# Settings apply in memory at once; FileView writes the file asynchronously.
+file_mode_is() { [[ "$(jq -r '."bloom-theme-mode"' "$SETTINGS" 2>/dev/null)" == "$1" ]]; }
+wait_for "the mode to reach the file" file_mode_is light
 assert_eq "$(jq -r '."x-future-key"' "$SETTINGS")" "1" "unknown key kept"
 assert_eq "$(ipc theme mode)" "light" "theme follows settings"
 assert_eq "$(ipc settings set bloom-theme-opacity 2)" "bloom-theme-opacity: expected a number from 0.1 to 1" "invalid set rejected"
