@@ -1,8 +1,10 @@
 import QtQuick
+import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "../../services/stats.js" as Stats
 import "notch.js" as Logic
+import "music.js" as Music
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -27,6 +29,44 @@ Item {
 	property var weather: ({ shown: false, label: "", icon: "thermometer", tooltip: "" })
 	property var battery: ({ available: false, level: 0, charging: false, threshold: 20, tooltip: "" })
 	property var stats: ({ cpu: 0, ram: 0, disk: 0, up: 0, down: 0 })
+	// Music (Bloom music mode), fed by NotchWindow.
+	property bool musicEnabled: true
+	property bool compactNotch: true
+	property bool visualizerEnabled: true
+	property bool albumArtEnabled: true
+	property bool ambienceEnabled: true
+	property bool glowEnabled: true
+	property string layout: "classic"
+	property var media: ({ hasMedia: false, isPlaying: false, title: "", artist: "", artUrl: "", lengthMs: 0, canSeek: false })
+	property real positionMs: 0
+	property var levels: [0.18, 0.18, 0.18, 0.18, 0.18]
+	property real volume: 0
+	property bool muted: false
+	property bool mixerAvailable: false
+
+	signal togglePlay()
+	signal previousTrack()
+	signal nextTrack()
+	signal seekTo(real ms)
+	signal setVolume(real v)
+	signal openMixer()
+	signal layoutChosen(string layout)
+	signal musicWatched(bool watched)
+
+	property bool open: false
+	property bool musicActivityVisible: false
+	property bool volumeExpanded: false
+	readonly property string collapsedMode: Music.collapsedMode({
+		enabled: root.musicEnabled, compactNotch: root.compactNotch,
+		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible
+	})
+	readonly property string bloomMode: root.open ? "music" : root.collapsedMode
+	readonly property bool musicOnHover: Music.musicOnStatusHover({
+		open: root.open, hovered: root.statusHover, mode: root.bloomMode, enabled: root.musicEnabled,
+		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible, compactNotch: root.compactNotch
+	})
+	// Bloom showCompactMusicIcons: the collapsed row shows music, not widgets.
+	readonly property bool _musicIcons: (root.bloomMode === "music" && !root.open) || root.musicOnHover
 	// Set once the surface is on screen; starts the drop-in.
 	property bool ready: false
 
@@ -48,7 +88,17 @@ Item {
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
 		{ ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
-		{ width: Logic.statusWidth(root.statusHover, root.widgetCount, root.fitWidth, root.use24h), height: Tokens.sizes.mainRow })
+		{
+			width: Music.contentWidth({
+				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
+				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
+				albumArt: root.albumArtEnabled, widgetCount: root.widgetCount, fitWidth: root.fitWidth, use24h: root.use24h
+			}),
+			height: Music.contentHeight({
+				open: root.open, mode: root.bloomMode, layout: root.layout,
+				hasProgress: root.media.lengthMs > 0, volumeExpanded: root.volumeExpanded
+			})
+		})
 
 	readonly property Item hitItem: pillArea
 	readonly property Item bandItem: band
@@ -65,12 +115,75 @@ Item {
 		peekTimer.interval = ms;
 		peekTimer.restart();
 	}
+	function openMusic() {
+		if (root.musicEnabled && root.media.hasMedia)
+			root.open = true;
+	}
+
+	// Bloom: a session shows as the live activity, and a paused one lingers
+	// 5 s before handing the pill back to the clock.
+	property bool _hadMedia: false
+	property bool _wasPlaying: false
+	property string _lastTitle: ""
+
+	function _updateActivity() {
+		if (!(root.musicEnabled && root.media.hasMedia)) {
+			activityTimer.stop();
+			root.musicActivityVisible = false;
+			return;
+		}
+		root.musicActivityVisible = true;
+		if (root.media.isPlaying)
+			activityTimer.stop();
+		else
+			activityTimer.restart();
+	}
+
+	onMediaChanged: {
+		if (root.media.hasMedia !== root._hadMedia || root.media.isPlaying !== root._wasPlaying)
+			root._updateActivity();
+		if (root.mode === "peek" && Music.shouldPeek({ title: root._lastTitle, playing: root._wasPlaying }, { title: root.media.title, playing: root.media.isPlaying }))
+			root.peek(Tokens.music.peekMs);
+		root._hadMedia = root.media.hasMedia;
+		root._wasPlaying = root.media.isPlaying;
+		root._lastTitle = root.media.title;
+	}
+	onMusicEnabledChanged: root._updateActivity()
+	Component.onCompleted: {
+		root._updateActivity();
+		// A watch that is already true at creation never changes, so announce it.
+		if (root._watching) {
+			root._watchHeld = true;
+			root.musicWatched(true);
+		}
+	}
+
+	// Leave the player when music is turned off or the player goes away.
+	readonly property bool _musicAvailable: root.musicEnabled && root.media.hasMedia
+	on_MusicAvailableChanged: if (!root._musicAvailable) root.open = false
+
+	onOpenChanged: if (!root.open) root.volumeExpanded = false
+
+	readonly property bool _watching: root.open || (root._musicIcons && root.visualizerEnabled && root.media.isPlaying)
+	property bool _watchHeld: false
+	on_WatchingChanged: {
+		root._watchHeld = root._watching;
+		root.musicWatched(root._watching);
+	}
+
+	Timer {
+		id: activityTimer
+		interval: Tokens.music.activityLingerMs
+		onTriggered: root.musicActivityVisible = false
+	}
+
 
 	function stateObject() {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			overlapped: root.overlapped, visible: root.userVisible,
-			width: root.target.width, height: root.target.height, y: root.target.y
+			width: root.target.width, height: root.target.height, y: root.target.y,
+			bloomMode: root.bloomMode, open: root.open
 		};
 	}
 
@@ -78,7 +191,12 @@ Item {
 		root._statsHeld = root._statsShown;
 		root.statsWanted(root._statsShown);
 	}
-	Component.onDestruction: if (root._statsHeld) root.statsWanted(false)
+	Component.onDestruction: {
+		if (root._statsHeld)
+			root.statsWanted(false);
+		if (root._watchHeld)
+			root.musicWatched(false);
+	}
 
 	onReadyChanged: {
 		if (!root.ready)
@@ -139,8 +257,11 @@ Item {
 		if (root.pillHovered) {
 			handoff.stop();
 			root.edgeArmed = false;
+		} else {
+			root.open = false;
 		}
 	}
+
 
 	Timer {
 		id: handoff
@@ -212,7 +333,7 @@ Item {
 				edgeRadius: rS.value
 				farRadius: Tokens.sizes.farRadius
 				flares: root.impacted
-				color: root.statusHover ? root.bgExpanded : root.bg
+				color: root.statusHover || root.open ? root.bgExpanded : root.bg
 				Behavior on color {
 					ColorAnimation {
 						duration: Tokens.notch.colorFadeMs
@@ -234,13 +355,21 @@ Item {
 
 			HoverHandler { id: pillHover }
 
+			Ambience {
+				anchors.fill: parent
+				visible: root.open && root.ambienceEnabled && root.media.artUrl !== ""
+				source: visible ? root.media.artUrl : ""
+				bg: root.bgExpanded
+				radius: Tokens.sizes.farRadius
+			}
+
 			Item {
 				id: mainRow
 				x: Tokens.sizes.padding
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: Tokens.sizes.mainRow
 				clip: true
-				opacity: root.expanded && !root.hidden ? 1 : 0
+				opacity: root.expanded && !root.hidden && !root.open ? 1 : 0
 				Behavior on opacity {
 					NumberAnimation {
 						duration: Tokens.easing.framerDefaultMs
@@ -254,7 +383,7 @@ Item {
 					anchors.left: parent.left
 					anchors.verticalCenter: parent.verticalCenter
 					spacing: Tokens.statusStrip.groupGap
-					opacity: root.statusHover ? 1 : 0
+					opacity: root.statusHover && !root._musicIcons ? 1 : 0
 					visible: opacity > 0
 					Behavior on opacity {
 						NumberAnimation {
@@ -297,6 +426,100 @@ Item {
 						delegate: widgetDelegate
 					}
 				}
+
+				Visualizer {
+					objectName: "collapsedVisualizer"
+					anchors.left: parent.left
+					anchors.verticalCenter: parent.verticalCenter
+					visible: root._musicIcons && root.visualizerEnabled
+					playing: root.media.isPlaying
+					levels: root.levels
+					color: root.textColor
+					opacity: visible ? 1 : 0
+					Behavior on opacity {
+						NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.35, 1, 1, 1] }
+					}
+				}
+
+				Item {
+					id: artSlot
+					objectName: "musicArt"
+					readonly property bool shown: root._musicIcons && (root.albumArtEnabled || root.musicOnHover)
+					readonly property real side: root.media.isPlaying ? Tokens.music.collapsedArt.size : Tokens.music.collapsedArt.pausedSize
+					anchors.right: parent.right
+					anchors.verticalCenter: parent.verticalCenter
+					width: side
+					height: side
+					visible: opacity > 0
+					opacity: shown ? 1 : 0
+					scale: shown ? 1 : 0.8
+					Behavior on width { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
+					Behavior on height { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
+					Behavior on opacity { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
+					Behavior on scale { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
+
+					HoverHandler { id: artHover }
+
+					// Bloom's glow: the art itself, blurred and saturated, behind the button.
+					Image {
+						id: glowSource
+						readonly property real inset: artHover.hovered ? Tokens.music.collapsedArt.glowHoverInset : Tokens.music.collapsedArt.glowInset
+						x: -inset
+						y: -inset
+						width: artSlot.width + 2 * inset
+						height: artSlot.height + 2 * inset
+						source: root.glowEnabled && root.albumArtEnabled ? root.media.artUrl : ""
+						fillMode: Image.PreserveAspectCrop
+						asynchronous: true
+						visible: false
+					}
+
+					MultiEffect {
+						anchors.fill: glowSource
+						source: glowSource
+						visible: glowSource.status === Image.Ready
+						blurEnabled: true
+						blurMax: 16
+						blur: (artHover.hovered ? 8 : 6) / 16
+						saturation: 1
+						brightness: artHover.hovered ? -0.1 : -0.2
+						opacity: artHover.hovered ? 0.7 : 0.6
+						Behavior on opacity { NumberAnimation { duration: 400 } }
+					}
+
+					Rectangle {
+						anchors.fill: parent
+						radius: Tokens.music.collapsedArt.radius
+						color: Qt.rgba(1, 1, 1, artHover.hovered ? 0.25 : 0.15)
+					}
+
+					AlbumArt {
+						anchors.fill: parent
+						source: root.albumArtEnabled ? root.media.artUrl : ""
+						radius: Tokens.music.collapsedArt.radius
+						flipMs: Tokens.music.collapsedArt.flipMs
+					}
+
+					TapHandler {
+						acceptedButtons: Qt.LeftButton
+						onTapped: root.openMusic()
+					}
+
+					TapHandler {
+						acceptedButtons: Qt.RightButton
+						onTapped: root.previousTrack()
+					}
+				}
+			}
+
+			Loader {
+				x: Tokens.sizes.padding
+				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
+				height: parent.height
+				active: root.open
+				opacity: root.open ? 1 : 0
+				Behavior on opacity { NumberAnimation { duration: 100 } }
+				sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
 			}
 		}
 
@@ -343,6 +566,51 @@ Item {
 				interval: Math.max(1, root.edgeDelay)
 				onTriggered: root.edgeArmed = true
 			}
+		}
+	}
+
+	Component {
+		id: classicComponent
+		ClassicPlayer {
+			media: root.media
+			positionMs: root.positionMs
+			levels: root.levels
+			visualizer: root.visualizerEnabled
+			volume: root.volume
+			muted: root.muted
+			mixerAvailable: root.mixerAvailable
+			textColor: root.textColor
+			textMuted: root.textMuted
+			onTogglePlay: root.togglePlay()
+			onPreviousTrack: root.previousTrack()
+			onNextTrack: root.nextTrack()
+			onSetVolume: v => root.setVolume(v)
+			onOpenMixer: root.openMixer()
+			onSwitchLayout: root.layoutChosen("compact")
+		}
+	}
+
+	Component {
+		id: compactComponent
+		CompactPlayer {
+			media: root.media
+			positionMs: root.positionMs
+			levels: root.levels
+			visualizer: root.visualizerEnabled
+			volume: root.volume
+			muted: root.muted
+			mixerAvailable: root.mixerAvailable
+			textColor: root.textColor
+			textMuted: root.textMuted
+			volumeExpanded: root.volumeExpanded
+			onVolumeExpandedChanged: root.volumeExpanded = volumeExpanded
+			onTogglePlay: root.togglePlay()
+			onPreviousTrack: root.previousTrack()
+			onNextTrack: root.nextTrack()
+			onSeekTo: ms => root.seekTo(ms)
+			onSetVolume: v => root.setVolume(v)
+			onOpenMixer: root.openMixer()
+			onSwitchLayout: root.layoutChosen("classic")
 		}
 	}
 

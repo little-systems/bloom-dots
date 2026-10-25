@@ -19,7 +19,7 @@ Item {
 	layer.enabled: true
 	layer.effect: MultiEffect {
 		maskEnabled: true
-		maskSource: clip
+		maskSource: pillShape
 	}
 
 	Image {
@@ -67,7 +67,7 @@ Item {
 	}
 
 	Item {
-		id: clip
+		id: pillShape
 		anchors.fill: parent
 		visible: false
 		layer.enabled: true
