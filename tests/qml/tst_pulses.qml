@@ -13,24 +13,24 @@ TestCase {
 	}
 
 	function battery(props) {
-		const b = { available: true, ready: true, level: 50, charging: false, threshold: 20 };
+		const b = { available: true, ready: true, level: 50, pluggedIn: false, threshold: 20 };
 		for (const k in props) b[k] = props[k];
 		return b;
 	}
 
-	// Bloom fires once per crossing and re-arms on charging or recovery.
+	// Bloom fires once per crossing and re-arms on plugging in or recovery.
 	function test_lowBatteryStep() {
 		let r = Pulses.lowBatteryStep(true, battery({ level: 20 }));
 		verify(r.fire, "at the threshold");
 		verify(!r.armed);
 		r = Pulses.lowBatteryStep(r.armed, battery({ level: 19 }));
 		verify(!r.fire, "once per crossing");
-		r = Pulses.lowBatteryStep(r.armed, battery({ level: 19, charging: true }));
+		r = Pulses.lowBatteryStep(r.armed, battery({ level: 19, pluggedIn: true }));
 		verify(!r.fire);
-		verify(r.armed, "charging re-arms");
+		verify(r.armed, "plugging in re-arms");
 		r = Pulses.lowBatteryStep(false, battery({ level: 21 }));
 		verify(r.armed, "recovering above the threshold re-arms");
-		verify(!Pulses.lowBatteryStep(true, battery({ level: 10, charging: true })).fire, "not while charging");
+		verify(!Pulses.lowBatteryStep(true, battery({ level: 10, pluggedIn: true })).fire, "not while plugged in");
 		verify(!Pulses.lowBatteryStep(true, battery({ level: 10, ready: false })).fire, "not before UPower answers");
 		verify(!Pulses.lowBatteryStep(true, battery({ level: 0, available: false })).fire, "no battery, no pulse");
 		compare(Pulses.lowBatteryStep(false, battery({ level: 10, ready: false })).armed, false, "unknown keeps the state");
@@ -68,9 +68,10 @@ TestCase {
 	}
 
 	function test_batteryLabel() {
-		compare(Pulses.batteryLabel("low", { level: 15, charging: false }), "Low Battery • 15%");
-		compare(Pulses.batteryLabel("power", { level: 80, charging: true }), "Charging • 80%");
-		compare(Pulses.batteryLabel("power", { level: 80, charging: false }), "On Battery • 80%");
+		compare(Pulses.batteryLabel("low", { level: 15, pluggedIn: false }), "Low Battery • 15%");
+		compare(Pulses.batteryLabel("power", { level: 80, pluggedIn: true }), "Charging • 80%");
+		compare(Pulses.batteryLabel("power", { level: 100, pluggedIn: true, charging: false }), "Charging • 100%", "full on the charger is still plugged in");
+		compare(Pulses.batteryLabel("power", { level: 80, pluggedIn: false }), "On Battery • 80%");
 	}
 
 	function test_workspaceLabel() {
@@ -91,5 +92,22 @@ TestCase {
 		compare(Pulses.peekUntil(1000, 0, 2000), 3000);
 		compare(Pulses.peekUntil(1000, 7000, 2000), 7000, "an update peek still running");
 		compare(Pulses.peekUntil(6000, 7000, 2000), 8000);
+	}
+
+	function hw(id, name, monitor) {
+		return { id: id, name: name, monitor: monitor };
+	}
+
+	// Hyprland gives named workspaces ids from -1337 down; only special
+	// (scratchpad) workspaces are left out.
+	function test_workspaceState() {
+		const m = { name: "eDP-1" };
+		const other = { name: "HDMI-A-1" };
+		const all = [hw(1, "1", m), hw(2, "2", m), hw(3, "3", other), hw(-1337, "web", m), hw(-98, "special:magic", m)];
+		compare(Pulses.workspaceState(hw(2, "2", m), all, m), { id: 2, name: "2", ids: [-1337, 1, 2] });
+		compare(Pulses.workspaceState(hw(-1337, "web", m), all, m), { id: -1337, name: "web", ids: [-1337, 1, 2] });
+		compare(Pulses.workspaceState(hw(-98, "special:magic", m), all, m), null);
+		compare(Pulses.workspaceState(null, all, m), null);
+		compare(Pulses.workspaceState(hw(5, "5", m), [], m), { id: 5, name: "5", ids: [5] }, "not listed yet");
 	}
 }

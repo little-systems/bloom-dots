@@ -1,19 +1,21 @@
 // Notch pulses ported from Bloom (App.tsx @ b5fb962), plus the workspace
 // pulse (spec D7). Plain JS, shared with the unit tests.
 
-// Bloom showPowerPulse: the charging flag changed. The first reading (the
-// battery as UPower first reports it) is not a change.
-function powerPulse(prevCharging, charging) {
-	return prevCharging !== null && prevCharging !== charging;
+// Bloom showPowerPulse: the charger was connected or disconnected. This
+// follows the charger, not UPower's charge state, which leaves Charging when
+// the battery is full or at a charge limit with the charger still in. The
+// first reading (as UPower first reports it) is not a change.
+function powerPulse(prevPluggedIn, pluggedIn) {
+	return prevPluggedIn !== null && prevPluggedIn !== pluggedIn;
 }
 
-// Bloom showLowBatteryPulse: once per drop to the threshold while
-// discharging; charging or recovering above it re-arms. An unknown battery
+// Bloom showLowBatteryPulse: once per drop to the threshold on battery;
+// plugging in or recovering above it re-arms. An unknown battery
 // keeps the state as it was.
 function lowBatteryStep(armed, b) {
 	if (!b.available || !b.ready)
 		return { fire: false, armed: armed };
-	if (b.charging || b.level > b.threshold)
+	if (b.pluggedIn || b.level > b.threshold)
 		return { fire: false, armed: true };
 	return { fire: armed, armed: false };
 }
@@ -48,8 +50,20 @@ function viewKey(kind) {
 }
 
 function batteryLabel(kind, b) {
-	const state = kind === "low" ? "Low Battery" : b.charging ? "Charging" : "On Battery";
+	const state = kind === "low" ? "Low Battery" : b.pluggedIn ? "Charging" : "On Battery";
 	return `${state} • ${b.level}%`;
+}
+
+// This monitor's workspace for the pulse, from Hyprland's workspaces as
+// plain { id, name, monitor }. Named workspaces have negative ids (from
+// -1337 down); special (scratchpad) ones are not places you switch to.
+function workspaceState(active, all, monitor) {
+	if (!active || active.name.startsWith("special:"))
+		return null;
+	const ids = all.filter(w => w.monitor === monitor && !w.name.startsWith("special:")).map(w => w.id);
+	if (ids.indexOf(active.id) < 0)
+		ids.push(active.id);
+	return { id: active.id, name: active.name, ids: ids.sort((a, b) => a - b) };
 }
 
 function workspaceLabel(ws) {

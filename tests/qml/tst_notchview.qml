@@ -13,7 +13,7 @@ Item {
 			width: 1000
 			height: 480
 			weather: ({ shown: true, label: "28°C", icon: "sun", tooltip: "Clear — Chennai" })
-			battery: ({ available: true, ready: true, level: 80, charging: false, threshold: 20, tooltip: "80% remaining" })
+			battery: ({ available: true, ready: true, level: 80, charging: false, pluggedIn: false, threshold: 20, tooltip: "80% remaining" })
 		}
 	}
 
@@ -432,6 +432,9 @@ Item {
 		function bat(props) {
 			const b = { available: true, ready: true, level: 80, charging: false, threshold: 20, tooltip: "" };
 			for (const k in props) b[k] = props[k];
+			// Most tests plug in to charge; a full battery on the charger says so explicitly.
+			if (!("pluggedIn" in b))
+				b.pluggedIn = b.charging;
 			return b;
 		}
 
@@ -443,6 +446,24 @@ Item {
 			compare(v.target.width, 200, "Bloom: pulses are 200 wide");
 			tryCompare(v, "pulse", "", 1500);
 			compare(v.target.width, 140);
+		}
+
+		// A full battery stops charging on the charger (UPower: Charging →
+		// FullyCharged, or PendingCharge at a charge limit): still plugged in.
+		function test_fullChargeIsNotUnplugging() {
+			const v = fast({ battery: bat({ level: 99, charging: true }) });
+			settle(v);
+			v.battery = bat({ level: 100, charging: false, pluggedIn: true });
+			compare(v.pulse, "", "no On Battery pulse while the charger is connected");
+			v.battery = bat({ level: 100, charging: false, pluggedIn: false });
+			compare(v.pulse, "power", "unplugging pulses");
+		}
+
+		function test_pluggingInWhenFullPulses() {
+			const v = fast({ battery: bat({ level: 100, charging: false, pluggedIn: false }) });
+			settle(v);
+			v.battery = bat({ level: 100, charging: false, pluggedIn: true });
+			compare(v.pulse, "power", "Bloom: Charging • 100%");
 		}
 
 		// Review focus 1.

@@ -28,7 +28,7 @@ Item {
 	property color textMuted: Qt.rgba(1, 1, 1, 0.6)
 	property var now: new Date()
 	property var weather: ({ shown: false, label: "", icon: "thermometer", tooltip: "" })
-	property var battery: ({ available: false, ready: false, level: 0, charging: false, threshold: 20, tooltip: "" })
+	property var battery: ({ available: false, ready: false, level: 0, charging: false, pluggedIn: false, threshold: 20, tooltip: "" })
 	property var updates: ({ available: false, count: 0 })
 	property bool updateIndicator: true
 	property var workspace: null
@@ -230,15 +230,15 @@ Item {
 
 	// The battery as UPower first reports it is not a change; Bloom started
 	// watching once it was ready.
-	property var _lastCharging: null
+	property var _lastPluggedIn: null
 	property bool _lowArmed: true
 	function _batteryCheck() {
 		const b = root.battery;
 		if (!root.ready || !b.available || !b.ready)
 			return;
-		if (Pulses.powerPulse(root._lastCharging, b.charging))
+		if (Pulses.powerPulse(root._lastPluggedIn, b.pluggedIn))
 			root._fire("power");
-		root._lastCharging = b.charging;
+		root._lastPluggedIn = b.pluggedIn;
 		const low = Pulses.lowBatteryStep(root._lowArmed, b);
 		root._lowArmed = low.armed;
 		if (low.fire)

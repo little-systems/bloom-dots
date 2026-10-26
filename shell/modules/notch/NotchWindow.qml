@@ -113,7 +113,7 @@ PanelWindow {
 		textColor: Theme.text
 		textMuted: Theme.textMuted
 		weather: ({ shown: Weather.shown, label: Weather.label, icon: Weather.icon, tooltip: Weather.tooltip })
-		battery: ({ available: Battery.available, ready: Battery.ready, level: Battery.level, charging: Battery.charging, threshold: Battery.threshold, tooltip: Battery.tooltip })
+		battery: ({ available: Battery.available, ready: Battery.ready, level: Battery.level, charging: Battery.charging, pluggedIn: Battery.pluggedIn, threshold: Battery.threshold, tooltip: Battery.tooltip })
 		stats: ({ cpu: SystemStats.cpu, ram: SystemStats.ram, disk: SystemStats.disk, up: SystemStats.up, down: SystemStats.down })
 		onStatsWanted: wanted => SystemStats.hold(win._key, wanted)
 		musicEnabled: win._musicOn
