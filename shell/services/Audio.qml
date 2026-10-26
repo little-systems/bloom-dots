@@ -27,8 +27,9 @@ Singleton {
 	}
 
 	function openMixer() {
+		// Its own scope, so the mixer outlives a shell restart.
 		if (root.mixer)
-			Quickshell.execDetached([root.mixer]);
+			Apps.run([root.mixer], root.mixer);
 	}
 
 	PwObjectTracker { objects: [root.sink] }

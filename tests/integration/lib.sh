@@ -16,6 +16,8 @@ bloom_env() {
 	# Never sync the real pacman databases from a test (tests that need
 	# updates point this at tests/integration/updates-fake.sh).
 	export BLOOM_CHECKUPDATES="$TEST_TMP/no-checkupdates"
+	# Apps launched by the shell in tests stay out of the real user systemd.
+	export BLOOM_LAUNCH_SCOPE=0
 	unset WAYLAND_DISPLAY
 	mkdir -p "$XDG_CONFIG_HOME/quickshell" "$XDG_RUNTIME_DIR"
 	chmod 700 "$XDG_RUNTIME_DIR"
