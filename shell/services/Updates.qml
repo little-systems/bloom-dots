@@ -75,9 +75,10 @@ Singleton {
 		onTriggered: root.check()
 	}
 
+	// Backstop, should timeout itself ever fail to end the check.
 	Timer {
 		id: watchdog
-		interval: Tokens.updates.timeoutMs
+		interval: Tokens.updates.timeoutMs + 15000
 		onTriggered: proc.running = false
 	}
 
@@ -85,8 +86,11 @@ Singleton {
 		id: proc
 		// Through sh so a missing checkupdates exits 127; a missing binary
 		// started directly never reports an exit.
-		// BLOOM_CHECKUPDATES points tests at a fake, so they never sync the real databases.
-		command: ["sh", "-c", 'c="${BLOOM_CHECKUPDATES:-checkupdates}"; command -v "$c" >/dev/null || exit 127; exec "$c"']
+		// BLOOM_CHECKUPDATES points tests at a fake, so they never sync the real
+		// databases. checkupdates traps SIGTERM and finishes `pacman -Sy` first,
+		// so a stalled sync is ended by timeout, which signals the whole group
+		// (then kills it 10 s later); it exits 124, a failed check.
+		command: ["sh", "-c", 'c="${BLOOM_CHECKUPDATES:-checkupdates}"; command -v "$c" >/dev/null || exit 127; exec timeout -k 10 "${BLOOM_CHECKUPDATES_TIMEOUT:-' + Tokens.updates.timeoutMs / 1000 + '}" "$c"']
 		onRunningChanged: {
 			if (proc.running)
 				watchdog.restart();

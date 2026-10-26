@@ -10,6 +10,8 @@ mkdir -p "$TEST_TMP/bin" "$XDG_CONFIG_HOME/bloom"
 cp "$ROOT/tests/integration/updates-fake.sh" "$TEST_TMP/bin/checkupdates"
 chmod +x "$TEST_TMP/bin/checkupdates"
 export BLOOM_CHECKUPDATES="$TEST_TMP/bin/checkupdates" BLOOM_FAKE_UPDATES="$TEST_TMP/fake"
+# A stalled check ends after 1 s here (2 min in use).
+export BLOOM_CHECKUPDATES_TIMEOUT=1
 printf '{ "bloom-weather-enabled": false }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
 
 printf '0\nfuzzel 1 -> 2\njdk 1 -> 2\n' >"$BLOOM_FAKE_UPDATES"
@@ -26,6 +28,12 @@ ipc updates check >/dev/null
 wait_for "the failed check to finish" state_is "checking" '{"checking":false}'
 assert_eq "$(state "count")" '{"count":2}' "a failed check keeps the last good count"
 pass "offline keeps the dot steady"
+
+printf 'hang\n' >"$BLOOM_FAKE_UPDATES"
+ipc updates check >/dev/null
+wait_for "the check to start" state_is "checking" '{"checking":true}'
+wait_for "the stalled check to be ended" state_is "checking,count" '{"checking":false,"count":2}'
+pass "a stalled check (one that traps TERM) is ended and keeps the count"
 
 printf '2\n' >"$BLOOM_FAKE_UPDATES"
 ipc updates check >/dev/null
