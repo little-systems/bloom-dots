@@ -434,6 +434,12 @@ Item {
 			return n;
 		}
 
+		// Waits for running animations (the hide spring's tail can outlast a
+		// fixed wait on a slow run) to finish, so a count measures only what follows.
+		function settleFrames() {
+			for (let i = 0; i < 20 && framesIn(250) > 0; i++) {}
+		}
+
 		function test_idleNotchDrawsNoFrames() {
 			const v = make();
 			settle(v);
@@ -445,7 +451,7 @@ Item {
 			const v = make({ mode: "peek", media: playing() });
 			settle(v);
 			tryCompare(v, "hidden", true, 4000);
-			wait(800);
+			settleFrames();
 			fakeCava.target = v;
 			const n = framesIn(1000);
 			fakeCava.target = null;
