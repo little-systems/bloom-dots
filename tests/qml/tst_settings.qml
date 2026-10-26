@@ -147,6 +147,15 @@ TestCase {
 		verify(!Settings.validateOne("bloom-media-layout", "grid").ok);
 	}
 
+	function test_pulseDefaults() {
+		const d = Settings.defaults();
+		compare(d["bloom-show-update-indicator"], true);
+		compare(d["bloom-workspace-peek-enabled"], true);
+		const off = Settings.validate({ "bloom-show-update-indicator": "false" });
+		compare(off.values["bloom-show-update-indicator"], false, "Bloom's string form");
+		compare(off.warnings, []);
+	}
+
 	// Bloom read the visualizer switch from an older key too.
 	function test_legacyVisualizerKey() {
 		const old = Settings.validate({ "bloom-visualizer-enabled": "false" });

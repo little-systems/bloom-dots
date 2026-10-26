@@ -110,7 +110,17 @@ var SCHEMA = {
 		min: 5,
 		max: 50,
 		default: 20,
-		doc: "Battery percentage at or below which the battery fill turns red."
+		doc: "Battery percentage at or below which the battery fill turns red and the notch shows a low-battery pulse."
+	},
+	"bloom-show-update-indicator": {
+		type: "bool",
+		default: true,
+		doc: "Check for pacman updates hourly (needs pacman-contrib) and show a green dot under the clock while some are pending, with a pulse when new ones arrive."
+	},
+	"bloom-workspace-peek-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Briefly show the workspace in the notch when you switch to it (Hyprland)."
 	},
 	"bloom-scale": {
 		type: "number",

@@ -21,7 +21,9 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-weather-lon` | number | `null` | -180 to 180, or `null` | Longitude for the weather. null uses IP geolocation. |
 | `bloom-temp-unit` | enum | `"celsius"` | `celsius`, `fahrenheit` | Temperature unit for the weather widget. |
 | `bloom-time-format-24h` | bool | `false` | `true`, `false` | 24-hour clock in the notch; otherwise 12-hour with AM/PM. |
-| `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red. |
+| `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red and the notch shows a low-battery pulse. |
+| `bloom-show-update-indicator` | bool | `true` | `true`, `false` | Check for pacman updates hourly (needs pacman-contrib) and show a green dot under the clock while some are pending, with a pulse when new ones arrive. |
+| `bloom-workspace-peek-enabled` | bool | `true` | `true`, `false` | Briefly show the workspace in the notch when you switch to it (Hyprland). |
 | `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |
