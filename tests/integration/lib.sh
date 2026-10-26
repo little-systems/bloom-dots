@@ -13,6 +13,9 @@ bloom_env() {
 	export XDG_STATE_HOME="$TEST_TMP/state"
 	export XDG_RUNTIME_DIR="$TEST_TMP/run"
 	export QT_QPA_PLATFORM=offscreen NO_COLOR=1
+	# Never sync the real pacman databases from a test (tests that need
+	# updates point this at tests/integration/updates-fake.sh).
+	export BLOOM_CHECKUPDATES="$TEST_TMP/no-checkupdates"
 	unset WAYLAND_DISPLAY
 	mkdir -p "$XDG_CONFIG_HOME/quickshell" "$XDG_RUNTIME_DIR"
 	chmod 700 "$XDG_RUNTIME_DIR"

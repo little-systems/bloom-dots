@@ -78,6 +78,20 @@ ShellRoot {
 	}
 
 	IpcHandler {
+		target: "updates"
+
+		function state(): string {
+			return JSON.stringify({ available: Updates.available, count: Updates.count, installed: Updates.installed, checking: Updates.checking });
+		}
+
+		// Checks now (after an upgrade, the dot would otherwise wait an hour).
+		function check(): string {
+			Updates.check();
+			return "ok";
+		}
+	}
+
+	IpcHandler {
 		target: "notch"
 
 		function _windows() {
