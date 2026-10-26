@@ -21,7 +21,7 @@ wait_for "the fake players" grep -q READY "$TEST_TMP/busy.log"
 
 HARNESS="$TEST_TMP/harness"
 mkdir -p "$HARNESS"
-cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$HARNESS/"
+cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$ROOT/shell/modules" "$HARNESS/"
 cp "$ROOT/tests/integration/media-harness.qml" "$HARNESS/shell.qml"
 
 timeout 15 qs --no-color -p "$HARNESS" >"$TEST_TMP/shell.log" 2>&1 || fail "harness exited with an error"

@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# The dock on headless sway: it loads per screen, shows pins from the state
+# file, pins and unpins over IPC, launches the pinned app (Super+Alt+N's
+# action) and changes mode live, with no warnings. No Hyprland here, so no
+# running windows and no global shortcuts.
+set -euo pipefail
+# shellcheck source=lib.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+if ! command -v sway >/dev/null; then
+	[[ "${CI:-}" == true ]] && { echo "sway is required in CI" >&2; exit 1; }
+	echo "skipped: sway not installed"
+	exit 0
+fi
+bloom_env
+# The isolated XDG_DATA_DIRS below has no host KDE colour schemes.
+export QT_QPA_PLATFORMTHEME=generic
+start_sway
+
+mkdir -p "$TEST_TMP/data/applications" "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME/bloom"
+# Desktop-entry Exec has its own quoting rules, so the fixture takes a plain
+# path (mktemp paths have no spaces).
+sed "s|@LAUNCHED@|$TEST_TMP/launched|" "$ROOT/tests/integration/fixtures/applications/bloom-test-app.desktop" \
+	>"$TEST_TMP/data/applications/bloom-test-app.desktop"
+export XDG_DATA_HOME="$TEST_TMP/data" XDG_DATA_DIRS="$TEST_TMP/data"
+printf '{ "bloom-enabled-modules": ["dock"], "bloom-weather-enabled": false, "bloom-dock-mode": "fixed" }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
+printf '{ "pinned": ["bloom-test-app"] }\n' >"$XDG_STATE_HOME/bloom/dock.json"
+start_shell
+
+state() { ipc dock state | jq -c ".[0] | {$1}"; }
+state_is() { [[ "$(state "$1")" == "$2" ]]; }
+
+wait_for "the dock to settle with its pin" state_is "keys,height,y" '{"keys":["bloom-test-app"],"height":52,"y":0}'
+pass "dock loads and shows the pinned app"
+
+assert_eq "$(ipc dock pin nope)" "unknown app" "pin of a missing entry"
+assert_eq "$(ipc dock pin bloom-test-app)" "already pinned" "double pin"
+pass "pin refuses unknown and duplicate ids"
+
+# Desktop entries load after start; activate answers "cannot launch" until then.
+wait_for "activating slot 1 to launch the app" ipc_equals ok dock activate 1
+wait_for "the app to run" test -f "$TEST_TMP/launched"
+pass "activating a pinned app that isn't running launches it"
+assert_eq "$(ipc dock activate 5)" "no app in slot 5" "empty slot"
+
+assert_eq "$(ipc dock unpin bloom-test-app)" "ok" "unpin"
+wait_for "the pin to leave" state_is "keys" '{"keys":[]}'
+wait_for "the state file to drop it" grep -q '"pinned": \[\]' "$XDG_STATE_HOME/bloom/dock.json"
+ipc dock pin bloom-test-app >/dev/null
+wait_for "the pin to return" state_is "keys" '{"keys":["bloom-test-app"]}'
+pass "pin and unpin persist to dock.json"
+
+ipc settings set bloom-dock-mode peek >/dev/null
+wait_for "peek mode to hide the dock" state_is "hidden,y" '{"hidden":true,"y":100}'
+ipc settings set bloom-dock-mode smart >/dev/null
+wait_for "smart mode without Hyprland to show it" state_is "hidden,overlapped" '{"hidden":false,"overlapped":false}'
+pass "modes change live"
+
+assert_eq "$(ipc dock setVisible false)" "ok" "setVisible"
+wait_for "hiding by the user" state_is "visible,y" '{"visible":false,"y":150}'
+ipc dock setVisible true >/dev/null
+
+problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" || true)"
+if [[ ! -S /run/dbus/system_bus_socket ]]; then
+	problems="$(grep -viE 'upower|powerprofiles|dbus' <<<"$problems" || true)"
+fi
+[[ -z "$problems" ]] || fail "shell logged warnings or errors: $problems"
+pass "no warnings or errors in the shell log"

@@ -9,7 +9,7 @@ bloom_env
 # A config can only import QML from inside its own folder, so build one.
 HARNESS="$TEST_TMP/harness"
 mkdir -p "$HARNESS"
-cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$HARNESS/"
+cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$ROOT/shell/modules" "$HARNESS/"
 cp "$ROOT/tests/integration/settings-harness.qml" "$HARNESS/shell.qml"
 
 if ! QML_XHR_ALLOW_FILE_READ=1 timeout 15 qs --no-color -p "$HARNESS" >"$TEST_TMP/shell.log" 2>&1; then

@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import "modules/notch"
+import "modules/dock"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
@@ -23,6 +24,24 @@ ShellRoot {
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/notch/NotchWindow.qml"), { modelData: modelData })
 			}
 		}
+	}
+
+	LazyLoader {
+		id: dockLoader
+		active: _modules.indexOf("dock") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/dock/DockWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	// Super+Alt+1–9, only under Hyprland, with the dock and the setting on.
+	LazyLoader {
+		active: _modules.indexOf("dock") >= 0 && HyprState.available && Settings.values["bloom-dock-win-number-enabled"]
+		source: Qt.resolvedUrl("modules/dock/DockShortcuts.qml")
 	}
 
 	IpcHandler {
@@ -121,6 +140,39 @@ ShellRoot {
 		}
 
 		// Bloom's visibility toggle.
+		function setVisible(visible: bool): string {
+			_windows().forEach(w => w.view.userVisible = visible);
+			return "ok";
+		}
+	}
+
+	IpcHandler {
+		target: "dock"
+
+		function _windows() {
+			const variants = dockLoader.item;
+			return variants ? variants.instances.map(loader => loader.item).filter(Boolean) : [];
+		}
+
+		// One state object per screen, in screen order.
+		function state(): string {
+			return JSON.stringify(_windows().map(w => Object.assign(w.view.stateObject(), { pinned: Dock.pinned })));
+		}
+
+		// `id` is a desktop entry id (as in its .desktop file name).
+		function pin(id: string): string {
+			return Dock.pin(id);
+		}
+
+		function unpin(id: string): string {
+			return Dock.unpin(id);
+		}
+
+		// Pinned app `n` (1-based), as Super+Alt+n.
+		function activate(n: int): string {
+			return Dock.activateSlot(n);
+		}
+
 		function setVisible(visible: bool): string {
 			_windows().forEach(w => w.view.userVisible = visible);
 			return "ok";

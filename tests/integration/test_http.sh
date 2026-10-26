@@ -21,7 +21,7 @@ wait_for "the silent server" test -s "$TEST_TMP/port"
 
 HARNESS="$TEST_TMP/harness"
 mkdir -p "$HARNESS"
-cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$HARNESS/"
+cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$ROOT/shell/modules" "$HARNESS/"
 cp "$ROOT/tests/integration/http-harness.qml" "$HARNESS/shell.qml"
 
 if ! BLOOM_TEST_PORT="$(cat "$TEST_TMP/port")" timeout 15 qs --no-color -p "$HARNESS" >"$TEST_TMP/shell.log" 2>&1; then
