@@ -1,0 +1,123 @@
+import QtQuick
+import "../../common/tokens.js" as Tokens
+import "pulses.js" as Pulses
+
+// Bloom's pulse slot in the collapsed row (AnimatePresence mode="wait"): the
+// view on screen leaves before the next one enters, 300 ms each way.
+// `standardOpacity` is the normal row's share of the same swap.
+Item {
+	id: root
+
+	property string kind: ""
+	property var battery: ({ level: 0, charging: false, threshold: 20 })
+	property bool updateAvailable: false
+	property var workspace: null
+	property color textColor: "white"
+
+	readonly property string wantedKey: Pulses.viewKey(root.kind)
+	readonly property string shownKey: root._shown
+	property string _shown: ""
+	property bool _leaving: false
+	property real standardOpacity: root._shown === "" && !root._leaving ? 1 : 0
+	Behavior on standardOpacity {
+		NumberAnimation { duration: Tokens.pulse.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.35, 1, 1, 1] }
+	}
+
+	function _advance() {
+		if (root._leaving || root.wantedKey === root._shown)
+			return;
+		root._leaving = true;
+		leave.restart();
+	}
+	onWantedKeyChanged: root._advance()
+
+	Timer {
+		id: leave
+		interval: Tokens.pulse.fadeMs
+		onTriggered: {
+			root._shown = root.wantedKey;
+			root._leaving = false;
+			root._advance();
+		}
+	}
+
+	component Label: Text {
+		objectName: "pulse-label"
+		font.family: Tokens.type.family
+		font.pixelSize: Tokens.pulse.labelSize
+		font.weight: Font.DemiBold
+		color: root.textColor
+		elide: Text.ElideRight
+	}
+
+	PulseItem {
+		objectName: "pulse-battery"
+		anchors.fill: parent
+		present: root._shown === "battery" && !root._leaving
+
+		Row {
+			anchors.centerIn: parent
+			spacing: Tokens.pulse.gap
+			UpdateArrow {
+				anchors.verticalCenter: parent.verticalCenter
+				shown: root.updateAvailable
+			}
+			BatteryIcon {
+				anchors.verticalCenter: parent.verticalCenter
+				level: root.battery.level
+				charging: root.battery.charging
+				threshold: root.battery.threshold
+				color: root.textColor
+			}
+			Label {
+				anchors.verticalCenter: parent.verticalCenter
+				text: Pulses.batteryLabel(root.kind === "low" ? "low" : "power", root.battery)
+				color: root.kind === "low" ? Tokens.status.red : root.textColor
+			}
+		}
+	}
+
+	PulseItem {
+		objectName: "pulse-update"
+		anchors.fill: parent
+		present: root._shown === "update" && !root._leaving
+
+		Row {
+			anchors.centerIn: parent
+			spacing: Tokens.pulse.gap
+			UpdateArrow { anchors.verticalCenter: parent.verticalCenter }
+			Label {
+				anchors.verticalCenter: parent.verticalCenter
+				text: "Update Available"
+				color: Tokens.status.green
+			}
+		}
+	}
+
+	PulseItem {
+		id: workspaceItem
+		objectName: "pulse-workspace"
+		anchors.fill: parent
+		present: root._shown === "workspace" && !root._leaving
+
+		Row {
+			anchors.centerIn: parent
+			spacing: Tokens.pulse.gap
+			PageDots {
+				id: pageDots
+				anchors.verticalCenter: parent.verticalCenter
+				ids: root.workspace ? Pulses.pageDots(root.workspace) : []
+				active: root.workspace?.id ?? 0
+				color: root.textColor
+				animate: workspaceItem.visible
+				visible: count > 0
+			}
+			Label {
+				anchors.verticalCenter: parent.verticalCenter
+				// Long workspace names elide inside the 176 px row.
+				width: Math.min(implicitWidth, root.width - (pageDots.count > 0 ? pageDots.width + Tokens.pulse.gap : 0))
+				text: root.workspace ? Pulses.workspaceLabel(root.workspace) : ""
+			}
+		}
+	}
+}
