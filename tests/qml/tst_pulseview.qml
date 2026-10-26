@@ -18,7 +18,7 @@ Item {
 		PulseView {
 			width: 176
 			height: 36
-			battery: ({ level: 80, charging: true, threshold: 20 })
+			battery: ({ level: 80, charging: true, pluggedIn: true, threshold: 20 })
 			workspace: ({ id: 2, name: "2", ids: [1, 2, 3] })
 		}
 	}
@@ -55,7 +55,7 @@ Item {
 		function test_lowAndPowerShareOneView() {
 			const v = make({ kind: "power" });
 			tryCompare(v, "shownKey", "battery", 600);
-			v.battery = { level: 15, charging: false, threshold: 20 };
+			v.battery = { level: 15, charging: false, pluggedIn: false, threshold: 20 };
 			v.kind = "low";
 			compare(v.shownKey, "battery", "no swap");
 			compare(label(v, "battery"), "Low Battery • 15%");
@@ -88,9 +88,9 @@ Item {
 		// The charging bolt (a Shape) appears when charging starts, which is
 		// exactly when the charging pulse shows; it must draw inside the pulse.
 		function test_boltDrawsWhenChargingStarts() {
-			const v = make({ kind: "power", textColor: "#ff00ff", battery: { level: 80, charging: false, threshold: 20 } });
+			const v = make({ kind: "power", textColor: "#ff00ff", battery: { level: 80, charging: false, pluggedIn: false, threshold: 20 } });
 			tryCompare(v, "shownKey", "battery", 600);
-			v.battery = { level: 80, charging: true, threshold: 20 };
+			v.battery = { level: 80, charging: true, pluggedIn: true, threshold: 20 };
 			wait(700);
 			const img = grabImage(host);
 			let white = 0;
@@ -101,6 +101,16 @@ Item {
 						white++;
 				}
 			verify(white >= 4, `the white bolt is drawn (${white} white pixels)`);
+		}
+
+		// The leaving view keeps what it showed (Bloom's exiting element is frozen).
+		function test_lowLabelHoldsWhileLeaving() {
+			const v = make({ kind: "low", battery: { level: 12, charging: false, pluggedIn: false, threshold: 20 } });
+			tryCompare(v, "shownKey", "battery", 600);
+			v.kind = "";
+			wait(50);
+			compare(label(v, "battery"), "Low Battery • 12%");
+			compare(findChild(findChild(v, "pulse-battery"), "pulse-label").color, Qt.color("#FF453A"));
 		}
 
 		// A key that flips back while leaving finishes the exit first, then
