@@ -14,14 +14,18 @@ function musicOnStatusHover(s) {
 	return !s.open && s.hovered && s.mode === "status" && s.enabled && s.hasMedia && (!s.activityVisible || !s.compactNotch);
 }
 
-// Bloom getDynamicWidth, in its order (pulses arrive in phase 2C).
+// Bloom getDynamicWidth, in its order.
 function contentWidth(s) {
 	if (s.onStatusHover)
 		return 170 + (s.visualizer ? 30 : 0);
-	if (s.mode === "status")
-		return Notch.statusWidth(s.hovered, s.widgetCount, s.fitWidth, s.use24h);
+	if (s.mode === "status" && s.hovered)
+		return Notch.statusWidth(true, s.widgetCount, s.fitWidth, s.use24h);
 	if (s.open)
 		return s.layout === "compact" ? 300 : 340;
+	if (s.pulse)
+		return 200;
+	if (s.mode === "status")
+		return Notch.statusWidth(false, s.widgetCount, s.fitWidth, s.use24h);
 	let w = 140 - (s.use24h ? 16 : 0);
 	if (s.visualizer && s.playing)
 		w += 30;

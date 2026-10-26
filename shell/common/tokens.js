@@ -109,3 +109,25 @@ var music = {
 	slide: { distance: 30, ms: 180, curve: [0.4, 0, 0.2, 1] },
 	ambience: { blur: 52, scale: 1.8, opacity: 0.85, fadeMs: 600 }
 };
+
+// Pulses (Bloom App.tsx/App.css @ b5fb962; workspace pulse is new, D7).
+var pulse = {
+	width: 200,
+	gap: 10,
+	labelSize: 13,
+	powerMs: 4000,
+	lowBatteryMs: 5000,
+	updateMs: 6000,
+	workspaceMs: 2000,
+	enterScale: 0.95,
+	exitScale: 1.05,
+	blur: 4,
+	blurMax: 8,
+	fadeMs: 300,
+	arrow: { box: 18, glyph: 10, stroke: 3 },
+	dot: { size: 5, top: 26 },
+	pageDot: { size: 5, activeWidth: 14, gap: 5, idleOpacity: 0.35 }
+};
+
+// pacman updates (spec §5.1): hourly while held; a stalled check ends at 2 min.
+var updates = { firstCheckMs: 60000, intervalMs: 3600000, timeoutMs: 120000 };

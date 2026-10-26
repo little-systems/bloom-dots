@@ -47,6 +47,16 @@ TestCase {
 		compare(widthOf({}), 140);
 	}
 
+	// Bloom: a pulse widens the collapsed pill to 200, after the hover and
+	// open-player checks.
+	function test_pulseWidth() {
+		compare(widthOf({ pulse: "power" }), 200, "status mode");
+		compare(widthOf({ pulse: "update", mode: "music" }), 200, "collapsed music");
+		compare(widthOf({ pulse: "", mode: "status" }), 140);
+		compare(widthOf({ pulse: "power", hovered: true }), 300, "the hovered strip wins");
+		compare(widthOf({ pulse: "power", open: true, mode: "music" }), 340, "the open player wins");
+	}
+
 	function test_contentHeight() {
 		compare(Music.contentHeight({ open: false, mode: "music", layout: "classic", hasProgress: false, volumeExpanded: false }), 36);
 		compare(Music.contentHeight({ open: true, mode: "music", layout: "classic", hasProgress: true, volumeExpanded: true }), 120);
