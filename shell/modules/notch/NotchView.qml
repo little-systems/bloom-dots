@@ -5,6 +5,7 @@ import "../../common/tokens.js" as Tokens
 import "../../services/stats.js" as Stats
 import "notch.js" as Logic
 import "music.js" as Music
+import "pulses.js" as Pulses
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -27,7 +28,13 @@ Item {
 	property color textMuted: Qt.rgba(1, 1, 1, 0.6)
 	property var now: new Date()
 	property var weather: ({ shown: false, label: "", icon: "thermometer", tooltip: "" })
-	property var battery: ({ available: false, level: 0, charging: false, threshold: 20, tooltip: "" })
+	property var battery: ({ available: false, ready: false, level: 0, charging: false, threshold: 20, tooltip: "" })
+	property var updates: ({ available: false, count: 0 })
+	property bool updateIndicator: true
+	property var workspace: null
+	property bool workspacePeekEnabled: true
+	property var pulseMs: ({ power: Tokens.pulse.powerMs, low: Tokens.pulse.lowBatteryMs, update: Tokens.pulse.updateMs, workspace: Tokens.pulse.workspaceMs })
+	signal updatesWanted(bool wanted)
 	property var stats: ({ cpu: 0, ram: 0, disk: 0, up: 0, down: 0 })
 	// Music (Bloom music mode), fed by NotchWindow.
 	property bool musicEnabled: true
@@ -92,7 +99,8 @@ Item {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
 				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
-				albumArt: root.albumArtEnabled, widgetCount: root.widgetCount, fitWidth: root.fitWidth, use24h: root.use24h
+				albumArt: root.albumArtEnabled, widgetCount: root.widgetCount, fitWidth: root.fitWidth, use24h: root.use24h,
+				pulse: root.pulse
 			}),
 			height: Music.contentHeight({
 				open: root.open, mode: root.bloomMode, layout: root.layout,
@@ -110,9 +118,11 @@ Item {
 	readonly property bool _statsShown: root.statusHover && ["cpu", "ram", "disk", "net"].some(w => root.widgets.left.indexOf(w) >= 0 || root.widgets.right.indexOf(w) >= 0)
 	property bool _statsHeld: false
 
+	property real _peekUntil: 0
 	function peek(ms) {
+		root._peekUntil = Pulses.peekUntil(Date.now(), root._peekUntil, ms);
 		root.eventPeek = true;
-		peekTimer.interval = ms;
+		peekTimer.interval = Math.max(1, root._peekUntil - Date.now());
 		peekTimer.restart();
 	}
 	function openMusic() {
@@ -162,6 +172,8 @@ Item {
 	onMusicEnabledChanged: root._updateActivity()
 	Component.onCompleted: {
 		root._updateActivity();
+		root.updatesWanted(root.updateIndicator);
+		root._lastWorkspace = root.workspace ? root.workspace.id : null;
 		// A watch that is already true at creation never changes, so announce it.
 		if (root._watching) {
 			root._watchHeld = true;
@@ -190,13 +202,78 @@ Item {
 		onTriggered: root.musicActivityVisible = false
 	}
 
+	// Pulses (Bloom App.tsx; the workspace pulse is D7). Each kind has its own
+	// timer; `pulse` is the one on screen.
+	property bool _powerPulse: false
+	property bool _lowPulse: false
+	property bool _updatePulse: false
+	property bool _workspacePulse: false
+	readonly property string pulse: Pulses.activePulse({
+		workspace: root._workspacePulse, update: root._updatePulse, low: root._lowPulse, power: root._powerPulse,
+		hovered: root.pillHovered, open: root.open
+	})
+
+	function _fire(kind) {
+		const ms = root.pulseMs[kind];
+		if (kind === "power") { root._powerPulse = true; powerTimer.interval = ms; powerTimer.restart(); }
+		else if (kind === "low") { root._lowPulse = true; lowTimer.interval = ms; lowTimer.restart(); }
+		else if (kind === "update") { root._updatePulse = true; updateTimer.interval = ms; updateTimer.restart(); }
+		else { root._workspacePulse = true; workspaceTimer.interval = ms; workspaceTimer.restart(); }
+		if (root.mode === "peek")
+			root.peek(ms);
+	}
+
+	Timer { id: powerTimer; onTriggered: root._powerPulse = false }
+	Timer { id: lowTimer; onTriggered: root._lowPulse = false }
+	Timer { id: updateTimer; onTriggered: root._updatePulse = false }
+	Timer { id: workspaceTimer; onTriggered: root._workspacePulse = false }
+
+	// The battery as UPower first reports it is not a change; Bloom started
+	// watching once it was ready.
+	property var _lastCharging: null
+	property bool _lowArmed: true
+	function _batteryCheck() {
+		const b = root.battery;
+		if (!root.ready || !b.available || !b.ready)
+			return;
+		if (Pulses.powerPulse(root._lastCharging, b.charging))
+			root._fire("power");
+		root._lastCharging = b.charging;
+		const low = Pulses.lowBatteryStep(root._lowArmed, b);
+		root._lowArmed = low.armed;
+		if (low.fire)
+			root._fire("low");
+	}
+	onBatteryChanged: root._batteryCheck()
+
+	function updatesArrived() {
+		if (root.updateIndicator && root.ready)
+			root._fire("update");
+	}
+	onUpdatesChanged: if (!root.updates.available) { root._updatePulse = false; updateTimer.stop(); }
+	onUpdateIndicatorChanged: {
+		root.updatesWanted(root.updateIndicator);
+		if (!root.updateIndicator) { root._updatePulse = false; updateTimer.stop(); }
+	}
+
+	// The workspace at login is seeded, not announced.
+	property var _lastWorkspace: null
+	onWorkspaceChanged: {
+		const id = root.workspace ? root.workspace.id : null;
+		if (root.ready && root.workspacePeekEnabled && Pulses.workspacePulse(root._lastWorkspace, id))
+			root._fire("workspace");
+		if (id !== null)
+			root._lastWorkspace = id;
+	}
+
 
 	function stateObject() {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			overlapped: root.overlapped, visible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open
+			bloomMode: root.bloomMode, open: root.open,
+			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
 
@@ -217,6 +294,7 @@ Item {
 		root.startupAnimating = true;
 		impactTimer.restart();
 		startupTimer.restart();
+		root._batteryCheck();
 	}
 
 	Timer {
@@ -393,146 +471,176 @@ Item {
 					}
 				}
 
-				Row {
-					id: leftGroup
-					anchors.left: parent.left
-					anchors.verticalCenter: parent.verticalCenter
-					spacing: Tokens.statusStrip.groupGap
-					opacity: root.statusHover && !root._musicIcons ? 1 : 0
-					visible: opacity > 0
-					Behavior on opacity {
-						NumberAnimation {
-							duration: Tokens.statusStrip.fadeMs
-							easing.type: Easing.BezierSpline
-							easing.bezierCurve: [0, 0, 0.58, 1, 1, 1]
-						}
-					}
-					Repeater {
-						model: root.widgets.left
-						delegate: widgetDelegate
-					}
-				}
-
-				Text {
-					id: clock
-					anchors.centerIn: parent
-					text: Logic.clockText(root.now, root.use24h)
-					color: clockHover.hovered ? root.textMuted : root.textColor
-					Behavior on color { ColorAnimation { duration: 200 } }
-					font.family: Tokens.type.family
-					font.pixelSize: Tokens.type.clock.size
-					font.weight: Font.Medium
-					font.letterSpacing: Tokens.type.clock.tracking
-					scale: clockTap.pressed ? 0.95 : 1
-					Behavior on scale { NumberAnimation { duration: 100 } }
-					HoverHandler { id: clockHover }
-					TapHandler { id: clockTap }
-				}
-
-				Row {
-					id: rightGroup
-					anchors.right: parent.right
-					anchors.verticalCenter: parent.verticalCenter
-					spacing: Tokens.statusStrip.groupGap
-					opacity: leftGroup.opacity
-					visible: opacity > 0
-					Repeater {
-						model: root.widgets.right
-						delegate: widgetDelegate
-					}
-				}
-
-				Visualizer {
-					objectName: "collapsedVisualizer"
-					active: visible && !root.open && root.expanded && !root.hidden && root.userVisible
-					anchors.left: parent.left
-					anchors.verticalCenter: parent.verticalCenter
-					visible: root._musicIcons && root.visualizerEnabled
-					playing: root.media.isPlaying
-					levels: root.levels
-					color: root.textColor
-					opacity: visible ? 1 : 0
-					Behavior on opacity {
-						NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.35, 1, 1, 1] }
-					}
-				}
-
 				Item {
-					id: artSlot
-					objectName: "musicArt"
-					readonly property bool shown: root._musicIcons && (root.albumArtEnabled || root.musicOnHover)
-					readonly property real side: root.media.isPlaying ? Tokens.music.collapsedArt.size : Tokens.music.collapsedArt.pausedSize
-					anchors.right: parent.right
-					anchors.verticalCenter: parent.verticalCenter
-					width: side
-					height: side
-					visible: opacity > 0
-					opacity: shown ? 1 : 0
-					scale: shown ? 1 : 0.8
-					Behavior on width { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
-					Behavior on height { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
-					Behavior on opacity { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
-					Behavior on scale { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
+					id: standardRow
+					anchors.fill: parent
+					opacity: pulseView.standardOpacity
 
-					HoverHandler { id: artHover }
-
-					// Bloom's glow: the art itself, blurred and saturated, behind the button.
-					Image {
-						id: glowSource
-						readonly property real inset: artHover.hovered ? Tokens.music.collapsedArt.glowHoverInset : Tokens.music.collapsedArt.glowInset
-						x: -inset
-						y: -inset
-						width: artSlot.width + 2 * inset
-						height: artSlot.height + 2 * inset
-						source: root.glowEnabled && root.albumArtEnabled ? root.media.artUrl : ""
-						fillMode: Image.PreserveAspectCrop
-						asynchronous: true
-						visible: false
-					}
-
-					// Cached as a texture: the blur only changes with the art or hover,
-					// but would otherwise be re-run on every frame the visualizer
-					// draws (about 7 % of a core, measured 2026-10-25).
-					Item {
-						anchors.fill: glowSource
-						visible: glowSource.status === Image.Ready
-						opacity: artHover.hovered ? 0.7 : 0.6
-						Behavior on opacity { NumberAnimation { duration: 400 } }
-						layer.enabled: true
-
-						MultiEffect {
-							anchors.fill: parent
-							source: glowSource
-							blurEnabled: true
-							blurMax: 16
-							blur: (artHover.hovered ? 8 : 6) / 16
-							saturation: 1
-							brightness: artHover.hovered ? -0.1 : -0.2
+					Row {
+						id: leftGroup
+						anchors.left: parent.left
+						anchors.verticalCenter: parent.verticalCenter
+						spacing: Tokens.statusStrip.groupGap
+						opacity: root.statusHover && !root._musicIcons ? 1 : 0
+						visible: opacity > 0
+						Behavior on opacity {
+							NumberAnimation {
+								duration: Tokens.statusStrip.fadeMs
+								easing.type: Easing.BezierSpline
+								easing.bezierCurve: [0, 0, 0.58, 1, 1, 1]
+							}
+						}
+						Repeater {
+							model: root.widgets.left
+							delegate: widgetDelegate
 						}
 					}
 
-					Rectangle {
-						anchors.fill: parent
-						radius: Tokens.music.collapsedArt.radius
-						color: Qt.rgba(1, 1, 1, artHover.hovered ? 0.25 : 0.15)
+					Text {
+						id: clock
+						anchors.centerIn: parent
+						text: Logic.clockText(root.now, root.use24h)
+						color: clockHover.hovered ? root.textMuted : root.textColor
+						Behavior on color { ColorAnimation { duration: 200 } }
+						font.family: Tokens.type.family
+						font.pixelSize: Tokens.type.clock.size
+						font.weight: Font.Medium
+						font.letterSpacing: Tokens.type.clock.tracking
+						scale: clockTap.pressed ? 0.95 : 1
+						Behavior on scale { NumberAnimation { duration: 100 } }
+						HoverHandler { id: clockHover }
+						TapHandler { id: clockTap }
 					}
 
-					AlbumArt {
-						anchors.fill: parent
-						source: root.albumArtEnabled ? root.media.artUrl : ""
-						radius: Tokens.music.collapsedArt.radius
-						flipMs: Tokens.music.collapsedArt.flipMs
+					Row {
+						id: rightGroup
+						anchors.right: parent.right
+						anchors.verticalCenter: parent.verticalCenter
+						spacing: Tokens.statusStrip.groupGap
+						opacity: leftGroup.opacity
+						visible: opacity > 0
+						Repeater {
+							model: root.widgets.right
+							delegate: widgetDelegate
+						}
 					}
 
-					TapHandler {
-						acceptedButtons: Qt.LeftButton
-						onTapped: root.openMusic()
+					Visualizer {
+						objectName: "collapsedVisualizer"
+						active: visible && !root.open && root.expanded && !root.hidden && root.userVisible
+						anchors.left: parent.left
+						anchors.verticalCenter: parent.verticalCenter
+						visible: root._musicIcons && root.visualizerEnabled
+						playing: root.media.isPlaying
+						levels: root.levels
+						color: root.textColor
+						opacity: visible ? 1 : 0
+						Behavior on opacity {
+							NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.35, 1, 1, 1] }
+						}
 					}
 
-					TapHandler {
-						acceptedButtons: Qt.RightButton
-						onTapped: root.previousTrack()
+					Item {
+						id: artSlot
+						objectName: "musicArt"
+						readonly property bool shown: root._musicIcons && (root.albumArtEnabled || root.musicOnHover)
+						readonly property real side: root.media.isPlaying ? Tokens.music.collapsedArt.size : Tokens.music.collapsedArt.pausedSize
+						anchors.right: parent.right
+						anchors.verticalCenter: parent.verticalCenter
+						width: side
+						height: side
+						visible: opacity > 0
+						opacity: shown ? 1 : 0
+						scale: shown ? 1 : 0.8
+						Behavior on width { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
+						Behavior on height { NumberAnimation { duration: Tokens.music.collapsedArt.sizeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1] } }
+						Behavior on opacity { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
+						Behavior on scale { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
+
+						HoverHandler { id: artHover }
+
+						// Bloom's glow: the art itself, blurred and saturated, behind the button.
+						Image {
+							id: glowSource
+							readonly property real inset: artHover.hovered ? Tokens.music.collapsedArt.glowHoverInset : Tokens.music.collapsedArt.glowInset
+							x: -inset
+							y: -inset
+							width: artSlot.width + 2 * inset
+							height: artSlot.height + 2 * inset
+							source: root.glowEnabled && root.albumArtEnabled ? root.media.artUrl : ""
+							fillMode: Image.PreserveAspectCrop
+							asynchronous: true
+							visible: false
+						}
+
+						// Cached as a texture: the blur only changes with the art or hover,
+						// but would otherwise be re-run on every frame the visualizer
+						// draws (about 7 % of a core, measured 2026-10-25).
+						Item {
+							anchors.fill: glowSource
+							visible: glowSource.status === Image.Ready
+							opacity: artHover.hovered ? 0.7 : 0.6
+							Behavior on opacity { NumberAnimation { duration: 400 } }
+							layer.enabled: true
+
+							MultiEffect {
+								anchors.fill: parent
+								source: glowSource
+								blurEnabled: true
+								blurMax: 16
+								blur: (artHover.hovered ? 8 : 6) / 16
+								saturation: 1
+								brightness: artHover.hovered ? -0.1 : -0.2
+							}
+						}
+
+						Rectangle {
+							anchors.fill: parent
+							radius: Tokens.music.collapsedArt.radius
+							color: Qt.rgba(1, 1, 1, artHover.hovered ? 0.25 : 0.15)
+						}
+
+						AlbumArt {
+							anchors.fill: parent
+							source: root.albumArtEnabled ? root.media.artUrl : ""
+							radius: Tokens.music.collapsedArt.radius
+							flipMs: Tokens.music.collapsedArt.flipMs
+						}
+
+						TapHandler {
+							acceptedButtons: Qt.LeftButton
+							onTapped: root.openMusic()
+						}
+
+						TapHandler {
+							acceptedButtons: Qt.RightButton
+							onTapped: root.previousTrack()
+						}
 					}
+				}
+
+				PulseView {
+					id: pulseView
+					anchors.fill: parent
+					kind: root.pulse
+					battery: root.battery
+					updateAvailable: root.updates.available && root.updateIndicator
+					workspace: root.workspace
+					textColor: root.textColor
+				}
+
+				// Bloom's update dot: centred under the clock's 24 px box (top: 100%,
+				// margin-top: -4px), in status and collapsed music alike.
+				Rectangle {
+					objectName: "update-dot"
+					visible: root.updates.available && root.updateIndicator
+					x: clock.x + clock.width / 2 - width / 2
+					y: Tokens.pulse.dot.top
+					width: Tokens.pulse.dot.size
+					height: width
+					radius: width / 2
+					color: Tokens.status.green
+					opacity: standardRow.opacity
 				}
 			}
 

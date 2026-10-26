@@ -13,7 +13,7 @@ Item {
 			width: 1000
 			height: 480
 			weather: ({ shown: true, label: "28°C", icon: "sun", tooltip: "Clear — Chennai" })
-			battery: ({ available: true, level: 80, charging: false, threshold: 20, tooltip: "80% remaining" })
+			battery: ({ available: true, ready: true, level: 80, charging: false, threshold: 20, tooltip: "80% remaining" })
 		}
 	}
 
@@ -423,7 +423,152 @@ Item {
 			v.userVisible = false;
 			verify(!viz.active, "notch hidden by the user");
 		}
-			// Frames the window draws in `ms`: the cost that matters on the
+			function fast(props) {
+			const p = props || {};
+			p.pulseMs = { power: 600, low: 600, update: 600, workspace: 600 };
+			return make(p);
+		}
+
+		function bat(props) {
+			const b = { available: true, ready: true, level: 80, charging: false, threshold: 20, tooltip: "" };
+			for (const k in props) b[k] = props[k];
+			return b;
+		}
+
+		function test_chargingPulse() {
+			const v = fast();
+			settle(v);
+			v.battery = bat({ charging: true });
+			compare(v.pulse, "power");
+			compare(v.target.width, 200, "Bloom: pulses are 200 wide");
+			tryCompare(v, "pulse", "", 1500);
+			compare(v.target.width, 140);
+		}
+
+		// Review focus 1.
+		function test_noPulseFromStartupValues() {
+			const v = fast({ battery: bat({ ready: false, charging: false }), workspace: null });
+			v.battery = bat({ ready: true, charging: true });
+			v.workspace = { id: 2, name: "2", ids: [1, 2] };
+			settle(v);
+			compare(v.pulse, "", "UPower's first answer and the login workspace are not changes");
+		}
+
+		function test_lowBatteryAtLoginPulsesOnce() {
+			const v = fast({ battery: bat({ level: 12 }) });
+			v.ready = true;
+			compare(v.pulse, "low", "Bloom pulses a low battery as soon as it is ready");
+			tryCompare(v, "pulse", "", 1500);
+			v.battery = bat({ level: 11 });
+			compare(v.pulse, "", "once per crossing");
+			v.battery = bat({ level: 30, charging: true });
+			v.battery = bat({ level: 19, charging: false });
+			compare(v.pulse, "low", "re-armed after charging");
+		}
+
+		function test_noBatteryNoPulse() {
+			const v = fast({ battery: bat({ available: false, level: 0 }) });
+			settle(v);
+			v.battery = bat({ available: false, level: 0, charging: true });
+			compare(v.pulse, "", "a desktop has no battery pulses");
+		}
+
+		function test_updatePulseAndDot() {
+			const v = fast();
+			settle(v);
+			const dot = findChild(v, "update-dot");
+			verify(!dot.visible);
+			v.updates = { available: true, count: 3 };
+			v.updatesArrived();
+			compare(v.pulse, "update");
+			verify(dot.visible, "the dot stays while updates are pending");
+			tryCompare(v, "pulse", "", 1500);
+			verify(dot.visible);
+			v.updateIndicator = false;
+			verify(!dot.visible, "bloom-show-update-indicator off");
+		}
+
+		function test_workspacePulse() {
+			const v = fast({ workspace: { id: 1, name: "1", ids: [1, 2] } });
+			settle(v);
+			v.workspace = { id: 2, name: "2", ids: [1, 2] };
+			compare(v.pulse, "workspace");
+			tryCompare(v, "pulse", "", 1500);
+			v.workspacePeekEnabled = false;
+			v.workspace = { id: 1, name: "1", ids: [1, 2] };
+			compare(v.pulse, "", "turned off");
+		}
+
+		// Review focus 3.
+		function test_rapidWorkspaceSwitchesShowOnePulse() {
+			const v = fast({ mode: "peek", workspace: { id: 1, name: "1", ids: [1, 2, 3] } });
+			settle(v);
+			tryCompare(v, "hidden", true, 4000);
+			v.workspace = { id: 2, name: "2", ids: [1, 2, 3] };
+			wait(300);
+			v.workspace = { id: 3, name: "3", ids: [1, 2, 3] };
+			compare(v.pulse, "workspace");
+			verify(!v.hidden, "peek mode shows it");
+			wait(450);
+			verify(!v.hidden && v.pulse === "workspace", "timed from the last switch, not the first");
+			tryCompare(v, "hidden", true, 1500);
+		}
+
+		function test_shortPeekKeepsALongerOne() {
+			const v = make({ mode: "peek", pulseMs: { power: 600, low: 600, update: 1500, workspace: 300 }, workspace: { id: 1, name: "1", ids: [1, 2] } });
+			settle(v);
+			tryCompare(v, "hidden", true, 4000);
+			v.updates = { available: true, count: 1 };
+			v.updatesArrived();
+			v.workspace = { id: 2, name: "2", ids: [1, 2] };
+			wait(700);
+			verify(!v.hidden, "the update peek still runs");
+			compare(v.pulse, "update", "back to the update pulse after the workspace one");
+		}
+
+		// Review focus 2.
+		function test_hoverHidesAPulse() {
+			const v = make({ pulseMs: { power: 2000, low: 600, update: 600, workspace: 600 } });
+			settle(v);
+			v.battery = bat({ charging: true });
+			compare(v.pulse, "power");
+			mouseMove(v, 500, 18);
+			tryCompare(v, "statusHover", true, 500);
+			compare(v.pulse, "", "the status strip takes the pill");
+			compare(v.target.width, 300);
+			mouseMove(v, 500, 300);
+			tryCompare(v, "pulse", "power", 500);
+			tryCompare(v, "pulse", "", 2500);
+		}
+
+		function test_pulseHoldsWhileMusicIsCollapsed() {
+			const v = fast({ media: playing(), albumArtEnabled: false });
+			settle(v);
+			compare(v.target.width, 170, "collapsed music: clock + visualizer");
+			v.battery = bat({ charging: true });
+			compare(v.target.width, 200, "pulses win over the collapsed music width");
+		}
+
+		function test_stateObjectShowsPulses() {
+			const v = fast();
+			settle(v);
+			v.updates = { available: true, count: 1 };
+			v.updatesArrived();
+			const s = v.stateObject();
+			compare(s.pulse, "update");
+			compare(s.updateDot, true);
+		}
+
+		function test_updatesWanted() {
+			const v = make();
+			const s = spy(v, "updatesWanted");
+			v.updateIndicator = false;
+			compare(s.signalArguments[s.count - 1][0], false);
+			v.updateIndicator = true;
+			compare(s.signalArguments[s.count - 1][0], true);
+		}
+
+		// Frames the window draws in `ms`: the cost that matters on the
 		// owner's UHD 620 is how often the surface redraws, not what's on it.
 		function framesIn(ms) {
 			let n = 0;
@@ -456,6 +601,14 @@ Item {
 			const n = framesIn(1000);
 			fakeCava.target = null;
 			compare(n, 0, "the hidden visualizer must not animate");
+		}
+
+		function test_settledPulseDrawsNoFrames() {
+			const v = make({ pulseMs: { power: 5000, low: 600, update: 600, workspace: 600 } });
+			settle(v);
+			v.battery = bat({ charging: true });
+			wait(1200);
+			compare(framesIn(1000), 0, "a pulse at rest is static");
 		}
 
 		// The owner chose Bloom's 60 fps motion for the bars.
