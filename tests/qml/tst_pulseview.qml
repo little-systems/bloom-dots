@@ -70,7 +70,8 @@ Item {
 			v.kind = "power";
 			v.updateAvailable = true;
 			tryCompare(v, "shownKey", "battery", 900);
-			verify(findChild(findChild(v, "pulse-battery"), "update-arrow").visible, "Bloom shows the arrow beside the battery");
+			// Visible once the entering pulse is above opacity 0.
+			tryCompare(findChild(findChild(v, "pulse-battery"), "update-arrow"), "visible", true, 600, "Bloom shows the arrow beside the battery");
 		}
 
 		function test_workspaceDotsAndLabel() {
