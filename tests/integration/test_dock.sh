@@ -21,6 +21,14 @@ mkdir -p "$TEST_TMP/data/applications" "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME
 # path (mktemp paths have no spaces).
 sed "s|@LAUNCHED@|$TEST_TMP/launched|" "$ROOT/tests/integration/fixtures/applications/bloom-test-app.desktop" \
 	>"$TEST_TMP/data/applications/bloom-test-app.desktop"
+sed "s|@LAUNCHED@|$TEST_TMP/term-launched|" "$ROOT/tests/integration/fixtures/applications/bloom-test-term.desktop" \
+	>"$TEST_TMP/data/applications/bloom-test-term.desktop"
+# A stand-in terminal, chosen through $TERMINAL as the user's would be: it
+# runs `-e cmd…` and records that it was used.
+mkdir -p "$TEST_TMP/bin"
+printf '#!/bin/sh\n[ "$1" = -e ] && shift\ntouch "%s/term-used"\nexec "$@"\n' "$TEST_TMP" >"$TEST_TMP/bin/fake-term"
+chmod +x "$TEST_TMP/bin/fake-term"
+export TERMINAL="$TEST_TMP/bin/fake-term"
 export XDG_DATA_HOME="$TEST_TMP/data" XDG_DATA_DIRS="$TEST_TMP/data"
 printf '{ "bloom-enabled-modules": ["dock"], "bloom-weather-enabled": false, "bloom-dock-mode": "fixed" }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
 printf '{ "pinned": ["bloom-test-app"] }\n' >"$XDG_STATE_HOME/bloom/dock.json"
@@ -41,6 +49,13 @@ wait_for "activating slot 1 to launch the app" ipc_equals ok dock activate 1
 wait_for "the app to run" test -f "$TEST_TMP/launched"
 pass "activating a pinned app that isn't running launches it"
 assert_eq "$(ipc dock activate 5)" "no app in slot 5" "empty slot"
+
+assert_eq "$(ipc dock pin bloom-test-term)" "ok" "pin a Terminal=true app"
+wait_for "activating slot 2 to launch the terminal app" ipc_equals ok dock activate 2
+wait_for "the terminal app to run" test -f "$TEST_TMP/term-launched"
+test -f "$TEST_TMP/term-used" || fail "the terminal app did not run in a terminal"
+assert_eq "$(ipc dock unpin bloom-test-term)" "ok" "unpin the terminal app"
+pass "Terminal=true apps open in the user's terminal"
 
 assert_eq "$(ipc dock unpin bloom-test-app)" "ok" "unpin"
 wait_for "the pin to leave" state_is "keys" '{"keys":[]}'

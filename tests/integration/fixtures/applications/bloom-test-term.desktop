@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Bloom Test Terminal App
+Exec=touch @LAUNCHED@
+Terminal=true
