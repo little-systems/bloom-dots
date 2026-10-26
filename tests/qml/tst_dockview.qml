@@ -123,6 +123,37 @@ Item {
 			compare(v.stateObject().keys, ["a", "b", "|divider|", "c"]);
 		}
 
+		// Review focus 2: framer layout animation. Neighbours stay where they
+		// were in the frame of the change, then slide; nothing jumps.
+		function test_neighboursSlideNotJump() {
+			const v = make({ items: { pinned: [host.app("a"), host.app("b")], unpinned: [] } });
+			settle(v);
+			settleFrames();
+			const a = findChild(v, "dock-slot-a");
+			const b = findChild(v, "dock-slot-b");
+			const at = item => item.mapToItem(v, 0, 0).x;
+			const ax = at(a);
+			const bx = at(b);
+			v.items = { pinned: [host.app("a"), host.app("n"), host.app("b")], unpinned: [] };
+			compare(Math.round(at(a)), Math.round(ax), "a holds its place in the frame of the change");
+			compare(Math.round(at(b)), Math.round(bx), "b too");
+			tryVerify(() => Math.abs(at(a) - (ax - 24)) < 0.5, 2000, "then a slides half a slot left");
+			tryVerify(() => Math.abs(at(b) - (bx + 24)) < 0.5, 2000, "and b half a slot right");
+		}
+
+		// Bloom: a closing app (not pinned) exits in 120 ms; pinned ones keep
+		// the delayed spring.
+		function test_closingAppLeavesQuickly() {
+			const v = make();
+			settle(v);
+			v.items = { pinned: [host.app("a"), host.app("b")], unpinned: [] };
+			tryVerify(() => v.stateObject().keys.indexOf("c") < 0, 300, "the closed app's slot is gone quickly");
+			v.items = { pinned: [host.app("a")], unpinned: [] };
+			wait(300);
+			verify(v.stateObject().keys.indexOf("b") >= 0, "a pinned app still plays its slower exit");
+			tryVerify(() => v.stateObject().keys.indexOf("b") < 0, 1000);
+		}
+
 		function test_clicksReachTheDock() {
 			const v = make();
 			settle(v);

@@ -105,15 +105,28 @@ Item {
 		for (const s of next)
 			byKey[s.key] = s;
 		const now = Date.now();
+		// Bloom: a pinned item's exit waits 150 ms then springs; a running
+		// app's exit is a 120 ms tween with no delay.
+		const holdOf = key => {
+			for (let k = 0; k < slotModel.count; k++)
+				if (slotModel.get(k).key === key)
+					return slotModel.get(k).pinned ? Tokens.dock.exitMs : Tokens.dock.quickExitHoldMs;
+			return Tokens.dock.exitMs;
+		};
 		const expired = root._rows
-			.filter(r => r.key === Dock.dividerKey || (r.leaving && now - (root._leftAt[r.key] ?? now) >= Tokens.dock.exitMs))
+			.filter(r => r.key === Dock.dividerKey || (r.leaving && root._leftAt[r.key] && now - root._leftAt[r.key].at >= root._leftAt[r.key].ms))
 			.map(r => r.key);
 		const rows = Dock.reconcile(root._rows, next.map(s => s.key), expired);
 		const leftAt = {};
 		for (const r of rows)
 			if (r.leaving)
-				leftAt[r.key] = root._leftAt[r.key] ?? now;
+				leftAt[r.key] = root._leftAt[r.key] ?? { at: now, ms: holdOf(r.key) };
 		const lay = Dock.layout(rows.map(r => r.key));
+		// Positions are relative to the row's centre (the pill's centre), so a
+		// width change moves no one until each slot's layout spring runs.
+		const xs = lay.xs.map(x => x - lay.width / 2);
+		if (JSON.stringify(lay) !== JSON.stringify(root._layout))
+			root._layout = lay;
 
 		for (let i = slotModel.count - 1; i >= 0; i--)
 			if (!rows.some(r => r.key === slotModel.get(i).key))
@@ -124,31 +137,33 @@ Item {
 				if (slotModel.get(k).key === r.key) { j = k; break; }
 			const s = byKey[r.key];
 			if (j < 0) {
-				slotModel.insert(i, { key: r.key, kind: s.kind, name: s.name, icon: s.icon, windows: s.windows, present: true, slotX: lay.xs[i] });
+				slotModel.insert(i, { key: r.key, kind: s.kind, pinned: s.pinned, name: s.name, icon: s.icon, windows: s.windows, present: true, slotX: xs[i] });
 				return;
 			}
 			if (j !== i)
 				slotModel.move(j, i, 1);
 			if (s) {
+				if (slotModel.get(i).pinned !== s.pinned) slotModel.setProperty(i, "pinned", s.pinned);
 				if (slotModel.get(i).name !== s.name) slotModel.setProperty(i, "name", s.name);
 				if (slotModel.get(i).icon !== s.icon) slotModel.setProperty(i, "icon", s.icon);
 				if (slotModel.get(i).windows !== s.windows) slotModel.setProperty(i, "windows", s.windows);
 			}
 			if (slotModel.get(i).present !== !r.leaving) slotModel.setProperty(i, "present", !r.leaving);
-			if (slotModel.get(i).slotX !== lay.xs[i]) slotModel.setProperty(i, "slotX", lay.xs[i]);
+			if (slotModel.get(i).slotX !== xs[i]) slotModel.setProperty(i, "slotX", xs[i]);
 		});
 
 		root._rows = rows;
 		root._leftAt = leftAt;
-		if (JSON.stringify(lay) !== JSON.stringify(root._layout))
-			root._layout = lay;
-		if (rows.some(r => r.leaving))
+		const waits = Object.keys(leftAt).map(k => leftAt[k].at + leftAt[k].ms - now);
+		if (waits.length > 0) {
+			exitTimer.interval = Math.max(1, Math.min.apply(null, waits));
 			exitTimer.restart();
+		}
 	}
 	onItemsChanged: root._sync()
 	onSeparatorEnabledChanged: root._sync()
 	Component.onCompleted: root._sync()
-	Timer { id: exitTimer; interval: Tokens.dock.exitMs; onTriggered: root._sync() }
+	Timer { id: exitTimer; onTriggered: root._sync() }
 
 	Spring {
 		id: wS
@@ -229,9 +244,10 @@ Item {
 
 			Item {
 				id: row
-				x: (pillArea.width - width) / 2
+				// Slots sit relative to the pill's centre (see _sync).
+				x: pillArea.width / 2
 				y: Tokens.dock.padding
-				width: root._layout.width
+				width: 0
 				height: Tokens.dock.iconBox
 				opacity: root.expanded ? 1 : 0
 				Behavior on opacity {
@@ -243,8 +259,10 @@ Item {
 
 					delegate: Item {
 						id: slot
+						objectName: "dock-slot-" + slot.key
 						required property string key
 						required property string kind
+						required property bool pinned
 						required property string name
 						required property string icon
 						required property int windows
@@ -282,6 +300,7 @@ Item {
 							iconSource: slot.icon
 							windows: slot.windows
 							present: slot.present && root.expanded
+							quickExit: !slot.pinned
 							iconOnly: root.iconOnly
 							light: root.light
 							textColor: root.textColor

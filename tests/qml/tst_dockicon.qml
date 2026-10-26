@@ -52,6 +52,18 @@ Item {
 			tryVerify(() => Math.abs(lift.mapToItem(v, 36, 0).x - lift.mapToItem(v, 0, 0).x) < 0.36, 1500);
 		}
 
+		// Bloom: a running (unpinned) app's exit is a 120 ms tween, no delay.
+		function test_quickExitForRunningApps() {
+			const v = make({ quickExit: true });
+			tryCompare(v, "shown", true, 400);
+			wait(500);
+			v.present = false;
+			compare(v.shown, false, "no exit delay");
+			const lift = findChild(v, "dock-lift");
+			const width = () => Math.abs(lift.mapToItem(v, 36, 0).x - lift.mapToItem(v, 0, 0).x);
+			tryVerify(() => width() < 0.36, 250, "gone within about 120 ms");
+		}
+
 		function test_hoverLiftsAndPressSinks() {
 			const v = make();
 			tryCompare(v, "shown", true, 400);

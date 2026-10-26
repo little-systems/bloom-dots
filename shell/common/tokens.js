@@ -162,6 +162,9 @@ var dock = {
 	contentFadeMs: 150,
 	entry: { delayMs: 150, fadeMs: 150 },
 	exitMs: 450,
+	// A running app's exit: a 120 ms tween, no delay (Dock.tsx unpinned items).
+	quickExitMs: 120,
+	quickExitHoldMs: 150,
 	hover: { y: -5, scale: 1.1 },
 	tapScale: 0.95,
 	dot: { size: 4, gap: 3, offset: 4, glow: 4, glowLight: 3 },

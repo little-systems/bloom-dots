@@ -14,6 +14,8 @@ Item {
 	property string iconSource: ""
 	property int windows: 0
 	property bool present: true
+	// Bloom: running (unpinned) apps leave with a 120 ms tween and no delay.
+	property bool quickExit: false
 	property bool iconOnly: false
 	property bool light: false
 	property color textColor: "white"
@@ -34,7 +36,33 @@ Item {
 	// Entry and exit both wait 150 ms (Bloom's transition delay), then the
 	// scale springs 400/25 and the opacity fades over 150 ms.
 	Component.onCompleted: if (root.present) delay.restart()
-	onPresentChanged: delay.restart()
+	onPresentChanged: {
+		if (!root.present && root.quickExit) {
+			delay.stop();
+			root._quickScale = entrySpring.value;
+			root._quick = true;
+			entrySpring.jump(0);
+			root.shown = false;
+			quickAnim.restart();
+			return;
+		}
+		if (root.present) {
+			quickAnim.stop();
+			root._quick = false;
+		}
+		delay.restart();
+	}
+	property bool _quick: false
+	property real _quickScale: 1
+	NumberAnimation {
+		id: quickAnim
+		target: root
+		property: "_quickScale"
+		to: 0
+		duration: Tokens.dock.quickExitMs
+		easing.type: Easing.BezierSpline
+		easing.bezierCurve: [0, 0, 0.58, 1, 1, 1]
+	}
 	Timer {
 		id: delay
 		interval: Tokens.dock.entry.delayMs
@@ -57,9 +85,9 @@ Item {
 		anchors.fill: parent
 		opacity: root.shown ? 1 : 0
 		Behavior on opacity {
-			NumberAnimation { duration: Tokens.dock.entry.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] }
+			NumberAnimation { duration: root._quick ? Tokens.dock.quickExitMs : Tokens.dock.entry.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] }
 		}
-		scale: entrySpring.value
+		scale: root._quick ? root._quickScale : entrySpring.value
 
 		Spring {
 			id: entrySpring
