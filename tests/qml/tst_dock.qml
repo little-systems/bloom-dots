@@ -144,4 +144,44 @@ TestCase {
 		compare(Dock.focusArg("0x1\" })os.execute(\"x"), "", "only hex addresses reach the dispatcher");
 		compare(Dock.focusArg(""), "");
 	}
+
+	// Hyprland keeps the last window at focus history 0 after you switch to an
+	// empty workspace; only a window on the focused monitor's shown workspace
+	// is really active.
+	function test_activeAddress() {
+		const monitors = [{ name: "eDP-1", focused: true, activeWorkspace: { id: 3 }, specialWorkspace: { id: 0 } }];
+		const on = (address, ws, focus, extra) => {
+			const c = { address: address, workspace: { id: ws }, focusHistoryID: focus, mapped: true, hidden: false };
+			for (const k in extra || {}) c[k] = extra[k];
+			return c;
+		};
+		compare(Dock.activeAddress([on("0xa", 1, 0)], monitors), "", "an empty workspace has no active window");
+		compare(Dock.activeAddress([on("0xa", 3, 0)], monitors), "0xa");
+		compare(Dock.activeAddress([on("0xa", 3, 1), on("0xb", 1, 0)], monitors), "");
+		compare(Dock.activeAddress([on("0xa", 3, 0, { hidden: true })], monitors), "");
+		compare(Dock.activeAddress([on("0xs", -98, 0)], [{ focused: true, activeWorkspace: { id: 3 }, specialWorkspace: { id: -98 } }]), "0xs", "an open special workspace");
+		compare(Dock.activeAddress([on("0xa", 3, 0)], []), "", "no monitors (before Hyprland answers)");
+	}
+
+	// A never-focused window (focusHistoryID -1, e.g. autostarted silently)
+	// is the least recent, not the most.
+	function test_neverFocusedIsLeastRecent() {
+		const ws = [{ address: "0xa", focus: -1 }, { address: "0xb", focus: 4 }];
+		compare(Dock.clickAction({ id: "x", windows: ws }, ""), { kind: "focus", address: "0xb" });
+		compare(Dock.clickAction({ id: "x", windows: [{ address: "0xa", focus: -1 }] }, ""), { kind: "focus", address: "0xa" });
+	}
+
+	// A hand-edited or damaged dock.json must not empty the dock.
+	function test_pinsOf() {
+		compare(Dock.pinsOf({ pinned: ["firefox", "kitty"] }), ["firefox", "kitty"]);
+		compare(Dock.pinsOf(null), []);
+		compare(Dock.pinsOf({ pinned: "firefox" }), []);
+		compare(Dock.pinsOf({ pinned: ["a", 3, "a", "", null, "b"] }), ["a", "b"], "strings only, once each");
+	}
+
+	function test_slotsMarkPinned() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [] }], unpinned: [{ id: "b", name: "B", icon: "", windows: [1] }] };
+		const s = Dock.slots(items, true);
+		compare(s.map(x => x.pinned), [true, false, false]);
+	}
 }

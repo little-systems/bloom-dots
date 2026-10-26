@@ -55,11 +55,11 @@ function buildItems(pinned, groups, order, info) {
 // What the row shows: pinned apps, Bloom's divider when both groups have
 // something, then the other running apps.
 function slots(items, separator) {
-	const app = i => ({ key: i.id, kind: "app", name: i.name, icon: i.icon, windows: i.windows.length });
-	const out = items.pinned.map(app);
+	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon, windows: i.windows.length });
+	const out = items.pinned.map(app(true));
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
-		out.push({ key: dividerKey, kind: "divider", name: "", icon: "", windows: 0 });
-	return out.concat(items.unpinned.map(app));
+		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
+	return out.concat(items.unpinned.map(app(false)));
 }
 
 // framer AnimatePresence: a row that left `next` stays where it was, marked
@@ -103,12 +103,32 @@ function clickAction(item, activeAddress) {
 	const stable = ws.slice().sort((a, b) => a.address < b.address ? -1 : a.address > b.address ? 1 : 0);
 	const i = stable.findIndex(w => w.address === activeAddress);
 	if (i < 0) {
-		const recent = ws.slice().sort((a, b) => a.focus - b.focus);
+		// Focus history 0 is the latest; -1 means never focused, so last.
+		const rank = w => w.focus < 0 ? Infinity : w.focus;
+		const recent = ws.slice().sort((a, b) => rank(a) - rank(b));
 		return { kind: "focus", address: recent[0].address };
 	}
 	if (stable.length === 1)
 		return { kind: "none" };
 	return { kind: "focus", address: stable[(i + 1) % stable.length].address };
+}
+
+// The window that really has focus: history 0, shown on the focused
+// monitor's workspace (or its open special workspace). Hyprland keeps the
+// last window at history 0 after a switch to an empty workspace.
+function activeAddress(clients, monitors) {
+	const m = monitors.find(x => x.focused);
+	if (!m)
+		return "";
+	const shown = id => id === m.activeWorkspace.id || (m.specialWorkspace && m.specialWorkspace.id !== 0 && id === m.specialWorkspace.id);
+	const c = clients.find(x => x.focusHistoryID === 0 && x.mapped && !x.hidden && x.workspace && shown(x.workspace.id));
+	return c ? c.address : "";
+}
+
+// Pins from dock.json: strings only, once each, whatever the file holds.
+function pinsOf(value) {
+	const list = value && Array.isArray(value.pinned) ? value.pinned : [];
+	return list.filter((p, i) => typeof p === "string" && p !== "" && list.indexOf(p) === i);
 }
 
 function dotCount(windows) {

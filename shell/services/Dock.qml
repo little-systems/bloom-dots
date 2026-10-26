@@ -11,7 +11,7 @@ import "../modules/dock/dock.js" as Logic
 Singleton {
 	id: root
 
-	readonly property var pinned: pins.value.pinned ?? []
+	readonly property var pinned: Logic.pinsOf(pins.value)
 	property var _order: []
 	readonly property var groups: Logic.groupWindows(HyprState.clients, cls => Logic.identity(cls, root._idFor(cls)))
 	readonly property var items: {
@@ -54,8 +54,7 @@ Singleton {
 		const item = root._item(id);
 		if (!item)
 			return "no such app";
-		const active = HyprState.clients.reduce((best, c) => best === null || c.focusHistoryID < best.focusHistoryID ? c : best, null);
-		const action = Logic.clickAction(item, active ? active.address : "");
+		const action = Logic.clickAction(item, Logic.activeAddress(HyprState.clients, HyprState.monitors));
 		if (action.kind === "launch")
 			return Apps.launch(id) ? "ok" : "cannot launch";
 		if (action.kind === "focus")
