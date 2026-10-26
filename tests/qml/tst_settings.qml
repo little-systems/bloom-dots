@@ -156,6 +156,22 @@ TestCase {
 		compare(off.warnings, []);
 	}
 
+	function test_dockDefaults() {
+		const d = Settings.defaults();
+		compare(d["bloom-dock-mode"], "smart");
+		compare(d["bloom-dock-edge-delay"], 200);
+		compare(d["bloom-dock-icon-only"], false);
+		compare(d["bloom-dock-separator-enabled"], true);
+		compare(d["bloom-dock-adaptive"], false);
+		compare(d["bloom-dock-win-number-enabled"], true);
+		compare(Settings.validateOne("bloom-dock-mode", "auto-hide"), { ok: true, value: "smart" });
+		verify(!Settings.validateOne("bloom-dock-edge-delay", 2500).ok);
+		const s = Settings.validate({ "bloom-dock-icon-only": "true", "bloom-dock-edge-delay": "0" });
+		compare(s.values["bloom-dock-icon-only"], true, "Bloom's string form");
+		compare(s.values["bloom-dock-edge-delay"], 0);
+		compare(s.warnings, []);
+	}
+
 	// Bloom read the visualizer switch from an older key too.
 	function test_legacyVisualizerKey() {
 		const old = Settings.validate({ "bloom-visualizer-enabled": "false" });

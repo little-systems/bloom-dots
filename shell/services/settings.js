@@ -122,6 +122,40 @@ var SCHEMA = {
 		default: true,
 		doc: "Briefly show the workspace in the notch when you switch to it (Hyprland)."
 	},
+	"bloom-dock-mode": {
+		type: "enum",
+		values: ["fixed", "smart", "peek"],
+		aliases: { "auto-hide": "smart" },
+		default: "smart",
+		doc: "Dock visibility. fixed = always shown, with its strip reserved; smart = hides while a window covers it; peek = hidden until the pointer rests on the bottom edge."
+	},
+	"bloom-dock-edge-delay": {
+		type: "number",
+		min: 0,
+		max: 2000,
+		default: 200,
+		doc: "In smart and peek mode, how long (ms) the pointer must rest on the bottom edge before a hidden dock appears. 0 reveals it at once."
+	},
+	"bloom-dock-icon-only": {
+		type: "bool",
+		default: false,
+		doc: "Show dock icons without their tile background."
+	},
+	"bloom-dock-separator-enabled": {
+		type: "bool",
+		default: true,
+		doc: "A divider between pinned apps and other running apps."
+	},
+	"bloom-dock-adaptive": {
+		type: "bool",
+		default: false,
+		doc: "Fixed dock only: stretch to the full screen width while the focused window is maximised."
+	},
+	"bloom-dock-win-number-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows."
+	},
 	"bloom-scale": {
 		type: "number",
 		min: 0.8,
