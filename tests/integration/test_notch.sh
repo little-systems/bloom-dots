@@ -15,6 +15,11 @@ start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom"
 # No network in tests: weather off.
 printf '{ "bloom-enabled-modules": ["notch"], "bloom-weather-enabled": false, "bloom-music-mode-enabled": false }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
+mkdir -p "$TEST_TMP/bin"
+cp "$ROOT/tests/integration/updates-fake.sh" "$TEST_TMP/bin/checkupdates"
+chmod +x "$TEST_TMP/bin/checkupdates"
+export BLOOM_CHECKUPDATES="$TEST_TMP/bin/checkupdates" BLOOM_FAKE_UPDATES="$TEST_TMP/fake"
+printf '0\nfuzzel 1 -> 2\njdk 1 -> 2\n' >"$BLOOM_FAKE_UPDATES"
 start_shell
 
 state() { ipc notch state | jq -c ".[0] | {$1}"; }
@@ -22,6 +27,11 @@ state_is() { [[ "$(state "$1")" == "$2" ]]; }
 
 wait_for "the notch to settle after the drop-in" state_is "hidden,width" '{"hidden":false,"width":140}'
 pass "notch surface loads and settles at 140 px"
+
+ipc updates check >/dev/null
+wait_for "the update pulse" state_is "pulse,updateDot,width" '{"pulse":"update","updateDot":true,"width":200}'
+WAIT_S=10 wait_for "the 6 s pulse to end" state_is "pulse,updateDot,width" '{"pulse":"","updateDot":true,"width":140}'
+pass "new updates pulse, then leave the dot"
 
 # Quickshell expands a JSON array into positional IPC arguments unless the
 # CLI quotes it as one string. Exercise both removal and re-creation live.

@@ -53,6 +53,7 @@ PanelWindow {
 		HyprState.hold(win._key, "");
 		SystemStats.hold(win._key, false);
 		music.item?.hold(win._key, false, false);
+		Updates.hold(win._key, false);
 	}
 
 	// Let the surface map before the drop-in starts.
@@ -83,6 +84,20 @@ PanelWindow {
 		source: "AudioData.qml"
 	}
 
+	readonly property bool _workspaceOn: HyprState.available && Settings.values["bloom-workspace-peek-enabled"]
+
+	Loader {
+		id: workspaces
+		active: win._workspaceOn
+		source: "WorkspaceData.qml"
+		onLoaded: workspaces.item.screen = win.modelData
+	}
+
+	Connections {
+		target: Updates
+		function onArrived() { view.updatesArrived(); }
+	}
+
 	NotchView {
 		id: view
 		anchors.fill: parent
@@ -98,7 +113,7 @@ PanelWindow {
 		textColor: Theme.text
 		textMuted: Theme.textMuted
 		weather: ({ shown: Weather.shown, label: Weather.label, icon: Weather.icon, tooltip: Weather.tooltip })
-		battery: ({ available: Battery.available, level: Battery.level, charging: Battery.charging, threshold: Battery.threshold, tooltip: Battery.tooltip })
+		battery: ({ available: Battery.available, ready: Battery.ready, level: Battery.level, charging: Battery.charging, threshold: Battery.threshold, tooltip: Battery.tooltip })
 		stats: ({ cpu: SystemStats.cpu, ram: SystemStats.ram, disk: SystemStats.disk, up: SystemStats.up, down: SystemStats.down })
 		onStatsWanted: wanted => SystemStats.hold(win._key, wanted)
 		musicEnabled: win._musicOn
@@ -122,5 +137,10 @@ PanelWindow {
 		onOpenMixer: audio.item?.openMixer()
 		onLayoutChosen: layout => Settings.set("bloom-media-layout", layout)
 		onMusicWatched: watched => music.item?.hold(win._key, watched, view.visualizerEnabled)
+		updates: ({ available: Updates.available, count: Updates.count })
+		updateIndicator: Settings.values["bloom-show-update-indicator"]
+		onUpdatesWanted: wanted => Updates.hold(win._key, wanted)
+		workspace: workspaces.item?.workspace ?? null
+		workspacePeekEnabled: Settings.values["bloom-workspace-peek-enabled"]
 	}
 }

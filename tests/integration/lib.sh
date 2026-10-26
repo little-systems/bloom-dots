@@ -50,11 +50,12 @@ assert_eq() {
 
 log_has() { grep -qF -- "$1" "$TEST_TMP/shell.log"; }
 
-# wait_for <description> <command...>: retries the command for up to 6 s.
+# wait_for <description> <command...>: retries the command for up to
+# $WAIT_S seconds (default 6).
 wait_for() {
 	local what="$1"
 	shift
-	for _ in $(seq 1 60); do
+	for _ in $(seq 1 $(( ${WAIT_S:-6} * 10 ))); do
 		if "$@" >/dev/null 2>&1; then return 0; fi
 		sleep 0.1
 	done

@@ -13,6 +13,8 @@ Singleton {
 
 	readonly property var device: UPower.displayDevice
 	readonly property bool available: root.device?.isLaptopBattery ?? false
+	// UPower has answered for this device (its first values are placeholders).
+	readonly property bool ready: root.device?.ready ?? false
 	readonly property int level: Math.round((root.device?.percentage ?? 0) * 100)
 	readonly property bool charging: root.device?.state === UPowerDeviceState.Charging
 	readonly property bool pluggedIn: !UPower.onBattery
