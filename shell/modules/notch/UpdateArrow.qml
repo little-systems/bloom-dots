@@ -8,9 +8,6 @@ import "../../common/tokens.js" as Tokens
 Item {
 	id: root
 	objectName: "update-arrow"
-	// `visible` reads false inside an effect source, so layout and tests use this.
-	property bool shown: true
-	visible: root.shown
 	implicitWidth: Tokens.pulse.arrow.box
 	implicitHeight: Tokens.pulse.arrow.box
 	readonly property real _k: Tokens.pulse.arrow.glyph / 24

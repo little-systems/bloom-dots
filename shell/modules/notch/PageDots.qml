@@ -11,8 +11,8 @@ Row {
 	property var ids: []
 	property int active: 0
 	property color color: "white"
-	// Inside a PulseItem the dots are an effect's hidden source, so their own
-	// `visible` is always false; the pulse says when they are on screen.
+	// A running spring redraws the window every frame, so the dots spring only
+	// while their pulse is on screen.
 	property bool animate: true
 	readonly property int count: dots.count
 

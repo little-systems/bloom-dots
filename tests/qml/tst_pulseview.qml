@@ -7,6 +7,12 @@ Item {
 	width: 400
 	height: 100
 
+	// Black, so only the bolt's own white counts in pixel checks.
+	Rectangle {
+		anchors.fill: parent
+		color: "black"
+	}
+
 	Component {
 		id: viewComponent
 		PulseView {
@@ -64,7 +70,7 @@ Item {
 			v.kind = "power";
 			v.updateAvailable = true;
 			tryCompare(v, "shownKey", "battery", 900);
-			verify(findChild(findChild(v, "pulse-battery"), "update-arrow").shown, "Bloom shows the arrow beside the battery");
+			verify(findChild(findChild(v, "pulse-battery"), "update-arrow").visible, "Bloom shows the arrow beside the battery");
 		}
 
 		function test_workspaceDotsAndLabel() {
@@ -76,6 +82,24 @@ Item {
 			compare(label(v, "workspace"), "Workspace 3", "follows without a swap");
 			v.workspace = { id: 1, name: "1", ids: [1] };
 			compare(findChild(v, "page-dots").count, 0);
+		}
+
+		// The charging bolt (a Shape) appears when charging starts, which is
+		// exactly when the charging pulse shows; it must draw inside the pulse.
+		function test_boltDrawsWhenChargingStarts() {
+			const v = make({ kind: "power", textColor: "#ff00ff", battery: { level: 80, charging: false, threshold: 20 } });
+			tryCompare(v, "shownKey", "battery", 600);
+			v.battery = { level: 80, charging: true, threshold: 20 };
+			wait(700);
+			const img = grabImage(host);
+			let white = 0;
+			for (let x = 0; x < v.width; x++)
+				for (let y = 0; y < v.height; y++) {
+					const c = img.pixel(x, y);
+					if (c.r > 0.9 && c.g > 0.9 && c.b > 0.9)
+						white++;
+				}
+			verify(white >= 4, `the white bolt is drawn (${white} white pixels)`);
 		}
 
 		// A key that flips back while leaving finishes the exit first, then

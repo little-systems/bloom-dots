@@ -60,7 +60,7 @@ Item {
 			spacing: Tokens.pulse.gap
 			UpdateArrow {
 				anchors.verticalCenter: parent.verticalCenter
-				shown: root.updateAvailable
+				visible: root.updateAvailable
 			}
 			BatteryIcon {
 				anchors.verticalCenter: parent.verticalCenter
