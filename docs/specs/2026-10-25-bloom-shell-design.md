@@ -309,6 +309,17 @@ A throwaway "hello notch" was built in the session scratchpad and not kept. It c
 - **Interpretation:** ii's "fatal Wayland surface errors" appear to come from ii itself, not from Quickshell. The fixed-size surface rule (§3.3) is adopted.
 - **CPU:** about 0.1% at idle. About 21% of one core during non-stop animation, which is the worst case; a real notch animates for a few hundred ms at a time. This motivates the low-power mode.
 
+### Hybrid spike (2026-10-26)
+
+The owner asked whether Bloom's real React UI could run on Linux so upstream releases flow into the dotfiles. A throwaway spike loaded Bloom's built notch bundle with a fake Tauri runtime:
+
+- **Inside Quickshell:** impossible. Chromium (QtWebEngine) aborts at start because Quickshell creates its app without a program name.
+- **WebKitGTK on a gtk-layer-shell surface** (Tauri's Linux stack): the page runs but gets no animation frames (2 in 14 s), so the notch never drops in. The usual `WEBKIT_DISABLE_*` switches don't help.
+- **In ordinary windows** with music playing, the notch costs about 48–50 % of a core (WebKitGTK and Chrome) against about 18 % native. Memory is 290–590 MB against 116 MB for the whole native shell.
+- **Backend surface:** the frontend calls 102 Windows backend commands, all of which would need Linux versions.
+
+**Decision (owner, 2026-10-26):** stay native (D5 stands). Upstream Bloom changes are ported deliberately: diff each upstream release against the last ported commit and turn its UI changes into small port tasks.
+
 ## Appendix A: Bloom notch design tokens
 
 Source: Bloom `App.tsx`, `App.css`, `theme.ts`, `components/EdgeSurface.*` @ `b5fb962`.
