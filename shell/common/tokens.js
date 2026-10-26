@@ -11,7 +11,16 @@ var springs = {
 	standard: { stiffness: 500, damping: 30, mass: 1 },
 	flip: { stiffness: 600, damping: 30, mass: 1 },
 	visualizerBar: { stiffness: 600, damping: 30, mass: 0.5 },
-	press: { stiffness: 400, damping: 25, mass: 1 }
+	press: { stiffness: 400, damping: 25, mass: 1 },
+	// Dock (Bloom Dock.tsx).
+	dockY: { stiffness: 400, damping: 35, mass: 0.8 },
+	dockSize: { stiffness: 250, damping: 22, mass: 0.8 },
+	dockLayout: { stiffness: 300, damping: 25, mass: 1 },
+	dockRadius: { stiffness: 500, damping: 30, mass: 1 },
+	itemEntry: { stiffness: 400, damping: 25, mass: 1 },
+	// framer's defaults for a hover variant: y underdamped, scale critically damped.
+	hoverY: { stiffness: 500, damping: 25, mass: 1, restSpeed: 10 },
+	hoverScale: { stiffness: 550, damping: 30, mass: 1, restSpeed: 10 }
 };
 
 // Notch geometry in px.
@@ -131,3 +140,31 @@ var pulse = {
 
 // pacman updates (spec §5.1): hourly while held; a stalled check ends at 2 min.
 var updates = { firstCheckMs: 60000, intervalMs: 3600000, timeoutMs: 120000 };
+
+// Dock (Bloom Dock.tsx/Dock.css @ b5fb962).
+var dock = {
+	// Fixed surface: full screen width, room for the dock, tooltips and 3C previews.
+	surfaceHeight: 420,
+	collapsed: 34,
+	height: 52,
+	padding: 8,
+	iconBox: 36,
+	iconImage: 28,
+	iconOnlyImage: 32,
+	iconRadius: 12,
+	divider: { width: 1, height: 26, margin: 2, alpha: 0.24 },
+	startup: { impactMs: 280, expandMs: 350, animatingMs: 1500 },
+	reserve: 56,
+	graceMs: 800,
+	edgeBand: { height: 2 },
+	edgeHandoffMs: 1000,
+	opacityMs: 200,
+	contentFadeMs: 150,
+	entry: { delayMs: 150, fadeMs: 150 },
+	exitMs: 450,
+	hover: { y: -5, scale: 1.1 },
+	tapScale: 0.95,
+	dot: { size: 4, gap: 3, offset: 4, glow: 4, glowLight: 3 },
+	tooltip: { offset: 36, paddingV: 4, paddingH: 10, radius: 6, size: 12, alpha: 0.7, slide: 4, from: 0.95, fadeMs: 200 },
+	fallback: { size: 16, opacity: 0.7 }
+};

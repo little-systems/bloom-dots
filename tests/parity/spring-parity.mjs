@@ -15,7 +15,12 @@ const SPRINGS = [
 	{ name: "default", stiffness: 500, damping: 30, mass: 1 },
 	{ name: "clock flip", stiffness: 600, damping: 30, mass: 1 },
 	{ name: "visualizer bar", stiffness: 600, damping: 30, mass: 0.5 },
-	{ name: "button press", stiffness: 400, damping: 25, mass: 1 }
+	{ name: "button press", stiffness: 400, damping: 25, mass: 1 },
+	{ name: "dock y", stiffness: 400, damping: 35, mass: 0.8 },
+	{ name: "dock size", stiffness: 250, damping: 22, mass: 0.8 },
+	{ name: "dock layout", stiffness: 300, damping: 25, mass: 1 },
+	{ name: "hover y", stiffness: 500, damping: 25, mass: 1 },
+	{ name: "hover scale", stiffness: 550, damping: 30, mass: 1 }
 ];
 
 const ctx = {};
