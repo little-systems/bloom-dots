@@ -24,6 +24,8 @@ Item {
 	property bool captureEnabled: false
 	property var previewSources: []
 	property var items: ({ pinned: [], unpinned: [] })
+	property var extraItems: []
+	property string extrasPosition: "off"
 	property var workspaceCells: []
 	property var menuTarget: id => ({ kind: "background" })
 	property var apps: []
@@ -53,14 +55,18 @@ Item {
 	signal hideWorkspaces()
 	signal previewFocus(string address)
 	signal previewClose(string address)
+	signal extraActivated(string key)
+	signal emptyTrashConfirmed()
 
 	readonly property bool keyboardWanted: popup.opened
-	readonly property bool grabWanted: menu.opened || popup.opened
+	readonly property bool grabWanted: menu.opened || popup.opened || confirm.opened
 	readonly property Item menuItem: menu
 	readonly property bool menuOpen: menu.opened
 	readonly property Item menuBoxItem: menu.boxItem
 	readonly property Item submenuBoxItem: menu.submenuBoxItem
 	readonly property Item popupItem: popup
+	readonly property bool confirmOpen: confirm.opened
+	readonly property Item confirmBoxItem: confirm.boxItem
 	readonly property Item previewItem: preview
 	readonly property Item previewBoxItem: preview.boxItem
 	readonly property var previewCandidates: {
@@ -104,11 +110,16 @@ Item {
 	onPreviewEnabledChanged: if (!root.previewEnabled) root._cancelPreview()
 	onHiddenChanged: if (root.hidden) root._cancelPreview()
 
-	function openAddApp() { menu.close(); popup.open(); }
-	function closeMenus() { menu.close(); popup.close(); root._cancelPreview(); }
+	function openAddApp() { menu.close(); confirm.opened = false; popup.open(); }
+	function closeMenus() { menu.close(); popup.close(); confirm.opened = false; root._cancelPreview(); }
+	function confirmEmptyTrash() { root.closeMenus(); confirm.opened = true; }
 	function _insideFloating(scenePos) {
 		if (menu.containsScenePoint(scenePos.x, scenePos.y))
 			return true;
+		if (confirm.opened) {
+			const c = confirm.mapFromItem(null, scenePos.x, scenePos.y);
+			return c.x >= 0 && c.y >= 0 && c.x < confirm.width && c.y < confirm.height;
+		}
 		if (!popup.opened)
 			return false;
 		const p = popup.mapFromItem(null, scenePos.x, scenePos.y);
@@ -240,7 +251,7 @@ Item {
 		const ordered = root._dragOrder.length > 0
 			? Object.assign({}, root.items, { pinned: root._dragOrder.map(id => root.items.pinned.find(i => i.id === id)).filter(Boolean) })
 			: root.items;
-		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells);
+		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition);
 		const byKey = {};
 		for (const s of next)
 			byKey[s.key] = s;
@@ -277,7 +288,8 @@ Item {
 				if (slotModel.get(k).key === r.key) { j = k; break; }
 			const s = byKey[r.key];
 			if (j < 0) {
-				slotModel.insert(i, { key: r.key, kind: s.kind, pinned: s.pinned, name: s.name, icon: s.icon, windows: s.windows, present: true, slotX: xs[i] });
+				slotModel.insert(i, { key: r.key, kind: s.kind, extraKind: s.extraKind || "", count: s.count || 0,
+					pinned: s.pinned, name: s.name, icon: s.icon, windows: s.windows, present: true, slotX: xs[i] });
 				return;
 			}
 			if (j !== i)
@@ -287,6 +299,7 @@ Item {
 				if (slotModel.get(i).name !== s.name) slotModel.setProperty(i, "name", s.name);
 				if (slotModel.get(i).icon !== s.icon) slotModel.setProperty(i, "icon", s.icon);
 				if (slotModel.get(i).windows !== s.windows) slotModel.setProperty(i, "windows", s.windows);
+				if (slotModel.get(i).count !== (s.count || 0)) slotModel.setProperty(i, "count", s.count || 0);
 			}
 			if (slotModel.get(i).present !== !r.leaving) slotModel.setProperty(i, "present", !r.leaving);
 			if (slotModel.get(i).slotX !== xs[i]) slotModel.setProperty(i, "slotX", xs[i]);
@@ -301,6 +314,8 @@ Item {
 		}
 	}
 	onItemsChanged: root._sync()
+	onExtraItemsChanged: root._sync()
+	onExtrasPositionChanged: root._sync()
 	onWorkspaceCellsChanged: root._sync()
 	onSeparatorEnabledChanged: root._sync()
 	Component.onCompleted: root._sync()
@@ -408,6 +423,8 @@ Item {
 						required property string name
 						required property string icon
 						required property int windows
+						required property string extraKind
+						required property int count
 						required property bool present
 						required property real slotX
 
@@ -473,6 +490,22 @@ Item {
 							onClicked: root.activated(slot.key)
 							onMiddleClicked: root.newInstance(slot.key)
 							onHoveredChanged: if (icon.hovered) root._beginPreview(slot.key, slot); else root._leavePreview(slot.key)
+						}
+						DockExtraIcon {
+							anchors.fill: parent
+							visible: slot.kind === "extra"
+							name: slot.name
+							iconSource: slot.icon
+							kind: slot.extraKind
+							count: slot.count
+							present: slot.present && root.expanded
+							iconOnly: root.iconOnly
+							light: root.light
+							textColor: root.textColor
+							tooltipBg: root.tooltipBg
+							tooltipText: root.tooltipText
+							tooltipBorder: root.tooltipBorder
+							onClicked: root.extraActivated(slot.key.slice(6))
 						}
 
 						WorkspaceSegment {
@@ -541,6 +574,15 @@ Item {
 			}
 			onFocusRequested: address => { root.previewFocus(address); root._cancelPreview(); }
 			onCloseRequested: address => { root.previewClose(address); root._cancelPreview(); }
+		}
+		DockConfirm {
+			id: confirm
+			z: 9
+			x: (stage.width - width) / 2
+			y: pillArea.y - height - 14
+			background: root.bgExpanded
+			foreground: root.textColor
+			onConfirmed: root.emptyTrashConfirmed()
 		}
 
 		AddAppPopup {

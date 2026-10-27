@@ -64,6 +64,7 @@ Singleton {
 		root.toast = message;
 		root.toastSerial++;
 	}
+	function notify(message) { root._toast(message); }
 
 	function reorder(ids) {
 		const same = Array.isArray(ids) && ids.length === root.pinned.length

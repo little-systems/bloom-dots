@@ -92,6 +92,28 @@ Singleton {
 		}
 		return "unsupported action";
 	}
+	function menuTarget(key) {
+		const item = root.items.find(x => x.key === key);
+		return item ? { kind: item.kind, removable: !!item.removable } : { kind: "background" };
+	}
+	function hide(key) {
+		const item = root.drives.find(x => x.key === key);
+		if (!item) return "drive unavailable";
+		const id = item.uuid || "path:" + item.device;
+		const old = Logic.jsonArray(Settings.values["bloom-dock-extras-hidden-drives"]);
+		return Settings.set("bloom-dock-extras-hidden-drives", JSON.stringify(old.concat([id])));
+	}
+	function remove(key) {
+		const item = root.folders.find(x => x.key === key);
+		if (!item) return "folder unavailable";
+		if (item.kind === "folder") {
+			const id = key.slice(7);
+			const rest = Settings.values["bloom-dock-extras-folders"].split(",").filter(x => x.trim() !== id);
+			return Settings.set("bloom-dock-extras-folders", rest.length ? rest.join(",") : "none");
+		}
+		const old = Logic.jsonArray(Settings.values["bloom-dock-extras-custom-folders"]);
+		return Settings.set("bloom-dock-extras-custom-folders", JSON.stringify(old.filter(x => x.path !== item.path)));
+	}
 	function emptyTrash(confirmed) {
 		if (!confirmed || !root.active || !Settings.values["bloom-dock-extras-recycle-bin"]) return "confirmation required";
 		root._run(["gio", "trash", "--empty"], { kind: "empty" });

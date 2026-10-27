@@ -58,6 +58,26 @@ TestCase {
 		compare(Dock.slots({ pinned: items.pinned, unpinned: [] }, true).map(x => x.key), ["a"], "nothing unpinned, no divider");
 	}
 
+	function test_extrasFlankAppsWithoutChangingAppSlots() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [] }], unpinned: [{ id: "b", name: "B", icon: "", windows: [1] }] };
+		const extras = [{ key: "drive:USB", kind: "drive", name: "USB", icon: "", path: "/run/media/me/USB" },
+			{ key: "trash", kind: "trash", name: "Trash", icon: "", path: "trash:///" }];
+		compare(Dock.slots(items, true, [], extras, "off").map(x => x.key), ["a", Dock.dividerKey, "b"]);
+		compare(Dock.slots(items, true, [], extras, "left").map(x => x.key),
+			["extra:drive:USB", "extra:trash", "|divider|extras", "a", Dock.dividerKey, "b"]);
+		compare(Dock.slots(items, true, [], extras, "right").map(x => x.key),
+			["a", Dock.dividerKey, "b", "|divider|extras", "extra:drive:USB", "extra:trash"]);
+		compare(Dock.slots({ pinned: [], unpinned: [] }, true, [], extras, "left").map(x => x.key),
+			["extra:drive:USB", "extra:trash"], "no divider without apps");
+	}
+
+	function test_extraMenusKeepDestructiveActionsExplicit() {
+		compare(Dock.menuFor({ kind: "drive", removable: true }).filter(x => x.kind === "item").map(x => x.key), ["open", "eject", "hide"]);
+		compare(Dock.menuFor({ kind: "drive", removable: false }).filter(x => x.kind === "item").map(x => x.key), ["open", "hide"]);
+		compare(Dock.menuFor({ kind: "trash" }).filter(x => x.kind === "item").map(x => x.key), ["open", "empty-trash"]);
+		compare(Dock.menuFor({ kind: "custom" }).filter(x => x.kind === "item").map(x => x.key), ["open", "remove"]);
+	}
+
 	// framer AnimatePresence: a leaving item keeps its place until its exit ends.
 	function test_reconcile() {
 		const rows = keys => keys.map(k => ({ key: k, leaving: false }));

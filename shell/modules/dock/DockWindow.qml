@@ -37,6 +37,7 @@ PanelWindow {
 		Region { item: view.menuOpen && HyprState.available ? view.submenuBoxItem : null }
 		Region { item: view.keyboardWanted ? view.popupItem : null }
 		Region { item: view.previewOpen ? view.previewBoxItem : null }
+		Region { item: view.confirmOpen ? (HyprState.available ? view.confirmBoxItem : view) : null }
 	}
 
 	Loader {
@@ -59,6 +60,10 @@ PanelWindow {
 		target: grab.item
 		ignoreUnknownSignals: true
 		function onCleared() { view.closeMenus(); }
+	}
+	Connections {
+		target: DockExtras
+		function onToastSerialChanged() { Dock.notify(DockExtras.toast); }
 	}
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
@@ -103,8 +108,10 @@ PanelWindow {
 		overlapped: win._overlapped
 		maximized: Logic.maximized(win._focused)
 		items: Dock.items
+		extraItems: DockExtras.items.map(e => Object.assign({}, e, { icon: Quickshell.iconPath(e.icon, true) }))
+		extrasPosition: Settings.values["bloom-dock-extras-position"]
 		workspaceCells: workspaces.item ? Logic.workspaceCells(workspaces.item.workspaces, workspaces.item.workspace?.id ?? 0) : []
-		menuTarget: id => Dock.menuTarget(id)
+		menuTarget: id => id.startsWith("extra:") ? DockExtras.menuTarget(id.slice(6)) : Dock.menuTarget(id)
 		apps: Apps.all()
 		appsLoading: Apps.revision === 0
 		bg: Theme.bg
@@ -122,10 +129,19 @@ PanelWindow {
 		onNewInstance: id => Dock.newInstance(id)
 		onPreviewFocus: address => Dock.focusWindow(address)
 		onPreviewClose: address => Dock.closeWindow(address)
+		onExtraActivated: key => DockExtras.action(key, "open")
+		onEmptyTrashConfirmed: DockExtras.emptyTrash(true)
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
 		onReordered: ids => Dock.reorder(ids)
-		onMenuChosen: (id, key) => Dock.runMenu(id, key)
+		onMenuChosen: (id, key) => {
+			if (!id.startsWith("extra:")) { Dock.runMenu(id, key); return; }
+			const extraKey = id.slice(6);
+			if (key === "empty-trash") view.confirmEmptyTrash();
+			else if (key === "hide") DockExtras.hide(extraKey);
+			else if (key === "remove") DockExtras.remove(extraKey);
+			else DockExtras.action(extraKey, key);
+		}
 		onPinRequested: id => Dock.pin(id)
 		onSwitchWorkspace: cell => cell.id > 0 ? Dock.switchWorkspace(cell.id) : Dock.switchWorkspaceNamed(cell.tip)
 		onStepWorkspace: dir => Dock.stepWorkspace(dir, view.workspaceCells)

@@ -57,19 +57,32 @@ var workspacesKey = "|workspaces|";
 // What the row shows: the workspace segment (D7) and its divider, pinned
 // apps, Bloom's divider when both app groups have something, then the other
 // running apps.
-function slots(items, separator, segmentCells) {
+function slots(items, separator, segmentCells, extras, extrasPosition) {
 	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon, windows: i.windows.length });
+	const extra = e => ({ key: "extra:" + e.key, kind: "extra", extraKind: e.kind, count: e.count || 0,
+		pinned: false, name: e.name, icon: e.icon, windows: 0 });
 	const out = [];
 	const cells = segmentCells || [];
+	const shownExtras = extrasPosition === "left" || extrasPosition === "right" ? (extras || []) : [];
+	const appsCount = items.pinned.length + items.unpinned.length;
 	if (cells.length > 0) {
 		out.push({ key: workspacesKey, kind: "workspaces", pinned: false, name: "", icon: "", windows: cells.length });
 		if (items.pinned.length + items.unpinned.length > 0)
 			out.push({ key: dividerKey + "ws", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 	}
+	if (extrasPosition === "left" && shownExtras.length > 0) {
+		out.push.apply(out, shownExtras.map(extra));
+		if (appsCount > 0) out.push({ key: dividerKey + "extras", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
+	}
 	out.push.apply(out, items.pinned.map(app(true)));
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
 		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
-	return out.concat(items.unpinned.map(app(false)));
+	out.push.apply(out, items.unpinned.map(app(false)));
+	if (extrasPosition === "right" && shownExtras.length > 0) {
+		if (appsCount > 0) out.push({ key: dividerKey + "extras", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
+		out.push.apply(out, shownExtras.map(extra));
+	}
+	return out;
 }
 
 
@@ -225,6 +238,15 @@ var _divider = { kind: "divider" };
 function menuFor(t) {
 	if (t.kind === "workspaces")
 		return [_item("hide-workspaces", "Hide Workspaces")];
+	if (t.kind === "drive") {
+		const entries = [_item("open", "Open Drive")];
+		if (t.removable) entries.push(_item("eject", "Eject Drive"));
+		entries.push(_divider, _item("hide", "Hide from Dock"));
+		return entries;
+	}
+	if (t.kind === "trash") return [_item("open", "Open Trash"), _divider, _item("empty-trash", "Empty Trash…", true)];
+	if (t.kind === "folder" || t.kind === "custom")
+		return [_item("open", "Open Folder"), _divider, _item("remove", "Remove from Dock")];
 	const bloom = { kind: "submenu", key: "bloom", label: "Bloom Options", children: [_item("restart", "Restart Bloom"), _divider, _item("quit", "Quit Bloom", true)] };
 	const addApp = _item("add-app", "Add App to Dock...");
 	if (t.kind === "background")

@@ -195,6 +195,29 @@ Item {
 			compare(v.previewOpen, false);
 		}
 
+		function test_extraTilesKeepPinnedAppOrder() {
+			const extras = [{ key: "drive:USB", kind: "drive", name: "USB", icon: "", path: "/run/media/me/USB" }];
+			const v = make({ extraItems: extras, extrasPosition: "left" });
+			settle(v);
+			compare(v.stateObject().keys, ["extra:drive:USB", "|divider|extras", "a", "b", "|divider|", "c"], "extras sit before apps");
+			compare(v.items.pinned.map(x => x.id), ["a", "b"], "shortcuts stay app-only");
+			v.extrasPosition = "right";
+			tryVerify(() => v.stateObject().keys.indexOf("extra:drive:USB") > v.stateObject().keys.indexOf("c"), 1000);
+			v.extrasPosition = "off";
+			tryVerify(() => v.stateObject().keys.indexOf("extra:drive:USB") < 0, 1000);
+		}
+
+		function test_emptyTrashOutsideDismissesWithoutRunning() {
+			const v = make();
+			settle(v);
+			const emptied = createTemporaryObject(spyComponent, host, { target: v, signalName: "emptyTrashConfirmed" });
+			v.confirmEmptyTrash();
+			compare(v.confirmOpen, true);
+			v.closeMenus();
+			compare(v.confirmOpen, false);
+			compare(emptied.count, 0);
+		}
+
 		function framesIn(ms) {
 			let n = 0;
 			const count = () => n++;

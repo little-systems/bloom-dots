@@ -8,7 +8,7 @@ bloom_env
 mkdir -p "$TEST_TMP/bin" "$XDG_CONFIG_HOME/bloom" "$TEST_TMP/harness"
 cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$ROOT/shell/modules" "$TEST_TMP/harness/"
 cp "$ROOT/tests/integration/dock-extras-harness.qml" "$TEST_TMP/harness/shell.qml"
-printf '{"bloom-dock-extras-position":"left","bloom-dock-extras-folders":"downloads","bloom-dock-extras-recycle-bin":true}\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
+printf '{"bloom-enabled-modules":["dock"],"bloom-dock-mode":"fixed","bloom-dock-extras-position":"left","bloom-dock-extras-folders":"downloads","bloom-dock-extras-recycle-bin":true}\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
 
 cat >"$TEST_TMP/bin/lsblk" <<'SH'
 #!/bin/sh
@@ -50,3 +50,12 @@ grep -Fxq 'unmount -b /dev/bloom-test1' "$TEST_TMP/udisks.log" || fail "eject di
 grep -Fxq 'power-off -b /dev/bloom-test1' "$TEST_TMP/udisks.log" || fail "eject did not attempt power-off: $(cat "$TEST_TMP/udisks.log")"
 grep -Fxq 'trash --empty' "$TEST_TMP/gio.log" || fail "confirmed empty did not reach fake gio"
 pass "extras discovery and guarded actions use only fake commands and exact argv"
+
+start_sway
+start_shell
+extras_visible() { ipc dock state | jq -e '.[0].keys == ["extra:drive:USB","extra:drive:USB2","extra:folder:downloads","extra:trash"]' >/dev/null; }
+extras_gone() { ipc dock state | jq -e '.[0].keys == []' >/dev/null; }
+wait_for "extras to appear in the real dock" extras_visible
+ipc settings set bloom-dock-extras-position off >/dev/null
+wait_for "extras setting to remove the tiles" extras_gone
+pass "the real dock places extras and removes them when the setting turns off"
