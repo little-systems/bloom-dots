@@ -335,12 +335,23 @@ var ICON_TYPES = ["png", "ico", "jpg", "jpeg", "svg", "bmp"];
 
 // The copy's name in dock-icons/: the app id (made path-safe) plus the
 // source's extension; "" for anything but Bloom's image types.
-function iconFile(id, source) {
+// `tag` makes each copy's name (and so its URL) unique, so a new icon is
+// never served from Qt's image cache under the old one's name.
+function iconFile(id, source, tag) {
 	const m = /\.([A-Za-z0-9]+)$/.exec(source);
 	const ext = m ? m[1].toLowerCase() : "";
 	if (ICON_TYPES.indexOf(ext) < 0)
 		return "";
-	return id.replace(/[^A-Za-z0-9_.-]/g, "_").replace(/\.\./g, "__") + "." + ext;
+	return id.replace(/[^A-Za-z0-9_.-]/g, "_").replace(/\.\./g, "__") + (tag ? "-" + tag : "") + "." + ext;
+}
+
+// Whether `path` is one of Bloom's own copies (directly in dock-icons/):
+// dock.json can be hand-edited, and nothing else may ever be deleted.
+function ownsIconPath(dir, path) {
+	if (typeof path !== "string" || !path.startsWith(dir + "/"))
+		return false;
+	const name = path.slice(dir.length + 1);
+	return name !== "" && name.indexOf("/") < 0 && name !== "." && name !== "..";
 }
 
 // Prints the chosen file. Exit 1 = cancelled, 127 = no picker installed.

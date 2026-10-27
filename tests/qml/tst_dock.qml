@@ -286,4 +286,19 @@ TestCase {
 		compare(Dock.slots(items, true, []).map(x => x.key), ["a"], "no cells, no segment");
 		compare(Dock.layout([Dock.workspacesKey, Dock.dividerKey + "ws", "a"], 2), { xs: [0, 74, 91], width: 127 }, "62 + 12 + 5 + 12 + 36");
 	}
+
+	// Review I6: each copy has its own name, so a new icon is a new URL.
+	function test_iconFileTag() {
+		compare(Dock.iconFile("firefox", "/a/b.svg", "k3"), "firefox-k3.svg");
+		compare(Dock.iconFile("firefox", "/a/b.svg"), "firefox.svg");
+	}
+
+	// Review M3: Bloom only ever deletes its own copies.
+	function test_ownsIconPath() {
+		verify(Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons/firefox-k3.png"));
+		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/home/me/Pictures/logo.png"));
+		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons/../dock.json"));
+		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons-evil/x.png"));
+		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons/sub/x.png"), "no subfolders");
+	}
 }

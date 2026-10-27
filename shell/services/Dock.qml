@@ -52,10 +52,7 @@ Singleton {
 		const path = icons[id];
 		delete icons[id];
 		root._save(root.pinned.filter(p => p !== id), icons);
-		if (path) {
-			iconRm.command = ["rm", "-f", "--", path];
-			iconRm.running = true;
-		}
+		root._removeCopy(path);
 		return "ok";
 	}
 
@@ -84,7 +81,8 @@ Singleton {
 		const file = Logic.iconFile(id, path);
 		if (!file)
 			return "unsupported type";
-		iconCopy.target = { id: id, dest: root._iconDir + "/" + file };
+		const tagged = Logic.iconFile(id, path, Date.now().toString(36));
+		iconCopy.target = { id: id, dest: root._iconDir + "/" + tagged };
 		iconCopy.command = ["sh", "-c", 'mkdir -p "$1" && cp -f -- "$2" "$3"', "sh", root._iconDir, path, iconCopy.target.dest];
 		iconCopy.running = true;
 		return "ok";
@@ -97,9 +95,16 @@ Singleton {
 		const icons = Object.assign({}, root.icons);
 		delete icons[id];
 		root._save(root.pinned, icons);
-		iconRm.command = ["rm", "-f", "--", path];
-		iconRm.running = true;
+		root._removeCopy(path);
 		return "ok";
+	}
+
+	// Only Bloom's own copies are ever deleted (dock.json can be hand-edited).
+	function _removeCopy(path) {
+		if (!Logic.ownsIconPath(root._iconDir, path))
+			return;
+		const rm = rmComponent.createObject(root, { command: ["rm", "-f", "--", path] });
+		rm.running = true;
 	}
 
 	function pickIcon(id) {
@@ -204,14 +209,48 @@ Singleton {
 		onExited: code => {
 			if (code !== 0 || !root.pinned.includes(iconCopy.target.id)) {
 				root._toast("Couldn't use that image");
+				root._removeCopy(iconCopy.target.dest);
+				return;
+			}
+			// Saved only once Qt can load it; a broken file keeps the old icon.
+			iconProbe.target = iconCopy.target;
+			iconProbe.source = "file://" + iconCopy.target.dest;
+		}
+	}
+
+	Image {
+		id: iconProbe
+		property var target: null
+		visible: false
+		asynchronous: true
+		cache: false
+		sourceSize: Qt.size(64, 64)
+		onStatusChanged: {
+			const t = iconProbe.target;
+			// Read before clearing: clearing the source resets the status to Null.
+			const status = iconProbe.status;
+			if (!t || status === Image.Loading || status === Image.Null)
+				return;
+			iconProbe.target = null;
+			iconProbe.source = "";
+			if (status === Image.Error || !root.pinned.includes(t.id)) {
+				root._toast("Couldn't use that image");
+				root._removeCopy(t.dest);
 				return;
 			}
 			const icons = Object.assign({}, root.icons);
-			icons[iconCopy.target.id] = iconCopy.target.dest;
+			const previous = icons[t.id];
+			icons[t.id] = t.dest;
 			root._save(root.pinned, icons);
+			if (previous && previous !== t.dest)
+				root._removeCopy(previous);
 		}
 	}
-	Process { id: iconRm }
+
+	Component {
+		id: rmComponent
+		Process { onExited: destroy() }
+	}
 	Process {
 		id: picker
 		property string forId: ""

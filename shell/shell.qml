@@ -156,7 +156,7 @@ ShellRoot {
 
 		// One state object per screen, in screen order.
 		function state(): string {
-			return JSON.stringify(_windows().map(w => Object.assign(w.view.stateObject(), { pinned: Dock.pinned, icons: Dock.icons })));
+			return JSON.stringify(_windows().map(w => Object.assign(w.view.stateObject(), { pinned: Dock.pinned, icons: Dock.icons, toast: Dock.toast, toastSerial: Dock.toastSerial })));
 		}
 
 		// `id` is a desktop entry id (as in its .desktop file name).
@@ -170,6 +170,14 @@ ShellRoot {
 
 		function setIcon(id: string, path: string): string {
 			return Dock.setIcon(id, path);
+		}
+
+		// Opens the file picker for `id`'s icon, as "Change Icon..." does.
+		function pickIcon(id: string): string {
+			if (Dock.pinned.indexOf(id) < 0)
+				return "not pinned";
+			Dock.pickIcon(id);
+			return "ok";
 		}
 
 		function resetIcon(id: string): string {

@@ -85,14 +85,58 @@ assert_eq "$(ipc dock setVisible false)" "ok" "setVisible"
 wait_for "hiding by the user" state_is "visible,y" '{"visible":false,"y":150}'
 ipc dock setVisible true >/dev/null
 
+icons_dir="$XDG_STATE_HOME/bloom/dock-icons"
+icon_path() { ipc dock state | jq -r '.[0].icons["bloom-test-app"] // ""'; }
+toast_is() { [[ "$(ipc dock state | jq -r '.[0].toast')" == "$1" ]]; }
+icon_count() { find "$icons_dir" -type f 2>/dev/null | wc -l; }
+icon_set() { [[ -n "$(icon_path)" ]]; }
+icon_not() { [[ "$(icon_path)" != "$1" ]]; }
+file_gone() { ! test -f "$1"; }
+count_is() { [[ "$(icon_count)" == "$1" ]]; }
+
 assert_eq "$(ipc dock setIcon bloom-test-app "$TEST_TMP/icon.png")" "ok" "setIcon"
-wait_for "the copy" test -f "$XDG_STATE_HOME/bloom/dock-icons/bloom-test-app.png"
-wait_for "the icon in state" state_icon_is_set
+wait_for "the icon in state" icon_set
+first="$(icon_path)"
+[[ "$first" == "$icons_dir"/bloom-test-app-*.png && -f "$first" ]] || fail "copied into dock-icons under a unique name: $first"
 assert_eq "$(ipc dock setIcon bloom-test-app /etc/hostname)" "unsupported type" "non-image"
 assert_eq "$(ipc dock setIcon bloom-test-term "$TEST_TMP/icon.png")" "not pinned" "only pinned apps get icons"
+
+# Review I6: a second change gets a new file (so the image cache can't show
+# the old one) and the old copy goes.
+cp "$TEST_TMP/icon.png" "$TEST_TMP/icon2.png"
+ipc dock setIcon bloom-test-app "$TEST_TMP/icon2.png" >/dev/null
+wait_for "the second icon" icon_not "$first"
+second="$(icon_path)"
+wait_for "the old copy to go" file_gone "$first"
+assert_eq "$(icon_count)" "1" "one copy in dock-icons"
+
+# Review I6: an image Qt can't load keeps the old icon, says so, and leaves no copy.
+printf 'not an image' >"$TEST_TMP/bad.png"
+ipc dock setIcon bloom-test-app "$TEST_TMP/bad.png" >/dev/null
+wait_for "the bad-image toast" toast_is "Couldn't use that image"
+assert_eq "$(icon_path)" "$second" "the old icon stays"
+wait_for "no stray copy" count_is 1
+
 assert_eq "$(ipc dock resetIcon bloom-test-app)" "ok" "resetIcon"
-wait_for "the copy to go" bash -c "! test -f '$XDG_STATE_HOME/bloom/dock-icons/bloom-test-app.png'"
-pass "custom icons are copied, kept in dock.json and reset"
+wait_for "the copy to go" file_gone "$second"
+pass "custom icons: unique copies, checked images, old copies removed, reset"
+
+# Review I8: the picker's three outcomes (BLOOM_PICKER is the stub).
+printf '%s\n0\n' "$TEST_TMP/icon.png" >"$BLOOM_FAKE_PICK"
+assert_eq "$(ipc dock pickIcon bloom-test-app)" "ok" "pickIcon"
+wait_for "the picked icon" icon_set
+picked="$(icon_path)"
+serial="$(ipc dock state | jq -r '.[0].toastSerial')"
+printf '\n1\n' >"$BLOOM_FAKE_PICK"
+ipc dock pickIcon bloom-test-app >/dev/null
+sleep 1
+assert_eq "$(icon_path)" "$picked" "cancel keeps the icon"
+assert_eq "$(ipc dock state | jq -r '.[0].toastSerial')" "$serial" "cancel says nothing"
+printf '\n127\n' >"$BLOOM_FAKE_PICK"
+ipc dock pickIcon bloom-test-app >/dev/null
+wait_for "the no-picker toast" toast_is "Install kdialog or zenity to choose icons"
+ipc dock resetIcon bloom-test-app >/dev/null
+pass "the picker: chosen sets the icon, cancel does nothing, missing says what to install"
 
 ipc dock pin bloom-test-term >/dev/null
 assert_eq "$(ipc dock reorder '["bloom-test-term","bloom-test-app"]')" "ok" "reorder"
@@ -106,6 +150,8 @@ assert_eq "$(ipc settings get bloom-dock-workspaces-enabled)" "false" "workspace
 pass "the workspaces setting applies without warnings"
 
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" || true)"
+# The broken test image is meant to fail decoding (once, in the check itself).
+problems="$(grep -v 'Error decoding: .*bloom-test-app-.*: Unsupported image format' <<<"$problems" || true)"
 if [[ ! -S /run/dbus/system_bus_socket ]]; then
 	problems="$(grep -viE 'upower|powerprofiles|dbus' <<<"$problems" || true)"
 fi
