@@ -54,6 +54,7 @@ Item {
 	readonly property Item popupItem: popup
 
 	function openAddApp() { menu.close(); popup.open(); }
+	function closeMenus() { menu.close(); popup.close(); }
 	function _openMenu(id, target, x, y) {
 		popup.close();
 		menu.forId = id;

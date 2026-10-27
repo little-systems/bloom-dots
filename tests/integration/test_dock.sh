@@ -43,6 +43,7 @@ start_shell
 state() { ipc dock state | jq -c ".[0] | {$1}"; }
 state_is() { [[ "$(state "$1")" == "$2" ]]; }
 state_icon_is_set() { ipc dock state | jq -e '.[0].icons["bloom-test-app"] | endswith("dock-icons/bloom-test-app.png")' >/dev/null; }
+state_has_no_segment() { ipc dock state | jq -e '.[0].keys | index("|workspaces|") == null' >/dev/null; }
 
 wait_for "the dock to settle with its pin" state_is "keys,height,y" '{"keys":["bloom-test-app"],"height":52,"y":0}'
 pass "dock loads and shows the pinned app"
@@ -76,6 +77,9 @@ wait_for "peek mode to hide the dock" state_is "hidden,y" '{"hidden":true,"y":10
 ipc settings set bloom-dock-mode smart >/dev/null
 wait_for "smart mode without Hyprland to show it" state_is "hidden,overlapped" '{"hidden":false,"overlapped":false}'
 pass "modes change live"
+
+wait_for "no segment without Hyprland" state_has_no_segment
+pass "no workspace segment outside Hyprland"
 
 assert_eq "$(ipc dock setVisible false)" "ok" "setVisible"
 wait_for "hiding by the user" state_is "visible,y" '{"visible":false,"y":150}'

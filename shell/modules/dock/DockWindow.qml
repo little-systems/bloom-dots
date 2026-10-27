@@ -25,10 +25,34 @@ PanelWindow {
 	exclusiveZone: view.mode === "fixed" && view.userVisible ? Math.round(Tokens.dock.reserve * view.uiScale) : 0
 	WlrLayershell.namespace: "bloom:dock"
 	WlrLayershell.layer: WlrLayer.Top
-	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+	WlrLayershell.keyboardFocus: view.keyboardWanted ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
+		Region { item: view.grabWanted ? view.menuItem : null }
+		Region { item: view.grabWanted ? view.popupItem : null }
+	}
+
+	Loader {
+		id: workspaces
+		active: HyprState.available && Settings.values["bloom-dock-workspaces-enabled"]
+		source: "../notch/WorkspaceData.qml"
+		onLoaded: workspaces.item.screen = win.modelData
+	}
+
+	Loader {
+		id: grab
+		active: HyprState.available
+		source: "DockFocusGrab.qml"
+		onLoaded: {
+			grab.item.window = win;
+			grab.item.active = Qt.binding(() => view.grabWanted);
+		}
+	}
+	Connections {
+		target: grab.item
+		ignoreUnknownSignals: true
+		function onCleared() { view.closeMenus(); }
 	}
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
@@ -64,7 +88,16 @@ PanelWindow {
 		overlapped: win._overlapped
 		maximized: Logic.maximized(win._focused)
 		items: Dock.items
+		workspaceCells: workspaces.item ? Logic.workspaceCells(workspaces.item.workspaces, workspaces.item.workspace?.id ?? 0) : []
+		menuTarget: id => Dock.menuTarget(id)
+		apps: Apps.all()
+		appsLoading: Apps.revision === 0
 		bg: Theme.bg
+		bgExpanded: Theme.bgExpanded
+		border: Theme.border
+		groupBg: Theme.groupBg
+		textMuted: Theme.textMuted
+		accent: Theme.accent
 		textColor: Theme.text
 		light: Theme.isLight
 		tooltipBg: Theme.isLight ? Theme.bgExpanded : Qt.rgba(0, 0, 0, Tokens.dock.tooltip.alpha)
@@ -72,5 +105,13 @@ PanelWindow {
 		tooltipBorder: Theme.border
 		onActivated: id => Dock.activate(id)
 		onNewInstance: id => Dock.newInstance(id)
+		toastMessage: Dock.toast
+		toastSerial: Dock.toastSerial
+		onReordered: ids => Dock.reorder(ids)
+		onMenuChosen: (id, key) => Dock.runMenu(id, key)
+		onPinRequested: id => Dock.pin(id)
+		onSwitchWorkspace: cell => cell.id > 0 ? Dock.switchWorkspace(cell.id) : Dock.switchWorkspaceNamed(cell.tip)
+		onStepWorkspace: dir => Dock.stepWorkspace(dir, view.workspaceCells)
+		onHideWorkspaces: Settings.set("bloom-dock-workspaces-enabled", false)
 	}
 }
