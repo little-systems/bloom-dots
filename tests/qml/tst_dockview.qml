@@ -1,6 +1,7 @@
 import QtQuick
 import QtTest
 import "../../shell/modules/dock"
+import "../../shell/common/tokens.js" as Tokens
 
 Item {
 	id: host
@@ -256,6 +257,100 @@ Item {
 			compare(spy.count, 0);
 		}
 
+		function rightClickA(v) {
+			const p = findChild(v, "dock-slot-a").mapToItem(v, 18, 18);
+			mouseClick(v, p.x, p.y, Qt.RightButton);
+			return p;
+		}
+
+		// Review C1: the menu item and the outside-click catcher both saw the
+		// release, so Add App opened and closed in one click.
+		function test_addAppFromTheMenu() {
+			const v = make({ menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
+			settle(v);
+			settleFrames();
+			rightClickA(v);
+			mouseClick(findChild(v, "menu-item-add-app"), 10, 10);
+			verify(v.keyboardWanted, "the card is open");
+		}
+
+		// Review I1: a click on the card's own padding must not close it.
+		function test_cardPaddingKeepsItOpen() {
+			const v = make();
+			settle(v);
+			v.openAddApp();
+			wait(400);
+			mouseClick(v.popupItem, 180, 436);
+			verify(v.keyboardWanted, "bottom padding");
+			mouseClick(v.popupItem, 3, 200);
+			verify(v.keyboardWanted, "side margin");
+		}
+
+		// Review I2: the window's mask uses these, so they must be the boxes,
+		// not the full-surface menu root.
+		function test_maskItemsAreTheBoxes() {
+			const v = make({ menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
+			settle(v);
+			rightClickA(v);
+			verify(v.menuBoxItem.width < 300 && v.menuBoxItem.height < 400, "the menu box");
+			compare(v.popupItem.width, 360);
+		}
+
+		// Review I3 (Bloom: an open menu or card counts as interaction).
+		function test_openMenuKeepsTheDockShown() {
+			const v = make({ mode: "smart", menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
+			settle(v);
+			v.overlapped = true;
+			const p = rightClickA(v);
+			mouseMove(v, 20, 20);
+			wait(1500);
+			verify(v.grabWanted);
+			verify(!v.hidden, "not hidden while the menu is open");
+		}
+
+		// Review I4: the dropped icon springs from where it was let go.
+		function test_dropSpringsToItsSlot() {
+			const v = make();
+			settle(v);
+			settleFrames();
+			const a = findChild(v, "dock-slot-a");
+			const start = a.mapToItem(v, 18, 18);
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 64; dx += 4)
+				mouseMove(v, start.x + dx, start.y);
+			const held = a.mapToItem(v, 0, 0).x;
+			mouseRelease(v, start.x + 64, start.y);
+			verify(Math.abs(a.mapToItem(v, 0, 0).x - held) < 1.5, `no snap on release (${held} -> ${a.mapToItem(v, 0, 0).x})`);
+			// What the Dock service does on `reordered`.
+			v.items = { pinned: [host.app("b", [{ address: "0x1", focus: 0 }]), host.app("a")], unpinned: [host.app("c", [{ address: "0x2", focus: 1 }])] };
+			const b = findChild(v, "dock-slot-b");
+			tryVerify(() => Math.abs(a.mapToItem(v, 0, 0).x - (b.mapToItem(v, 0, 0).x + 48)) < 0.5, 2000, "then settles one slot after b");
+		}
+
+		// Review I7: the icon follows the pointer one-to-one at any bloom-scale.
+		function test_dragFollowsThePointerAtScale() {
+			const v = make({ uiScale: 1.3 });
+			settle(v);
+			settleFrames();
+			const a = findChild(v, "dock-slot-a");
+			const start = a.mapToItem(v, 18, 18);
+			const x0 = a.mapToItem(v, 0, 0).x;
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 32; dx += 4)
+				mouseMove(v, start.x + dx, start.y);
+			verify(Math.abs(a.mapToItem(v, 0, 0).x - x0 - 32) < 1.5, `moved ${a.mapToItem(v, 0, 0).x - x0} for 32`);
+			mouseRelease(v, start.x + 32, start.y);
+		}
+
+		// Review I7: the card fits the surface at the largest bloom-scale.
+		function test_cardFitsAtLargestScale() {
+			const v = make({ uiScale: 1.3, height: Tokens.dock.surfaceHeight });
+			settle(v);
+			v.openAddApp();
+			wait(500);
+			verify(v.popupItem.mapToItem(v, 0, 0).y >= 0, "the card's top is on the surface");
+		}
+
 		function test_rightClickOpensTheMenu() {
 			const v = make({ menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
 			settle(v);
@@ -317,6 +412,10 @@ Item {
 			v.openAddApp();
 			wait(300);
 			keyClick(Qt.Key_Escape);
+			// An open card counts as interaction (Bloom), so its 800 ms grace runs
+			// after it closes; a QML Timer finishing draws a frame or two (Qt's
+			// animation driver stopping), which is not the dock animating.
+			wait(Tokens.dock.graceMs + 200);
 			settleFrames();
 			compare(framesIn(1000), 0, "nothing runs once the card has gone");
 		}

@@ -51,10 +51,22 @@ Item {
 	readonly property bool keyboardWanted: popup.opened
 	readonly property bool grabWanted: menu.opened || popup.opened
 	readonly property Item menuItem: menu
+	readonly property bool menuOpen: menu.opened
+	readonly property Item menuBoxItem: menu.boxItem
+	readonly property Item submenuBoxItem: menu.submenuBoxItem
 	readonly property Item popupItem: popup
 
 	function openAddApp() { menu.close(); popup.open(); }
 	function closeMenus() { menu.close(); popup.close(); }
+	function _insideFloating(scenePos) {
+		if (menu.containsScenePoint(scenePos.x, scenePos.y))
+			return true;
+		if (!popup.opened)
+			return false;
+		const p = popup.mapFromItem(null, scenePos.x, scenePos.y);
+		return p.x >= 0 && p.y >= 0 && p.x < popup.width && p.y < popup.height;
+	}
+
 	function _openMenu(id, target, x, y) {
 		popup.close();
 		menu.forId = id;
@@ -107,7 +119,8 @@ Item {
 	Timer { id: startupTimer; interval: Tokens.dock.startup.animatingMs; onTriggered: root.startupAnimating = false }
 
 	// Interaction and its 800 ms grace (Bloom interactionState).
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed
+	// Bloom counts an open menu or Add App card as interaction too.
+	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.grabWanted
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -359,10 +372,16 @@ Item {
 							yAxis.enabled: false
 							target: null
 							onActiveChanged: {
-								if (drag.active) root._dragStart(slot.key, slot.x);
-								else if (root._dragKey === slot.key) root._dragEnd();
+								if (drag.active)
+									root._dragStart(slot.key, slot.x);
+								else if (root._dragKey === slot.key) {
+									// Spring from where it was let go, not from the slot.
+									xSpring.jump(root._dragX);
+									root._dragEnd();
+								}
 							}
-							onTranslationChanged: if (drag.active) root._dragMove(drag.translation.x)
+							// Translation is in scene pixels; the row is scaled by bloom-scale.
+							onTranslationChanged: if (drag.active) root._dragMove(drag.translation.x / root.uiScale)
 						}
 
 						Spring {
@@ -439,16 +458,24 @@ Item {
 			}
 		}
 
+		// A press elsewhere on the surface closes the menu or card. Decided on
+		// the press: the menu item's own tap may close the menu before release.
 		Item {
 			anchors.fill: parent
 			z: 8
 			visible: root.grabWanted
-			TapHandler { onTapped: { menu.close(); popup.close(); } }
+			TapHandler {
+				id: catcher
+				property bool startedInside: false
+				onPressedChanged: if (catcher.pressed) catcher.startedInside = root._insideFloating(catcher.point.scenePosition)
+				onTapped: if (!catcher.startedInside) root.closeMenus()
+			}
 		}
 
+		// Under the pill, which covers its bottom 14 px (Bloom: the pill paints above the card).
 		AddAppPopup {
 			id: popup
-			z: 9
+			z: -1
 			x: (stage.width - width) / 2
 			y: pillArea.y + Tokens.dock.popup.tuck - height
 			apps: root.apps

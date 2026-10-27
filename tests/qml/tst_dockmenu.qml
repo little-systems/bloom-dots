@@ -57,6 +57,17 @@ Item {
 			verify(quit.mapToItem(host, 0, 0).x > sub.mapToItem(host, 0, 0).x + sub.width - 10, "to the right");
 		}
 
+		// Review M2: hovering another item closes the submenu (Bloom: mouseleave).
+		function test_submenuClosesOnAnotherItem() {
+			const m = make();
+			m.openAt(300, 480);
+			mouseMove(findChild(m, "menu-submenu-bloom"), 10, 10);
+			const quit = findChild(m, "menu-item-quit");
+			tryCompare(quit, "visible", true, 500);
+			mouseMove(findChild(m, "menu-item-unpin"), 10, 10);
+			tryCompare(quit, "visible", false, 500);
+		}
+
 		function test_hoverColours() {
 			const m = make();
 			m.openAt(300, 480);

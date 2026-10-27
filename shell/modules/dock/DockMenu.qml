@@ -16,6 +16,21 @@ Item {
 	property color groupBg: Qt.rgba(1, 1, 1, 0.04)
 	property real viewWidth: width
 	readonly property bool opened: box.visible
+	// For the dock window's input mask: only the boxes take clicks.
+	readonly property Item boxItem: box
+	property Item submenuBoxItem: null
+
+	// Whether a scene point falls on the open menu or its submenu.
+	function containsScenePoint(x, y) {
+		for (const b of [box, root.submenuBoxItem]) {
+			if (!b || !b.visible)
+				continue;
+			const p = b.mapFromItem(null, x, y);
+			if (p.x >= 0 && p.y >= 0 && p.x < b.width && p.y < b.height)
+				return true;
+		}
+		return false;
+	}
 
 	signal chosen(string key)
 
@@ -55,7 +70,9 @@ Item {
 
 		HoverHandler {
 			id: hover
-			onHoveredChanged: if (hover.hovered) root._submenu = item.entry.kind === "submenu" ? item.entry.key : (item.parent === column ? "" : root._submenu)
+			// A top-level item (its Loader sits in `column`) closes the submenu;
+			// the submenu's own items keep it open.
+			onHoveredChanged: if (hover.hovered) root._submenu = item.entry.kind === "submenu" ? item.entry.key : (item.parent && item.parent.parent === column ? "" : root._submenu)
 		}
 		TapHandler {
 			enabled: item.entry.kind === "item"
@@ -150,6 +167,7 @@ Item {
 				required property var modelData
 				readonly property Item anchorItem: root._findItem(modelData.key)
 				visible: root._submenu === modelData.key && anchorItem !== null
+				onVisibleChanged: root.submenuBoxItem = visible ? this : (root.submenuBoxItem === this ? null : root.submenuBoxItem)
 				x: box.width - Tokens.dock.menu.padding
 				y: anchorItem ? anchorItem.mapToItem(box, 0, 0).y + anchorItem.height + Tokens.dock.menu.padding - height : 0
 				width: Math.max(Tokens.dock.menu.submenuMinWidth, sub.implicitWidth) + 2 * Tokens.dock.menu.padding

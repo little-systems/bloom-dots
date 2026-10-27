@@ -29,8 +29,12 @@ PanelWindow {
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
-		Region { item: view.grabWanted ? view.menuItem : null }
-		Region { item: view.grabWanted ? view.popupItem : null }
+		// Only the open boxes take clicks under Hyprland (its focus grab closes
+		// them on an outside click). Elsewhere the whole surface catches a click
+		// that closes them.
+		Region { item: view.menuOpen ? (HyprState.available ? view.menuBoxItem : view) : null }
+		Region { item: view.menuOpen && HyprState.available ? view.submenuBoxItem : null }
+		Region { item: view.keyboardWanted ? view.popupItem : null }
 	}
 
 	Loader {

@@ -145,8 +145,9 @@ var updates = { firstCheckMs: 60000, intervalMs: 3600000, timeoutMs: 120000 };
 
 // Dock (Bloom Dock.tsx/Dock.css @ b5fb962).
 var dock = {
-	// Room for the Add App card (440) over the dock, and 3C previews.
-	surfaceHeight: 500,
+	// Room for the Add App card over the dock at the largest bloom-scale
+	// (1.3 × (52 − 14 + 440) = 622), and 3C previews.
+	surfaceHeight: 640,
 	collapsed: 34,
 	height: 52,
 	padding: 8,
