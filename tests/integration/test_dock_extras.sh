@@ -27,7 +27,7 @@ cat >"$TEST_TMP/bin/gio" <<SH
 printf '%s\\n' "\$*" >>'$TEST_TMP/gio.log'
 case "\$*" in
   'info -a trash::item-count trash:///') printf '%s\\n' 'trash::item-count: 2' ;;
-  'info -a standard::type $TEST_TMP/Downloads') printf '%s\\n' 'standard::type: directory' ;;
+  'info -a standard::type $TEST_TMP/Downloads') printf '%s\\n' 'standard::type: 2' ;;
 esac
 SH
 cat >"$TEST_TMP/bin/udisksctl" <<SH

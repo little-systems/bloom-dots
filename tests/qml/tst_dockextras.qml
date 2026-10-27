@@ -42,4 +42,11 @@ TestCase {
 		compare(Extras.trashCount("trash::item-count: 12"), 12);
 		compare(Extras.trashCount("trash::item-count: nonsense"), null);
 	}
+
+	function test_gioDirectoryTypeOnThisMachine() {
+		verify(Extras.isDirectoryInfo("standard::type: 2\n"));
+		verify(Extras.isDirectoryInfo("standard::type: directory\n"));
+		verify(!Extras.isDirectoryInfo("standard::type: 1\n"));
+		verify(!Extras.isDirectoryInfo("standard::type: 20\n"));
+	}
 }

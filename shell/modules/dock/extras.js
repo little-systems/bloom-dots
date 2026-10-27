@@ -73,3 +73,7 @@ function trashCount(text) {
 	const m = /^\s*trash::item-count:\s*(\d+)\s*$/m.exec(text || "");
 	return m ? Number(m[1]) : null;
 }
+
+function isDirectoryInfo(text) {
+	return /^\s*standard::type:\s*(?:2|directory)\s*$/m.test(text || "");
+}

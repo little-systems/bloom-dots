@@ -193,7 +193,7 @@ Singleton {
 		id: folderCheck
 		stdout: StdioCollector { id: checkOut }
 		onExited: code => {
-			if (code === 0 && checkOut.text.indexOf("standard::type: directory") >= 0)
+			if (code === 0 && Logic.isDirectoryInfo(checkOut.text))
 				root._existing[root._currentCheck] = true;
 			root._nextCheck();
 		}
