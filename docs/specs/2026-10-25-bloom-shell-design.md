@@ -36,7 +36,7 @@ The end state **replaces end-4 illogical-impulse (ii) entirely**. During develop
 | D4 | Build approach | Custom Bloom-style UI for every surface; off-the-shelf only for background services |
 | D5 | Toolkit | **Quickshell (QML / Qt Quick)**. Validated by the spike (§10) |
 | D6 | Layout | **Notch-only.** No top bar. Clock lives in the collapsed notch; tray in the dock |
-| D7 | Workspaces | Switcher segment at the start of the dock (replacing Bloom's start button) **plus** a notch peek on workspace change; overview on a keybind |
+| D7 | Workspaces | Switcher segment at the start of the dock (replacing Bloom's start button); overview on a keybind. (The notch peek on workspace change, built in 2C, was removed by the owner on 2026-10-27: workspaces live in the dock only.) |
 | D8 | Monitors | A notch and dock on every connected monitor (Quickshell `Variants`). No setting. The owner runs a single eDP-1 1920×1080 |
 | D9 | Kept from ii | Workspace overview, region tools (screenshot/OCR/recording), wallpaper picker + auto theming, keybind cheatsheet, todo (as a notch tab) |
 | D10 | Visual language | Bloom only. Theme modes Light / Dark / Custom / Adaptive with opacity, saturation and brightness. On Linux, Adaptive takes its colours from the wallpaper (matugen), and **only Adaptive** also themes other apps |
@@ -109,7 +109,6 @@ All surfaces are built on `Spring` and `EdgeSurface` with Appendix A values.
 - Display modes: fixed, smart (hides when a window overlaps) and peek; edge-dwell reveal.
 - Startup drop-in and "impact" animation.
 - New on Linux:
-  - workspace peek on change (D7);
   - privacy dots while the mic or screen-share is in use.
 
 **Dock**

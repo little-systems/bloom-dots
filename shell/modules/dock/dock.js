@@ -303,6 +303,18 @@ function addAppSections(all, running, pinned, query) {
 	return [{ title: null, items: starts.sort(byName).concat(contains.sort(byName)).slice(0, 50) }];
 }
 
+// This monitor's active workspace for the segment, from Hyprland's workspaces as
+// plain { id, name, monitor }. Named workspaces have negative ids (from
+// -1337 down); special (scratchpad) ones are not places you switch to.
+function workspaceState(active, all, monitor) {
+	if (!active || active.name.startsWith("special:"))
+		return null;
+	const ids = all.filter(w => w.monitor === monitor && !w.name.startsWith("special:")).map(w => w.id);
+	if (ids.indexOf(active.id) < 0)
+		ids.push(active.id);
+	return { id: active.id, name: active.name, ids: ids.sort((a, b) => a - b) };
+}
+
 // The workspace segment (D7): this monitor's workspaces, no scratchpads;
 // numbered ones in order, then named ones (ids -1337, -1338, …) as created.
 function workspaceCells(list, activeId) {

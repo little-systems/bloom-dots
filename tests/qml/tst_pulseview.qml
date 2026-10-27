@@ -19,7 +19,6 @@ Item {
 			width: 176
 			height: 36
 			battery: ({ level: 80, charging: true, pluggedIn: true, threshold: 20 })
-			workspace: ({ id: 2, name: "2", ids: [1, 2, 3] })
 		}
 	}
 
@@ -74,16 +73,6 @@ Item {
 			tryCompare(findChild(findChild(v, "pulse-battery"), "update-arrow"), "visible", true, 600, "Bloom shows the arrow beside the battery");
 		}
 
-		function test_workspaceDotsAndLabel() {
-			const v = make({ kind: "workspace" });
-			tryCompare(v, "shownKey", "workspace", 600);
-			compare(label(v, "workspace"), "Workspace 2");
-			compare(findChild(v, "page-dots").count, 3);
-			v.workspace = { id: 3, name: "3", ids: [1, 2, 3] };
-			compare(label(v, "workspace"), "Workspace 3", "follows without a swap");
-			v.workspace = { id: 1, name: "1", ids: [1] };
-			compare(findChild(v, "page-dots").count, 0);
-		}
 
 		// The charging bolt (a Shape) appears when charging starts, which is
 		// exactly when the charging pulse shows; it must draw inside the pulse.

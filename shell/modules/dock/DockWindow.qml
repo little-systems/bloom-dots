@@ -40,7 +40,7 @@ PanelWindow {
 	Loader {
 		id: workspaces
 		active: HyprState.available && Settings.values["bloom-dock-workspaces-enabled"]
-		source: "../notch/WorkspaceData.qml"
+		source: "WorkspaceData.qml"
 		onLoaded: workspaces.item.screen = win.modelData
 	}
 

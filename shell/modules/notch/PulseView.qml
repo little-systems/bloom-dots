@@ -11,7 +11,6 @@ Item {
 	property string kind: ""
 	property var battery: ({ level: 0, charging: false, pluggedIn: false, threshold: 20 })
 	property bool updateAvailable: false
-	property var workspace: null
 	property color textColor: "white"
 
 	readonly property string wantedKey: Pulses.viewKey(root.kind)
@@ -102,33 +101,6 @@ Item {
 				anchors.verticalCenter: parent.verticalCenter
 				text: "Update Available"
 				color: Tokens.status.green
-			}
-		}
-	}
-
-	PulseItem {
-		id: workspaceItem
-		objectName: "pulse-workspace"
-		anchors.fill: parent
-		present: root._shown === "workspace" && !root._leaving
-
-		Row {
-			anchors.centerIn: parent
-			spacing: Tokens.pulse.gap
-			PageDots {
-				id: pageDots
-				anchors.verticalCenter: parent.verticalCenter
-				ids: root.workspace ? Pulses.pageDots(root.workspace) : []
-				active: root.workspace?.id ?? 0
-				color: root.textColor
-				animate: workspaceItem.visible
-				visible: count > 0
-			}
-			Label {
-				anchors.verticalCenter: parent.verticalCenter
-				// Long workspace names elide inside the 176 px row.
-				width: Math.min(implicitWidth, root.width - (pageDots.count > 0 ? pageDots.width + Tokens.pulse.gap : 0))
-				text: root.workspace ? Pulses.workspaceLabel(root.workspace) : ""
 			}
 		}
 	}

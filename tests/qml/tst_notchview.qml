@@ -425,7 +425,7 @@ Item {
 		}
 			function fast(props) {
 			const p = props || {};
-			p.pulseMs = { power: 600, low: 600, update: 600, workspace: 600 };
+			p.pulseMs = { power: 600, low: 600, update: 600 };
 			return make(p);
 		}
 
@@ -468,11 +468,10 @@ Item {
 
 		// Review focus 1.
 		function test_noPulseFromStartupValues() {
-			const v = fast({ battery: bat({ ready: false, charging: false }), workspace: null });
+			const v = fast({ battery: bat({ ready: false, charging: false }) });
 			v.battery = bat({ ready: true, charging: true });
-			v.workspace = { id: 2, name: "2", ids: [1, 2] };
 			settle(v);
-			compare(v.pulse, "", "UPower's first answer and the login workspace are not changes");
+			compare(v.pulse, "", "UPower's first answer is not a change");
 		}
 
 		function test_lowBatteryAtLoginPulsesOnce() {
@@ -509,47 +508,33 @@ Item {
 			verify(!dot.visible, "bloom-show-update-indicator off");
 		}
 
-		function test_workspacePulse() {
-			const v = fast({ workspace: { id: 1, name: "1", ids: [1, 2] } });
-			settle(v);
-			v.workspace = { id: 2, name: "2", ids: [1, 2] };
-			compare(v.pulse, "workspace");
-			tryCompare(v, "pulse", "", 1500);
-			v.workspacePeekEnabled = false;
-			v.workspace = { id: 1, name: "1", ids: [1, 2] };
-			compare(v.pulse, "", "turned off");
-		}
 
-		// Review focus 3.
-		function test_rapidWorkspaceSwitchesShowOnePulse() {
-			const v = fast({ mode: "peek", workspace: { id: 1, name: "1", ids: [1, 2, 3] } });
-			settle(v);
-			tryCompare(v, "hidden", true, 4000);
-			v.workspace = { id: 2, name: "2", ids: [1, 2, 3] };
-			wait(300);
-			v.workspace = { id: 3, name: "3", ids: [1, 2, 3] };
-			compare(v.pulse, "workspace");
-			verify(!v.hidden, "peek mode shows it");
-			wait(450);
-			verify(!v.hidden && v.pulse === "workspace", "timed from the last switch, not the first");
-			tryCompare(v, "hidden", true, 1500);
-		}
 
+		// Review focus 3 (2C): a short peek never cuts a longer one short.
 		function test_shortPeekKeepsALongerOne() {
-			const v = make({ mode: "peek", pulseMs: { power: 600, low: 600, update: 1500, workspace: 300 }, workspace: { id: 1, name: "1", ids: [1, 2] } });
+			const v = make({ mode: "peek", pulseMs: { power: 300, low: 600, update: 1500 } });
 			settle(v);
 			tryCompare(v, "hidden", true, 4000);
 			v.updates = { available: true, count: 1 };
 			v.updatesArrived();
-			v.workspace = { id: 2, name: "2", ids: [1, 2] };
+			v.battery = bat({ charging: true });
 			wait(700);
-			verify(!v.hidden, "the update peek still runs");
-			compare(v.pulse, "update", "back to the update pulse after the workspace one");
+			verify(!v.hidden, "the update peek still runs after the charging one ended");
+			compare(v.pulse, "update");
+		}
+
+		// Owner decision (2026-10-27): workspaces live in the dock only; the
+		// notch neither takes nor shows them.
+		function test_noWorkspaceInTheNotch() {
+			const v = make();
+			compare(v.workspace, undefined, "no workspace input");
+			compare(v.workspacePeekEnabled, undefined);
+			compare(findChild(v, "pulse-workspace"), null, "no workspace pulse view");
 		}
 
 		// Review focus 2.
 		function test_hoverHidesAPulse() {
-			const v = make({ pulseMs: { power: 2000, low: 600, update: 600, workspace: 600 } });
+			const v = make({ pulseMs: { power: 2000, low: 600, update: 600 } });
 			settle(v);
 			v.battery = bat({ charging: true });
 			compare(v.pulse, "power");
@@ -625,7 +610,7 @@ Item {
 		}
 
 		function test_settledPulseDrawsNoFrames() {
-			const v = make({ pulseMs: { power: 5000, low: 600, update: 600, workspace: 600 } });
+			const v = make({ pulseMs: { power: 5000, low: 600, update: 600 } });
 			settle(v);
 			v.battery = bat({ charging: true });
 			wait(1200);

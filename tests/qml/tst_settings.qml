@@ -150,7 +150,7 @@ TestCase {
 	function test_pulseDefaults() {
 		const d = Settings.defaults();
 		compare(d["bloom-show-update-indicator"], true);
-		compare(d["bloom-workspace-peek-enabled"], true);
+		compare(d["bloom-workspace-peek-enabled"], undefined, "the notch workspace pulse was removed (owner, 2026-10-27)");
 		const off = Settings.validate({ "bloom-show-update-indicator": "false" });
 		compare(off.values["bloom-show-update-indicator"], false, "Bloom's string form");
 		compare(off.warnings, []);

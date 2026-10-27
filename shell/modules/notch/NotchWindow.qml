@@ -84,15 +84,6 @@ PanelWindow {
 		source: "AudioData.qml"
 	}
 
-	readonly property bool _workspaceOn: HyprState.available && Settings.values["bloom-workspace-peek-enabled"]
-
-	Loader {
-		id: workspaces
-		active: win._workspaceOn
-		source: "WorkspaceData.qml"
-		onLoaded: workspaces.item.screen = win.modelData
-	}
-
 	Connections {
 		target: Updates
 		function onArrived() { view.updatesArrived(); }
@@ -140,7 +131,5 @@ PanelWindow {
 		updates: ({ available: Updates.available, count: Updates.count })
 		updateIndicator: Settings.values["bloom-show-update-indicator"]
 		onUpdatesWanted: wanted => Updates.hold(win._key, wanted)
-		workspace: workspaces.item?.workspace ?? null
-		workspacePeekEnabled: Settings.values["bloom-workspace-peek-enabled"]
 	}
 }

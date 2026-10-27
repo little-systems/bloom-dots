@@ -23,7 +23,6 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-time-format-24h` | bool | `false` | `true`, `false` | 24-hour clock in the notch; otherwise 12-hour with AM/PM. |
 | `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red and the notch shows a low-battery pulse. |
 | `bloom-show-update-indicator` | bool | `true` | `true`, `false` | Check for pacman updates hourly (needs pacman-contrib) and show a green dot under the clock while some are pending, with a pulse when new ones arrive. |
-| `bloom-workspace-peek-enabled` | bool | `true` | `true`, `false` | Briefly show the workspace in the notch when you switch to it (Hyprland). |
 | `bloom-dock-mode` | enum | `"smart"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Dock visibility. fixed = always shown, with its strip reserved; smart = hides while a window covers it; peek = hidden until the pointer rests on the bottom edge. |
 | `bloom-dock-edge-delay` | number | `200` | 0 to 2000 | In smart and peek mode, how long (ms) the pointer must rest on the bottom edge before a hidden dock appears. 0 reveals it at once. |
 | `bloom-dock-icon-only` | bool | `false` | `true`, `false` | Show dock icons without their tile background. |

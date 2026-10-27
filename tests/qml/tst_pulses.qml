@@ -36,15 +36,8 @@ TestCase {
 		compare(Pulses.lowBatteryStep(false, battery({ level: 10, ready: false })).armed, false, "unknown keeps the state");
 	}
 
-	function test_workspacePulse() {
-		verify(Pulses.workspacePulse(1, 2));
-		verify(!Pulses.workspacePulse(2, 2), "the same workspace (its window list changed)");
-		verify(!Pulses.workspacePulse(null, 2), "the workspace at login");
-		verify(!Pulses.workspacePulse(2, null));
-	}
-
 	function s(props) {
-		const o = { workspace: false, update: false, low: false, power: false, hovered: false, open: false };
+		const o = { update: false, low: false, power: false, hovered: false, open: false };
 		for (const k in props) o[k] = props[k];
 		return o;
 	}
@@ -54,7 +47,6 @@ TestCase {
 		compare(Pulses.activePulse(s({ power: true })), "power");
 		compare(Pulses.activePulse(s({ power: true, low: true })), "low");
 		compare(Pulses.activePulse(s({ low: true, update: true })), "update");
-		compare(Pulses.activePulse(s({ update: true, workspace: true })), "workspace");
 		compare(Pulses.activePulse(s({ update: true, hovered: true })), "", "the status strip wins on hover");
 		compare(Pulses.activePulse(s({ update: true, open: true })), "", "never over an open player");
 	}
@@ -64,7 +56,6 @@ TestCase {
 		compare(Pulses.viewKey("power"), "battery");
 		compare(Pulses.viewKey("low"), "battery", "Bloom's one pulse-view: no swap between them");
 		compare(Pulses.viewKey("update"), "update");
-		compare(Pulses.viewKey("workspace"), "workspace");
 	}
 
 	function test_batteryLabel() {
@@ -74,40 +65,10 @@ TestCase {
 		compare(Pulses.batteryLabel("power", { level: 80, pluggedIn: false }), "On Battery • 80%");
 	}
 
-	function test_workspaceLabel() {
-		compare(Pulses.workspaceLabel({ id: 3, name: "3" }), "Workspace 3");
-		compare(Pulses.workspaceLabel({ id: 4, name: "" }), "Workspace 4");
-		compare(Pulses.workspaceLabel({ id: 5, name: "web" }), "web");
-	}
-
-	function test_pageDots() {
-		compare(Pulses.pageDots({ id: 2, ids: [1, 2, 3] }), [1, 2, 3]);
-		compare(Pulses.pageDots({ id: 1, ids: [1] }), [], "one workspace: nothing to place");
-		compare(Pulses.pageDots({ id: 7, ids: [1, 2, 3, 4, 5, 6, 7] }), [], "more than 6 would crowd the row");
-		compare(Pulses.pageDots({ id: 2, ids: [3, 1, 2] }), [1, 2, 3], "in order");
-	}
-
 	// Review focus 3: a short peek never cuts a longer one short.
 	function test_peekNeverShortens() {
 		compare(Pulses.peekUntil(1000, 0, 2000), 3000);
 		compare(Pulses.peekUntil(1000, 7000, 2000), 7000, "an update peek still running");
 		compare(Pulses.peekUntil(6000, 7000, 2000), 8000);
-	}
-
-	function hw(id, name, monitor) {
-		return { id: id, name: name, monitor: monitor };
-	}
-
-	// Hyprland gives named workspaces ids from -1337 down; only special
-	// (scratchpad) workspaces are left out.
-	function test_workspaceState() {
-		const m = { name: "eDP-1" };
-		const other = { name: "HDMI-A-1" };
-		const all = [hw(1, "1", m), hw(2, "2", m), hw(3, "3", other), hw(-1337, "web", m), hw(-98, "special:magic", m)];
-		compare(Pulses.workspaceState(hw(2, "2", m), all, m), { id: 2, name: "2", ids: [-1337, 1, 2] });
-		compare(Pulses.workspaceState(hw(-1337, "web", m), all, m), { id: -1337, name: "web", ids: [-1337, 1, 2] });
-		compare(Pulses.workspaceState(hw(-98, "special:magic", m), all, m), null);
-		compare(Pulses.workspaceState(null, all, m), null);
-		compare(Pulses.workspaceState(hw(5, "5", m), [], m), { id: 5, name: "5", ids: [5] }, "not listed yet");
 	}
 }

@@ -1,5 +1,5 @@
-// Notch pulses ported from Bloom (App.tsx @ b5fb962), plus the workspace
-// pulse (spec D7). Plain JS, shared with the unit tests.
+// Notch pulses ported from Bloom (App.tsx @ b5fb962). Plain JS, shared with
+// the unit tests.
 
 // Bloom showPowerPulse: the charger was connected or disconnected. This
 // follows the charger, not UPower's charge state, which leaves Charging when
@@ -20,18 +20,11 @@ function lowBatteryStep(armed, b) {
 	return { fire: armed, armed: false };
 }
 
-function workspacePulse(prevId, id) {
-	return prevId !== null && id !== null && prevId !== id;
-}
-
-// One slot: the newest kind (the workspace pulse is the shortest) first,
-// then Bloom's update-over-battery order. Hover and the open player win
-// over all of them (Bloom !isHovered).
+// One slot, in Bloom's update-over-battery order. Hover and the open player
+// win over all of them (Bloom !isHovered).
 function activePulse(s) {
 	if (s.hovered || s.open)
 		return "";
-	if (s.workspace)
-		return "workspace";
 	if (s.update)
 		return "update";
 	if (s.low)
@@ -52,28 +45,6 @@ function viewKey(kind) {
 function batteryLabel(kind, b) {
 	const state = kind === "low" ? "Low Battery" : b.pluggedIn ? "Charging" : "On Battery";
 	return `${state} • ${b.level}%`;
-}
-
-// This monitor's workspace for the pulse, from Hyprland's workspaces as
-// plain { id, name, monitor }. Named workspaces have negative ids (from
-// -1337 down); special (scratchpad) ones are not places you switch to.
-function workspaceState(active, all, monitor) {
-	if (!active || active.name.startsWith("special:"))
-		return null;
-	const ids = all.filter(w => w.monitor === monitor && !w.name.startsWith("special:")).map(w => w.id);
-	if (ids.indexOf(active.id) < 0)
-		ids.push(active.id);
-	return { id: active.id, name: active.name, ids: ids.sort((a, b) => a - b) };
-}
-
-function workspaceLabel(ws) {
-	return ws.name && ws.name !== String(ws.id) ? ws.name : `Workspace ${ws.id}`;
-}
-
-// Page dots fit the 176 px row beside the label for up to 6 workspaces.
-function pageDots(ws) {
-	const ids = ws.ids.slice().sort((a, b) => a - b);
-	return ids.length >= 2 && ids.length <= 6 ? ids : [];
 }
 
 // Bloom's triggerEventPeek replaced the running peek; here a shorter peek

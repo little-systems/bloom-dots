@@ -301,4 +301,20 @@ TestCase {
 		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons-evil/x.png"));
 		verify(!Dock.ownsIconPath("/s/bloom/dock-icons", "/s/bloom/dock-icons/sub/x.png"), "no subfolders");
 	}
+	function hw(id, name, monitor) {
+		return { id: id, name: name, monitor: monitor };
+	}
+
+	// Hyprland gives named workspaces ids from -1337 down; only special
+	// (scratchpad) workspaces are left out.
+	function test_workspaceState() {
+		const m = { name: "eDP-1" };
+		const other = { name: "HDMI-A-1" };
+		const all = [hw(1, "1", m), hw(2, "2", m), hw(3, "3", other), hw(-1337, "web", m), hw(-98, "special:magic", m)];
+		compare(Dock.workspaceState(hw(2, "2", m), all, m), { id: 2, name: "2", ids: [-1337, 1, 2] });
+		compare(Dock.workspaceState(hw(-1337, "web", m), all, m), { id: -1337, name: "web", ids: [-1337, 1, 2] });
+		compare(Dock.workspaceState(hw(-98, "special:magic", m), all, m), null);
+		compare(Dock.workspaceState(null, all, m), null);
+		compare(Dock.workspaceState(hw(5, "5", m), [], m), { id: 5, name: "5", ids: [5] }, "not listed yet");
+	}
 }

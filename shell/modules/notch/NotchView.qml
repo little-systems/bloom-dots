@@ -31,9 +31,7 @@ Item {
 	property var battery: ({ available: false, ready: false, level: 0, charging: false, pluggedIn: false, threshold: 20, tooltip: "" })
 	property var updates: ({ available: false, count: 0 })
 	property bool updateIndicator: true
-	property var workspace: null
-	property bool workspacePeekEnabled: true
-	property var pulseMs: ({ power: Tokens.pulse.powerMs, low: Tokens.pulse.lowBatteryMs, update: Tokens.pulse.updateMs, workspace: Tokens.pulse.workspaceMs })
+	property var pulseMs: ({ power: Tokens.pulse.powerMs, low: Tokens.pulse.lowBatteryMs, update: Tokens.pulse.updateMs })
 	signal updatesWanted(bool wanted)
 	property var stats: ({ cpu: 0, ram: 0, disk: 0, up: 0, down: 0 })
 	// Music (Bloom music mode), fed by NotchWindow.
@@ -173,7 +171,6 @@ Item {
 	Component.onCompleted: {
 		root._updateActivity();
 		root.updatesWanted(root.updateIndicator);
-		root._lastWorkspace = root.workspace ? root.workspace.id : null;
 		// A watch that is already true at creation never changes, so announce it.
 		if (root._watching) {
 			root._watchHeld = true;
@@ -202,14 +199,13 @@ Item {
 		onTriggered: root.musicActivityVisible = false
 	}
 
-	// Pulses (Bloom App.tsx; the workspace pulse is D7). Each kind has its own
+	// Pulses (Bloom App.tsx). Each kind has its own
 	// timer; `pulse` is the one on screen.
 	property bool _powerPulse: false
 	property bool _lowPulse: false
 	property bool _updatePulse: false
-	property bool _workspacePulse: false
 	readonly property string pulse: Pulses.activePulse({
-		workspace: root._workspacePulse, update: root._updatePulse, low: root._lowPulse, power: root._powerPulse,
+		update: root._updatePulse, low: root._lowPulse, power: root._powerPulse,
 		hovered: root.pillHovered, open: root.open
 	})
 
@@ -217,8 +213,7 @@ Item {
 		const ms = root.pulseMs[kind];
 		if (kind === "power") { root._powerPulse = true; powerTimer.interval = ms; powerTimer.restart(); }
 		else if (kind === "low") { root._lowPulse = true; lowTimer.interval = ms; lowTimer.restart(); }
-		else if (kind === "update") { root._updatePulse = true; updateTimer.interval = ms; updateTimer.restart(); }
-		else { root._workspacePulse = true; workspaceTimer.interval = ms; workspaceTimer.restart(); }
+		else { root._updatePulse = true; updateTimer.interval = ms; updateTimer.restart(); }
 		if (root.mode === "peek")
 			root.peek(ms);
 	}
@@ -226,7 +221,6 @@ Item {
 	Timer { id: powerTimer; onTriggered: root._powerPulse = false }
 	Timer { id: lowTimer; onTriggered: root._lowPulse = false }
 	Timer { id: updateTimer; onTriggered: root._updatePulse = false }
-	Timer { id: workspaceTimer; onTriggered: root._workspacePulse = false }
 
 	// The battery as UPower first reports it is not a change; Bloom started
 	// watching once it was ready.
@@ -256,15 +250,6 @@ Item {
 		if (!root.updateIndicator) { root._updatePulse = false; updateTimer.stop(); }
 	}
 
-	// The workspace at login is seeded, not announced.
-	property var _lastWorkspace: null
-	onWorkspaceChanged: {
-		const id = root.workspace ? root.workspace.id : null;
-		if (root.ready && root.workspacePeekEnabled && Pulses.workspacePulse(root._lastWorkspace, id))
-			root._fire("workspace");
-		if (id !== null)
-			root._lastWorkspace = id;
-	}
 
 
 	function stateObject() {
@@ -625,7 +610,6 @@ Item {
 					kind: root.pulse
 					battery: root.battery
 					updateAvailable: root.updates.available && root.updateIndicator
-					workspace: root.workspace
 					textColor: root.textColor
 				}
 
