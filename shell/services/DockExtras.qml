@@ -21,7 +21,8 @@ Singleton {
 	property string toast: ""
 	property int toastSerial: 0
 	property bool _monitorOk: true
-	readonly property bool busy: actionProc.running
+	readonly property bool busy: actionProc.running || verifyScan.running
+	property var _pendingDrive: null
 	readonly property bool active: Settings.values["bloom-dock-extras-position"] !== "off"
 	readonly property var items: {
 		if (!root.active) return [];
@@ -78,12 +79,13 @@ Singleton {
 
 	function action(key, verb) {
 		if (!root.active) return "extras off";
+		if (root.busy) return "another action is running";
 		const item = root.items.find(x => x.key === key);
 		if (!item) return "no such extra";
 		if (item.kind === "drive") {
-			const argv = Logic.driveAction(root.drives, key, verb);
-			if (!argv) return "drive unavailable";
-			root._run(argv, { kind: "drive", key: key, verb: verb, device: item.device, stage: argv[1] });
+			if (!Logic.driveAction(root.drives, key, verb)) return "drive unavailable";
+			root._pendingDrive = { key: key, verb: verb, device: item.device, uuid: item.uuid, stage: "initial" };
+			verifyScan.running = true;
 			return "ok";
 		}
 		if (verb === "open") {
@@ -116,6 +118,7 @@ Singleton {
 	}
 	function emptyTrash(confirmed) {
 		if (!confirmed || !root.active || !Settings.values["bloom-dock-extras-recycle-bin"]) return "confirmation required";
+		if (root.busy) return "another action is running";
 		root._run(["gio", "trash", "--empty"], { kind: "empty" });
 		return "ok";
 	}
@@ -158,6 +161,27 @@ Singleton {
 		}
 	}
 	Process {
+		id: verifyScan
+		command: ["lsblk", "--json", "--bytes", "-o", "PATH,UUID,LABEL,FSTYPE,MOUNTPOINT,RM,HOTPLUG,TYPE"]
+		stdout: StdioCollector { id: verifyOut }
+		onExited: code => {
+			const pending = root._pendingDrive;
+			root._pendingDrive = null;
+			if (!pending) return;
+			const current = code === 0 ? Logic.parseDrives(verifyOut.text, Settings.values["bloom-dock-extras-hidden-drives"]) : null;
+			if (current === null) { root._notice("Couldn't verify the drive"); return; }
+			root.drives = current;
+			const drive = current.find(x => x.key === pending.key && x.device === pending.device && x.uuid === pending.uuid);
+			if (!drive) { root._notice("Drive is no longer available"); return; }
+			const argv = pending.stage === "power-off"
+				? (drive.removable ? ["udisksctl", "power-off", "-b", drive.device] : null)
+				: Logic.driveAction(current, pending.key, pending.verb);
+			if (!argv) { root._notice("Drive action is no longer available"); return; }
+			root._run(argv, { kind: "drive", key: pending.key, verb: pending.verb,
+				device: drive.device, uuid: drive.uuid, stage: argv[1] });
+		}
+	}
+	Process {
 		id: folderScan
 		stdout: StdioCollector { id: folderOut }
 		onExited: code => {
@@ -194,11 +218,11 @@ Singleton {
 				return;
 			}
 			if (job && job.kind === "drive" && job.verb === "open" && job.stage === "mount") {
-				const m = /\s+at\s+(\/[^\n]+?)(?:\.|\n|$)/.exec(actionOut.text);
+				const m = /\s+at\s+(\/[^\n]+)\.\s*$/m.exec(actionOut.text);
 				if (m) root._run(["gio", "open", m[1]], { kind: "open" });
 			} else if (job && job.kind === "drive" && job.verb === "eject" && job.stage === "unmount") {
-				const still = root.drives.find(x => x.key === job.key && x.device === job.device);
-				if (still) root._run(["udisksctl", "power-off", "-b", job.device], { kind: "power-off" });
+				root._pendingDrive = { key: job.key, verb: "eject", device: job.device, uuid: job.uuid, stage: "power-off" };
+				verifyScan.running = true;
 			}
 			root.refresh();
 		}

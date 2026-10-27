@@ -1,5 +1,6 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
+import "previews.js" as Preview
 
 // Window cards are created only after the dock's hover dwell. Each visible
 // card owns its own capture stream; closing the card destroys the stream.
@@ -12,6 +13,13 @@ Item {
 	property color foreground: "white"
 	readonly property bool hovered: hover.hovered
 	readonly property Item boxItem: frame
+	property alias scrollOffset: scroller.contentX
+	readonly property var liveIndices: Preview.liveCards(
+		{ left: scroller.contentX, right: scroller.contentX + scroller.width },
+		root.candidates.map((_, i) => ({
+			left: i * (Tokens.dock.preview.width + Tokens.dock.preview.gap),
+			right: i * (Tokens.dock.preview.width + Tokens.dock.preview.gap) + Tokens.dock.preview.width
+		})))
 	signal focusRequested(string address)
 	signal closeRequested(string address)
 
@@ -68,7 +76,7 @@ Item {
 						Loader {
 							id: capture
 							anchors.fill: parent
-							active: root.captureEnabled && root.opened && card.inViewport && !!card.candidate.toplevel
+							active: root.captureEnabled && root.opened && root.liveIndices.indexOf(card.index) >= 0 && !!card.candidate.toplevel
 							source: "DockCapture.qml"
 							onLoaded: {
 								capture.item.captureSource = card.candidate.toplevel;

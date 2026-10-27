@@ -89,7 +89,7 @@ TestCase {
 
 	function test_mergedAppMenuShowsEachTrayHandle() {
 		const menu = Dock.menuFor({ kind: "app", pinned: false, pinnable: true, running: true, windows: 1,
-			actions: [], trays: [{ key: "one", title: "Inbox" }, { key: "two", title: "Calls" }] });
+			actions: [], trays: [{ key: "one", title: "Inbox", hasMenu: true }, { key: "two", title: "Calls", hasMenu: true }] });
 		compare(menu.filter(x => x.kind === "item" && x.key.startsWith("tray:")).map(x => x.label),
 			["App tray menu: Inbox", "App tray menu: Calls"]);
 	}

@@ -1,66 +1,71 @@
 #!/usr/bin/env python3
-"""A throwaway StatusNotifierItem for the isolated tray adapter test."""
-import time
-import dbus
-import dbus.service
-from dbus.mainloop.glib import DBusGMainLoop
-from gi.repository import GLib
+"""A throwaway StatusNotifierItem using the CI's existing PyGObject stack."""
+from gi.repository import Gio, GLib
 
-DBusGMainLoop(set_as_default=True)
-bus = dbus.SessionBus()
-name = dbus.service.BusName("org.kde.StatusNotifierItem-BloomTest-1", bus)
+NAME = "org.kde.StatusNotifierItem-BloomTest-1"
+PATH = "/StatusNotifierItem"
+IFACE = "org.kde.StatusNotifierItem"
+XML = """
+<node>
+  <interface name="org.kde.StatusNotifierItem">
+    <method name="Activate"><arg direction="in" type="i" name="x"/><arg direction="in" type="i" name="y"/></method>
+    <method name="SecondaryActivate"><arg direction="in" type="i" name="x"/><arg direction="in" type="i" name="y"/></method>
+    <signal name="NewStatus"><arg type="s" name="status"/></signal>
+    <property name="Id" type="s" access="read"/>
+    <property name="Title" type="s" access="read"/>
+    <property name="Status" type="s" access="read"/>
+    <property name="Category" type="s" access="read"/>
+    <property name="IconName" type="s" access="read"/>
+    <property name="ItemIsMenu" type="b" access="read"/>
+    <property name="Menu" type="o" access="read"/>
+  </interface>
+</node>
+"""
 
-
-class Item(dbus.service.Object):
-    def __init__(self):
-        super().__init__(bus, "/StatusNotifierItem")
-        self.properties = {
-            "Id": dbus.String("org.example.BloomTest"),
-            "Title": dbus.String("Bloom Test Tray"),
-            "Status": dbus.String("Active"),
-            "Category": dbus.String("ApplicationStatus"),
-            "IconName": dbus.String("applications-system"),
-            "ItemIsMenu": dbus.Boolean(False),
-            "Menu": dbus.ObjectPath("/NO_DBUSMENU"),
-        }
-
-    @dbus.service.method("org.freedesktop.DBus.Properties", in_signature="s", out_signature="a{sv}")
-    def GetAll(self, interface):
-        return self.properties if interface == "org.kde.StatusNotifierItem" else {}
-
-    @dbus.service.method("org.freedesktop.DBus.Properties", in_signature="ss", out_signature="v")
-    def Get(self, interface, key):
-        if interface != "org.kde.StatusNotifierItem":
-            raise dbus.exceptions.DBusException("unknown interface")
-        return self.properties[key]
-
-    @dbus.service.method("org.kde.StatusNotifierItem", in_signature="ii", out_signature="")
-    def Activate(self, x, y):
-        print("FAKE activated", flush=True)
-
-    @dbus.service.method("org.kde.StatusNotifierItem", in_signature="ii", out_signature="")
-    def SecondaryActivate(self, x, y):
-        print("FAKE secondary", flush=True)
-
-    @dbus.service.signal("org.kde.StatusNotifierItem", signature="s")
-    def NewStatus(self, status):
-        pass
-
-    def make_passive(self):
-        self.properties["Status"] = dbus.String("Passive")
-        self.NewStatus("Passive")
-        return False
+conn = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+node = Gio.DBusNodeInfo.new_for_xml(XML)
+status = "Active"
 
 
-item = Item()
-for _ in range(100):
-    if bus.name_has_owner("org.kde.StatusNotifierWatcher"):
-        watcher = bus.get_object("org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher")
-        dbus.Interface(watcher, "org.kde.StatusNotifierWatcher").RegisterStatusNotifierItem(name.get_name())
-        break
-    time.sleep(0.05)
-else:
-    raise SystemExit("watcher unavailable")
+def prop(_conn, _sender, _path, _iface, key):
+    values = {
+        "Id": GLib.Variant("s", "org.example.BloomTest"),
+        "Title": GLib.Variant("s", "Bloom Test Tray"),
+        "Status": GLib.Variant("s", status),
+        "Category": GLib.Variant("s", "ApplicationStatus"),
+        "IconName": GLib.Variant("s", "applications-system"),
+        "ItemIsMenu": GLib.Variant("b", False),
+        "Menu": GLib.Variant("o", "/NO_DBUSMENU"),
+    }
+    return values[key]
 
-GLib.timeout_add(1000, item.make_passive)
+
+def call(_conn, _sender, _path, _iface, method, _params, invocation):
+    print("FAKE " + ("activated" if method == "Activate" else "secondary"), flush=True)
+    invocation.return_value(None)
+
+
+conn.register_object(PATH, node.interfaces[0], call, prop, None)
+Gio.bus_own_name_on_connection(conn, NAME, Gio.BusNameOwnerFlags.NONE, None, None)
+
+
+def make_passive():
+    global status
+    status = "Passive"
+    conn.emit_signal(None, PATH, IFACE, "NewStatus", GLib.Variant("(s)", (status,)))
+    return False
+
+
+def register():
+    try:
+        conn.call_sync("org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
+                       "org.kde.StatusNotifierWatcher", "RegisterStatusNotifierItem",
+                       GLib.Variant("(s)", (NAME,)), None, Gio.DBusCallFlags.NONE, 1000, None)
+    except GLib.Error:
+        return True
+    GLib.timeout_add(1000, make_passive)
+    return False
+
+
+GLib.timeout_add(50, register)
 GLib.MainLoop().run()

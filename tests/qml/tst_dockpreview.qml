@@ -48,5 +48,12 @@ Item {
 			compare(focus.count, 1);
 			compare(focus.signalArguments[0][0], "0xa");
 		}
+		function test_onlyThreePartlyVisibleCardsCanCapture() {
+			const candidates = ["0xa", "0xb", "0xc", "0xd"].map(address => ({ address: address, title: address, toplevel: null }));
+			const p = createTemporaryObject(previewComponent, parent, { candidates: candidates });
+			verify(p !== null);
+			p.scrollOffset = 100;
+			compare(p.liveIndices.length, 3);
+		}
 	}
 }

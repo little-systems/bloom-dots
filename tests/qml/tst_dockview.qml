@@ -195,6 +195,25 @@ Item {
 			compare(v.previewOpen, false);
 		}
 
+		function test_previewFitsScreenEdgesAtLargestScale() {
+			const pins = [];
+			for (let i = 0; i < 15; i++) pins.push(host.app("edge" + i, [{ address: "0x" + (i + 1).toString(16), focus: i }]));
+			const v = make({ uiScale: 1.3, items: { pinned: pins, unpinned: [] }, previewSources: [] });
+			settle(v);
+			wait(500);
+			for (const id of ["edge0", "edge14"]) {
+				const slot = findChild(v, "dock-slot-" + id);
+				const hit = slot.mapToItem(v, slot.width / 2, slot.height / 2);
+				mouseMove(v, hit.x, hit.y);
+				tryCompare(v, "previewOpen", true, 1000);
+				const box = v.previewBoxItem;
+				const left = box.mapToItem(v, 0, 0).x;
+				const right = box.mapToItem(v, box.width, 0).x;
+				verify(left >= 7 && right <= v.width - 7, id + " stays inside the screen: " + left + ".." + right);
+				v.closeMenus();
+			}
+		}
+
 		function test_extraTilesKeepPinnedAppOrder() {
 			const extras = [{ key: "drive:USB", kind: "drive", name: "USB", icon: "", path: "/run/media/me/USB" }];
 			const v = make({ extraItems: extras, extrasPosition: "left" });
@@ -229,6 +248,21 @@ Item {
 			mouseClick(v, point.x, point.y);
 			compare(activated.count, 1);
 			compare(activated.signalArguments[0][0], "sni-1");
+		}
+
+		function test_trayWithoutMenuContextActionActivates() {
+			const v = make({ trayOnlyItems: [{ key: "sni-1", title: "Chat", icon: "" }],
+				menuTarget: id => id.startsWith("tray:") ? { kind: "tray", trayKey: "sni-1", hasMenu: false } : { kind: "background" } });
+			settle(v);
+			wait(250);
+			const slot = findChild(v, "dock-slot-tray:sni-1");
+			const p = slot.mapToItem(v, 18, 18);
+			const activate = createTemporaryObject(spyComponent, host, { target: v, signalName: "trayActivated" });
+			const menu = createTemporaryObject(spyComponent, host, { target: v, signalName: "trayMenuRequested" });
+			mouseClick(v, p.x, p.y, Qt.RightButton);
+			mouseClick(findChild(v, "menu-item-tray:sni-1"), 10, 10);
+			compare(activate.count, 1);
+			compare(menu.count, 0);
 		}
 
 		function framesIn(ms) {

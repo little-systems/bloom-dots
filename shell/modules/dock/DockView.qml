@@ -98,20 +98,28 @@ Item {
 		previewDwell.stop();
 		if (root._previewId === id && !preview.hovered) previewRelease.restart();
 	}
+	function _placePreview() {
+		const anchor = root._previewAnchor;
+		if (!anchor || !root.previewOpen) return;
+		const p = anchor.mapToItem(null, 0, 0);
+		const placed = Preview.previewPlacement(
+			{ x: p.x, y: p.y, width: anchor.width * root.uiScale },
+			{ width: preview.width, height: preview.height },
+			{ width: root.width, height: root.height }, root.uiScale);
+		preview.x = stage.width / 2 + (placed.x - stage.width / 2) / root.uiScale;
+	}
 	Timer {
 		id: previewDwell
 		interval: Tokens.dock.preview.dwellMs
 		onTriggered: {
 			root._previewId = root._previewHoverId;
-			const anchor = root._previewAnchor;
-			if (anchor) {
-				const p = anchor.mapToItem(stage, 0, 0);
-				preview.x = Math.max(8, Math.min(stage.width - preview.width - 8, p.x + (anchor.width - preview.width) / 2));
-			}
+			root._placePreview();
 		}
 	}
 	Timer { id: previewRelease; interval: Tokens.dock.preview.retainMs; onTriggered: if (!preview.hovered) root._cancelPreview() }
 	onPreviewEnabledChanged: if (!root.previewEnabled) root._cancelPreview()
+	onPreviewCandidatesChanged: root._placePreview()
+	onUiScaleChanged: root._placePreview()
 	onHiddenChanged: if (root.hidden) root._cancelPreview()
 
 	function openAddApp() { menu.close(); confirm.opened = false; popup.open(); }
@@ -633,7 +641,10 @@ Item {
 				else if (key === "hide-workspaces") root.hideWorkspaces();
 				else if (key.startsWith("tray:")) {
 					const p = menu.boxItem.mapToItem(null, menu.boxItem.width / 2, menu.boxItem.height / 2);
-					root.trayMenuRequested(key.slice(5), p.x, p.y);
+					const target = root.menuTarget(menu.forId);
+					const handle = target.kind === "tray" ? target : (target.trays || []).find(t => t.key === key.slice(5));
+					if (handle?.hasMenu) root.trayMenuRequested(key.slice(5), p.x, p.y);
+					else root.trayActivated(key.slice(5), p.x, p.y);
 				}
 				else root.menuChosen(menu.forId, key);
 			}

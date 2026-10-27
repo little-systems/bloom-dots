@@ -284,7 +284,8 @@ function menuFor(t) {
 	if (t.trays && t.trays.length > 0) {
 		out.push(_divider);
 		for (const tray of t.trays)
-			out.push(_item("tray:" + tray.key, t.trays.length > 1 ? "App tray menu: " + (tray.title || tray.key) : "App tray menu"));
+			out.push(_item("tray:" + tray.key, (tray.hasMenu ? "App tray menu" : "Activate tray app")
+				+ (t.trays.length > 1 ? ": " + (tray.title || tray.key) : "")));
 	}
 	return out;
 }

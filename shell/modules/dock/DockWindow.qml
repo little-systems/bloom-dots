@@ -16,6 +16,7 @@ PanelWindow {
 	required property var modelData
 	readonly property alias view: view
 	readonly property string _key: "dock-" + win.modelData.name
+	function _reportExtra(result) { if (result && result !== "ok") Dock.notify(result); }
 
 	screen: win.modelData
 	anchors.bottom: true
@@ -130,8 +131,8 @@ PanelWindow {
 		onNewInstance: id => Dock.newInstance(id)
 		onPreviewFocus: address => Dock.focusWindow(address)
 		onPreviewClose: address => Dock.closeWindow(address)
-		onExtraActivated: key => DockExtras.action(key, "open")
-		onEmptyTrashConfirmed: DockExtras.emptyTrash(true)
+		onExtraActivated: key => win._reportExtra(DockExtras.action(key, "open"))
+		onEmptyTrashConfirmed: win._reportExtra(DockExtras.emptyTrash(true))
 		onTrayActivated: (key, x, y) => Dock.trayActivate(key, win, Math.round(x), Math.round(y))
 		onTraySecondary: key => Dock.traySecondary(key)
 		onTrayMenuRequested: (key, x, y) => Dock.trayMenu(key, win, Math.round(x), Math.round(y))
@@ -142,9 +143,9 @@ PanelWindow {
 			if (!id.startsWith("extra:")) { Dock.runMenu(id, key); return; }
 			const extraKey = id.slice(6);
 			if (key === "empty-trash") view.confirmEmptyTrash();
-			else if (key === "hide") DockExtras.hide(extraKey);
-			else if (key === "remove") DockExtras.remove(extraKey);
-			else DockExtras.action(extraKey, key);
+			else if (key === "hide") win._reportExtra(DockExtras.hide(extraKey));
+			else if (key === "remove") win._reportExtra(DockExtras.remove(extraKey));
+			else win._reportExtra(DockExtras.action(extraKey, key));
 		}
 		onPinRequested: id => Dock.pin(id)
 		onSwitchWorkspace: cell => cell.id > 0 ? Dock.switchWorkspace(cell.id) : Dock.switchWorkspaceNamed(cell.tip)
