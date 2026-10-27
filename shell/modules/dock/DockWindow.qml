@@ -108,6 +108,7 @@ PanelWindow {
 		overlapped: win._overlapped
 		maximized: Logic.maximized(win._focused)
 		items: Dock.items
+		trayOnlyItems: Dock.trayOnly
 		extraItems: DockExtras.items.map(e => Object.assign({}, e, { icon: Quickshell.iconPath(e.icon, true) }))
 		extrasPosition: Settings.values["bloom-dock-extras-position"]
 		workspaceCells: workspaces.item ? Logic.workspaceCells(workspaces.item.workspaces, workspaces.item.workspace?.id ?? 0) : []
@@ -131,6 +132,9 @@ PanelWindow {
 		onPreviewClose: address => Dock.closeWindow(address)
 		onExtraActivated: key => DockExtras.action(key, "open")
 		onEmptyTrashConfirmed: DockExtras.emptyTrash(true)
+		onTrayActivated: (key, x, y) => Dock.trayActivate(key, win, Math.round(x), Math.round(y))
+		onTraySecondary: key => Dock.traySecondary(key)
+		onTrayMenuRequested: (key, x, y) => Dock.trayMenu(key, win, Math.round(x), Math.round(y))
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
 		onReordered: ids => Dock.reorder(ids)

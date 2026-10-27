@@ -13,6 +13,7 @@ Item {
 	property string name: ""
 	property string iconSource: ""
 	property int windows: 0
+	property bool backgroundDot: false
 	property bool present: true
 	// Bloom: running (unpinned) apps leave with a 120 ms tween and no delay.
 	property bool quickExit: false
@@ -180,7 +181,7 @@ Item {
 
 			Repeater {
 				objectName: "dock-dots"
-				model: Dock.dotCount(root.windows)
+				model: root.windows > 0 ? Dock.dotCount(root.windows) : (root.backgroundDot ? 1 : 0)
 
 				Item {
 					width: Tokens.dock.dot.size
@@ -190,12 +191,12 @@ Item {
 						anchors.fill: parent
 						radius: width / 2
 						blur: root.light ? Tokens.dock.dot.glowLight : Tokens.dock.dot.glow
-						color: root.light ? root.textColor : Qt.rgba(1, 1, 1, 0.8)
+						color: root.backgroundDot && root.windows === 0 ? "#8b8b8b" : root.light ? root.textColor : Qt.rgba(1, 1, 1, 0.8)
 					}
 					Rectangle {
 						anchors.fill: parent
 						radius: width / 2
-						color: root.light ? root.textColor : "white"
+						color: root.backgroundDot && root.windows === 0 ? "#8b8b8b" : root.light ? root.textColor : "white"
 					}
 				}
 			}

@@ -45,6 +45,11 @@ Singleton {
 			.sort((a, b) => a.name.localeCompare(b.name));
 	}
 
+	function desktopIdentities() {
+		root.revision;
+		return DesktopEntries.applications.values.map(e => ({ id: e.id, startupClass: e.startupClass || "" }));
+	}
+
 	function actions(id) {
 		const e = id.startsWith("class:") ? null : DesktopEntries.byId(id);
 		return e ? e.actions.map(a => a.name) : [];

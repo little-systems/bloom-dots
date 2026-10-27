@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "../modules/dock/dock.js" as Logic
+import "../modules/dock/tray.js" as Tray
 import "../common/paths.js" as Paths
 
 // The dock's apps (Bloom Dock.tsx): pins from $XDG_STATE_HOME/bloom/dock.json
@@ -18,11 +19,23 @@ Singleton {
 	property int toastSerial: 0
 	readonly property string _iconDir: Paths.stateDir(Quickshell.env("XDG_STATE_HOME"), Quickshell.env("HOME")) + "/dock-icons"
 	property var _order: []
+	property var trayEntries: []
+	readonly property var traySelection: {
+		Apps.revision;
+		const projections = root.trayEntries.map(e => ({ key: e.key, id: e.id, title: e.title,
+			icon: e.icon, status: e.status, category: e.category, onlyMenu: e.onlyMenu, hasMenu: e.hasMenu }));
+		return Tray.selectTray(projections, Apps.desktopIdentities(), root.groups.map(g => g.id), root.pinned);
+	}
+	readonly property var trayOnly: root.traySelection.separate
+	function setTrayItems(entries) { root.trayEntries = entries || []; }
 	readonly property var groups: Logic.groupWindows(HyprState.clients, cls => Logic.identity(cls, root._idFor(cls)))
 	readonly property var items: {
 		Apps.revision; // re-resolve names and icons as desktop entries load
-		return Logic.buildItems(root.pinned, root.groups, root._order,
+		const built = Logic.buildItems(root.pinned, root.groups, root._order,
 			id => Object.assign(Apps.info(id), root.icons[id] ? { icon: "file://" + root.icons[id] } : {}));
+		for (const item of built.pinned.concat(built.unpinned))
+			item.hasTray = !!root.traySelection.merged[item.id]?.length;
+		return built;
 	}
 
 	function _idFor(cls) {
@@ -179,12 +192,39 @@ Singleton {
 	function quitShell() { Apps.run(["systemctl", "--user", "stop", "bloom-shell"], "bloom-quit"); }
 
 	function menuTarget(id) {
+		if (id.startsWith("tray:")) {
+			const key = id.slice(5);
+			const entry = root.trayEntries.find(e => e.key === key);
+			return { kind: "tray", trayKey: key, hasMenu: !!entry?.hasMenu };
+		}
 		const item = root._item(id);
 		return {
 			kind: "app", id: id, pinned: root.pinned.indexOf(id) >= 0, pinnable: Apps.exists(id),
 			running: !!item && item.windows.length > 0, windows: item ? item.windows.length : 0,
-			hasCustomIcon: !!root.icons[id], actions: Apps.actions(id)
+			hasCustomIcon: !!root.icons[id], actions: Apps.actions(id),
+			trays: root.traySelection.merged[id] || []
 		};
+	}
+
+	function _trayItem(key) { return root.trayEntries.find(e => e.key === key)?.item || null; }
+	function trayActivate(key, window, x, y) {
+		const item = root._trayItem(key);
+		if (!item) return "tray item gone";
+		if (item.onlyMenu && item.hasMenu) item.display(window, x, y);
+		else item.activate();
+		return "ok";
+	}
+	function traySecondary(key) {
+		const item = root._trayItem(key);
+		if (!item) return "tray item gone";
+		item.secondaryActivate();
+		return "ok";
+	}
+	function trayMenu(key, window, x, y) {
+		const item = root._trayItem(key);
+		if (!item || !item.hasMenu) return "no tray menu";
+		item.display(window, x, y);
+		return "ok";
 	}
 
 	function runMenu(id, key) {

@@ -218,6 +218,19 @@ Item {
 			compare(emptied.count, 0);
 		}
 
+		function test_trayOnlyItemHasItsOwnAction() {
+			const v = make({ trayOnlyItems: [{ key: "sni-1", title: "Chat", icon: "" }] });
+			settle(v);
+			compare(v.stateObject().keys.slice(-2), ["|divider|tray", "tray:sni-1"]);
+			const activated = createTemporaryObject(spyComponent, host, { target: v, signalName: "trayActivated" });
+			const slot = findChild(v, "dock-slot-tray:sni-1");
+			const point = slot.mapToItem(v, slot.width / 2, slot.height / 2);
+			wait(250);
+			mouseClick(v, point.x, point.y);
+			compare(activated.count, 1);
+			compare(activated.signalArguments[0][0], "sni-1");
+		}
+
 		function framesIn(ms) {
 			let n = 0;
 			const count = () => n++;

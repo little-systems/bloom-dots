@@ -26,6 +26,7 @@ Item {
 	property var items: ({ pinned: [], unpinned: [] })
 	property var extraItems: []
 	property string extrasPosition: "off"
+	property var trayOnlyItems: []
 	property var workspaceCells: []
 	property var menuTarget: id => ({ kind: "background" })
 	property var apps: []
@@ -57,6 +58,9 @@ Item {
 	signal previewClose(string address)
 	signal extraActivated(string key)
 	signal emptyTrashConfirmed()
+	signal trayActivated(string key, real x, real y)
+	signal traySecondary(string key)
+	signal trayMenuRequested(string key, real x, real y)
 
 	readonly property bool keyboardWanted: popup.opened
 	readonly property bool grabWanted: menu.opened || popup.opened || confirm.opened
@@ -251,7 +255,7 @@ Item {
 		const ordered = root._dragOrder.length > 0
 			? Object.assign({}, root.items, { pinned: root._dragOrder.map(id => root.items.pinned.find(i => i.id === id)).filter(Boolean) })
 			: root.items;
-		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition);
+		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition, root.trayOnlyItems);
 		const byKey = {};
 		for (const s of next)
 			byKey[s.key] = s;
@@ -289,6 +293,7 @@ Item {
 			const s = byKey[r.key];
 			if (j < 0) {
 				slotModel.insert(i, { key: r.key, kind: s.kind, extraKind: s.extraKind || "", count: s.count || 0,
+					backgroundDot: !!s.backgroundDot,
 					pinned: s.pinned, name: s.name, icon: s.icon, windows: s.windows, present: true, slotX: xs[i] });
 				return;
 			}
@@ -300,6 +305,7 @@ Item {
 				if (slotModel.get(i).icon !== s.icon) slotModel.setProperty(i, "icon", s.icon);
 				if (slotModel.get(i).windows !== s.windows) slotModel.setProperty(i, "windows", s.windows);
 				if (slotModel.get(i).count !== (s.count || 0)) slotModel.setProperty(i, "count", s.count || 0);
+				if (slotModel.get(i).backgroundDot !== !!s.backgroundDot) slotModel.setProperty(i, "backgroundDot", !!s.backgroundDot);
 			}
 			if (slotModel.get(i).present !== !r.leaving) slotModel.setProperty(i, "present", !r.leaving);
 			if (slotModel.get(i).slotX !== xs[i]) slotModel.setProperty(i, "slotX", xs[i]);
@@ -316,6 +322,7 @@ Item {
 	onItemsChanged: root._sync()
 	onExtraItemsChanged: root._sync()
 	onExtrasPositionChanged: root._sync()
+	onTrayOnlyItemsChanged: root._sync()
 	onWorkspaceCellsChanged: root._sync()
 	onSeparatorEnabledChanged: root._sync()
 	Component.onCompleted: root._sync()
@@ -425,6 +432,7 @@ Item {
 						required property int windows
 						required property string extraKind
 						required property int count
+						required property bool backgroundDot
 						required property bool present
 						required property real slotX
 
@@ -473,10 +481,11 @@ Item {
 						DockIcon {
 							id: icon
 							anchors.fill: parent
-							visible: slot.kind === "app"
+							visible: slot.kind === "app" || slot.kind === "tray"
 							name: slot.name
 							iconSource: slot.icon
 							windows: slot.windows
+							backgroundDot: slot.backgroundDot
 							present: slot.present && root.expanded
 							quickExit: !slot.pinned
 							dragging: root._dragKey === slot.key
@@ -487,8 +496,13 @@ Item {
 							tooltipBg: root.tooltipBg
 							tooltipText: root.tooltipText
 							tooltipBorder: root.tooltipBorder
-							onClicked: root.activated(slot.key)
-							onMiddleClicked: root.newInstance(slot.key)
+							onClicked: {
+								if (slot.kind === "tray") {
+									const p = slot.mapToItem(null, slot.width / 2, slot.height / 2);
+									root.trayActivated(slot.key.slice(5), p.x, p.y);
+								} else root.activated(slot.key);
+							}
+							onMiddleClicked: if (slot.kind === "tray") root.traySecondary(slot.key.slice(5)); else root.newInstance(slot.key)
 							onHoveredChanged: if (icon.hovered) root._beginPreview(slot.key, slot); else root._leavePreview(slot.key)
 						}
 						DockExtraIcon {
@@ -617,6 +631,10 @@ Item {
 			onChosen: key => {
 				if (key === "add-app") popup.open();
 				else if (key === "hide-workspaces") root.hideWorkspaces();
+				else if (key.startsWith("tray:")) {
+					const p = menu.boxItem.mapToItem(null, menu.boxItem.width / 2, menu.boxItem.height / 2);
+					root.trayMenuRequested(key.slice(5), p.x, p.y);
+				}
 				else root.menuChosen(menu.forId, key);
 			}
 		}

@@ -99,6 +99,13 @@ Item {
 			compare(findChild(v, "dock-dots").count, 3, "at most three");
 		}
 
+		function test_trayBackgroundDot() {
+			const v = make({ windows: 0, backgroundDot: true });
+			compare(findChild(v, "dock-dots").count, 1);
+			v.windows = 2;
+			compare(findChild(v, "dock-dots").count, 2, "window dots take priority when an app gains windows");
+		}
+
 		function test_fallbackLetter() {
 			const v = make({ iconSource: "" });
 			verify(findChild(v, "dock-fallback").visible);

@@ -38,6 +38,11 @@ ShellRoot {
 		}
 	}
 
+	LazyLoader {
+		active: _modules.indexOf("dock") >= 0 && _modules.indexOf("tray") >= 0
+		source: Qt.resolvedUrl("modules/dock/DockTraySource.qml")
+	}
+
 	// Super+Alt+1–9, only under Hyprland, with the dock and the setting on.
 	LazyLoader {
 		active: _modules.indexOf("dock") >= 0 && HyprState.available && Settings.values["bloom-dock-win-number-enabled"]
