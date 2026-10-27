@@ -139,7 +139,9 @@ Item {
 		readonly property var pos: Dock.menuPosition(root._x, root._y, width, height, root.viewWidth)
 		x: box.pos.left
 		y: box.pos.top
-		width: Math.max(Tokens.dock.menu.minWidth, column.implicitWidth) + 2 * Tokens.dock.menu.padding
+		// The widest row's own width: rows are stretched to the column, so the
+		// Column's implicitWidth would only echo the box back.
+		width: Math.max(Tokens.dock.menu.minWidth, root._widest(column)) + 2 * Tokens.dock.menu.padding
 		height: column.implicitHeight + 2 * Tokens.dock.menu.padding
 
 		Column {
@@ -165,12 +167,15 @@ Item {
 			model: root.entries.filter(e => e.kind === "submenu")
 			delegate: Box {
 				required property var modelData
-				readonly property Item anchorItem: root._findItem(modelData.key)
-				visible: root._submenu === modelData.key && anchorItem !== null
+				// The row it hangs from (its Loader in `column`); bound, so it
+				// follows the rows' layout.
+				readonly property Item anchorRow: root._findRow(column.children, modelData.key)
+				visible: root._submenu === modelData.key && anchorRow !== null
 				onVisibleChanged: root.submenuBoxItem = visible ? this : (root.submenuBoxItem === this ? null : root.submenuBoxItem)
 				x: box.width - Tokens.dock.menu.padding
-				y: anchorItem ? anchorItem.mapToItem(box, 0, 0).y + anchorItem.height + Tokens.dock.menu.padding - height : 0
-				width: Math.max(Tokens.dock.menu.submenuMinWidth, sub.implicitWidth) + 2 * Tokens.dock.menu.padding
+				// Bloom: left 100%, bottom -6px: its bottom 6 px below the row's.
+				y: anchorRow ? column.y + anchorRow.y + anchorRow.height + Tokens.dock.menu.padding - height : 0
+				width: Math.max(Tokens.dock.menu.submenuMinWidth, root._widest(sub)) + 2 * Tokens.dock.menu.padding
 				height: sub.implicitHeight + 2 * Tokens.dock.menu.padding
 
 				Column {
@@ -196,12 +201,23 @@ Item {
 	Component { id: itemComponent; MenuItem { entry: parent.entry } }
 	Component { id: dividerComponent; Divider {} }
 
-	function _findItem(key) {
-		for (let i = 0; i < column.children.length; i++) {
-			const l = column.children[i];
+	function _findRow(rows, key) {
+		for (let i = 0; i < rows.length; i++) {
+			const l = rows[i];
 			if (l.item && l.entry && l.entry.key === key)
-				return l.item;
+				return l;
 		}
 		return null;
+	}
+
+	// Reads each row's implicitWidth, so a binding using it follows the labels.
+	function _widest(col) {
+		let w = 0;
+		for (let i = 0; i < col.children.length; i++) {
+			const l = col.children[i];
+			if (l.item)
+				w = Math.max(w, l.item.implicitWidth);
+		}
+		return w;
 	}
 }

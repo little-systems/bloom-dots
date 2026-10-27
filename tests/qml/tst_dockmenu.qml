@@ -68,6 +68,33 @@ Item {
 			tryCompare(quit, "visible", false, 500);
 		}
 
+		// Owner report: long desktop actions (Claude's "Continue Last Claude
+		// Code Session") ran past the box; it must grow to its widest label.
+		function test_widthFitsTheLongestLabel() {
+			const m = make();
+			m.entries = Dock.menuFor({ kind: "app", id: "x", pinned: false, pinnable: true, running: true, windows: 1, hasCustomIcon: false, actions: ["Continue Last Claude Code Session"] });
+			m.openAt(300, 480);
+			const item = findChild(m, "menu-item-action:0");
+			const box = findChild(m, "menu-box");
+			verify(item.implicitWidth > 200, "a long label");
+			verify(box.width >= item.implicitWidth + 2 * 6 - 0.5, `box ${box.width} fits ${item.implicitWidth}`);
+		}
+
+		// Owner report: the submenu sat above its item. Bloom: to the right,
+		// its bottom 6 px below the item's bottom (bottom: -6px), growing up.
+		function test_submenuAlignsWithItsItem() {
+			const m = make();
+			m.openAt(300, 480);
+			const sub = findChild(m, "menu-submenu-bloom");
+			mouseMove(sub, 10, 10);
+			const quit = findChild(m, "menu-item-quit");
+			tryCompare(quit, "visible", true, 500);
+			const subBox = m.submenuBoxItem;
+			const itemBottom = sub.mapToItem(host, 0, sub.height).y;
+			const boxBottom = subBox.mapToItem(host, 0, subBox.height).y;
+			verify(Math.abs(boxBottom - (itemBottom + 6)) < 1, `submenu bottom ${boxBottom}, item bottom ${itemBottom}`);
+		}
+
 		function test_hoverColours() {
 			const m = make();
 			m.openAt(300, 480);
