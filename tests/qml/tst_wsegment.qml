@@ -66,6 +66,20 @@ Item {
 			compare(step.signalArguments[1][0], -1);
 		}
 
+		// Review M5: a touchpad sends many small deltas; only a full notch
+		// (120) steps, and a sideways scroll doesn't step at all.
+		function test_wheelAccumulates() {
+			const s = make();
+			const step = createTemporaryObject(spyComponent, host, { target: s, signalName: "step" });
+			mouseWheel(s, 20, 18, 0, -40);
+			mouseWheel(s, 20, 18, 0, -40);
+			compare(step.count, 0, "two thirds of a notch");
+			mouseWheel(s, 20, 18, 0, -40);
+			compare(step.count, 1);
+			mouseWheel(s, 20, 18, -120, 0);
+			compare(step.count, 1, "sideways");
+		}
+
 		function test_rightClickAsksForTheMenu() {
 			const s = make();
 			const menu = createTemporaryObject(spyComponent, host, { target: s, signalName: "menuRequested" });

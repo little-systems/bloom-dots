@@ -121,7 +121,18 @@ Item {
 	MouseArea {
 		anchors.fill: parent
 		acceptedButtons: Qt.NoButton
-		onWheel: event => root.step(event.angleDelta.y < 0 ? 1 : -1)
+		// A touchpad sends many small deltas: step once per full notch (120),
+		// and ignore sideways scrolling.
+		property real acc: 0
+		onWheel: event => {
+			if (event.angleDelta.y === 0)
+				return;
+			acc += event.angleDelta.y;
+			if (Math.abs(acc) >= 120) {
+				root.step(acc < 0 ? 1 : -1);
+				acc = 0;
+			}
+		}
 	}
 	TapHandler {
 		acceptedButtons: Qt.RightButton
