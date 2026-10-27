@@ -20,7 +20,9 @@ var springs = {
 	itemEntry: { stiffness: 400, damping: 25, mass: 1 },
 	// framer's defaults for a hover variant: y underdamped, scale critically damped.
 	hoverY: { stiffness: 500, damping: 25, mass: 1, restSpeed: 10 },
-	hoverScale: { stiffness: 550, damping: 30, mass: 1, restSpeed: 10 }
+	hoverScale: { stiffness: 550, damping: 30, mass: 1, restSpeed: 10 },
+	// Add App card (Dock.tsx AddAppPopup).
+	popupScale: { stiffness: 300, damping: 28, mass: 0.9 }
 };
 
 // Notch geometry in px.
@@ -143,8 +145,8 @@ var updates = { firstCheckMs: 60000, intervalMs: 3600000, timeoutMs: 120000 };
 
 // Dock (Bloom Dock.tsx/Dock.css @ b5fb962).
 var dock = {
-	// Fixed surface: full screen width, room for the dock, tooltips and 3C previews.
-	surfaceHeight: 420,
+	// Room for the Add App card (440) over the dock, and 3C previews.
+	surfaceHeight: 500,
 	collapsed: 34,
 	height: 52,
 	padding: 8,
@@ -169,5 +171,35 @@ var dock = {
 	tapScale: 0.95,
 	dot: { size: 4, gap: 3, offset: 4, glow: 4, glowLight: 3 },
 	tooltip: { offset: 36, paddingV: 4, paddingH: 10, radius: 6, size: 12, alpha: 0.7, slide: 4, from: 0.95, fadeMs: 200 },
-	fallback: { size: 16, opacity: 0.7 }
+	fallback: { size: 16, opacity: 0.7 },
+	// Context menu (Dock.css .context-menu).
+	menu: {
+		radius: 12, padding: 6, minWidth: 160, submenuMinWidth: 140, margin: 8,
+		item: { paddingV: 8, paddingH: 12, size: 13, radius: 6 },
+		divider: { marginV: 4, marginH: 8 },
+		arrow: { size: 8, opacity: 0.5, gap: 10 },
+		hover: "#3b82f6", dangerHover: "#ef4444",
+		shadow: { y: 10, blur: 30, alpha: 0.5 }, shadowLight: { y: 8, blur: 32, alpha: 0.08 },
+		fadeMs: 200
+	},
+	// Add App card (Dock.css .add-app-popup).
+	popup: {
+		width: 360, height: 440, radius: 18, tuck: 14,
+		shadow: { y: -12, blur: 40, alpha: 0.4 },
+		search: { margin: 10, marginBottom: 4, paddingV: 10, paddingH: 12, radius: 12, gap: 10, icon: 14, size: 14 },
+		list: { top: 6, side: 10, bottom: 10 },
+		row: { height: 48, paddingV: 8, paddingH: 10, gap: 12, radius: 10, icon: 32, iconRadius: 8, initial: 13, name: 14, pin: 24, pinRadius: 7, pinSize: 15 },
+		label: { size: 11, tracking: 0.66, top: 10, side: 10, bottom: 4 },
+		empty: { size: 13, padding: 40 },
+		selectedAlpha: 0.28, selectedEdgeAlpha: 0.55,
+		skeleton: { rows: 8, pulseMs: 1100, line: 12 },
+		debounceMs: 150, browseLimit: 60, searchLimit: 50,
+		fadeMs: 150, exitMs: 160
+	},
+	// Error toast (Dock.css .dock-toast).
+	toast: { bottom: 80, paddingV: 8, paddingH: 16, radius: 8, size: 12, color: "#f87171", slide: 10, fadeMs: 200, showMs: 4000 },
+	// Workspace segment (new, D7).
+	workspaces: { padding: 6, cell: 24, cellRadius: 8, gap: 2, size: 12, idleOpacity: 0.55, highlightAlpha: 0.15 },
+	// Bloom's drag variant.
+	drag: { y: -10, scale: 1.1, opacity: 0.8 }
 };

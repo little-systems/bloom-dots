@@ -172,6 +172,11 @@ TestCase {
 		compare(s.warnings, []);
 	}
 
+	function test_dockWorkspacesSetting() {
+		compare(Settings.defaults()["bloom-dock-workspaces-enabled"], true);
+		compare(Settings.validate({ "bloom-dock-workspaces-enabled": "false" }).values["bloom-dock-workspaces-enabled"], false);
+	}
+
 	// Bloom read the visualizer switch from an older key too.
 	function test_legacyVisualizerKey() {
 		const old = Settings.validate({ "bloom-visualizer-enabled": "false" });

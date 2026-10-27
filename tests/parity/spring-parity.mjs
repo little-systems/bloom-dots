@@ -20,7 +20,8 @@ const SPRINGS = [
 	{ name: "dock size", stiffness: 250, damping: 22, mass: 0.8 },
 	{ name: "dock layout", stiffness: 300, damping: 25, mass: 1 },
 	{ name: "hover y", stiffness: 500, damping: 25, mass: 1 },
-	{ name: "hover scale", stiffness: 550, damping: 30, mass: 1 }
+	{ name: "hover scale", stiffness: 550, damping: 30, mass: 1 },
+	{ name: "add app card", stiffness: 300, damping: 28, mass: 0.9 }
 ];
 
 const ctx = {};

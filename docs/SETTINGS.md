@@ -30,6 +30,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-separator-enabled` | bool | `true` | `true`, `false` | A divider between pinned apps and other running apps. |
 | `bloom-dock-adaptive` | bool | `false` | `true`, `false` | Fixed dock only: stretch to the full screen width while the focused window is maximised. |
 | `bloom-dock-win-number-enabled` | bool | `true` | `true`, `false` | Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows. |
+| `bloom-dock-workspaces-enabled` | bool | `true` | `true`, `false` | Show this monitor's workspaces at the start of the dock (Hyprland). |
 | `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |

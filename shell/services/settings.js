@@ -156,6 +156,11 @@ var SCHEMA = {
 		default: true,
 		doc: "Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows."
 	},
+	"bloom-dock-workspaces-enabled": {
+		type: "bool",
+		default: true,
+		doc: "Show this monitor's workspaces at the start of the dock (Hyprland)."
+	},
 	"bloom-scale": {
 		type: "number",
 		min: 0.8,
