@@ -38,6 +38,25 @@ Singleton {
 		return true;
 	}
 
+	function all() {
+		root.revision;
+		return DesktopEntries.applications.values
+			.map(e => ({ id: e.id, name: e.name, icon: Quickshell.iconPath(e.icon, true) }))
+			.sort((a, b) => a.name.localeCompare(b.name));
+	}
+
+	function actions(id) {
+		const e = id.startsWith("class:") ? null : DesktopEntries.byId(id);
+		return e ? e.actions.map(a => a.name) : [];
+	}
+
+	function runAction(id, n) {
+		const e = DesktopEntries.byId(id);
+		const a = e ? e.actions[n] : null;
+		if (a && a.command.length > 0)
+			root.run(a.command, id, e.runInTerminal, e.workingDirectory);
+	}
+
 	function run(command, name, terminal, workingDirectory) {
 		const context = { command: Launch.argv(command, Launch.unitName(name, Date.now()), !!terminal) };
 		if (workingDirectory)

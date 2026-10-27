@@ -156,7 +156,7 @@ ShellRoot {
 
 		// One state object per screen, in screen order.
 		function state(): string {
-			return JSON.stringify(_windows().map(w => Object.assign(w.view.stateObject(), { pinned: Dock.pinned })));
+			return JSON.stringify(_windows().map(w => Object.assign(w.view.stateObject(), { pinned: Dock.pinned, icons: Dock.icons })));
 		}
 
 		// `id` is a desktop entry id (as in its .desktop file name).
@@ -166,6 +166,23 @@ ShellRoot {
 
 		function unpin(id: string): string {
 			return Dock.unpin(id);
+		}
+
+		function setIcon(id: string, path: string): string {
+			return Dock.setIcon(id, path);
+		}
+
+		function resetIcon(id: string): string {
+			return Dock.resetIcon(id);
+		}
+
+		function reorder(ids: string): string {
+			let list;
+			try {
+				list = JSON.parse(ids);
+				if (typeof list === "string") list = JSON.parse(list);
+			} catch (e) { return "ids must be a JSON array"; }
+			return Array.isArray(list) ? Dock.reorder(list) : "ids must be a JSON array";
 		}
 
 		// Pinned app `n` (1-based), as Super+Alt+n.

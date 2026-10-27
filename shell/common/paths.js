@@ -18,3 +18,7 @@ function stateFile(xdgStateHome, home, name) {
 		throw new Error("invalid state name: " + name);
 	return _stateHome(xdgStateHome, home) + "/bloom/" + name + ".json";
 }
+
+function stateDir(xdgStateHome, home) {
+	return _stateHome(xdgStateHome, home) + "/bloom";
+}

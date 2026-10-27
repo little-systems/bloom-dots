@@ -39,6 +39,9 @@ cmd_version() {
 
 cmd_ipc() {
 	[[ $# -ge 2 ]] || die "usage: bloom ipc <target> <function> [args...]"
+	if [[ "$1" == dock && "$2" == reorder && $# -eq 3 && "$3" == \[* ]]; then
+		set -- "$1" "$2" "$(jq -n --arg value "$3" '$value')"
+	fi
 	if [[ "$1" == settings && "$2" == set ]]; then
 		[[ $# -eq 4 ]] || die "usage: bloom ipc settings set <key> <value>"
 		# The shell answers "ok" or the reason it refused; turn a refusal into

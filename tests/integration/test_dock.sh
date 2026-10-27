@@ -32,10 +32,17 @@ export TERMINAL="$TEST_TMP/bin/fake-term"
 export XDG_DATA_HOME="$TEST_TMP/data" XDG_DATA_DIRS="$TEST_TMP/data"
 printf '{ "bloom-enabled-modules": ["dock"], "bloom-weather-enabled": false, "bloom-dock-mode": "fixed" }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
 printf '{ "pinned": ["bloom-test-app"] }\n' >"$XDG_STATE_HOME/bloom/dock.json"
+cp "$ROOT/tests/integration/fake-picker.sh" "$TEST_TMP/bin/fake-picker"
+chmod +x "$TEST_TMP/bin/fake-picker"
+export BLOOM_PICKER="$TEST_TMP/bin/fake-picker" BLOOM_FAKE_PICK="$TEST_TMP/pick"
+base64 -d >"$TEST_TMP/icon.png" <<'PNG'
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12P4z8DwHwAFAAH/cpxSZwAAAABJRU5ErkJggg==
+PNG
 start_shell
 
 state() { ipc dock state | jq -c ".[0] | {$1}"; }
 state_is() { [[ "$(state "$1")" == "$2" ]]; }
+state_icon_is_set() { ipc dock state | jq -e '.[0].icons["bloom-test-app"] | endswith("dock-icons/bloom-test-app.png")' >/dev/null; }
 
 wait_for "the dock to settle with its pin" state_is "keys,height,y" '{"keys":["bloom-test-app"],"height":52,"y":0}'
 pass "dock loads and shows the pinned app"
@@ -73,6 +80,26 @@ pass "modes change live"
 assert_eq "$(ipc dock setVisible false)" "ok" "setVisible"
 wait_for "hiding by the user" state_is "visible,y" '{"visible":false,"y":150}'
 ipc dock setVisible true >/dev/null
+
+assert_eq "$(ipc dock setIcon bloom-test-app "$TEST_TMP/icon.png")" "ok" "setIcon"
+wait_for "the copy" test -f "$XDG_STATE_HOME/bloom/dock-icons/bloom-test-app.png"
+wait_for "the icon in state" state_icon_is_set
+assert_eq "$(ipc dock setIcon bloom-test-app /etc/hostname)" "unsupported type" "non-image"
+assert_eq "$(ipc dock setIcon bloom-test-term "$TEST_TMP/icon.png")" "not pinned" "only pinned apps get icons"
+assert_eq "$(ipc dock resetIcon bloom-test-app)" "ok" "resetIcon"
+wait_for "the copy to go" bash -c "! test -f '$XDG_STATE_HOME/bloom/dock-icons/bloom-test-app.png'"
+pass "custom icons are copied, kept in dock.json and reset"
+
+ipc dock pin bloom-test-term >/dev/null
+assert_eq "$(ipc dock reorder '["bloom-test-term","bloom-test-app"]')" "ok" "reorder"
+wait_for "the new order" state_is "keys" '{"keys":["bloom-test-term","bloom-test-app"]}'
+assert_eq "$(ipc dock reorder '["nope"]')" "order must list the pinned apps" "reorder refuses a different set"
+ipc dock unpin bloom-test-term >/dev/null
+pass "reorder persists and refuses a different set"
+
+ipc settings set bloom-dock-workspaces-enabled false >/dev/null
+assert_eq "$(ipc settings get bloom-dock-workspaces-enabled)" "false" "workspaces setting"
+pass "the workspaces setting applies without warnings"
 
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" || true)"
 if [[ ! -S /run/dbus/system_bus_socket ]]; then

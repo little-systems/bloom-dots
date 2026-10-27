@@ -16,6 +16,11 @@ TestCase {
 		compare(Paths.stateFile("/x/st", "/home/u", "dock-order"), "/x/st/bloom/dock-order.json");
 	}
 
+	function test_stateDir() {
+		compare(Paths.stateDir(undefined, "/home/u"), "/home/u/.local/state/bloom");
+		compare(Paths.stateDir("/x/st", "/home/u"), "/x/st/bloom");
+	}
+
 	function test_stateFileRejectsPathTricks() {
 		let threw = false;
 		try { Paths.stateFile(undefined, "/home/u", "../evil"); } catch (e) { threw = true; }
