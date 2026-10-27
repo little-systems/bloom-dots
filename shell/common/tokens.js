@@ -199,6 +199,8 @@ var dock = {
 	toast: { bottom: 80, paddingV: 8, paddingH: 16, radius: 8, size: 12, color: "#f87171", slide: 10, fadeMs: 200, showMs: 4000 },
 	// Workspace segment (new, D7).
 	workspaces: { padding: 6, cell: 24, cellRadius: 8, gap: 2, size: 12, idleOpacity: 0.55, highlightAlpha: 0.15 },
+	preview: { width: 220, imageHeight: 130, gap: 12, maxVisible: 3, dwellMs: 300, retainMs: 100, bridge: 20, motionMs: 150 },
+	extras: { tile: 36 },
 	// Bloom's drag variant.
 	drag: { y: -10, scale: 1.1, opacity: 0.8 }
 };

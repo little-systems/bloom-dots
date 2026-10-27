@@ -30,6 +30,13 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-adaptive` | bool | `false` | `true`, `false` | Fixed dock only: stretch to the full screen width while the focused window is maximised. |
 | `bloom-dock-win-number-enabled` | bool | `true` | `true`, `false` | Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows. |
 | `bloom-dock-workspaces-enabled` | bool | `true` | `true`, `false` | Show this monitor's workspaces at the start of the dock (Hyprland). |
+| `bloom-dock-preview-enabled` | bool | `true` | `true`, `false` | Show live previews of an app's windows after hovering its dock icon. |
+| `bloom-dock-extras-position` | enum | `"off"` | `off`, `left`, `right` | Show drive, trash and folder extras beside the dock apps. |
+| `bloom-dock-extras-drives` | bool | `true` | `true`, `false` | Include removable and user-mounted drives in dock extras. |
+| `bloom-dock-extras-recycle-bin` | bool | `true` | `true`, `false` | Include the XDG trash in dock extras. |
+| `bloom-dock-extras-hidden-drives` | string | `"[]"` | text, up to 8192 characters | JSON array of hidden drive UUIDs, or path:device IDs when a UUID is unavailable. |
+| `bloom-dock-extras-folders` | string | `"downloads"` | text, up to 8192 characters | Comma-separated XDG user folders to show, such as downloads and documents. |
+| `bloom-dock-extras-custom-folders` | string | `"[]"` | text, up to 8192 characters | JSON array of custom folder paths to show in dock extras. |
 | `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |

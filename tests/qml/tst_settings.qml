@@ -177,6 +177,23 @@ TestCase {
 		compare(Settings.validate({ "bloom-dock-workspaces-enabled": "false" }).values["bloom-dock-workspaces-enabled"], false);
 	}
 
+	function test_dockPreviewAndExtrasSettings() {
+		const d = Settings.defaults();
+		compare(d["bloom-dock-preview-enabled"], true);
+		compare(d["bloom-dock-extras-position"], "off");
+		compare(d["bloom-dock-extras-drives"], true);
+		compare(d["bloom-dock-extras-recycle-bin"], true);
+		compare(d["bloom-dock-extras-hidden-drives"], "[]");
+		compare(d["bloom-dock-extras-folders"], "downloads");
+		compare(d["bloom-dock-extras-custom-folders"], "[]");
+		const v = Settings.validate({ "bloom-dock-preview-enabled": "false", "bloom-dock-extras-position": "left" });
+		compare(v.values["bloom-dock-preview-enabled"], false);
+		compare(v.values["bloom-dock-extras-position"], "left");
+		compare(v.warnings, []);
+		verify(!Settings.validateOne("bloom-dock-extras-position", "top").ok);
+		verify(!Settings.validateOne("bloom-dock-extras-custom-folders", "x".repeat(8193)).ok);
+	}
+
 	// Bloom read the visualizer switch from an older key too.
 	function test_legacyVisualizerKey() {
 		const old = Settings.validate({ "bloom-visualizer-enabled": "false" });

@@ -157,6 +157,34 @@ var SCHEMA = {
 		default: true,
 		doc: "Show this monitor's workspaces at the start of the dock (Hyprland)."
 	},
+	"bloom-dock-preview-enabled": {
+		type: "bool", default: true,
+		doc: "Show live previews of an app's windows after hovering its dock icon."
+	},
+	"bloom-dock-extras-position": {
+		type: "enum", values: ["off", "left", "right"], default: "off",
+		doc: "Show drive, trash and folder extras beside the dock apps."
+	},
+	"bloom-dock-extras-drives": {
+		type: "bool", default: true,
+		doc: "Include removable and user-mounted drives in dock extras."
+	},
+	"bloom-dock-extras-recycle-bin": {
+		type: "bool", default: true,
+		doc: "Include the XDG trash in dock extras."
+	},
+	"bloom-dock-extras-hidden-drives": {
+		type: "string", maxLength: 8192, default: "[]",
+		doc: "JSON array of hidden drive UUIDs, or path:device IDs when a UUID is unavailable."
+	},
+	"bloom-dock-extras-folders": {
+		type: "string", maxLength: 8192, default: "downloads",
+		doc: "Comma-separated XDG user folders to show, such as downloads and documents."
+	},
+	"bloom-dock-extras-custom-folders": {
+		type: "string", maxLength: 8192, default: "[]",
+		doc: "JSON array of custom folder paths to show in dock extras."
+	},
 	"bloom-scale": {
 		type: "number",
 		min: 0.8,
