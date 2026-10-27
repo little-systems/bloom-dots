@@ -145,6 +145,18 @@ Singleton {
 			root._dispatch('hl.dsp.window.close({ window = "address:' + w.address + '" })', w.address);
 	}
 
+	function focusWindow(address) {
+		if (!root.groups.some(g => g.windows.some(w => w.address === address))) return "no such window";
+		root._dispatch(Logic.focusArg(address), address);
+		return "ok";
+	}
+
+	function closeWindow(address) {
+		if (!root.groups.some(g => g.windows.some(w => w.address === address))) return "no such window";
+		root._dispatch('hl.dsp.window.close({ window = "address:' + address + '" })', address);
+		return "ok";
+	}
+
 	function switchWorkspace(wsId) {
 		if (wsId > 0)
 			root._dispatch("hl.dsp.focus({ workspace = " + Math.floor(wsId) + " })", "0x0");

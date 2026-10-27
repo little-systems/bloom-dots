@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../../common/tokens.js" as Tokens
@@ -35,6 +36,7 @@ PanelWindow {
 		Region { item: view.menuOpen ? (HyprState.available ? view.menuBoxItem : view) : null }
 		Region { item: view.menuOpen && HyprState.available ? view.submenuBoxItem : null }
 		Region { item: view.keyboardWanted ? view.popupItem : null }
+		Region { item: view.previewOpen ? view.previewBoxItem : null }
 	}
 
 	Loader {
@@ -88,6 +90,15 @@ PanelWindow {
 		uiScale: Settings.values["bloom-scale"]
 		iconOnly: Settings.values["bloom-dock-icon-only"]
 		separatorEnabled: Settings.values["bloom-dock-separator-enabled"]
+		previewEnabled: Settings.values["bloom-dock-preview-enabled"]
+		captureEnabled: HyprState.available
+		previewSources: {
+			if (!HyprState.available) return [];
+			return ToplevelManager.toplevels.values.map(t => {
+				const raw = t.HyprlandToplevel.address;
+				return { address: raw ? (raw.startsWith("0x") ? raw : "0x" + raw) : "", toplevel: t };
+			});
+		}
 		adaptiveEnabled: Settings.values["bloom-dock-adaptive"]
 		overlapped: win._overlapped
 		maximized: Logic.maximized(win._focused)
@@ -109,6 +120,8 @@ PanelWindow {
 		tooltipBorder: Theme.border
 		onActivated: id => Dock.activate(id)
 		onNewInstance: id => Dock.newInstance(id)
+		onPreviewFocus: address => Dock.focusWindow(address)
+		onPreviewClose: address => Dock.closeWindow(address)
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
 		onReordered: ids => Dock.reorder(ids)

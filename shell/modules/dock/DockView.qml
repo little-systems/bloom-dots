@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
+import "previews.js" as Preview
 
 // Bloom's dock (Dock.tsx @ b5fb962): a bottom-edge pill that drops in, then
 // expands into the app row; fixed/smart/peek modes with an edge reveal and
@@ -19,6 +20,9 @@ Item {
 	property bool suppressed: false
 	property bool iconOnly: false
 	property bool separatorEnabled: true
+	property bool previewEnabled: true
+	property bool captureEnabled: false
+	property var previewSources: []
 	property var items: ({ pinned: [], unpinned: [] })
 	property var workspaceCells: []
 	property var menuTarget: id => ({ kind: "background" })
@@ -47,6 +51,8 @@ Item {
 	signal switchWorkspace(var cell)
 	signal stepWorkspace(int dir)
 	signal hideWorkspaces()
+	signal previewFocus(string address)
+	signal previewClose(string address)
 
 	readonly property bool keyboardWanted: popup.opened
 	readonly property bool grabWanted: menu.opened || popup.opened
@@ -55,9 +61,51 @@ Item {
 	readonly property Item menuBoxItem: menu.boxItem
 	readonly property Item submenuBoxItem: menu.submenuBoxItem
 	readonly property Item popupItem: popup
+	readonly property Item previewItem: preview
+	readonly property Item previewBoxItem: preview.boxItem
+	readonly property var previewCandidates: {
+		const item = root.items.pinned.concat(root.items.unpinned).find(i => i.id === root._previewId);
+		return item ? Preview.candidates(item, root.previewSources) : [];
+	}
+	readonly property bool previewOpen: root._previewId !== "" && root.previewCandidates.length > 0
+		&& !menu.opened && !popup.opened && root._dragKey === "" && !root.hidden && root.previewEnabled
+	property string _previewId: ""
+	property string _previewHoverId: ""
+	property var _previewAnchor: null
+
+	function _cancelPreview() { previewDwell.stop(); previewRelease.stop(); root._previewId = ""; root._previewHoverId = ""; }
+	function _beginPreview(id, anchor) {
+		if (!root.previewEnabled || !root.userVisible || root.hidden || root.grabWanted || root._dragKey !== "") return;
+		const item = root.items.pinned.concat(root.items.unpinned).find(i => i.id === id);
+		if (!item || item.windows.length === 0) return;
+		previewRelease.stop();
+		root._previewHoverId = id;
+		root._previewAnchor = anchor;
+		if (root._previewId !== id) previewDwell.restart();
+	}
+	function _leavePreview(id) {
+		if (root._previewHoverId !== id) return;
+		previewDwell.stop();
+		if (root._previewId === id && !preview.hovered) previewRelease.restart();
+	}
+	Timer {
+		id: previewDwell
+		interval: Tokens.dock.preview.dwellMs
+		onTriggered: {
+			root._previewId = root._previewHoverId;
+			const anchor = root._previewAnchor;
+			if (anchor) {
+				const p = anchor.mapToItem(stage, 0, 0);
+				preview.x = Math.max(8, Math.min(stage.width - preview.width - 8, p.x + (anchor.width - preview.width) / 2));
+			}
+		}
+	}
+	Timer { id: previewRelease; interval: Tokens.dock.preview.retainMs; onTriggered: if (!preview.hovered) root._cancelPreview() }
+	onPreviewEnabledChanged: if (!root.previewEnabled) root._cancelPreview()
+	onHiddenChanged: if (root.hidden) root._cancelPreview()
 
 	function openAddApp() { menu.close(); popup.open(); }
-	function closeMenus() { menu.close(); popup.close(); }
+	function closeMenus() { menu.close(); popup.close(); root._cancelPreview(); }
 	function _insideFloating(scenePos) {
 		if (menu.containsScenePoint(scenePos.x, scenePos.y))
 			return true;
@@ -68,6 +116,7 @@ Item {
 	}
 
 	function _openMenu(id, target, x, y) {
+		root._cancelPreview();
 		popup.close();
 		menu.forId = id;
 		menu.entries = Dock.menuFor(target);
@@ -101,6 +150,7 @@ Item {
 			mode: root.mode, hidden: root.hidden, interaction: root.interaction, overlapped: root.overlapped,
 			visible: root.userVisible, expanded: root.expanded, adaptive: root.adaptive,
 			width: root.target.width, height: root.target.height, y: root.target.y,
+			previewOpen: root.previewOpen,
 			keys: root._rows.map(r => r.key)
 		};
 	}
@@ -120,7 +170,7 @@ Item {
 
 	// Interaction and its 800 ms grace (Bloom interactionState).
 	// Bloom counts an open menu or Add App card as interaction too.
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.grabWanted
+	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.grabWanted || root.previewOpen
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -154,6 +204,7 @@ Item {
 	}
 
 	function _dragStart(key, x) {
+		root._cancelPreview();
 		root._dragKey = key;
 		root._dragOrigin = x;
 		root._dragX = x;
@@ -421,6 +472,7 @@ Item {
 							tooltipBorder: root.tooltipBorder
 							onClicked: root.activated(slot.key)
 							onMiddleClicked: root.newInstance(slot.key)
+							onHoveredChanged: if (icon.hovered) root._beginPreview(slot.key, slot); else root._leavePreview(slot.key)
 						}
 
 						WorkspaceSegment {
@@ -473,6 +525,24 @@ Item {
 		}
 
 		// Under the pill, which covers its bottom 14 px (Bloom: the pill paints above the card).
+		DockPreview {
+			id: preview
+			objectName: "dock-preview"
+			z: 2
+			y: pillArea.y - height - Tokens.dock.preview.bridge
+			candidates: root.previewCandidates
+			opened: root.previewOpen
+			captureEnabled: root.captureEnabled
+			background: root.bgExpanded
+			foreground: root.textColor
+			onHoveredChanged: {
+				if (preview.hovered) previewRelease.stop();
+				else if (root._previewId && !previewDwell.running) previewRelease.restart();
+			}
+			onFocusRequested: address => { root.previewFocus(address); root._cancelPreview(); }
+			onCloseRequested: address => { root.previewClose(address); root._cancelPreview(); }
+		}
+
 		AddAppPopup {
 			id: popup
 			z: -1

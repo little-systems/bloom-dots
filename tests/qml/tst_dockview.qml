@@ -170,6 +170,31 @@ Item {
 			compare(newInstance.signalArguments[0][0], "a");
 		}
 
+		function test_previewHoverAndClose() {
+			const v = make({ previewSources: [{ address: "0x1", toplevel: null }] });
+			settle(v);
+			const slot = findChild(v, "dock-slot-b");
+			const point = slot.mapToItem(v, slot.width / 2, slot.height / 2);
+			mouseMove(v, point.x, point.y);
+			tryCompare(v, "previewOpen", true, 1000);
+			compare(v.previewItem.candidates.map(c => c.address), ["0x1"]);
+			const focus = createTemporaryObject(spyComponent, host, { target: v, signalName: "previewFocus" });
+			v.previewItem.focusRequested("0x1");
+			compare(focus.signalArguments[0][0], "0x1");
+			v.closeMenus();
+			compare(v.previewOpen, false);
+		}
+
+		function test_previewSettingCanDisableCapture() {
+			const v = make({ previewEnabled: false, previewSources: [{ address: "0x1", toplevel: null }] });
+			settle(v);
+			const slot = findChild(v, "dock-slot-b");
+			const point = slot.mapToItem(v, slot.width / 2, slot.height / 2);
+			mouseMove(v, point.x, point.y);
+			wait(350);
+			compare(v.previewOpen, false);
+		}
+
 		function framesIn(ms) {
 			let n = 0;
 			const count = () => n++;

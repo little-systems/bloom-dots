@@ -47,6 +47,7 @@ state_has_no_segment() { ipc dock state | jq -e '.[0].keys | index("|workspaces|
 
 wait_for "the dock to settle with its pin" state_is "keys,height,y" '{"keys":["bloom-test-app"],"height":52,"y":0}'
 pass "dock loads and shows the pinned app"
+assert_eq "$(state "previewOpen")" '{"previewOpen":false}' "no toplevel capture on headless sway"
 
 assert_eq "$(ipc dock pin nope)" "unknown app" "pin of a missing entry"
 assert_eq "$(ipc dock pin bloom-test-app)" "already pinned" "double pin"
