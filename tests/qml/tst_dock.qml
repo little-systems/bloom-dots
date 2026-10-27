@@ -278,4 +278,12 @@ TestCase {
 		verify(Dock.pickerScript.indexOf("exit 127") > 0);
 		verify(Dock.pickerScript.indexOf('"$BLOOM_PICKER"') >= 0, "tests point it at a stub");
 	}
+	function test_slotsWithSegment() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [] }], unpinned: [] };
+		const s = Dock.slots(items, true, [{ id: 1 }, { id: 2 }]);
+		compare(s.map(x => x.key), [Dock.workspacesKey, Dock.dividerKey + "ws", "a"]);
+		compare(Dock.slots({ pinned: [], unpinned: [] }, true, [{ id: 1 }]).map(x => x.key), [Dock.workspacesKey], "no divider with nothing after it");
+		compare(Dock.slots(items, true, []).map(x => x.key), ["a"], "no cells, no segment");
+		compare(Dock.layout([Dock.workspacesKey, Dock.dividerKey + "ws", "a"], 2), { xs: [0, 74, 91], width: 127 }, "62 + 12 + 5 + 12 + 36");
+	}
 }

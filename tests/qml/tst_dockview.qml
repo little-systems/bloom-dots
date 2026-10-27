@@ -211,5 +211,114 @@ Item {
 			settleFrames();
 			compare(framesIn(1000), 0);
 		}
+
+		// Review focus 2.
+		function test_dragReorders() {
+			const v = make();
+			settle(v);
+			settleFrames();
+			const spy = createTemporaryObject(spyComponent, host, { target: v, signalName: "reordered" });
+			const a = findChild(v, "dock-slot-a");
+			const start = a.mapToItem(v, 18, 18);
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 64; dx += 4)
+				mouseMove(v, start.x + dx, start.y);
+			mouseRelease(v, start.x + 64, start.y);
+			compare(spy.count, 1);
+			compare(spy.signalArguments[0][0], ["b", "a"]);
+		}
+
+		function test_dragIsNotAClick() {
+			const v = make();
+			settle(v);
+			settleFrames();
+			const activated = createTemporaryObject(spyComponent, host, { target: v, signalName: "activated" });
+			const a = findChild(v, "dock-slot-a");
+			const start = a.mapToItem(v, 18, 18);
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 40; dx += 4)
+				mouseMove(v, start.x + dx, start.y);
+			mouseRelease(v, start.x + 40, start.y);
+			compare(activated.count, 0);
+		}
+
+		function test_runningAppsDoNotDrag() {
+			const v = make();
+			settle(v);
+			settleFrames();
+			const spy = createTemporaryObject(spyComponent, host, { target: v, signalName: "reordered" });
+			const c = findChild(v, "dock-slot-c");
+			const start = c.mapToItem(v, 18, 18);
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 64; dx += 4)
+				mouseMove(v, start.x - dx, start.y);
+			mouseRelease(v, start.x - 64, start.y);
+			compare(spy.count, 0);
+		}
+
+		function test_rightClickOpensTheMenu() {
+			const v = make({ menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
+			settle(v);
+			settleFrames();
+			const chosen = createTemporaryObject(spyComponent, host, { target: v, signalName: "menuChosen" });
+			const a = findChild(v, "dock-slot-a");
+			const p = a.mapToItem(v, 18, 18);
+			mouseClick(v, p.x, p.y, Qt.RightButton);
+			verify(v.grabWanted);
+			mouseClick(findChild(v, "menu-item-unpin"), 10, 10);
+			compare(chosen.signalArguments[0][0], "a");
+			compare(chosen.signalArguments[0][1], "unpin");
+			verify(!v.grabWanted);
+		}
+
+		// Review focus 1 (the part a test can reach).
+		function test_outsideClickInsideTheSurfaceCloses() {
+			const v = make({ menuTarget: id => ({ kind: "app", id: id, pinned: true, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] }) });
+			settle(v);
+			const p = findChild(v, "dock-slot-a").mapToItem(v, 18, 18);
+			mouseClick(v, p.x, p.y, Qt.RightButton);
+			verify(v.grabWanted);
+			mouseClick(v, 20, 20);
+			verify(!v.grabWanted);
+		}
+
+		function test_addAppTakesTheKeyboard() {
+			const v = make({ menuTarget: id => ({ kind: "background" }) });
+			settle(v);
+			v.openAddApp();
+			verify(v.keyboardWanted);
+			keyClick(Qt.Key_Escape);
+			verify(!v.keyboardWanted);
+		}
+
+		function test_toast() {
+			const v = make();
+			settle(v);
+			const toast = findChild(v, "dock-toast");
+			compare(toast.opacity, 0);
+			v.toastMessage = "Couldn't use that image";
+			v.toastSerial++;
+			tryCompare(toast, "opacity", 1, 500);
+			compare(findChild(v, "dock-toast-text").text, "Couldn't use that image");
+		}
+
+		function test_segment() {
+			const v = make({ workspaceCells: [{ id: 1, label: "1", tip: "Workspace 1", active: true }, { id: 2, label: "2", tip: "Workspace 2", active: false }] });
+			settle(v);
+			compare(v.stateObject().keys.slice(0, 2), ["|workspaces|", "|divider|ws"]);
+			const sw = createTemporaryObject(spyComponent, host, { target: v, signalName: "switchWorkspace" });
+			mouseClick(findChild(v, "ws-cell-2"), 12, 12);
+			compare(sw.signalArguments[0][0].id, 2);
+		}
+
+		function test_closedMenusDrawNoFrames() {
+			const v = make({ menuTarget: id => ({ kind: "background" }) });
+			settle(v);
+			v.openAddApp();
+			wait(300);
+			keyClick(Qt.Key_Escape);
+			settleFrames();
+			compare(framesIn(1000), 0, "nothing runs once the card has gone");
+		}
 	}
 }

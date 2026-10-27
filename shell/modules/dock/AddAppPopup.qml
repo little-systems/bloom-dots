@@ -49,6 +49,7 @@ Item {
 	function close() {
 		if (!root._open)
 			return;
+		root.forceActiveFocus();
 		root._open = false;
 		root.closed();
 	}

@@ -27,6 +27,7 @@ Item {
 		root._x = x;
 		root._y = y;
 		root._submenu = "";
+		column.forceLayout();
 		box.visible = true;
 		root.forceActiveFocus();
 	}
@@ -135,6 +136,7 @@ Item {
 				delegate: Loader {
 					required property var modelData
 					width: column.width
+					height: item ? item.implicitHeight : 0
 					sourceComponent: modelData.kind === "divider" ? dividerComponent : itemComponent
 					property var entry: modelData
 				}
@@ -163,6 +165,7 @@ Item {
 						delegate: Loader {
 							required property var modelData
 							width: sub.width
+							height: item ? item.implicitHeight : 0
 							sourceComponent: modelData.kind === "divider" ? dividerComponent : itemComponent
 							property var entry: modelData
 						}

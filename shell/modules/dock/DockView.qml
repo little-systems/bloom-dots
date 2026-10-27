@@ -20,7 +20,19 @@ Item {
 	property bool iconOnly: false
 	property bool separatorEnabled: true
 	property var items: ({ pinned: [], unpinned: [] })
+	property var workspaceCells: []
+	property var menuTarget: id => ({ kind: "background" })
+	property var apps: []
+	property var pinnedIds: []
+	property bool appsLoading: false
+	property string toastMessage: ""
+	property int toastSerial: 0
 	property color bg: Qt.rgba(0, 0, 0, 0.8)
+	property color bgExpanded: root.bg
+	property color border: "transparent"
+	property color groupBg: Qt.rgba(1, 1, 1, 0.06)
+	property color textMuted: Qt.rgba(1, 1, 1, 0.6)
+	property color accent: "#007aff"
 	property color textColor: "white"
 	property color tooltipBg: Qt.rgba(0, 0, 0, Tokens.dock.tooltip.alpha)
 	property color tooltipText: "white"
@@ -29,6 +41,26 @@ Item {
 
 	signal activated(string id)
 	signal newInstance(string id)
+	signal reordered(var ids)
+	signal menuChosen(string id, string key)
+	signal pinRequested(string id)
+	signal switchWorkspace(var cell)
+	signal stepWorkspace(int dir)
+	signal hideWorkspaces()
+
+	readonly property bool keyboardWanted: popup.opened
+	readonly property bool grabWanted: menu.opened || popup.opened
+	readonly property Item menuItem: menu
+	readonly property Item popupItem: popup
+
+	function openAddApp() { menu.close(); popup.open(); }
+	function _openMenu(id, target, x, y) {
+		popup.close();
+		menu.forId = id;
+		menu.entries = Dock.menuFor(target);
+		const p = stage.mapFromItem(null, x, y);
+		menu.openAt(p.x, p.y);
+	}
 
 	property bool ready: false
 	property bool impacted: false
@@ -98,9 +130,52 @@ Item {
 	property var _rows: []
 	property var _leftAt: ({})
 	property var _layout: ({ xs: [], width: 0 })
+	property string _dragKey: ""
+	property real _dragOrigin: 0
+	property real _dragX: 0
+	property var _dragOrder: []
+
+	function _pinnedKeys() {
+		return root._rows.map(r => r.key).filter(k => (root.items.pinned || []).some(i => i.id === k));
+	}
+
+	function _dragStart(key, x) {
+		root._dragKey = key;
+		root._dragOrigin = x;
+		root._dragX = x;
+		root._dragOrder = root._pinnedKeys();
+	}
+
+	function _dragMove(dx) {
+		root._dragX = root._dragOrigin + dx;
+		const others = root._dragOrder.filter(k => k !== root._dragKey);
+		const centre = k => {
+			const row = root._rows.findIndex(r => r.key === k);
+			return slotModel.get(row).slotX + Tokens.dock.iconBox / 2;
+		};
+		const index = Dock.reorderIndex(others.map(centre), root._dragX + Tokens.dock.iconBox / 2);
+		const next = Dock.moveKey(root._dragOrder, root._dragKey, index);
+		if (JSON.stringify(next) !== JSON.stringify(root._dragOrder)) {
+			root._dragOrder = next;
+			root._sync();
+		}
+	}
+
+	function _dragEnd() {
+		const order = root._dragOrder;
+		const before = (root.items.pinned || []).map(i => i.id);
+		root._dragKey = "";
+		root._dragOrder = [];
+		if (JSON.stringify(order) !== JSON.stringify(before))
+			root.reordered(order);
+		root._sync();
+	}
 
 	function _sync() {
-		const next = Dock.slots(root.items, root.separatorEnabled);
+		const ordered = root._dragOrder.length > 0
+			? Object.assign({}, root.items, { pinned: root._dragOrder.map(id => root.items.pinned.find(i => i.id === id)).filter(Boolean) })
+			: root.items;
+		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells);
 		const byKey = {};
 		for (const s of next)
 			byKey[s.key] = s;
@@ -114,14 +189,14 @@ Item {
 			return Tokens.dock.exitMs;
 		};
 		const expired = root._rows
-			.filter(r => r.key === Dock.dividerKey || (r.leaving && root._leftAt[r.key] && now - root._leftAt[r.key].at >= root._leftAt[r.key].ms))
+			.filter(r => r.key.startsWith(Dock.dividerKey) || (r.leaving && root._leftAt[r.key] && now - root._leftAt[r.key].at >= root._leftAt[r.key].ms))
 			.map(r => r.key);
 		const rows = Dock.reconcile(root._rows, next.map(s => s.key), expired);
 		const leftAt = {};
 		for (const r of rows)
 			if (r.leaving)
 				leftAt[r.key] = root._leftAt[r.key] ?? { at: now, ms: holdOf(r.key) };
-		const lay = Dock.layout(rows.map(r => r.key));
+		const lay = Dock.layout(rows.map(r => r.key), root.workspaceCells.length);
 		// Positions are relative to the row's centre (the pill's centre), so a
 		// width change moves no one until each slot's layout spring runs.
 		const xs = lay.xs.map(x => x - lay.width / 2);
@@ -161,6 +236,7 @@ Item {
 		}
 	}
 	onItemsChanged: root._sync()
+	onWorkspaceCellsChanged: root._sync()
 	onSeparatorEnabledChanged: root._sync()
 	Component.onCompleted: root._sync()
 	Timer { id: exitTimer; onTriggered: root._sync() }
@@ -255,6 +331,7 @@ Item {
 				}
 
 				Repeater {
+					id: slotRepeater
 					model: slotModel
 
 					delegate: Item {
@@ -269,10 +346,23 @@ Item {
 						required property bool present
 						required property real slotX
 
-						x: xSpring.value
-						width: slot.kind === "divider" ? 5 : Tokens.dock.iconBox
+						x: root._dragKey === slot.key ? root._dragX : xSpring.value
+						width: Dock._width(slot.key, root.workspaceCells.length)
 						height: Tokens.dock.iconBox
-						z: icon.hovered ? 1 : 0
+						z: root._dragKey === slot.key ? 3 : icon.hovered ? 1 : 0
+
+						DragHandler {
+							id: drag
+							enabled: slot.kind === "app" && slot.pinned && root.expanded
+							xAxis.enabled: true
+							yAxis.enabled: false
+							target: null
+							onActiveChanged: {
+								if (drag.active) root._dragStart(slot.key, slot.x);
+								else if (root._dragKey === slot.key) root._dragEnd();
+							}
+							onTranslationChanged: if (drag.active) root._dragMove(drag.translation.x)
+						}
 
 						Spring {
 							id: xSpring
@@ -301,6 +391,8 @@ Item {
 							windows: slot.windows
 							present: slot.present && root.expanded
 							quickExit: !slot.pinned
+							dragging: root._dragKey === slot.key
+							anyDragging: root._dragKey !== ""
 							iconOnly: root.iconOnly
 							light: root.light
 							textColor: root.textColor
@@ -310,9 +402,93 @@ Item {
 							onClicked: root.activated(slot.key)
 							onMiddleClicked: root.newInstance(slot.key)
 						}
+
+						WorkspaceSegment {
+							visible: slot.kind === "workspaces"
+							cells: root.workspaceCells
+							iconOnly: root.iconOnly
+							light: root.light
+							textColor: root.textColor
+							tooltipBg: root.tooltipBg
+							tooltipText: root.tooltipText
+							onSwitchTo: cell => root.switchWorkspace(cell)
+							onStep: dir => root.stepWorkspace(dir)
+							onMenuRequested: (x, y) => {}
+						}
 					}
 				}
 			}
+			TapHandler {
+				acceptedButtons: Qt.RightButton
+				onTapped: eventPoint => {
+					const local = eventPoint.position;
+					const p = pillArea.mapToItem(null, local.x, local.y);
+					for (let i = 0; i < slotRepeater.count; i++) {
+						const slot = slotRepeater.itemAt(i);
+						if (!slot || !slot.present || slot.kind === "divider") continue;
+						const hit = slot.mapFromItem(pillArea, local.x, local.y);
+						if (hit.x >= 0 && hit.x < slot.width && hit.y >= 0 && hit.y < slot.height) {
+							const target = slot.kind === "workspaces" ? { kind: "workspaces" } : root.menuTarget(slot.key);
+							root._openMenu(slot.kind === "workspaces" ? "" : slot.key, target, p.x, p.y);
+							return;
+						}
+					}
+					root._openMenu("", { kind: "background" }, p.x, p.y);
+				}
+			}
+		}
+
+		Item {
+			anchors.fill: parent
+			z: 8
+			visible: root.grabWanted
+			TapHandler { onTapped: { menu.close(); popup.close(); } }
+		}
+
+		AddAppPopup {
+			id: popup
+			z: 9
+			x: (stage.width - width) / 2
+			y: pillArea.y + Tokens.dock.popup.tuck - height
+			apps: root.apps
+			running: (root.items.unpinned || []).filter(i => !i.id.startsWith("class:")).map(i => ({ id: i.id, name: i.name, icon: i.icon }))
+			pinned: (root.items.pinned || []).map(i => i.id)
+			loading: root.appsLoading
+			bg: root.bgExpanded
+			border: root.border
+			textColor: root.textColor
+			textMuted: root.textMuted
+			groupBg: root.groupBg
+			accent: root.accent
+			onPinRequested: id => root.pinRequested(id)
+		}
+
+		DockMenu {
+			id: menu
+			anchors.fill: parent
+			z: 10
+			viewWidth: stage.width
+			light: root.light
+			bg: root.bgExpanded
+			border: root.border
+			textColor: root.textColor
+			groupBg: root.groupBg
+			property string forId: ""
+			onChosen: key => {
+				if (key === "add-app") popup.open();
+				else if (key === "hide-workspaces") root.hideWorkspaces();
+				else root.menuChosen(menu.forId, key);
+			}
+		}
+
+		DockToast {
+			id: toast
+			objectName: "dock-toast"
+			z: 11
+			anchors.horizontalCenter: parent.horizontalCenter
+			y: stage.height - Tokens.dock.toast.bottom - height
+			message: root.toastMessage
+			serial: root.toastSerial
 		}
 
 		// Reveal band: a 2 px strip across the resting dock (Wayland only

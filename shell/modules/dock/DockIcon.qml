@@ -16,6 +16,8 @@ Item {
 	property bool present: true
 	// Bloom: running (unpinned) apps leave with a 120 ms tween and no delay.
 	property bool quickExit: false
+	property bool dragging: false
+	property bool anyDragging: false
 	property bool iconOnly: false
 	property bool light: false
 	property color textColor: "white"
@@ -83,7 +85,7 @@ Item {
 	Item {
 		id: presence
 		anchors.fill: parent
-		opacity: root.shown ? 1 : 0
+		opacity: root.shown ? (root.dragging ? Tokens.dock.drag.opacity : 1) : 0
 		Behavior on opacity {
 			NumberAnimation { duration: root._quick ? Tokens.dock.quickExitMs : Tokens.dock.entry.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] }
 		}
@@ -111,7 +113,7 @@ Item {
 				damping: Tokens.springs.hoverY.damping
 				restSpeed: Tokens.springs.hoverY.restSpeed
 				initial: 0
-				target: root.hovered && root.shown ? Tokens.dock.hover.y : 0
+				target: root.dragging ? Tokens.dock.drag.y : (root.hovered && root.shown ? Tokens.dock.hover.y : 0)
 			}
 			Spring {
 				id: liftScale
@@ -119,7 +121,7 @@ Item {
 				damping: Tokens.springs.hoverScale.damping
 				restSpeed: Tokens.springs.hoverScale.restSpeed
 				initial: 1
-				target: root.pressed ? Tokens.dock.tapScale : root.hovered && root.shown ? Tokens.dock.hover.scale : 1
+				target: root.pressed && !root.dragging ? Tokens.dock.tapScale : root.dragging ? Tokens.dock.drag.scale : root.hovered && root.shown ? Tokens.dock.hover.scale : 1
 			}
 
 			RectangularShadow {
@@ -204,7 +206,7 @@ Item {
 	Rectangle {
 		id: tip
 		objectName: "dock-tooltip"
-		readonly property bool showing: root.hovered && root.shown
+		readonly property bool showing: root.hovered && root.shown && !root.anyDragging
 		x: (root.width - width) / 2
 		y: -Tokens.dock.tooltip.offset
 		z: 1

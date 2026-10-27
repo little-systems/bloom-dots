@@ -52,15 +52,26 @@ function buildItems(pinned, groups, order, info) {
 	};
 }
 
-// What the row shows: pinned apps, Bloom's divider when both groups have
-// something, then the other running apps.
-function slots(items, separator) {
+var workspacesKey = "|workspaces|";
+
+// What the row shows: the workspace segment (D7) and its divider, pinned
+// apps, Bloom's divider when both app groups have something, then the other
+// running apps.
+function slots(items, separator, segmentCells) {
 	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon, windows: i.windows.length });
-	const out = items.pinned.map(app(true));
+	const out = [];
+	const cells = segmentCells || [];
+	if (cells.length > 0) {
+		out.push({ key: workspacesKey, kind: "workspaces", pinned: false, name: "", icon: "", windows: cells.length });
+		if (items.pinned.length + items.unpinned.length > 0)
+			out.push({ key: dividerKey + "ws", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
+	}
+	out.push.apply(out, items.pinned.map(app(true)));
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
 		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 	return out.concat(items.unpinned.map(app(false)));
 }
+
 
 // framer AnimatePresence: a row that left `next` stays where it was, marked
 // leaving, until its exit ends (`expired`); one that comes back reuses it.
@@ -81,19 +92,24 @@ function reconcile(prev, nextKeys, expired) {
 	return out;
 }
 
+function _width(key, cells) {
+	if (key === workspacesKey)
+		return segmentWidth(cells);
+	return key.startsWith(dividerKey) ? DIVIDER_SPAN : ICON;
+}
+
 // Left edges of each row in the flex row (gap 12), and its total width.
-function layout(keys) {
+function layout(keys, cells) {
 	const xs = [];
 	let x = 0;
 	keys.forEach((k, i) => {
 		if (i > 0)
 			x += GAP;
 		xs.push(x);
-		x += k === dividerKey ? DIVIDER_SPAN : ICON;
+		x += _width(k, cells || 0);
 	});
 	return { xs: xs, width: x };
 }
-
 // Bloom handleAppClick on Hyprland. Cycling uses a stable order: focus
 // history would only bounce between the two latest windows.
 function clickAction(item, activeAddress) {
