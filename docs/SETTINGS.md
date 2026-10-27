@@ -37,6 +37,13 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-extras-hidden-drives` | string | `"[]"` | text, up to 8192 characters | JSON array of hidden drive UUIDs, or path:device IDs when a UUID is unavailable. |
 | `bloom-dock-extras-folders` | string | `"downloads"` | text, up to 8192 characters | Comma-separated XDG user folders to show, such as downloads and documents. |
 | `bloom-dock-extras-custom-folders` | string | `"[]"` | text, up to 8192 characters | JSON array of custom folder paths to show in dock extras. |
+| `bloom-osd-timeout` | number | `1000` | 250 to 10000 | Milliseconds an OSD stays visible after a volume or brightness change. |
+| `bloom-volume-protection-enabled` | bool | `false` | `true`, `false` | Limit sudden output-volume increases and enforce a maximum level. |
+| `bloom-volume-max-jump` | number | `10` | 1 to 100 | Largest allowed output-volume increase in percentage points at once when protection is enabled. |
+| `bloom-volume-max-level` | number | `99` | 0 to 200 | Maximum output volume in percent when protection is enabled. |
+| `bloom-notifications-dnd` | bool | `false` | `true`, `false` | Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear. |
+| `bloom-notifications-timeout` | number | `7000` | 1000 to 60000 | Default notification card timeout in milliseconds when the sender does not specify one. |
+| `bloom-notifications-history-limit` | number | `200` | 0 to 500 | Maximum number of non-transient notifications retained in local history. |
 | `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |

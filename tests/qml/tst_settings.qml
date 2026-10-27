@@ -57,6 +57,22 @@ TestCase {
 		verify(!Settings.validateOne("bloom-notch-edge-delay", 2001).ok);
 	}
 
+	function test_osdAndNotificationDefaultsAndBounds() {
+		const d = Settings.defaults();
+		compare(d["bloom-osd-timeout"], 1000);
+		compare(d["bloom-volume-protection-enabled"], false);
+		compare(d["bloom-volume-max-jump"], 10);
+		compare(d["bloom-volume-max-level"], 99);
+		compare(d["bloom-notifications-dnd"], false);
+		compare(d["bloom-notifications-timeout"], 7000);
+		compare(d["bloom-notifications-history-limit"], 200);
+		verify(Settings.validateOne("bloom-osd-timeout", 250).ok);
+		verify(!Settings.validateOne("bloom-osd-timeout", 0).ok);
+		verify(!Settings.validateOne("bloom-volume-max-jump", 101).ok);
+		verify(!Settings.validateOne("bloom-volume-max-level", -1).ok);
+		compare(Settings.validateOne("bloom-notifications-dnd", "true"), { ok: true, value: true });
+	}
+
 	function test_nullableNumber() {
 		compare(Settings.validateOne("bloom-weather-lat", null), { ok: true, value: null });
 		compare(Settings.validateOne("bloom-weather-lat", "12.5"), { ok: true, value: 12.5 });

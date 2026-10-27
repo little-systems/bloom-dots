@@ -185,6 +185,34 @@ var SCHEMA = {
 		type: "string", maxLength: 8192, default: "[]",
 		doc: "JSON array of custom folder paths to show in dock extras."
 	},
+	"bloom-osd-timeout": {
+		type: "number", min: 250, max: 10000, default: 1000,
+		doc: "Milliseconds an OSD stays visible after a volume or brightness change."
+	},
+	"bloom-volume-protection-enabled": {
+		type: "bool", default: false,
+		doc: "Limit sudden output-volume increases and enforce a maximum level."
+	},
+	"bloom-volume-max-jump": {
+		type: "number", min: 1, max: 100, default: 10,
+		doc: "Largest allowed output-volume increase in percentage points at once when protection is enabled."
+	},
+	"bloom-volume-max-level": {
+		type: "number", min: 0, max: 200, default: 99,
+		doc: "Maximum output volume in percent when protection is enabled."
+	},
+	"bloom-notifications-dnd": {
+		type: "bool", default: false,
+		doc: "Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear."
+	},
+	"bloom-notifications-timeout": {
+		type: "number", min: 1000, max: 60000, default: 7000,
+		doc: "Default notification card timeout in milliseconds when the sender does not specify one."
+	},
+	"bloom-notifications-history-limit": {
+		type: "number", min: 0, max: 500, default: 200,
+		doc: "Maximum number of non-transient notifications retained in local history."
+	},
 	"bloom-scale": {
 		type: "number",
 		min: 0.8,
