@@ -78,6 +78,22 @@ TestCase {
 		compare(Dock.menuFor({ kind: "custom" }).filter(x => x.kind === "item").map(x => x.key), ["open", "remove"]);
 	}
 
+	function test_trayOnlyAddsBackgroundItemWithoutChangingAppOrder() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [] }], unpinned: [] };
+		const tray = [{ key: "sni1", title: "Chat", icon: "icon:chat" }];
+		const slots = Dock.slots(items, true, [], [], "off", tray);
+		compare(slots.map(x => x.key), ["a", "|divider|tray", "tray:sni1"]);
+		compare(slots[2].kind, "tray");
+		compare(slots[2].backgroundDot, true);
+	}
+
+	function test_mergedAppMenuShowsEachTrayHandle() {
+		const menu = Dock.menuFor({ kind: "app", pinned: false, pinnable: true, running: true, windows: 1,
+			actions: [], trays: [{ key: "one", title: "Inbox" }, { key: "two", title: "Calls" }] });
+		compare(menu.filter(x => x.kind === "item" && x.key.startsWith("tray:")).map(x => x.label),
+			["App tray menu: Inbox", "App tray menu: Calls"]);
+	}
+
 	// framer AnimatePresence: a leaving item keeps its place until its exit ends.
 	function test_reconcile() {
 		const rows = keys => keys.map(k => ({ key: k, leaving: false }));

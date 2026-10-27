@@ -57,10 +57,13 @@ var workspacesKey = "|workspaces|";
 // What the row shows: the workspace segment (D7) and its divider, pinned
 // apps, Bloom's divider when both app groups have something, then the other
 // running apps.
-function slots(items, separator, segmentCells, extras, extrasPosition) {
-	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon, windows: i.windows.length });
+function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly) {
+	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon,
+		windows: i.windows.length, backgroundDot: !!i.hasTray && i.windows.length === 0 });
 	const extra = e => ({ key: "extra:" + e.key, kind: "extra", extraKind: e.kind, count: e.count || 0,
 		pinned: false, name: e.name, icon: e.icon, windows: 0 });
+	const tray = t => ({ key: "tray:" + t.key, kind: "tray", pinned: false, name: t.title || t.id || "Tray app",
+		icon: t.icon || "", windows: 0, backgroundDot: true });
 	const out = [];
 	const cells = segmentCells || [];
 	const shownExtras = extrasPosition === "left" || extrasPosition === "right" ? (extras || []) : [];
@@ -78,6 +81,10 @@ function slots(items, separator, segmentCells, extras, extrasPosition) {
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
 		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 	out.push.apply(out, items.unpinned.map(app(false)));
+	if (trayOnly && trayOnly.length > 0) {
+		if (appsCount > 0) out.push({ key: dividerKey + "tray", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
+		out.push.apply(out, trayOnly.map(tray));
+	}
 	if (extrasPosition === "right" && shownExtras.length > 0) {
 		if (appsCount > 0) out.push({ key: dividerKey + "extras", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 		out.push.apply(out, shownExtras.map(extra));
@@ -247,6 +254,7 @@ function menuFor(t) {
 	if (t.kind === "trash") return [_item("open", "Open Trash"), _divider, _item("empty-trash", "Empty Trash…", true)];
 	if (t.kind === "folder" || t.kind === "custom")
 		return [_item("open", "Open Folder"), _divider, _item("remove", "Remove from Dock")];
+	if (t.kind === "tray") return [_item("tray:" + t.trayKey, t.hasMenu ? "App tray menu" : "Activate")];
 	const bloom = { kind: "submenu", key: "bloom", label: "Bloom Options", children: [_item("restart", "Restart Bloom"), _divider, _item("quit", "Quit Bloom", true)] };
 	const addApp = _item("add-app", "Add App to Dock...");
 	if (t.kind === "background")
@@ -273,6 +281,11 @@ function menuFor(t) {
 	}
 	if (t.running)
 		out.push(_item("close", t.windows > 1 ? "Close all windows" : "Close window", true));
+	if (t.trays && t.trays.length > 0) {
+		out.push(_divider);
+		for (const tray of t.trays)
+			out.push(_item("tray:" + tray.key, t.trays.length > 1 ? "App tray menu: " + (tray.title || tray.key) : "App tray menu"));
+	}
 	return out;
 }
 
