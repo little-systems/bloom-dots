@@ -198,3 +198,139 @@ function focusArg(address) {
 		return "";
 	return 'hl.dsp.focus({ window = "address:' + address + '" })';
 }
+
+// Context menus (Bloom Dock.tsx), mapped to Linux: desktop actions stand in
+// for the taskbar's tray/jump list, and there is no Start menu (D7).
+function _item(key, label, danger) {
+	return { kind: "item", key: key, label: label, danger: !!danger };
+}
+var _divider = { kind: "divider" };
+
+function menuFor(t) {
+	if (t.kind === "workspaces")
+		return [_item("hide-workspaces", "Hide Workspaces")];
+	const bloom = { kind: "submenu", key: "bloom", label: "Bloom Options", children: [_item("restart", "Restart Bloom"), _divider, _item("quit", "Quit Bloom", true)] };
+	const addApp = _item("add-app", "Add App to Dock...");
+	if (t.kind === "background")
+		return [addApp, bloom];
+	const out = [];
+	if (t.pinned)
+		out.push(_item("unpin", "Unpin from Dock"));
+	else if (t.pinnable)
+		out.push(_item("pin", "Pin to Dock"));
+	if (t.pinned) {
+		out.push(_divider, _item("change-icon", "Change Icon..."));
+		if (t.hasCustomIcon)
+			out.push(_item("reset-icon", "Reset Icon"));
+	}
+	if (out.length > 0)
+		out.push(_divider);
+	out.push(addApp, bloom);
+	const actions = (t.actions || []).map((name, i) => _item("action:" + i, name));
+	if (actions.length > 0 || t.running) {
+		out.push(_divider);
+		out.push.apply(out, actions);
+		if (t.running)
+			out.push(_item("new-window", "Open New Window"));
+	}
+	if (t.running)
+		out.push(_item("close", t.windows > 1 ? "Close all windows" : "Close window", true));
+	return out;
+}
+
+// Bloom: just above the pointer, kept 8 px inside the dock window.
+function menuPosition(x, y, w, h, viewW) {
+	const m = 8;
+	return { left: Math.max(m, Math.min(x, viewW - w - m)), top: Math.max(m, y - h - m) };
+}
+
+// framer Reorder: where the dragged item goes among the others, by the
+// neighbour centres it has passed.
+function reorderIndex(centers, draggedCenter) {
+	let i = 0;
+	while (i < centers.length && draggedCenter > centers[i])
+		i++;
+	return i;
+}
+
+function moveKey(keys, key, index) {
+	const rest = keys.filter(k => k !== key);
+	rest.splice(index, 0, key);
+	return rest;
+}
+
+// Bloom AddAppPopup: browse = running (unpinned) then all apps (60, not
+// pinned or running); search = starts-with then contains, by name, 50 max.
+function addAppSections(all, running, pinned, query) {
+	const byName = (x, y) => x.name.localeCompare(y.name);
+	const s = query.trim().toLowerCase();
+	if (!s) {
+		const suggestions = running.filter(r => pinned.indexOf(r.id) < 0);
+		const ids = suggestions.map(r => r.id);
+		const rest = all.filter(x => pinned.indexOf(x.id) < 0 && ids.indexOf(x.id) < 0).sort(byName).slice(0, 60);
+		const out = [];
+		if (suggestions.length > 0)
+			out.push({ title: "Running", items: suggestions });
+		if (rest.length > 0)
+			out.push({ title: "All apps", items: rest });
+		return out;
+	}
+	const starts = [];
+	const contains = [];
+	for (const x of all) {
+		const n = x.name.toLowerCase();
+		if (n.startsWith(s))
+			starts.push(x);
+		else if (n.indexOf(s) >= 0)
+			contains.push(x);
+	}
+	return [{ title: null, items: starts.sort(byName).concat(contains.sort(byName)).slice(0, 50) }];
+}
+
+// The workspace segment (D7): this monitor's workspaces, no scratchpads;
+// numbered ones in order, then named ones (ids -1337, -1338, …) as created.
+function workspaceCells(list, activeId) {
+	const rank = w => w.id > 0 ? w.id : 1e9 - w.id;
+	return list
+		.filter(w => !w.name.startsWith("special:"))
+		.slice()
+		.sort((x, y) => rank(x) - rank(y))
+		.map(w => {
+			const named = w.name && w.name !== String(w.id);
+			return { id: w.id, label: named ? w.name.slice(0, 1).toUpperCase() : String(w.id), tip: named ? w.name : "Workspace " + w.id, active: w.id === activeId };
+		});
+}
+
+function segmentWidth(n) {
+	return 2 * 6 + n * 24 + Math.max(0, n - 1) * 2;
+}
+
+// Custom icons from dock.json: string paths only.
+function iconsOf(value) {
+	const icons = value && value.icons && typeof value.icons === "object" ? value.icons : {};
+	const out = {};
+	for (const id in icons)
+		if (typeof icons[id] === "string" && icons[id] !== "")
+			out[id] = icons[id];
+	return out;
+}
+
+var ICON_TYPES = ["png", "ico", "jpg", "jpeg", "svg", "bmp"];
+
+// The copy's name in dock-icons/: the app id (made path-safe) plus the
+// source's extension; "" for anything but Bloom's image types.
+function iconFile(id, source) {
+	const m = /\.([A-Za-z0-9]+)$/.exec(source);
+	const ext = m ? m[1].toLowerCase() : "";
+	if (ICON_TYPES.indexOf(ext) < 0)
+		return "";
+	return id.replace(/[^A-Za-z0-9_.-]/g, "_").replace(/\.\./g, "__") + "." + ext;
+}
+
+// Prints the chosen file. Exit 1 = cancelled, 127 = no picker installed.
+// BLOOM_PICKER (tests) replaces the search with a stub.
+var pickerScript = 'f="Images (*.png *.svg *.jpg *.jpeg *.ico *.bmp)"; '
+	+ 'if [ -n "$BLOOM_PICKER" ]; then exec "$BLOOM_PICKER"; fi; '
+	+ 'if command -v kdialog >/dev/null 2>&1; then exec kdialog --title "Choose an icon" --getopenfilename "$HOME" "$f"; fi; '
+	+ 'for z in zenity qarma; do if command -v $z >/dev/null 2>&1; then exec $z --file-selection --title="Choose an icon" --file-filter="Images | *.png *.svg *.jpg *.jpeg *.ico *.bmp"; fi; done; '
+	+ 'exit 127';

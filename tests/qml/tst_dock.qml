@@ -184,4 +184,98 @@ TestCase {
 		const s = Dock.slots(items, true);
 		compare(s.map(x => x.pinned), [true, false, false]);
 	}
+	function labels(entries) {
+		return entries.map(e => e.kind === "divider" ? "-" : e.kind === "submenu" ? e.label + ">" : e.label);
+	}
+
+	function menuApp(props) {
+		const t = { kind: "app", id: "firefox", pinned: false, pinnable: true, running: false, windows: 0, hasCustomIcon: false, actions: [] };
+		for (const k in props) t[k] = props[k];
+		return t;
+	}
+
+	// Bloom Dock.tsx menus, mapped to Linux (plan ruling 2).
+	function test_menuFor() {
+		compare(labels(Dock.menuFor(menuApp({}))), ["Pin to Dock", "-", "Add App to Dock...", "Bloom Options>"]);
+		compare(labels(Dock.menuFor(menuApp({ pinned: true }))),
+			["Unpin from Dock", "-", "Change Icon...", "-", "Add App to Dock...", "Bloom Options>"]);
+		compare(labels(Dock.menuFor(menuApp({ pinned: true, hasCustomIcon: true, running: true, windows: 2, actions: ["New Window", "New Private Window"] }))),
+			["Unpin from Dock", "-", "Change Icon...", "Reset Icon", "-", "Add App to Dock...", "Bloom Options>",
+			 "-", "New Window", "New Private Window", "Open New Window", "Close all windows"]);
+		compare(labels(Dock.menuFor(menuApp({ running: true, windows: 1, pinnable: false }))),
+			["Add App to Dock...", "Bloom Options>", "-", "Open New Window", "Close window"], "no pin without a desktop entry");
+		const bloom = Dock.menuFor(menuApp({})).find(e => e.kind === "submenu");
+		compare(labels(bloom.children), ["Restart Bloom", "-", "Quit Bloom"]);
+		verify(bloom.children[2].danger);
+		const close = Dock.menuFor(menuApp({ running: true, windows: 1 })).pop();
+		compare(close.key, "close");
+		verify(close.danger);
+		compare(labels(Dock.menuFor({ kind: "background" })), ["Add App to Dock...", "Bloom Options>"]);
+		compare(labels(Dock.menuFor({ kind: "workspaces" })), ["Hide Workspaces"]);
+		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).map(e => e.key), ["action:0", "action:1"]);
+	}
+
+	function test_menuPosition() {
+		compare(Dock.menuPosition(500, 400, 160, 120, 1920), { left: 500, top: 272 }, "opens above the pointer");
+		compare(Dock.menuPosition(1900, 400, 160, 120, 1920), { left: 1752, top: 272 }, "kept inside the right edge");
+		compare(Dock.menuPosition(2, 60, 160, 120, 1920), { left: 8, top: 8 }, "and the left and top edges");
+	}
+
+	// framer Reorder: the dragged item takes the slot whose neighbour centre it passed.
+	function test_reorderIndex() {
+		const centers = [18, 66, 114]; // the other three pinned icons
+		compare(Dock.reorderIndex(centers, 0), 0);
+		compare(Dock.reorderIndex(centers, 30), 1);
+		compare(Dock.reorderIndex(centers, 70), 2);
+		compare(Dock.reorderIndex(centers, 500), 3);
+		compare(Dock.reorderIndex([], 50), 0);
+		compare(Dock.moveKey(["a", "b", "c"], "a", 2), ["b", "c", "a"]);
+		compare(Dock.moveKey(["a", "b", "c"], "c", 0), ["c", "a", "b"]);
+		compare(Dock.moveKey(["a", "b", "c"], "b", 1), ["a", "b", "c"]);
+	}
+
+	function a(id, name) {
+		return { id: id, name: name, icon: "" };
+	}
+
+	function test_addAppSections() {
+		const all = [a("kitty", "kitty"), a("firefox", "Firefox"), a("dolphin", "Dolphin"), a("gimp", "GIMP"), a("chrome", "Google Chrome")];
+		const running = [a("chrome", "Google Chrome")];
+		const browse = Dock.addAppSections(all, running, ["firefox"], "");
+		compare(browse.map(s => s.title), ["Running", "All apps"]);
+		compare(browse[0].items.map(i => i.id), ["chrome"]);
+		compare(browse[1].items.map(i => i.id), ["dolphin", "gimp", "kitty"], "sorted, without pinned or running");
+		const q = Dock.addAppSections(all, running, ["firefox"], "  i ");
+		compare(q.length, 1);
+		compare(q[0].title, null);
+		compare(q[0].items.map(i => i.id), ["dolphin", "firefox", "gimp", "kitty"], "contains 'i', by name; a search covers pinned too");
+		const g = Dock.addAppSections(all, [], [], "g");
+		compare(g[0].items.map(i => i.id), ["gimp", "chrome"], "starts-with before contains");
+		compare(Dock.addAppSections([], [], [], ""), [], "nothing to show");
+	}
+
+	function test_workspaceCells() {
+		const cells = Dock.workspaceCells([{ id: -1337, name: "web" }, { id: 3, name: "3" }, { id: 1, name: "1" }, { id: -1338, name: "mail" }], 3);
+		compare(cells.map(c => c.label), ["1", "3", "W", "M"], "numbered first, then named as created");
+		compare(cells.map(c => c.tip), ["Workspace 1", "Workspace 3", "web", "mail"]);
+		compare(cells.map(c => c.active), [false, true, false, false]);
+		compare(Dock.workspaceCells([{ id: 2, name: "2" }, { id: -98, name: "special:magic" }], 2).map(c => c.id), [2], "no special workspaces");
+		compare(Dock.segmentWidth(3), 6 + 3 * 24 + 2 * 2 + 6);
+		compare(Dock.segmentWidth(1), 36);
+	}
+
+	function test_iconState() {
+		compare(Dock.iconsOf({ pinned: [], icons: { firefox: "/s/firefox.png", bad: 3 } }), { firefox: "/s/firefox.png" });
+		compare(Dock.iconsOf(null), {});
+		compare(Dock.iconFile("org.kde.dolphin", "/home/x/Pics/My Icon.PNG"), "org.kde.dolphin.png");
+		compare(Dock.iconFile("firefox", "/a/b.svg"), "firefox.svg");
+		compare(Dock.iconFile("firefox", "/a/b.exe"), "", "only Bloom's image types");
+		compare(Dock.iconFile("../evil", "/a/b.png"), "___evil.png", "ids can't leave the icons folder");
+	}
+
+	function test_pickerScript() {
+		verify(Dock.pickerScript.indexOf("kdialog") < Dock.pickerScript.indexOf("zenity"), "kdialog first (installed here)");
+		verify(Dock.pickerScript.indexOf("exit 127") > 0);
+		verify(Dock.pickerScript.indexOf('"$BLOOM_PICKER"') >= 0, "tests point it at a stub");
+	}
 }
