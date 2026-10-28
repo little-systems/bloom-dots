@@ -55,6 +55,8 @@ TestCase {
 		verify(N.action(live, 7, "open") !== null);
 		compare(N.action(live, 7, "wrong"), null);
 		compare(N.action({}, 7, "open"), null);
+		compare(N.actionForKey(live, "new", "old:7", 7, "open"), null);
+		verify(N.actionForKey(live, "new", "new:7", 7, "open") !== null);
 	}
 
 	function test_closeReasonRecordedOnce() {
@@ -63,5 +65,12 @@ TestCase {
 		compare(closed[0].closeReason, "dismissed");
 		compare(N.close(closed, "s:7", "expired"), closed);
 		compare(N.restore({ entries: closed }, 200), closed);
+	}
+
+	function test_imageUrlsStayLocal() {
+		compare(N.safeImage("image://notifications/123"), "image://notifications/123");
+		compare(N.safeImage("file:///tmp/cover.png"), "file:///tmp/cover.png");
+		compare(N.safeImage("https://example.org/track"), "");
+		compare(N.safeImage("data:image/png;base64,AAAA"), "");
 	}
 }

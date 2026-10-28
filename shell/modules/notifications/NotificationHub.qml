@@ -12,12 +12,25 @@ Scope {
 	property var cards: []
 	property var live: ({})
 	property var timers: ({})
+	property bool historyOpen: false
 	readonly property int unread: Logic.unread(root.history)
 	readonly property string session: String(Date.now())
+	onUnreadChanged: NotificationBridge.unread = root.unread
+	Component.onCompleted: NotificationBridge.unread = root.unread
+	Component.onDestruction: NotificationBridge.unread = 0
+	Connections {
+		target: NotificationBridge
+		function onHistoryRequested() { root.openHistory(); }
+	}
 
 	function stateObject() {
-		return { history: history, cards: cards, unread: unread, dnd: Settings.values["bloom-notifications-dnd"] };
+		const surfaces = [];
+		for (const variants of [cardVariants, historyVariants])
+			for (const loader of variants.instances) if (loader.item) surfaces.push(loader.item.stateObject());
+		return { history: history, cards: cards, unread: unread, dnd: Settings.values["bloom-notifications-dnd"], surfaces: surfaces };
 	}
+	function openHistory() { root.historyOpen = true; root.markRead(); return "ok"; }
+	function closeHistory() { root.historyOpen = false; return "ok"; }
 	function _save() { state.save({ entries: root.history }); }
 	function _removeCard(id) { root.cards = root.cards.filter(c => c.id !== id); }
 	function _stopTimer(id) {
@@ -47,7 +60,7 @@ Scope {
 		root.history = result.history;
 		if (!notification.transient) root._save();
 		if (root.cards.some(c => c.id === id))
-			root.cards = root.cards.map(c => c.id === id ? result.item : c);
+			root.cards = root.cards.map(c => c.id === id ? Object.assign({}, result.item, { image: Logic.safeImage(notification.image) }) : c);
 	}
 	function expire(id) {
 		const notification = root.live[id];
@@ -64,6 +77,13 @@ Scope {
 	}
 	function invoke(id, identifier) {
 		const action = Logic.action(root.live, id, identifier);
+		if (!action) return "action unavailable";
+		action.invoke();
+		return "ok";
+	}
+	function liveFor(key, id) { return key === root.session + ":" + id ? root.live[id] : null; }
+	function invokeHistory(key, id, identifier) {
+		const action = Logic.actionForKey(root.live, root.session, key, id, identifier);
 		if (!action) return "action unavailable";
 		action.invoke();
 		return "ok";
@@ -85,6 +105,22 @@ Scope {
 		defaultValue: ({ entries: [] })
 		onLoadedChanged: if (loaded && root.history.length === 0)
 			root.history = Logic.restore(value, Settings.values["bloom-notifications-history-limit"])
+	}
+	Variants {
+		id: cardVariants
+		model: Quickshell.screens
+		delegate: Loader {
+			required property var modelData
+			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationCards.qml"), { modelData: modelData, hub: root })
+		}
+	}
+	Variants {
+		id: historyVariants
+		model: Quickshell.screens
+		delegate: Loader {
+			required property var modelData
+			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationHistoryWindow.qml"), { modelData: modelData, hub: root })
+		}
 	}
 
 	Component {
@@ -116,7 +152,7 @@ Scope {
 			if (!notification.transient) root._save();
 			root.live = Object.assign({}, root.live, { [id]: notification });
 			root._removeCard(id);
-			if (result.popup) root.cards = [result.item].concat(root.cards).slice(0, 4);
+			if (result.popup) root.cards = [Object.assign({}, result.item, { image: Logic.safeImage(notification.image) })].concat(root.cards).slice(0, 4);
 			const duration = Logic.timeout(notification.expireTimeout, Settings.values["bloom-notifications-timeout"]);
 			if (duration > 0) {
 				const timer = timeoutComponent.createObject(root, { notificationId: id, interval: duration });

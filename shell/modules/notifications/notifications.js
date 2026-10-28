@@ -81,3 +81,12 @@ function action(live, id, identifier) {
 	const notification = live?.[id];
 	return notification?.actions?.find(a => a.identifier === identifier) ?? null;
 }
+
+function actionForKey(live, session, key, id, identifier) {
+	return key === String(session) + ":" + id ? action(live, id, identifier) : null;
+}
+
+function safeImage(value) {
+	if (typeof value !== "string" || value.length > 2048 || /[\u0000-\u001f]/.test(value)) return "";
+	return value.startsWith("image://") || value.startsWith("file:///") ? value : "";
+}

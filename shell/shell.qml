@@ -145,10 +145,13 @@ ShellRoot {
 	IpcHandler {
 		target: "notifications"
 		function state(): string { return JSON.stringify(notificationsLoader.item?.stateObject() ?? null); }
+		function openHistory(): string { return notificationsLoader.item?.openHistory() ?? "notifications disabled"; }
+		function closeHistory(): string { return notificationsLoader.item?.closeHistory() ?? "notifications disabled"; }
 		function markRead(): string { return notificationsLoader.item?.markRead() ?? "notifications disabled"; }
 		function clear(): string { return notificationsLoader.item?.clear() ?? "notifications disabled"; }
 		function dismiss(id: int): string { return notificationsLoader.item?.dismiss(id) ?? "notifications disabled"; }
 		function action(id: int, identifier: string): string { return notificationsLoader.item?.invoke(id, identifier) ?? "notifications disabled"; }
+		function historyAction(key: string, id: int, identifier: string): string { return notificationsLoader.item?.invokeHistory(key, id, identifier) ?? "notifications disabled"; }
 	}
 
 	IpcHandler {

@@ -48,6 +48,8 @@ Item {
 	property real volume: 0
 	property bool muted: false
 	property bool mixerAvailable: false
+	property int notificationUnread: 0
+	signal notificationHistoryRequested()
 
 	signal togglePlay()
 	signal previousTrack()
@@ -636,6 +638,15 @@ Item {
 				opacity: root.open ? 1 : 0
 				Behavior on opacity { NumberAnimation { duration: 100 } }
 				sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
+			}
+			Rectangle {
+				objectName: "notification-unread"
+				visible: root.notificationUnread > 0 && root.expanded && !root.hidden && !root.open
+				width: 16; height: 16; radius: 8
+				x: pillArea.width - width - 2; y: 2
+				color: Tokens.status.green
+				Text { anchors.centerIn: parent; text: root.notificationUnread > 9 ? "9+" : root.notificationUnread; color: "black"; font.pixelSize: 9; font.bold: true }
+				MouseArea { anchors.fill: parent; onClicked: root.notificationHistoryRequested() }
 			}
 		}
 
