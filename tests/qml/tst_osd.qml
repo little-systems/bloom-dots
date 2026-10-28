@@ -32,4 +32,25 @@ TestCase {
 		compare(OSD.edgePill("left", 1920, 1080, 1.3), { x: 0, y: 412.6, width: 54.6, height: 254.8 });
 		compare(OSD.edgePill("right", 1920, 1080, 1), { x: 1878, y: 442, width: 42, height: 196 });
 	}
+
+	function test_brightnessctlOutputIsValidated() {
+		compare(OSD.parseBrightness("intel_backlight,backlight,833,50%,1666\n"),
+			{ device: "intel_backlight", current: 833, maximum: 1666, percent: 50 });
+		compare(OSD.parseBrightness("input2::capslock,leds,1,100%,1"), null);
+		compare(OSD.parseBrightness("bad;name,backlight,833,50%,1666"), null);
+		compare(OSD.parseBrightness("intel_backlight,backlight,833,50%,0"), null);
+	}
+
+	function test_mixerUsesPipewireNodeIdentity() {
+		const nodes = [
+			{ id: 8, isStream: true, isSink: true, ready: true, properties: { "application.name": "Music" }, audio: { volume: 0.25, muted: false } },
+			{ id: 9, isStream: true, isSink: true, ready: true, properties: { "application.name": "Music" }, audio: { volume: 0.7, muted: true } },
+			{ id: 10, isStream: false, isSink: true, ready: true, audio: { volume: 0.5 } },
+			{ id: 11, isStream: true, isSink: false, ready: true, audio: { volume: 0.5 } }
+		];
+		compare(OSD.mixerRows(nodes), [
+			{ id: 8, name: "Music", volume: 0.25, muted: false },
+			{ id: 9, name: "Music", volume: 0.7, muted: true }
+		]);
+	}
 }

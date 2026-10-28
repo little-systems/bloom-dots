@@ -16,9 +16,26 @@ function brightnessPercent(current, maximum) {
 	return Math.round(Math.max(0, Math.min(1, current / maximum)) * 100);
 }
 
+function parseBrightness(text) {
+	const m = /^([A-Za-z0-9_.:+-]+),backlight,(\d+),(\d+)%,(\d+)\s*$/.exec((text || "").trim());
+	if (!m) return null;
+	const current = Number(m[2]);
+	const maximum = Number(m[4]);
+	if (!Number.isSafeInteger(current) || !Number.isSafeInteger(maximum) || maximum <= 0 || current > maximum)
+		return null;
+	return { device: m[1], current: current, maximum: maximum, percent: brightnessPercent(current, maximum) };
+}
+
 function edgePill(edge, screenWidth, screenHeight, scale) {
 	const width = 42 * scale;
 	const height = 196 * scale;
 	return { x: edge === "right" ? screenWidth - width : 0,
 		y: (screenHeight - height) / 2, width: width, height: height };
+}
+
+function mixerRows(nodes) {
+	return (nodes || []).filter(n => n && n.isStream && n.isSink && n.ready && n.audio)
+		.map(n => ({ id: n.id,
+			name: n.properties?.["application.name"] || n.description || n.name || "Audio",
+			volume: n.audio.volume, muted: !!n.audio.muted }));
 }
