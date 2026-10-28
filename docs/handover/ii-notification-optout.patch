@@ -1,0 +1,115 @@
+--- a/services/Notifications.qml
++++ b/services/Notifications.qml
+@@ -16,6 +16,9 @@
+  */
+ Singleton {
+ 	id: root
++    // Phase 4 handover: Bloom is the sole notification server.
++    readonly property bool bloomOwnsNotifications: true
++    readonly property var notifServer: notifServerLoader.item
+     component Notif: QtObject {
+         id: wrapper
+         required property int notificationId // Could just be `id` but it conflicts with the default prop in QtObject
+@@ -147,8 +150,10 @@
+     signal discardAll();
+     signal timeout(id: var);
+ 
+-	NotificationServer {
+-        id: notifServer
++	LazyLoader {
++        id: notifServerLoader
++        active: !root.bloomOwnsNotifications
++        component: NotificationServer {
+         // actionIconsSupported: true
+         actionsSupported: true
+         bodyHyperlinksSupported: true
+@@ -183,6 +188,7 @@
+             // console.log(notifToString(newNotifObject));
+             notifFileView.setText(stringifyList(root.list));
+         }
++        }
+     }
+ 
+     function markAllRead() {
+@@ -192,14 +198,14 @@
+     function discardNotification(id) {
+         console.log("[Notifications] Discarding notification with ID: " + id);
+         const index = root.list.findIndex((notif) => notif.notificationId === id);
+-        const notifServerIndex = notifServer.trackedNotifications.values.findIndex((notif) => notif.id + root.idOffset === id);
++        const notifServerIndex = (root.notifServer?.trackedNotifications.values ?? []).findIndex((notif) => notif.id + root.idOffset === id);
+         if (index !== -1) {
+             root.list.splice(index, 1);
+             notifFileView.setText(stringifyList(root.list));
+             triggerListChange()
+         }
+         if (notifServerIndex !== -1) {
+-            notifServer.trackedNotifications.values[notifServerIndex].dismiss()
++            (root.notifServer?.trackedNotifications.values ?? [])[notifServerIndex].dismiss()
+         }
+         root.discard(id); // Emit signal
+     }
+@@ -208,7 +214,7 @@
+         root.list = []
+         triggerListChange()
+         notifFileView.setText(stringifyList(root.list));
+-        notifServer.trackedNotifications.values.forEach((notif) => {
++        (root.notifServer?.trackedNotifications.values ?? []).forEach((notif) => {
+             notif.dismiss()
+         })
+         root.discardAll();
+@@ -238,10 +244,10 @@
+ 
+     function attemptInvokeAction(id, notifIdentifier) {
+         console.log("[Notifications] Attempting to invoke action with identifier: " + notifIdentifier + " for notification ID: " + id);
+-        const notifServerIndex = notifServer.trackedNotifications.values.findIndex((notif) => notif.id + root.idOffset === id);
++        const notifServerIndex = (root.notifServer?.trackedNotifications.values ?? []).findIndex((notif) => notif.id + root.idOffset === id);
+         console.log("Notification server index: " + notifServerIndex);
+         if (notifServerIndex !== -1) {
+-            const notifServerNotif = notifServer.trackedNotifications.values[notifServerIndex];
++            const notifServerNotif = (root.notifServer?.trackedNotifications.values ?? [])[notifServerIndex];
+             const action = notifServerNotif.actions.find((action) => action.identifier === notifIdentifier);
+             // console.log("Action found: " + JSON.stringify(action));
+             action.invoke()
+--- a/panelFamilies/IllogicalImpulseFamily.qml
++++ b/panelFamilies/IllogicalImpulseFamily.qml
+@@ -30,8 +30,8 @@
+     PanelLoader { extraCondition: Config.options.dock.enable; component: Dock {} }
+     PanelLoader { component: Lock {} }
+     PanelLoader { component: MediaControls {} }
+-    PanelLoader { component: NotificationPopup {} }
+-    PanelLoader { component: OnScreenDisplay {} }
++    PanelLoader { extraCondition: false; component: NotificationPopup {} }
++    PanelLoader { extraCondition: false; component: OnScreenDisplay {} }
+     PanelLoader { component: OnScreenKeyboard {} }
+     PanelLoader { component: Overlay {} }
+     PanelLoader { component: Overview {} }
+--- a/panelFamilies/WaffleFamily.qml
++++ b/panelFamilies/WaffleFamily.qml
+@@ -28,9 +28,9 @@
+     PanelLoader { component: WaffleBar {} }
+     PanelLoader { component: WaffleBackground {} }
+     PanelLoader { component: WaffleLock {} }
+-    PanelLoader { component: WaffleNotificationCenter {} }
+-    PanelLoader { component: WaffleNotificationPopup {} }
+-    PanelLoader { component: WaffleOSD {} }
++    PanelLoader { extraCondition: false; component: WaffleNotificationCenter {} }
++    PanelLoader { extraCondition: false; component: WaffleNotificationPopup {} }
++    PanelLoader { extraCondition: false; component: WaffleOSD {} }
+     // PanelLoader { component: WaffleOverlay {} }
+     PanelLoader { component: WafflePolkit {} }
+     PanelLoader { component: WScreenSnip {} }
+--- a/modules/ii/sidebarRight/SidebarRightContent.qml
++++ b/modules/ii/sidebarRight/SidebarRightContent.qml
+@@ -96,11 +96,7 @@
+                 }
+             }
+ 
+-            CenterWidgetGroup {
+-                Layout.alignment: Qt.AlignHCenter
+-                Layout.fillHeight: true
+-                Layout.fillWidth: true
+-            }
++            // Bloom owns notification history; keep ii's other sidebar tools.
+ 
+             BottomWidgetGroup {
+                 Layout.alignment: Qt.AlignHCenter
