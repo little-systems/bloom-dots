@@ -1,6 +1,15 @@
 # Phase 4 live check and ii handover
 
-**Status:** prepared for owner approval; no live Phase 4 setting, ii file, keybind, or device value has been changed. Do not run the switch before owner approval.
+**Status:** owner approved both checks on 2026-10-28. The local handover succeeded; final suite verification is recorded below. No push was made.
+
+## Live result (2026-10-28)
+
+- Local `bloom-dots` `main` fast-forwarded to `7e3e4cd`, and `bloom-shell.service` restarted. Its IPC answered after a brief startup delay.
+- Enabled `osd` first. Both eDP-1 rails appeared on `hyprctl layers` during a 1.00 to 0.98 volume check and a 1666 to 1583 backlight check. Volume and raw backlight were restored to 1.00 (unmuted) and 1666.
+- Applied the exact ii patch to live and tracked roots using `scripts/phase4-ii-notifications.sh`; backup: `/tmp/bloom-phase4-live.85BjJ8/ii`. Restarted ii through its existing supervisor. The notification name was unowned before enabling Bloom notifications. The tracked ii change is local commit `e56b9a46`; no push.
+- Bloom PID 859938 exclusively owned `org.freedesktop.Notifications` after enabling `notifications`. Replacement used one history entry; timeout recorded `expired`; DND hid the ordinary card and displayed the critical card; an action returned `open` to `notify-send`; the history sheet opened and closed. Test items were cleared after verifying all five history entries belonged to this check. DND returned to `false`.
+- ii's existing notification history file stayed byte-identical (`sha256 e01b130b370e345c68e142fee04a0993d5a8276017a0ef8848a5d0be6c950f5`). ii and Bloom remained running. ii logged two scene warnings in QuickSliders and ToolbarTabBar unrelated to patched files; Bloom logged a Wayland text-input warning, without a service failure.
+- Final `CI=true tests/run-all.sh` passed: 381 QML tests plus all integration, CLI, and systemd checks. Log: `/tmp/bloom-phase4-live-suite.log`.
 
 ## Reviewed change
 
