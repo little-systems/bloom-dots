@@ -39,6 +39,29 @@ ShellRoot {
 	}
 
 	LazyLoader {
+		id: leftOsdLoader
+		active: _modules.indexOf("osd") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/osd/OsdWindow.qml"), { modelData: modelData, edge: "left" })
+			}
+		}
+	}
+	LazyLoader {
+		id: rightOsdLoader
+		active: _modules.indexOf("osd") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/osd/OsdWindow.qml"), { modelData: modelData, edge: "right" })
+			}
+		}
+	}
+
+	LazyLoader {
 		active: _modules.indexOf("dock") >= 0 && _modules.indexOf("tray") >= 0
 		source: Qt.resolvedUrl("modules/dock/DockTraySource.qml")
 	}
@@ -99,6 +122,20 @@ ShellRoot {
 		function mode(): string {
 			return Theme.mode;
 		}
+	}
+
+	IpcHandler {
+		target: "osd"
+		function _windows() {
+			const result = [];
+			for (const v of [leftOsdLoader.item, rightOsdLoader.item]) {
+				if (v) for (const loader of v.instances) if (loader.item) result.push(loader.item);
+			}
+			return result;
+		}
+		function state(): string { return JSON.stringify(_windows().map(w => w.stateObject())); }
+		function showVolume(): string { _windows().filter(w => w.edge === "left").forEach(w => w.show()); return "ok"; }
+		function showBrightness(): string { _windows().filter(w => w.edge === "right").forEach(w => w.show()); return "ok"; }
 	}
 
 	IpcHandler {
