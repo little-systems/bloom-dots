@@ -16,13 +16,15 @@ PanelWindow {
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 
 	function show() {
-		if (!win.targetScreen) return;
+		if (!win.targetScreen || (win.edge === "right" && !Brightness.available)) return false;
 		win.shown = true;
 		hideTimer.restart();
+		return true;
 	}
 	function stateObject() {
 		return { edge: edge, screen: modelData.name, shown: shown, mixerOpen: mixerOpen,
-			width: 42 * uiScale, height: 196 * uiScale };
+			width: 42 * uiScale, height: 196 * uiScale,
+			backlightAvailable: edge === "right" && Brightness.available };
 	}
 
 	screen: modelData
@@ -81,6 +83,7 @@ PanelWindow {
 			}
 			Rectangle {
 				id: rail
+				visible: win.edge === "left" || Brightness.available
 				width: 6 * win.uiScale
 				height: 116 * win.uiScale
 				radius: width / 2
@@ -105,6 +108,7 @@ PanelWindow {
 			}
 			MouseArea {
 				anchors.fill: parent
+				enabled: win.edge === "left" || Brightness.available
 				onClicked: mouse => {
 					if (win.edge === "left" && mouse.y < 35 * win.uiScale) {
 						win.mixerOpen = !win.mixerOpen;

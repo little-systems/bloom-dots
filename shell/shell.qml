@@ -140,7 +140,9 @@ ShellRoot {
 		}
 		function state(): string { return JSON.stringify(_windows().map(w => w.stateObject())); }
 		function showVolume(): string { _windows().filter(w => w.edge === "left").forEach(w => w.show()); return "ok"; }
-		function showBrightness(): string { _windows().filter(w => w.edge === "right").forEach(w => w.show()); return "ok"; }
+		function showBrightness(): string {
+			return _windows().filter(w => w.edge === "right").some(w => w.show()) ? "ok" : "backlight unavailable";
+		}
 	}
 	IpcHandler {
 		target: "notifications"

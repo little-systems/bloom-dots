@@ -25,10 +25,12 @@ ipc settings set bloom-enabled-modules '["osd"]' >/dev/null
 osd_count() { [[ "$(ipc osd state 2>/dev/null | jq length)" == 2 ]]; }
 left_visible() { [[ "$(ipc osd state 2>/dev/null | jq -r '.[] | select(.edge=="left") | .shown')" == true ]]; }
 right_visible() { [[ "$(ipc osd state 2>/dev/null | jq -r '.[] | select(.edge=="right") | .shown')" == true ]]; }
+right_available() { [[ "$(ipc osd state 2>/dev/null | jq -r '.[] | select(.edge=="right") | .backlightAvailable')" == true ]]; }
 all_closed() { [[ "$(ipc osd state 2>/dev/null | jq '[.[] | .shown] | any')" == false ]]; }
 wait_for 'OSD windows' osd_count
 assert_eq "$(ipc osd showVolume)" 'ok' 'show volume'
 wait_for 'left OSD visible' left_visible
+wait_for 'fake backlight discovery' right_available
 assert_eq "$(ipc osd showBrightness)" 'ok' 'show brightness'
 wait_for 'right OSD visible' right_visible
 pass 'both edge OSD windows open on the single test screen'
