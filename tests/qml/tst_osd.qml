@@ -51,14 +51,14 @@ TestCase {
 
 	function test_mixerUsesPipewireNodeIdentity() {
 		const nodes = [
-			{ id: 8, isStream: true, isSink: true, ready: true, properties: { "application.name": "Music" }, audio: { volume: 0.25, muted: false } },
+			{ id: 8, isStream: true, isSink: true, ready: true, properties: { "application.name": "Music", "application.icon_name": "music-app" }, audio: { volume: 0.25, muted: false } },
 			{ id: 9, isStream: true, isSink: true, ready: true, properties: { "application.name": "Music" }, audio: { volume: 0.7, muted: true } },
 			{ id: 10, isStream: false, isSink: true, ready: true, audio: { volume: 0.5 } },
 			{ id: 11, isStream: true, isSink: false, ready: true, audio: { volume: 0.5 } }
 		];
 		compare(OSD.mixerRows(nodes), [
-			{ id: 8, name: "Music", volume: 0.25, muted: false },
-			{ id: 9, name: "Music", volume: 0.7, muted: true }
+			{ id: 8, name: "Music", iconName: "music-app", volume: 0.25, muted: false },
+			{ id: 9, name: "Music", iconName: "", volume: 0.7, muted: true }
 		]);
 	}
 }

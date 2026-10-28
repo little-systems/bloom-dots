@@ -43,5 +43,6 @@ function mixerRows(nodes) {
 	return (nodes || []).filter(n => n && n.isStream && n.isSink && n.ready && n.audio)
 		.map(n => ({ id: n.id,
 			name: n.properties?.["application.name"] || n.description || n.name || "Audio",
+			iconName: n.properties?.["application.icon_name"] || n.properties?.["application.id"] || n.properties?.["application.process.binary"] || "",
 			volume: n.audio.volume, muted: !!n.audio.muted }));
 }

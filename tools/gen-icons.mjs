@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const ICONS = [
 	"sun", "moon", "cloud", "cloud-fog", "cloud-drizzle", "cloud-rain", "cloud-snow", "cloud-lightning", "thermometer",
-	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search"
+	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search", "sliders-horizontal"
 ];
 
 const root = new URL("../", import.meta.url);
