@@ -42,6 +42,13 @@ function timeout(expireTimeout, defaultTimeout) {
 
 function unread(history) { return (history || []).filter(x => !x.read).length; }
 
+function close(history, key, reason) {
+	const valid = ["expired", "dismissed", "closeRequested"];
+	if (valid.indexOf(reason) < 0) return history;
+	return (history || []).map(item => item.key === key && !item.closeReason
+		? Object.assign({}, item, { closeReason: reason }) : item);
+}
+
 function groups(history) {
 	const result = [];
 	for (const item of history || []) {
@@ -60,9 +67,12 @@ function restore(value, limit) {
 			|| !Number.isInteger(item.id) || item.id <= 0 || typeof item.app !== "string"
 			|| typeof item.summary !== "string" || typeof item.body !== "string"
 			|| !Number.isFinite(item.time) || typeof item.urgency !== "string" || typeof item.read !== "boolean") continue;
-		items.push({ key: text(item.key, "", 80), id: item.id, app: text(item.app, "Unknown app", 128),
+		const restored = { key: text(item.key, "", 80), id: item.id, app: text(item.app, "Unknown app", 128),
 			summary: text(item.summary, "", 256), body: text(item.body, "", 2048), time: item.time,
-			urgency: urgency(item.urgency), read: item.read });
+			urgency: urgency(item.urgency), read: item.read };
+		if (["expired", "dismissed", "closeRequested"].indexOf(item.closeReason) >= 0)
+			restored.closeReason = item.closeReason;
+		items.push(restored);
 	}
 	return items.slice(0, Math.max(1, Math.min(1000, limit || 200)));
 }

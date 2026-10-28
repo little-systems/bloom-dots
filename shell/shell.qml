@@ -60,6 +60,11 @@ ShellRoot {
 			}
 		}
 	}
+	LazyLoader {
+		id: notificationsLoader
+		active: _modules.indexOf("notifications") >= 0
+		source: Qt.resolvedUrl("modules/notifications/NotificationHub.qml")
+	}
 
 	LazyLoader {
 		active: _modules.indexOf("dock") >= 0 && _modules.indexOf("tray") >= 0
@@ -136,6 +141,14 @@ ShellRoot {
 		function state(): string { return JSON.stringify(_windows().map(w => w.stateObject())); }
 		function showVolume(): string { _windows().filter(w => w.edge === "left").forEach(w => w.show()); return "ok"; }
 		function showBrightness(): string { _windows().filter(w => w.edge === "right").forEach(w => w.show()); return "ok"; }
+	}
+	IpcHandler {
+		target: "notifications"
+		function state(): string { return JSON.stringify(notificationsLoader.item?.stateObject() ?? null); }
+		function markRead(): string { return notificationsLoader.item?.markRead() ?? "notifications disabled"; }
+		function clear(): string { return notificationsLoader.item?.clear() ?? "notifications disabled"; }
+		function dismiss(id: int): string { return notificationsLoader.item?.dismiss(id) ?? "notifications disabled"; }
+		function action(id: int, identifier: string): string { return notificationsLoader.item?.invoke(id, identifier) ?? "notifications disabled"; }
 	}
 
 	IpcHandler {

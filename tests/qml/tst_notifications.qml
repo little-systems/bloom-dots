@@ -56,4 +56,12 @@ TestCase {
 		compare(N.action(live, 7, "wrong"), null);
 		compare(N.action({}, 7, "open"), null);
 	}
+
+	function test_closeReasonRecordedOnce() {
+		const original = N.ingest([], { id: 7, summary: "Hi" }, 100, "s", false, 200).history;
+		const closed = N.close(original, "s:7", "dismissed");
+		compare(closed[0].closeReason, "dismissed");
+		compare(N.close(closed, "s:7", "expired"), closed);
+		compare(N.restore({ entries: closed }, 200), closed);
+	}
 }
