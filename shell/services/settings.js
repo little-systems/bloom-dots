@@ -61,6 +61,30 @@ var SCHEMA = {
 		default: 200,
 		doc: "In smart and peek mode, how long (ms) the pointer must rest on the top edge before a hidden notch appears. 0 reveals it at once."
 	},
+	"bloom-calendar-enabled": {
+		type: "bool", default: true,
+		doc: "Show the Calendar, Pomodoro and Todo panel in the notch."
+	},
+	"bloom-notch-command-center-enabled": {
+		type: "bool", default: true,
+		doc: "Show Command Center and its Wi-Fi/Bluetooth subpanels in the notch."
+	},
+	"bloom-notch-devices-enabled": {
+		type: "bool", default: true,
+		doc: "Show the Connected Devices panel in the notch."
+	},
+	"bloom-notch-default-panel": {
+		type: "enum", values: ["calendar", "command-center", "devices"], default: "calendar",
+		doc: "Tool panel opened by clicking the collapsed notch when panel memory is off or unavailable."
+	},
+	"bloom-notch-panel-memory": {
+		type: "bool", default: true,
+		doc: "Reopen the last used notch tool panel."
+	},
+	"bloom-shelf-persist": {
+		type: "bool", default: false,
+		doc: "Keep Shelf items across shell restarts in local state."
+	},
 	"bloom-status-widgets": {
 		type: "widgets",
 		values: WIDGETS,

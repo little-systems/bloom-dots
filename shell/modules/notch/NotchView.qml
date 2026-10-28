@@ -6,6 +6,7 @@ import "../../services/stats.js" as Stats
 import "notch.js" as Logic
 import "music.js" as Music
 import "pulses.js" as Pulses
+import "panels.js" as Panels
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -50,6 +51,36 @@ Item {
 	property bool mixerAvailable: false
 	property int notificationUnread: 0
 	signal notificationHistoryRequested()
+	property string panel: ""
+	property string defaultPanel: "calendar"
+	property string lastPanel: "calendar"
+	property bool rememberPanel: true
+	property var enabledPanels: ({ calendar: true, "command-center": true, devices: true })
+	property int calendarRows: 5
+	property int deviceCount: 0
+	property var privacy: ({ microphone: false, screen: false })
+	property var deviceAlert: null
+	readonly property bool alertVisible: root.deviceAlert !== null && root.panel === "" && !root.open
+	onDeviceAlertChanged: if (root.deviceAlert && root.mode === "peek") root.peek(4300)
+	signal panelRemembered(string panel)
+	function openPanel(name) {
+		const choice = name || Panels.opening(root.lastPanel, root.defaultPanel, root.rememberPanel, root.enabledPanels);
+		if (!choice) return "no enabled panels";
+		if (Panels.ORDER.indexOf(choice) < 0 && choice !== "wifi" && choice !== "bluetooth" && choice !== "shelf") return "unknown panel";
+		if (Panels.ORDER.indexOf(choice) >= 0 && root.enabledPanels[choice] === false) return "panel disabled";
+		if ((choice === "wifi" || choice === "bluetooth") && root.enabledPanels["command-center"] === false) return "panel disabled";
+		root.open = false;
+		root.panel = choice;
+		if (Panels.ORDER.indexOf(choice) >= 0 && root.rememberPanel) root.panelRemembered(choice);
+		if (!root.pillHovered) scriptedPanelClose.restart();
+		return "ok";
+	}
+	function closePanel() { root.panel = ""; scriptedPanelClose.stop(); return "ok"; }
+	function cyclePanel(direction) {
+		const next = Panels.cycle(root.panel, direction, root.enabledPanels);
+		return next ? root.openPanel(next) : "no enabled panels";
+	}
+	Timer { id: scriptedPanelClose; interval: 5000; onTriggered: root.closePanel() }
 
 	signal togglePlay()
 	signal previousTrack()
@@ -67,7 +98,7 @@ Item {
 		enabled: root.musicEnabled, compactNotch: root.compactNotch,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible
 	})
-	readonly property string bloomMode: root.open ? "music" : root.collapsedMode
+	readonly property string bloomMode: root.panel || (root.alertVisible ? "device-alert" : root.open ? "music" : root.collapsedMode)
 	readonly property bool musicOnHover: Music.musicOnStatusHover({
 		open: root.open, hovered: root.statusHover, mode: root.bloomMode, enabled: root.musicEnabled,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible, compactNotch: root.compactNotch
@@ -91,11 +122,11 @@ Item {
 	readonly property bool pillHovered: pillHover.hovered
 	readonly property bool hidden: Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating)
 	// Bloom isHovered: the strip opens on the shown, expanded pill.
-	readonly property bool statusHover: root.pillHovered && root.expanded && !root.hidden && root.userVisible
+	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.userVisible
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
 		{ ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
-		{
+		(root.panel ? Panels.size(root.panel, root.calendarRows, root.deviceCount) : root.alertVisible ? { width: 330, height: 76 } : {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
 				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
@@ -106,7 +137,7 @@ Item {
 				open: root.open, mode: root.bloomMode, layout: root.layout,
 				hasProgress: root.media.lengthMs > 0, volumeExpanded: root.volumeExpanded
 			})
-		})
+		}))
 
 	readonly property Item hitItem: pillArea
 	readonly property Item bandItem: band
@@ -128,6 +159,7 @@ Item {
 	function openMusic() {
 		if (!(root.musicEnabled && root.media.hasMedia))
 			return;
+		root.closePanel();
 		root.open = true;
 		// Opened without the pointer (a script or keybind): close it again if
 		// the pointer never comes to it, so it can't stay open unseen.
@@ -259,7 +291,7 @@ Item {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			overlapped: root.overlapped, visible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
@@ -306,7 +338,7 @@ Item {
 
 	// Bloom interactionState: active while hovered, then an 800 ms grace.
 	// An open player counts too, so a hidden notch shows while it is open.
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.open
+	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -336,9 +368,11 @@ Item {
 		if (root.pillHovered) {
 			handoff.stop();
 			scriptedClose.stop();
+			scriptedPanelClose.stop();
 			root.edgeArmed = false;
 		} else {
 			root.open = false;
+			if (root.panel !== "") scriptedPanelClose.restart();
 		}
 	}
 
@@ -413,7 +447,7 @@ Item {
 				edgeRadius: rS.value
 				farRadius: Tokens.sizes.farRadius
 				flares: root.impacted
-				color: root.statusHover || root.open ? root.bgExpanded : root.bg
+				color: root.statusHover || root.open || root.panel !== "" || root.alertVisible ? root.bgExpanded : root.bg
 				Behavior on color {
 					ColorAnimation {
 						duration: Tokens.notch.colorFadeMs
@@ -437,7 +471,7 @@ Item {
 
 			Ambience {
 				anchors.fill: parent
-				visible: root.open && root.ambienceEnabled && root.media.artUrl !== ""
+				visible: root.open && root.panel === "" && root.ambienceEnabled && root.media.artUrl !== ""
 				source: visible ? root.media.artUrl : ""
 				bg: root.bgExpanded
 				radius: Tokens.sizes.farRadius
@@ -449,7 +483,7 @@ Item {
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: Tokens.sizes.mainRow
 				clip: true
-				opacity: root.expanded && !root.hidden && !root.open ? 1 : 0
+				opacity: root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible ? 1 : 0
 				Behavior on opacity {
 					NumberAnimation {
 						duration: Tokens.easing.framerDefaultMs
@@ -496,7 +530,13 @@ Item {
 						scale: clockTap.pressed ? 0.95 : 1
 						Behavior on scale { NumberAnimation { duration: 100 } }
 						HoverHandler { id: clockHover }
-						TapHandler { id: clockTap }
+						TapHandler { id: clockTap; onTapped: root.openPanel("") }
+					}
+					Row {
+						x: clock.x + clock.width + 5; y: 10; spacing: 3
+						visible: root.privacy.microphone || root.privacy.screen
+						Rectangle { visible: root.privacy.microphone; width: 5; height: 5; radius: 2.5; color: "#ff8c3a" }
+						Rectangle { visible: root.privacy.screen; width: 5; height: 5; radius: 2.5; color: "#63df91" }
 					}
 
 					Row {
@@ -634,10 +674,40 @@ Item {
 				x: Tokens.sizes.padding
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: parent.height
-				active: root.open
+				active: root.open && root.panel === ""
 				opacity: root.open ? 1 : 0
 				Behavior on opacity { NumberAnimation { duration: 100 } }
 				sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
+			}
+			Loader {
+				id: panelLoader
+				anchors.fill: parent
+				active: root.panel !== ""
+				source: active ? "PanelHost.qml" : ""
+				onLoaded: {
+					item.panel = Qt.binding(() => root.panel);
+					item.enabledPanels = Qt.binding(() => root.enabledPanels);
+					item.textColor = Qt.binding(() => root.textColor);
+					item.textMuted = Qt.binding(() => root.textMuted);
+					root.calendarRows = item.calendarRowCount;
+				}
+			}
+			Item {
+				anchors.fill: parent; visible: root.alertVisible
+				SvgIcon { x: 15; anchors.verticalCenter: parent.verticalCenter; name: root.deviceAlert?.kind === "bluetooth" ? "bluetooth" : root.deviceAlert?.kind === "usb" ? "usb" : "volume-2"; color: root.textColor; size: 20 }
+				Column { x: 47; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 62; spacing: 3
+					Text { width: parent.width; text: root.deviceAlert?.title ?? ""; color: root.textColor; font.family: "Inter"; font.pixelSize: 12; font.weight: Font.DemiBold; elide: Text.ElideRight }
+					Text { width: parent.width; text: root.deviceAlert?.detail ?? ""; color: root.textMuted; font.family: "Inter"; font.pixelSize: 10; elide: Text.ElideRight }
+				}
+			}
+			Connections {
+				target: panelLoader.item
+				ignoreUnknownSignals: true
+				function onCloseRequested() { root.closePanel(); }
+				function onNextRequested() { root.cyclePanel(1); }
+				function onPreviousRequested() { root.cyclePanel(-1); }
+				function onSubpanelRequested(name) { root.openPanel(name); }
+				function onCalendarRowCountChanged() { root.calendarRows = panelLoader.item?.calendarRowCount ?? 5; }
 			}
 			Rectangle {
 				objectName: "notification-unread"

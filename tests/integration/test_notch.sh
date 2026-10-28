@@ -61,11 +61,26 @@ ipc notch setVisible true >/dev/null
 wait_for "showing again" state_is "visible,y" '{"visible":true,"y":0}'
 pass "setVisible hides and shows the notch"
 
+ipc settings set bloom-notch-mode fixed >/dev/null
+for panel in calendar command-center wifi bluetooth devices shelf; do
+	assert_eq "$(ipc notch openPanel "$panel")" "ok" "open $panel"
+	wait_for "the $panel panel" state_is "panel" "{\"panel\":\"$panel\"}"
+done
+ipc settings set bloom-notch-command-center-enabled false >/dev/null
+assert_eq "$(ipc notch openPanel wifi)" "panel disabled" "disabled Wi-Fi subpanel"
+ipc settings set bloom-notch-command-center-enabled true >/dev/null
+assert_eq "$(ipc notch closePanel)" "ok" "close panel"
+wait_for "closing the panel" state_is "panel" '{"panel":""}'
+pass "all Phase 5 panels open and close over IPC"
+
 # A CI container has no system D-Bus, so UPower/power-profiles warnings are
 # expected there and only there.
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" || true)"
 if [[ ! -S /run/dbus/system_bus_socket ]]; then
 	problems="$(grep -viE 'upower|powerprofiles|dbus' <<<"$problems" || true)"
+fi
+if [[ ! -S "$XDG_RUNTIME_DIR/pipewire-0" ]]; then
+	problems="$(grep -vi 'Failed to connect pipewire context' <<<"$problems" || true)"
 fi
 [[ -z "$problems" ]] || fail "shell logged warnings or errors: $problems"
 pass "no warnings or errors in the shell log"

@@ -28,7 +28,7 @@ PanelWindow {
 	// draws over fullscreen windows, so while one is in front the notch drops
 	// to Top, which Hyprland keeps under fullscreen windows.
 	WlrLayershell.layer: win._fullscreen ? WlrLayer.Top : WlrLayer.Overlay
-	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+	WlrLayershell.keyboardFocus: view.panel === "calendar" || view.panel === "shelf" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
@@ -47,6 +47,7 @@ PanelWindow {
 	on_HyprNeedChanged: HyprState.hold(win._key, win._hyprNeed)
 	Component.onCompleted: {
 		HyprState.hold(win._key, win._hyprNeed);
+		Devices.hold(win._key, true);
 		readyTimer.start();
 	}
 	Component.onDestruction: {
@@ -54,6 +55,7 @@ PanelWindow {
 		SystemStats.hold(win._key, false);
 		music.item?.hold(win._key, false, false);
 		Updates.hold(win._key, false);
+		Devices.hold(win._key, false);
 	}
 
 	// Let the surface map before the drop-in starts.
@@ -93,6 +95,14 @@ PanelWindow {
 		id: view
 		anchors.fill: parent
 		mode: Settings.values["bloom-notch-mode"]
+		defaultPanel: Settings.values["bloom-notch-default-panel"]
+		lastPanel: PanelState.lastPanel
+		rememberPanel: Settings.values["bloom-notch-panel-memory"]
+		deviceCount: Devices.count
+		privacy: Devices.privacy
+		deviceAlert: Devices.alert
+		enabledPanels: ({ calendar: Settings.values["bloom-calendar-enabled"], "command-center": Settings.values["bloom-notch-command-center-enabled"], devices: Settings.values["bloom-notch-devices-enabled"] })
+		onPanelRemembered: panel => PanelState.remember(panel)
 		edgeDelay: Settings.values["bloom-notch-edge-delay"]
 		widgets: Settings.values["bloom-status-widgets"]
 		use24h: Settings.values["bloom-time-format-24h"]

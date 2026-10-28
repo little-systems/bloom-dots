@@ -14,6 +14,12 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-enabled-modules` | list | `[]` | `notch`, `dock`, `osd`, `notifications`, `launcher`, `overview`, `session`, `lock`, `polkit`, `tray`, `regiontools`, `wallpaper`, `cheatsheet` | Bloom surfaces to run. Anything not listed is left to another shell (e.g. illogical-impulse). |
 | `bloom-notch-mode` | enum | `"fixed"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Notch visibility. fixed = always shown; smart = hides while the focused window sits under it; peek = hidden until hovered or an event shows it briefly. |
 | `bloom-notch-edge-delay` | number | `200` | 0 to 2000 | In smart and peek mode, how long (ms) the pointer must rest on the top edge before a hidden notch appears. 0 reveals it at once. |
+| `bloom-calendar-enabled` | bool | `true` | `true`, `false` | Show the Calendar, Pomodoro and Todo panel in the notch. |
+| `bloom-notch-command-center-enabled` | bool | `true` | `true`, `false` | Show Command Center and its Wi-Fi/Bluetooth subpanels in the notch. |
+| `bloom-notch-devices-enabled` | bool | `true` | `true`, `false` | Show the Connected Devices panel in the notch. |
+| `bloom-notch-default-panel` | enum | `"calendar"` | `calendar`, `command-center`, `devices` | Tool panel opened by clicking the collapsed notch when panel memory is off or unavailable. |
+| `bloom-notch-panel-memory` | bool | `true` | `true`, `false` | Reopen the last used notch tool panel. |
+| `bloom-shelf-persist` | bool | `false` | `true`, `false` | Keep Shelf items across shell restarts in local state. |
 | `bloom-status-widgets` | widgets | `{"left":["weather"],"right":["battery"]}` | `{"left": [...], "right": [...]}` of `weather`, `battery`, `cpu`, `ram`, `disk`, `net` | Widgets in the hovered status strip, left and right of the clock. |
 | `bloom-weather-enabled` | bool | `true` | `true`, `false` | Show the weather widget (fetches from Open-Meteo; without coordinates the location comes from IP geolocation). |
 | `bloom-weather-city` | string | `""` | text, up to 100 characters | City name shown with the weather. Empty means the IP-geolocated city. |

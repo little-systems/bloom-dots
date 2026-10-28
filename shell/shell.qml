@@ -198,6 +198,15 @@ ShellRoot {
 			(onFocused.length ? onFocused : windows.slice(0, 1)).forEach(w => w.view.openMusic());
 			return "ok";
 		}
+		function openPanel(name: string): string {
+			const windows = _windows();
+			const focused = HyprState.monitors.find(m => m.focused)?.name ?? "";
+			const target = windows.find(w => w.modelData.name === focused) ?? windows[0];
+			return target ? target.view.openPanel(name) : "notch disabled";
+		}
+		function closePanel(): string { _windows().forEach(w => w.view.closePanel()); return "ok"; }
+		function nextPanel(): string { const w = _windows()[0]; return w ? w.view.cyclePanel(1) : "notch disabled"; }
+		function previousPanel(): string { const w = _windows()[0]; return w ? w.view.cyclePanel(-1) : "notch disabled"; }
 
 		// Bloom's visibility toggle.
 		function setVisible(visible: bool): string {
