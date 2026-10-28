@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
 import qs.services
+import "../../common/screens.js" as Screens
 
 // The history sheet opens below Bloom's notch. Old entries remain text-only;
 // action buttons exist solely while their source notification is live.
@@ -12,10 +13,7 @@ PanelWindow {
 	required property var modelData
 	required property var hub
 	readonly property real uiScale: Settings.values["bloom-scale"]
-	readonly property bool targetScreen: {
-		const focused = HyprState.monitors.find(m => m.focused)?.name;
-		return focused ? modelData.name === focused : modelData.name === Quickshell.screens[0]?.name;
-	}
+	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 	function stateObject() { return { kind: "history", screen: modelData.name, visible: visible, count: hub.history.length }; }
 
 	screen: modelData

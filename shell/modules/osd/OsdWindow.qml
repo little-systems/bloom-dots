@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import "../../common"
+import "../../common/screens.js" as Screens
 
 // One edge pill on one screen. The window maps only while a change is shown.
 PanelWindow {
@@ -12,10 +13,7 @@ PanelWindow {
 	property bool shown: false
 	property bool mixerOpen: false
 	readonly property real uiScale: Settings.values["bloom-scale"]
-	readonly property bool targetScreen: {
-		const focused = HyprState.monitors.find(m => m.focused)?.name;
-		return focused ? modelData.name === focused : modelData.name === Quickshell.screens[0]?.name;
-	}
+	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 
 	function show() {
 		if (!win.targetScreen) return;

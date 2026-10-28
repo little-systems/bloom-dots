@@ -38,6 +38,8 @@ TestCase {
 			{ key: "s:1", app: "Mail", time: 100 }
 		];
 		compare(N.groups(h).map(g => [g.app, g.items.length]), [["Mail", 2], ["Chat", 1]]);
+		compare(N.cardViewport(600, 1.3, 676), 506.4);
+		compare(N.cardViewport(900, 1, 224), 224);
 	}
 
 	function test_malformedInputAndReload() {

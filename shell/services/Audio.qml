@@ -40,17 +40,19 @@ Singleton {
 			const next = root.sink?.audio?.volume;
 			if (!Number.isFinite(next)) { root._baselineReady = false; return; }
 			if (!root._baselineReady) { root._seed(); return; }
-			const result = OSD.protectVolume(root._lastVolume, next, {
+			const result = OSD.volumeObservation(root._lastVolume, next, {
 				enabled: Settings.values["bloom-volume-protection-enabled"],
 				maxJump: Settings.values["bloom-volume-max-jump"],
 				maxLevel: Settings.values["bloom-volume-max-level"]
 			}, true);
 			root._lastVolume = result.value;
-			if (result.blocked) {
+			if (result.correction) {
 				root.sink.audio.volume = result.value;
 				root.protectionTriggered(result.reason);
+				// The corrective PipeWire update will emit the one visible event.
+				return;
 			}
-			root.outputChanged(result.value, root.muted);
+			if (result.announce) root.outputChanged(result.value, root.muted);
 		}
 		function onMutedChanged() {
 			if (root._baselineReady) root.outputChanged(root.volume, root.muted);

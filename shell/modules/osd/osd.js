@@ -10,6 +10,12 @@ function protectVolume(previous, next, options, ready) {
 	return { value: next, blocked: false, reason: "" };
 }
 
+function volumeObservation(previous, next, options, ready) {
+	const decision = protectVolume(previous, next, options, ready);
+	return { value: decision.value, correction: decision.blocked,
+		announce: !decision.blocked, reason: decision.reason };
+}
+
 function brightnessPercent(current, maximum) {
 	if (!Number.isFinite(current) || !Number.isFinite(maximum) || maximum <= 0)
 		return null;

@@ -12,6 +12,14 @@ TestCase {
 			{ value: 0.45, blocked: false, reason: "" });
 	}
 
+	function test_correctiveWriteEmitsOnlyAfterEcho() {
+		const options = { enabled: true, maxJump: 10, maxLevel: 99 };
+		const jump = OSD.volumeObservation(0.4, 0.8, options, true);
+		compare(jump, { value: 0.4, correction: true, announce: false, reason: "jump" });
+		const echo = OSD.volumeObservation(0.4, jump.value, options, true);
+		compare(echo, { value: 0.4, correction: false, announce: true, reason: "" });
+	}
+
 	function test_maximumAndInitialObservation() {
 		const options = { enabled: true, maxJump: 10, maxLevel: 99 };
 		compare(OSD.protectVolume(0.95, 1.0, options, true),

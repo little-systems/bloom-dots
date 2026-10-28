@@ -3,6 +3,8 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.services
+import "notifications.js" as Logic
+import "../../common/screens.js" as Screens
 
 // One top-right stack on the focused screen. No surface is mapped at rest.
 PanelWindow {
@@ -10,11 +12,9 @@ PanelWindow {
 	required property var modelData
 	required property var hub
 	readonly property real uiScale: Settings.values["bloom-scale"]
-	readonly property bool targetScreen: {
-		const focused = HyprState.monitors.find(m => m.focused)?.name;
-		return focused ? modelData.name === focused : modelData.name === Quickshell.screens[0]?.name;
-	}
-	function stateObject() { return { kind: "cards", screen: modelData.name, visible: visible, count: hub.cards.length }; }
+	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
+	function stateObject() { return { kind: "cards", screen: modelData.name, visible: visible,
+		groups: Logic.groups(hub.cards).map(g => ({ app: g.app, count: g.items.length })), viewportHeight: stack.height }; }
 
 	screen: modelData
 	anchors.top: true
@@ -29,17 +29,25 @@ PanelWindow {
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 	mask: Region { item: win.visible ? stack : null }
 
-	Column {
+	Flickable {
 		id: stack
 		x: 8 * win.uiScale
 		y: 64 * win.uiScale
 		width: win.width - 16 * win.uiScale
-		spacing: 8 * win.uiScale
-		Repeater {
-			model: win.hub.cards
+		height: Logic.cardViewport(win.height, win.uiScale, contentHeight)
+		contentHeight: groupColumn.height
+		clip: true
+		flickableDirection: Flickable.VerticalFlick
+		Column {
+			id: groupColumn
+			width: stack.width
+			spacing: 8 * win.uiScale
+			Repeater {
+			model: Logic.groups(win.hub.cards)
 			delegate: Rectangle {
 				id: card
 				required property var modelData
+				readonly property var latest: modelData.items[0]
 				width: stack.width
 				height: 108 * win.uiScale
 				radius: 14 * win.uiScale
@@ -50,18 +58,18 @@ PanelWindow {
 					x: 14 * win.uiScale
 					y: 8 * win.uiScale
 					width: parent.width - 48 * win.uiScale
-					text: card.modelData.app + (win.hub.cards.filter(c => c.app === card.modelData.app).length > 1
-						? " · " + win.hub.cards.filter(c => c.app === card.modelData.app).length : "")
+						text: card.modelData.app + (card.modelData.items.length > 1 ? " · " + card.modelData.items.length : "")
 					textFormat: Text.PlainText
 					elide: Text.ElideRight
 					color: Theme.textMuted
 					font.pixelSize: 11 * win.uiScale
+						MouseArea { anchors.fill: parent; enabled: card.modelData.items.length > 1; onClicked: win.hub.openHistory() }
 				}
 				Text {
 					x: 14 * win.uiScale
 					y: 30 * win.uiScale
 						width: parent.width - 88 * win.uiScale
-					text: card.modelData.summary
+						text: card.latest.summary
 					textFormat: Text.PlainText
 					elide: Text.ElideRight
 					color: Theme.text
@@ -73,7 +81,7 @@ PanelWindow {
 					y: 50 * win.uiScale
 						width: parent.width - 88 * win.uiScale
 					height: 32 * win.uiScale
-					text: card.modelData.body
+						text: card.latest.body
 					textFormat: Text.PlainText
 					wrapMode: Text.Wrap
 					elide: Text.ElideRight
@@ -88,7 +96,7 @@ PanelWindow {
 					Image {
 						id: cardImage
 						anchors.fill: parent
-						source: card.modelData.image || ""
+							source: card.latest.image || ""
 						fillMode: Image.PreserveAspectCrop
 						asynchronous: true
 						visible: status === Image.Ready
@@ -109,14 +117,14 @@ PanelWindow {
 					text: "×"
 					color: Theme.text
 					font.pixelSize: 17 * win.uiScale
-					MouseArea { anchors.fill: parent; onClicked: win.hub.dismiss(card.modelData.id) }
+					MouseArea { anchors.fill: parent; onClicked: win.hub.dismiss(card.latest.id) }
 				}
 				Row {
 					x: 14 * win.uiScale
 					y: 84 * win.uiScale
 					spacing: 8 * win.uiScale
 					Repeater {
-						model: win.hub.live[card.modelData.id]?.actions ?? []
+						model: win.hub.live[card.latest.id]?.actions ?? []
 						delegate: Rectangle {
 							id: actionButton
 							required property var modelData
@@ -125,11 +133,12 @@ PanelWindow {
 							radius: 5 * win.uiScale
 							color: Theme.groupBg
 							Text { id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: 10 * win.uiScale }
-							MouseArea { anchors.fill: parent; onClicked: win.hub.invoke(card.modelData.id, actionButton.modelData.identifier) }
+							MouseArea { anchors.fill: parent; onClicked: win.hub.invoke(card.latest.id, actionButton.modelData.identifier) }
 						}
 					}
 				}
 			}
+		}
 		}
 	}
 }

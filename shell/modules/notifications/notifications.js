@@ -59,6 +59,10 @@ function groups(history) {
 	return result;
 }
 
+function cardViewport(screenHeight, scale, contentHeight) {
+	return Math.max(0, Math.min(contentHeight, screenHeight - 72 * scale));
+}
+
 function restore(value, limit) {
 	if (!value || !Array.isArray(value.entries)) return [];
 	const items = [];

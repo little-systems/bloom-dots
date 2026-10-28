@@ -8,23 +8,47 @@ fi
 # shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 bloom_env
+SECOND_SHELL_PID=""
+cleanup_notification_test() {
+	if [[ -n "$SECOND_SHELL_PID" ]]; then kill "$SECOND_SHELL_PID" 2>/dev/null || true; wait "$SECOND_SHELL_PID" 2>/dev/null || true; fi
+	bloom_cleanup
+}
+trap cleanup_notification_test EXIT
 start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom"
 printf '{"bloom-enabled-modules":["notifications"],"bloom-notifications-timeout":1000}' >"$XDG_CONFIG_HOME/bloom/settings.json"
 start_shell
 wait_for 'Bloom notification bus owner' busctl --user status org.freedesktop.Notifications
+owned_status() { ipc notifications state | jq -e '.ownership=="owned" and .ownershipError==""' >/dev/null; }
+wait_for 'reported Bloom ownership' owned_status
 pass 'Bloom owns notifications on the private bus'
 
-id="$(notify-send -p -a 'Test App' -t 2000 'First' 'body')"
+ln -s "$ROOT/shell" "$XDG_CONFIG_HOME/quickshell/bloom-conflict"
+qs --no-color -c bloom-conflict >"$TEST_TMP/conflict.log" 2>&1 &
+SECOND_SHELL_PID=$!
+second_ipc() { qs -c bloom-conflict ipc call "$@"; }
+wait_for 'second shell ping' second_ipc shell ping
+conflict_reported() { second_ipc notifications state | jq -e '.ownership=="conflict" and (.ownershipError | contains("PID"))' >/dev/null; }
+wait_for 'ownership conflict report' conflict_reported
+kill "$SECOND_SHELL_PID"
+wait "$SECOND_SHELL_PID" 2>/dev/null || true
+SECOND_SHELL_PID=""
+pass 'a second Bloom instance reports the existing notification owner'
+
+id="$(notify-send -p -a 'Test App' -t 5000 'First' 'body')"
 [[ "$id" =~ ^[0-9]+$ ]] || fail "notify-send did not return an ID: $id"
 has_summary() { ipc notifications state | jq -e --arg s "$1" 'any(.history[]; .summary==$s)' >/dev/null; }
 wait_for 'first notification' has_summary First
 cards_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="cards" and .visible)' >/dev/null; }
 wait_for 'visible card surface' cards_mapped
-notify-send -r "$id" -a 'Test App' -t 2000 'Replaced' 'new body'
+notify-send -r "$id" -a 'Test App' -t 5000 'Replaced' 'new body'
 wait_for 'replacement' has_summary Replaced
 [[ "$(ipc notifications state | jq '.history | length')" == 1 ]] || fail 'replacement duplicated history'
 pass 'replacement updates one history entry'
+notify-send -a 'Test App' -t 5000 'Grouped' 'same app'
+grouped_cards() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="cards" and any(.groups[]; .app=="Test App" and .count==2))' >/dev/null; }
+wait_for 'one grouped app card' grouped_cards
+pass 'same-app notifications share one card group'
 
 ipc settings set bloom-notifications-dnd true >/dev/null
 notify-send -a 'Test App' 'Quiet' 'kept in history'
@@ -46,6 +70,8 @@ assert_eq "$(ipc notifications openHistory)" 'ok' 'open history'
 history_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="history" and .visible)' >/dev/null; }
 wait_for 'notch history surface' history_mapped
 assert_eq "$(ipc notifications closeHistory)" 'ok' 'close history'
+history_unloaded() { ipc notifications state | jq -e '[.surfaces[] | select(.kind=="history")] | length==0' >/dev/null; }
+wait_for 'history surface unloaded' history_unloaded
 pass 'history panel opens below the notch and closes by IPC'
 
 ipc settings set bloom-notifications-dnd false >/dev/null
