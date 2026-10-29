@@ -237,6 +237,15 @@ function usbArtFor(d) {
 	case "audio-out": return _EARBUDS.test(d.name) ? "earbuds-usbc" : "headphones-wired";
 	case "jack-headset": return "earbuds-jack";
 	case "jack-headphones": return "headphones-wired";
+	// The kinds beyond Bloom's four (owner, 2026-10-29).
+	case "phone": return "phone";
+	case "gamepad": return "controller";
+	case "mouse": return "mouse";
+	case "keyboard": return "keyboard";
+	case "hub": return "hub";
+	case "printer":
+	case "wireless":
+	case "other": return "device";
 	default:
 		if (_SSD.test(d.name)) return "ssd";
 		if (_CARD.test(d.name)) return "sd-card";
@@ -255,6 +264,14 @@ function usbDisplayName(d) {
 	case "camera": return "USB camera";
 	case "audio-in": return "USB microphone";
 	case "audio-out": return "USB audio";
+	case "phone": return "Phone";
+	case "gamepad": return "Controller";
+	case "mouse": return "USB mouse";
+	case "keyboard": return "USB keyboard";
+	case "printer": return "Printer";
+	case "wireless": return "Wireless adapter";
+	case "hub": return "USB hub";
+	case "other": return "USB device";
 	default: return "USB drive";
 	}
 }
@@ -280,10 +297,19 @@ function usbAlert(d, connected, looks) {
 	return _alert(name, art, connected, true);
 }
 
+// The battery hub's group for a USB device: audio, phones, accessories,
+// drives and cameras (with hubs), or the rest.
+function _usbKind(cls) {
+	if (_isAudio(cls)) return "audio";
+	if (cls === "phone" || cls === "gamepad" || cls === "mouse" || cls === "keyboard") return cls;
+	if (cls === "disk" || cls === "camera" || cls === "hub") return "usb";
+	return "other";
+}
+
 // The panel's wired devices: what's in the jack, then USB devices.
 function wiredDevices(usb, jackHeadphones) {
 	const out = jackHeadphones ? [{ id: "jack", name: "Headphones", kind: "audio", wired: true, art: "earbuds-jack" }] : [];
 	for (const d of usb || [])
-		out.push({ id: d.id, name: usbDisplayName(d), kind: _isAudio(d.class) ? "audio" : "usb", wired: true, art: usbArtFor(d) });
+		out.push({ id: d.id, name: usbDisplayName(d), kind: _usbKind(d.class), wired: true, art: usbArtFor(d) });
 	return out;
 }

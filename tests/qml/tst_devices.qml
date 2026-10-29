@@ -178,4 +178,32 @@ TestCase {
 		compare(groups.map(g => g.key), ["audio", "usb"]);
 		compare(Devices.wiredSub(wired[2]), "USB");
 	}
+
+	// Every USB device kind (owner, 2026-10-29): its drawing, name, group
+	// and alert text.
+	function test_everyUsbKind() {
+		const kinds = [
+			["phone", "Pixel 8", "phone", "phone"],
+			["gamepad", "Xbox Wireless Controller", "controller", "accessories"],
+			["mouse", "YICHIP Wireless Device", "mouse", "accessories"],
+			["keyboard", "USB Keyboard", "keyboard", "accessories"],
+			["printer", "LaserJet M110", "device", "other"],
+			["wireless", "TP-Link Adapter", "device", "other"],
+			["hub", "USB2.0 Hub", "hub", "usb"],
+			["other", "Smart Card Reader", "device", "other"]
+		];
+		for (const [cls, name, art, group] of kinds) {
+			const d = { id: "usb:x-" + cls, class: cls, name: name };
+			compare(Devices.usbArtFor(d), art, cls);
+			const wired = Devices.wiredDevices([d], false);
+			compare(Devices.groupDevices(Devices.entries(null, [], wired, {}), 20)[0].key, group, cls + " group");
+			compare(Devices.usbAlert(d, true, {}).status, "Plugged in", cls);
+			compare(Devices.usbAlert(d, false, {}).status, "Unplugged", cls);
+		}
+		compare(Devices.usbDisplayName({ class: "mouse", name: "" }), "USB mouse");
+		compare(Devices.usbDisplayName({ class: "keyboard", name: "" }), "USB keyboard");
+		compare(Devices.usbDisplayName({ class: "phone", name: "" }), "Phone");
+		compare(Devices.usbDisplayName({ class: "gamepad", name: "" }), "Controller");
+		compare(Devices.usbDisplayName({ class: "other", name: "" }), "USB device");
+	}
 }
