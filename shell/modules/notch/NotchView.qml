@@ -81,7 +81,14 @@ Item {
 		if (!root.pillHovered) scriptedPanelClose.restart();
 		return "ok";
 	}
-	function closePanel() { root.panel = ""; scriptedPanelClose.stop(); return "ok"; }
+	function closePanel() {
+		if (root.panel !== "") panelLinger.restart();
+		root.panel = "";
+		scriptedPanelClose.stop();
+		return "ok";
+	}
+	// Bloom's panel exit: 0.1 s of fade and blur (PanelStage).
+	Timer { id: panelLinger; interval: 150 }
 	function cyclePanel(direction) {
 		const next = Panels.cycle(root.panel, direction, root.enabledPanels);
 		return next ? root.openPanel(next) : "no enabled panels";
@@ -700,7 +707,8 @@ Item {
 			Loader {
 				id: panelLoader
 				anchors.fill: parent
-				active: root.panel !== ""
+				// Stays a moment after a close so the last panel fades out.
+				active: root.panel !== "" || panelLinger.running
 				source: active ? "PanelHost.qml" : ""
 				onLoaded: {
 					item.panel = Qt.binding(() => root.panel);

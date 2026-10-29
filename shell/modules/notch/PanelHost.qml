@@ -31,6 +31,8 @@ Item {
 
 	Item {
 		id: header
+		// Gone with the panel; the notch's own clock takes over as it closes.
+		visible: root.panel !== ""
 		anchors.horizontalCenter: parent.horizontalCenter
 		y: 6
 		width: 96
@@ -64,19 +66,30 @@ Item {
 		}
 	}
 
-	Loader {
+	// The panel content, crossfading as Bloom's AnimatePresence does.
+	PanelStage {
 		id: content
-		x: root.panel === "calendar" || root.subpanel ? 0 : root.panel === "command-center" || root.panel === "shelf" ? 14 : 12
 		y: 36
-		width: parent.width - 2 * x
+		width: parent.width
 		height: parent.height - 36
-		source: root.panel === "command-center" ? "CommandCenter.qml"
-			: root.panel === "wifi" ? "WifiPanel.qml"
-			: root.panel === "bluetooth" ? "BluetoothPanel.qml"
-			: root.panel === "calendar" ? "CalendarPanel.qml"
-			: root.panel === "devices" ? "ConnectedDevicesPanel.qml"
-			: root.panel === "shelf" ? "ShelfPanel.qml" : ""
 	}
+	function _source(panel) {
+		return panel === "command-center" ? "CommandCenter.qml"
+			: panel === "wifi" ? "WifiPanel.qml"
+			: panel === "bluetooth" ? "BluetoothPanel.qml"
+			: panel === "calendar" ? "CalendarPanel.qml"
+			: panel === "devices" ? "ConnectedDevicesPanel.qml"
+			: panel === "shelf" ? "ShelfPanel.qml" : "";
+	}
+	function _inset(panel) {
+		return panel === "calendar" || panel === "wifi" || panel === "bluetooth" ? 0 : panel === "command-center" || panel === "shelf" ? 14 : 12;
+	}
+	function _showPanel() {
+		const source = root._source(root.panel);
+		content.show(source ? Qt.resolvedUrl(source) : "", root._inset(root.panel));
+	}
+	onPanelChanged: root._showPanel()
+	Component.onCompleted: root._showPanel()
 	Connections {
 		target: content.item
 		ignoreUnknownSignals: true
