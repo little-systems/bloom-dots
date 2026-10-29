@@ -14,24 +14,19 @@
 
 **Spec:** `docs/specs/2026-10-25-bloom-shell-design.md` §4.1 (Notch: Command Center, Calendar + Pomodoro + Todo, Shelf, Wi-Fi/BT/Devices, device alerts) and Appendix A. The reference is Bloom @ `b5fb962`: `src/App.tsx`, `src/App.css`, `src/components/{WifiPanel,BluetoothPanel,ConnectedDevicesPanel}.tsx`, `src/components/QuickPanel.css`, `src/devices/*`.
 
-## Questions for the owner (answer before Task 3)
+## Owner decisions (2026-10-29)
 
-1. **The Command Center's six round buttons.**
-   - **Bloom's buttons:** Do Not Disturb (moon icon), Energy Saver, System Tray, Notification Center, Bloom Settings, Restart Bloom.
-   - **What we ship:** codex replaced these with DND, Idle, Night, Notifications, Wi-Fi and Bluetooth. Idle and Night come from our spec ("toggles in Command Center").
-   - **Options:**
-     - **(A) Recommended:** Bloom's six, in Bloom's order and icons, with these Linux actions:
-       - DND toggles Bloom's notification DND;
-       - Energy Saver toggles power-profiles power-saver, shown active while on;
-       - System Tray reveals the dock, where tray apps live since 3C;
-       - Notification Center opens the history panel;
-       - Bloom Settings opens `~/.config/bloom/settings.json` until the settings app arrives in Phase 7;
-       - Restart Bloom.
+1. **Command Center round buttons:** Bloom's six, in Bloom's order and icons:
+   - DND toggles Bloom's notification DND;
+   - Energy Saver toggles power-profiles power-saver;
+   - System Tray reveals the dock;
+   - Notification Center opens the history panel;
+   - Bloom Settings opens `~/.config/bloom/settings.json` until Phase 7;
+   - Restart Bloom.
 
-       Idle and Night light then go somewhere else you choose (for example, right-click on DND).
-     - **(B):** Bloom's look, but Idle and Night light replace System Tray and Bloom Settings.
-2. **"More Wi-Fi settings" and "More Bluetooth settings" footers** (Bloom opens Windows Settings). Recommended: open `nm-connection-editor` and `blueman-manager` (or the KDE settings module) when installed, and hide the footer when nothing is installed (spec §6: a missing tool hides its feature).
-3. **Tasks (your addition; Bloom has no todo list).** Recommended: keep the "Tasks" link in the timer column's status row, restyled with Bloom's quick-panel parts (a `qp-input` field, `qp-row` items, a `qp-chip`-style "Timer" link).
+   Idle and Night light leave the Command Center for now. Their services stay, reachable over IPC.
+2. **Footers:** "More Wi-Fi settings" and "More Bluetooth settings" open `nm-connection-editor` / `blueman-manager` (or `systemsettings kcm_bluetooth`) when installed, and are hidden when not.
+3. **Tasks (todo) is removed:** "if the OG bloom has tasks then keep it as toggle or remove it", and Bloom has none. The notch calendar is Bloom's calendar and timer only. The todo service and its IPC are removed with it. The spec's D9 "todo as a notch tab" is withdrawn.
 
 ## Global Constraints
 
@@ -325,7 +320,7 @@ function missing(root) {
     - presets: 4 columns, the active one with a `border` background;
     - an invalid edit turns the digits red; Enter commits; Escape cancels;
     - the finished state is red and pulses;
-    - the Tasks view styled with QpInput and QpRow (question 3).
+    - no Tasks link or view (owner decision 3).
 - [ ] **Step 2: Watch them fail.**
 - [ ] **Step 3: Implement** `RollDigit.qml` (y and rotateX; Qt has no perspective, so rotateX becomes `scaleY = cos(angle)`, the 2B ruling for flips) and rewrite `CalendarPanel.qml`.
 - [ ] **Step 4: Tests and the suite pass.**
