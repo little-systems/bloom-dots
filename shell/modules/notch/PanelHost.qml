@@ -18,6 +18,9 @@ Item {
 	signal previousRequested()
 	signal subpanelRequested(string name)
 	readonly property int calendarRowCount: root.panel === "calendar" ? (content.item?.rows ?? 5) : 5
+	// The open panel is being typed into (it says so with `pinned`).
+	readonly property bool pinned: content.item?.pinned ?? false
+	readonly property real devicesHeight: content.item?.panelHeight ?? 150
 	readonly property bool subpanel: panel === "wifi" || panel === "bluetooth"
 	readonly property bool toolPanel: Panels.ORDER.indexOf(panel) >= 0
 	property date now: new Date()
@@ -43,7 +46,7 @@ Item {
 		}
 		Text {
 			anchors.centerIn: parent
-			text: CalendarState.running || CalendarState.pausedSec !== CalendarState.durationSec
+			text: CalendarState.running || CalendarState.pausedSec > 0
 				? Calendar.timerText(Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, root.now.getTime()))
 				: Qt.formatTime(root.now, root.use24h ? "HH:mm" : "h:mm AP")
 			color: root.textColor

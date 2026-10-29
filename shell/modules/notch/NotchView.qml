@@ -58,7 +58,8 @@ Item {
 	property bool rememberPanel: true
 	property var enabledPanels: ({ calendar: true, "command-center": true, devices: true })
 	property int calendarRows: 5
-	property int deviceCount: 0
+	// The Devices panel's measured height (DevicesView.panelHeight).
+	property real devicesHeight: 150
 	property int shelfCount: 0
 	property var privacy: ({ microphone: false, screen: false })
 	property var deviceAlert: null
@@ -131,7 +132,7 @@ Item {
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
 		{ ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
-		(root.panel ? Panels.size(root.panel, root.calendarRows, root.deviceCount, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : {
+		(root.panel ? Panels.size(root.panel, root.calendarRows, root.devicesHeight, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
 				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
@@ -377,9 +378,14 @@ Item {
 			root.edgeArmed = false;
 		} else {
 			root.open = false;
-			if (root.panel !== "") scriptedPanelClose.restart();
+			// Bloom's handleMouseLeave: a panel closes as the pointer leaves,
+			// unless it's being typed into; then it closes once released.
+			if (root.panel !== "" && !root.panelPinned) root.closePanel();
 		}
 	}
+	// A panel being typed into (a Wi-Fi password) holds the notch open.
+	property bool panelPinned: false
+	onPanelPinnedChanged: if (!root.panelPinned && !root.pillHovered && root.panel !== "") root.closePanel()
 
 
 	Timer {
@@ -703,6 +709,8 @@ Item {
 					item.textMuted = Qt.binding(() => root.textMuted);
 					item.use24h = Qt.binding(() => root.use24h);
 					root.calendarRows = item.calendarRowCount;
+					root.panelPinned = Qt.binding(() => item?.pinned ?? false);
+					root.devicesHeight = Qt.binding(() => item?.devicesHeight ?? 150);
 				}
 			}
 			Item {

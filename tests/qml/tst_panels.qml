@@ -22,7 +22,10 @@ TestCase {
 		compare(Panels.size("calendar", 6, 0), { width: 480, height: 305 });
 		compare(Panels.size("command-center", 0, 0), { width: 350, height: 230 });
 		compare(Panels.size("wifi", 0, 0), { width: 350, height: 300 });
-		compare(Panels.size("devices", 0, 99), { width: 350, height: 300 });
+		// Devices: the content's measured height, kept within 150..300.
+		compare(Panels.size("devices", 0, 999), { width: 350, height: 300 });
+		compare(Panels.size("devices", 0, 99), { width: 350, height: 150 });
+		compare(Panels.size("devices", 0, 220.4), { width: 350, height: 221 });
 		compare(Panels.size("shelf", 0, 0, 0), { width: 380, height: 130 });
 		compare(Panels.size("shelf", 0, 0, 1), { width: 380, height: 176 });
 		compare(Panels.size("shelf", 0, 0, 2), { width: 380, height: 190 });

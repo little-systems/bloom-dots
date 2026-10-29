@@ -17,6 +17,9 @@ Singleton {
 	property var _knownAudio: null
 	property var _jackPorts: null
 	readonly property var connectedBluetooth: Bluetooth.devices.filter(d => d.connected)
+	// Headphones in the 3.5 mm jack (pactl's active port), while held.
+	readonly property bool jackHeadphones: root._jackPorts ? Object.values(root._jackPorts).some(v => v) : false
+	readonly property var wiredAudio: Logic.wiredAudio(Pipewire.nodes.values, root.jackHeadphones)
 	readonly property int count: (Battery.available && Battery.ready ? 1 : 0) + root.audioDevices.length + root.connectedBluetooth.length
 	onActiveChanged: {
 		Bluetooth.hold("device-alerts", root.active);

@@ -425,6 +425,32 @@ Item {
 			tryCompare(v, "open", false, 6000);
 		}
 
+		// Bloom's handleMouseLeave: a panel closes as soon as the pointer leaves
+		// the notch, unless something in it is being typed into.
+		function test_leavingClosesAnOpenPanel() {
+			const v = make();
+			settle(v);
+			mouseMove(v, 500, 18);
+			verify(v.pillHovered);
+			compare(v.openPanel("command-center"), "ok");
+			mouseMove(v, 500, 30);
+			mouseMove(v, 500, 470);
+			tryCompare(v, "panel", "", 300);
+		}
+
+		function test_typingKeepsThePanelUntilReleased() {
+			const v = make();
+			settle(v);
+			mouseMove(v, 500, 18);
+			v.openPanel("calendar");
+			v.panelPinned = true;
+			mouseMove(v, 500, 470);
+			wait(300);
+			compare(v.panel, "calendar", "pinned while typing");
+			v.panelPinned = false;
+			tryCompare(v, "panel", "", 300);
+		}
+
 		function test_scriptedOpenStaysWhileHovered() {
 			const v = make({ media: playing() });
 			settle(v);

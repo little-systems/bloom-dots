@@ -8,6 +8,18 @@ function batteryLabel(battery, buds) {
 	return Number.isInteger(battery) ? battery + "%" : "";
 }
 
+// Bloom's device kinds from BlueZ's Icon property.
+function bluetoothKind(icon) {
+	const i = icon || "";
+	if (/^audio-/.test(i)) return "audio";
+	if (i === "phone") return "phone";
+	if (i === "computer") return "computer";
+	if (i === "input-keyboard") return "keyboard";
+	if (i === "input-mouse" || i === "input-tablet") return "mouse";
+	if (i === "input-gaming") return "gamepad";
+	return "other";
+}
+
 function managed(text) {
 	let paths;
 	try { paths = JSON.parse(text).data?.[0]; } catch (e) { return { available: false, powered: false, adapter: "", devices: [] }; }
@@ -30,6 +42,7 @@ function managed(text) {
 			return { path, name: property(d, "Alias", property(d, "Name", "Bluetooth device")),
 				address: property(d, "Address", ""), connected: property(d, "Connected", false) === true,
 				paired: property(d, "Paired", false) === true,
+				kind: bluetoothKind(property(d, "Icon", "")),
 				battery: Number.isInteger(battery) ? battery : null, buds,
 				batteryLabel: batteryLabel(battery, buds) };
 		}).sort((a, b) => Number(b.connected) - Number(a.connected) || a.name.localeCompare(b.name));

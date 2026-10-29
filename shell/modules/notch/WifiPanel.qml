@@ -5,6 +5,7 @@ import "../../common"
 Item {
 	id: root
 	signal subpanelRequested(string name)
+	property bool pinned: false
 	property string selected: ""
 	Component.onCompleted: Network.hold("wifi-panel", true)
 	Component.onDestruction: Network.hold("wifi-panel", false)
@@ -45,7 +46,7 @@ Item {
 						visible: root.selected === modelData.ssid && modelData.secured && !modelData.active
 						color: Theme.groupBg; border.width: 1; border.color: Theme.border
 						TextInput {
-							id: passwordField; anchors.fill: parent; anchors.leftMargin: 9; anchors.rightMargin: 9
+							id: passwordField; anchors.fill: parent; onActiveFocusChanged: root.pinned = activeFocus; anchors.leftMargin: 9; anchors.rightMargin: 9
 							verticalAlignment: TextInput.AlignVCenter; echoMode: TextInput.Password
 							color: Theme.text; font.family: "Inter"; font.pixelSize: 10
 							onAccepted: { if (Network.connect(modelData.ssid, text) === "ok") text = ""; }

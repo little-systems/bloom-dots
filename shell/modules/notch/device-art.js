@@ -21,3 +21,33 @@ function artFor(name, kind) {
 	if (kind === "audio" || /\b(headphones?|headset)\b/.test(n)) return "headphones";
 	return "device";
 }
+
+// Bloom's deviceArtFor: the drawing for a Bluetooth device by its kind, by
+// name for audio.
+function artForKind(kind, name) {
+	switch (kind) {
+	case "audio": return artFor(name, "audio");
+	case "phone": return "phone";
+	case "gamepad": return "controller";
+	case "mouse": return "mouse";
+	case "keyboard": return "keyboard";
+	case "wearable": return "watch";
+	default: return "device";
+	}
+}
+
+// The looks a user can pick for an audio device (deviceLooks.ts).
+var DEVICE_LOOKS = [
+	{ art: "headphones", label: "Headphones" },
+	{ art: "round-buds", label: "Earbuds" },
+	{ art: "stem-buds", label: "Stem buds" },
+	{ art: "neckband", label: "Neckband" },
+	{ art: "speaker", label: "Speaker" }
+];
+var WIRED_DEVICE_LOOKS = [
+	{ art: "headphones-wired", label: "Headphones" },
+	{ art: "earbuds-usbc", label: "Earbuds (USB-C)" },
+	{ art: "earbuds-jack", label: "Earbuds (3.5 mm)" },
+	{ art: "speaker", label: "Speaker" },
+	{ art: "microphone", label: "Microphone" }
+];

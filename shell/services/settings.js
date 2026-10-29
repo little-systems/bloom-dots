@@ -209,6 +209,10 @@ var SCHEMA = {
 		type: "string", maxLength: 8192, default: "[]",
 		doc: "JSON array of custom folder paths to show in dock extras."
 	},
+	"bloom-device-looks": {
+		type: "string", maxLength: 8192, default: "{}",
+		doc: "JSON object of the drawing picked for an audio device, by device name (Connected devices' Looks like)."
+	},
 	"bloom-osd-timeout": {
 		type: "number", min: 250, max: 10000, default: 1000,
 		doc: "Milliseconds an OSD stays visible after a volume or brightness change."

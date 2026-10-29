@@ -20,6 +20,14 @@ const entries = ICONS.map(name => {
 	return `\t${JSON.stringify(name)}: ${JSON.stringify(svg)}`;
 });
 
+// Lucide icons Bloom draws with fill="currentColor" (the timer's Play/Pause,
+// the battery hub's charging bolt).
+for (const name of ["play", "pause", "zap"]) {
+	const raw = readFileSync(new URL(`icons/${name}.svg`, lucide), "utf8");
+	const svg = raw.replace(/<!--[\s\S]*?-->/g, "").replace(/\s*\n\s*/g, " ").replace(/>\s+</g, "><").trim().replace('fill="none"', 'fill="currentColor"');
+	entries.push(`\t${JSON.stringify(name + "-filled")}: ${JSON.stringify(svg)}`);
+}
+
 // Bloom's player icons (filled SF Symbols drawings), see third_party/bloom-sf-symbols/NOTICE.md.
 const SF = [
 	"play.fill", "pause.fill", "backward.fill", "forward.fill", "music.note", "headphones",

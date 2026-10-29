@@ -99,7 +99,6 @@ PanelWindow {
 		defaultPanel: Settings.values["bloom-notch-default-panel"]
 		lastPanel: PanelState.lastPanel
 		rememberPanel: Settings.values["bloom-notch-panel-memory"]
-		deviceCount: Devices.count
 		shelfCount: ShelfState.items.length
 		privacy: Devices.privacy
 		deviceAlert: Devices.alert
