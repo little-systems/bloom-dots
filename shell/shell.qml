@@ -4,8 +4,11 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.services
+// Importing a module's directory is what makes Quickshell index its QML
+// types, so a window loaded by URL can use the files beside it.
 import "modules/notch"
 import "modules/dock"
+import "modules/osd"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.

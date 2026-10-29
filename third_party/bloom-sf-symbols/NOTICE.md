@@ -2,7 +2,8 @@
 
 These SVGs are copied unchanged from Bloom for Windows
 (`src/icons/sf/` in https://github.com/SehajveerSingh2005/bloom @ b5fb962),
-which ships them as its media-player icons. They are drawings of Apple's
+which ships them as its media-player icons and, for `slider.horizontal.3`,
+the volume OSD's mixer button. They are drawings of Apple's
 SF Symbols.
 
 Apple's SF Symbols licence allows the symbols only in apps for Apple

@@ -31,7 +31,7 @@ for (const name of ["play", "pause", "zap"]) {
 // Bloom's player icons (filled SF Symbols drawings), see third_party/bloom-sf-symbols/NOTICE.md.
 const SF = [
 	"play.fill", "pause.fill", "backward.fill", "forward.fill", "music.note", "headphones",
-	"speaker.wave.1.fill", "speaker.wave.2.fill", "speaker.wave.3.fill", "speaker.slash.fill"
+	"speaker.wave.1.fill", "speaker.wave.2.fill", "speaker.wave.3.fill", "speaker.slash.fill", "slider.horizontal.3"
 ];
 for (const name of SF) {
 	const raw = readFileSync(new URL(`third_party/bloom-sf-symbols/${name}.svg`, root), "utf8");
@@ -41,7 +41,7 @@ for (const name of SF) {
 
 // Bloom's own Command Center icons, see third_party/bloom-icons/README.md.
 const BLOOM = [
-	"wifi", "bluetooth", "dock", "notch", "moon", "battery-saver", "tray", "bell", "settings", "reload", "brightness-low"
+	"wifi", "bluetooth", "dock", "notch", "moon", "battery-saver", "tray", "bell", "settings", "reload", "brightness-low", "sun"
 ];
 for (const name of BLOOM) {
 	const raw = readFileSync(new URL(`third_party/bloom-icons/${name}.svg`, root), "utf8");

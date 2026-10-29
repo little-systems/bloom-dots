@@ -3,23 +3,24 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import "../../common"
+import "."
 import "../../common/screens.js" as Screens
+import "../../common/tokens.js" as Tokens
 
-// One edge pill on one screen. Only its narrow hover target stays interactive
-// while the card is hidden; the rest of the transparent layer passes input on.
+// One edge HUD on one screen: binds OsdCard (Bloom's VolumeNotch or
+// BrightnessNotch) to the services, with Bloom's timing: shown for 2 s after a
+// change, kept while the pointer is on it or the edge, hidden 1.5 s after it
+// leaves (0.7 s with the mixer open); an open mixer pins it. Only the narrow
+// edge target and the card take input; the rest of the layer passes it on.
 PanelWindow {
 	id: win
 	required property var modelData
 	required property string edge
 	property bool shown: false
 	property bool mixerOpen: false
-	property bool showPercentage: false
-	readonly property bool pointerOverCard: edgeArea.containsMouse || cardHover.hovered || mixerHover.hovered
+	readonly property bool pointerOverCard: edgeArea.containsMouse || cardHover.hovered
 	readonly property real uiScale: Settings.values["bloom-scale"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
-	readonly property int mixerCount: Math.min(12, Audio.mixerRows.length)
-	readonly property int mixerColumns: Math.max(1, Math.min(4, mixerCount))
-	readonly property real mixerWidth: Math.max(204, mixerColumns * 73 + 12) * uiScale
 
 	function show() {
 		if (!win.targetScreen || (win.edge === "right" && !Brightness.available)) return false;
@@ -38,23 +39,25 @@ PanelWindow {
 		// Wait until Qt has delivered hover to a neighbouring item.
 		Qt.callLater(() => {
 			if (win.shown && !win.pointerOverCard) {
-				hoverHideTimer.interval = win.mixerOpen ? 700 : 1500;
+				hoverHideTimer.interval = win.mixerOpen ? Tokens.osd.leaveMixerMs : Tokens.osd.leaveMs;
 				hoverHideTimer.restart();
 			}
 		});
 	}
 	function stateObject() {
 		return { edge: edge, screen: modelData.name, shown: shown, mixerOpen: mixerOpen,
-			width: 42 * uiScale, height: 196 * uiScale,
+			width: Tokens.osd.card.width * uiScale, height: Tokens.osd.card.height * uiScale,
 			backlightAvailable: edge === "right" && Brightness.available };
 	}
+	onShownChanged: if (!win.shown) win.mixerOpen = false
 
 	screen: modelData
 	anchors.top: true
 	anchors.bottom: true
 	anchors.left: edge === "left"
 	anchors.right: edge === "right"
-	implicitWidth: Math.ceil((edge === "left" ? 360 : 42) * uiScale)
+	// Room for the card with its widest mixer (4 columns) and edge flares.
+	implicitWidth: Math.ceil((edge === "left" ? 360 : 60) * uiScale)
 	color: "transparent"
 	// Stay mapped so the transparent edge target can receive pointer hover.
 	visible: targetScreen && (edge === "left" || Brightness.available)
@@ -64,8 +67,7 @@ PanelWindow {
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 	mask: Region {
 		item: edgeTarget
-		Region { item: win.shown ? pill : null }
-		Region { item: win.shown && win.mixerOpen ? mixer : null }
+		Region { item: card.onScreen ? cardBox : null }
 	}
 
 	Timer {
@@ -75,23 +77,18 @@ PanelWindow {
 	}
 	Timer {
 		id: hoverHideTimer
-		interval: 1500
+		interval: Tokens.osd.leaveMs
 		onTriggered: if (!win.pointerOverCard) { win.mixerOpen = false; win.shown = false; }
 	}
-	Timer { id: percentageTimer; interval: 700; onTriggered: win.showPercentage = false }
 	Connections {
 		target: Audio
-		function onOutputChanged() {
-			if (win.edge !== "left") return;
-			win.show();
-			win.showPercentage = true;
-			percentageTimer.restart();
-		}
+		function onOutputChanged() { if (win.edge === "left") win.show(); }
 	}
 	Connections {
 		target: Brightness
 		function onLevelChanged() { if (win.edge === "right") win.show(); }
 	}
+
 	Item {
 		id: edgeTarget
 		x: win.edge === "left" ? 0 : win.width - width
@@ -107,17 +104,14 @@ PanelWindow {
 		}
 	}
 
-	EdgeSurface {
-		id: pill
-		edge: win.edge
-		pillWidth: 42 * win.uiScale
-		pillHeight: 196 * win.uiScale
-		flares: win.shown
-		color: Theme.bg
-		opacity: win.shown ? Theme.bg.a : 0
-		x: win.edge === "right" ? win.width - width : 0
+	// The card's box at its scale, for the input mask and hover.
+	Item {
+		id: cardBox
+		x: win.edge === "left" ? 0 : win.width - width
 		y: Math.round((win.height - height) / 2)
-		Behavior on opacity { NumberAnimation { duration: 180 } }
+		width: card.width * win.uiScale
+		height: card.height * win.uiScale
+
 		HoverHandler {
 			id: cardHover
 			onHoveredChanged: {
@@ -125,182 +119,34 @@ PanelWindow {
 				else win.leaveCard();
 			}
 		}
-		Item {
-			x: 0
-			y: pill.pillRect.y
-			width: pill.pillRect.width
-			height: pill.pillRect.height
-			visible: win.shown
-			// Bloom's original puts the slider above the action or sun icon.
-			Rectangle {
-				id: rail
-				x: (parent.width - width) / 2
-				y: 16 * win.uiScale
-				width: 10 * win.uiScale
-				height: (win.edge === "left" ? 144 : 136) * win.uiScale
-				radius: width / 2
-				color: Theme.isLight ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(1, 1, 1, 0.2)
-				clip: true
-				Rectangle {
-					anchors.bottom: parent.bottom
-					width: parent.width
-					height: parent.height * Math.max(0, Math.min(1, win.edge === "left" ? (Audio.muted ? 0 : Audio.volume) : Brightness.percent / 100))
-					radius: width / 2
-					color: Theme.text
-					Behavior on height { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-				}
-			}
-			MouseArea {
-				x: rail.x - 8 * win.uiScale
-				y: rail.y
-				width: rail.width + 16 * win.uiScale
-				height: rail.height
-				cursorShape: Qt.PointingHandCursor
-				function apply(mouseY) {
-					const value = Math.max(0, Math.min(1, (height - mouseY) / height));
-					if (win.edge === "left") Audio.setVolume(value);
-					else Brightness.setPercent(value * 100);
-				}
-				onPressed: mouse => apply(mouse.y)
-				onPositionChanged: mouse => { if (pressed) apply(mouse.y); }
-			}
-			Item {
-				x: (parent.width - width) / 2
-				y: 162 * win.uiScale
-				width: 24 * win.uiScale
-				height: 20 * win.uiScale
-				SvgIcon {
-					anchors.centerIn: parent
-					name: win.edge === "left" ? (Audio.muted ? "sf-speaker.slash.fill" : "sf-speaker.wave.2.fill") : "sun"
-					color: Theme.text
-					size: (win.edge === "left" ? 16 : 20) * win.uiScale
-					visible: win.edge === "right" || (!win.showPercentage && !actionHover.hovered && !win.mixerOpen)
-					transform: Rotation {
-						origin.x: 10 * win.uiScale
-						origin.y: 10 * win.uiScale
-						angle: win.edge === "right" ? Brightness.percent * 1.8 : 0
-						Behavior on angle { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
-					}
-				}
-				SvgIcon {
-					anchors.centerIn: parent
-					name: "sliders-horizontal"
-					color: Theme.text
-					size: 16 * win.uiScale
-					visible: win.edge === "left" && !win.showPercentage && (actionHover.hovered || win.mixerOpen)
-				}
-				Text {
-					anchors.centerIn: parent
-					visible: win.edge === "left" && win.showPercentage
-					text: (Audio.muted ? 0 : Math.round(Audio.volume * 100)) + "%"
-					color: Theme.text
-					font.pixelSize: 10 * win.uiScale
-					font.bold: true
-				}
-				HoverHandler { id: actionHover; enabled: win.edge === "left" }
-				MouseArea {
-					anchors.fill: parent
-					enabled: win.edge === "left"
-					hoverEnabled: true
-					cursorShape: Qt.PointingHandCursor
-					onClicked: {
-						win.mixerOpen = !win.mixerOpen;
-						if (win.mixerOpen) { win.shown = true; hideTimer.stop(); hoverHideTimer.stop(); }
-						else if (!win.pointerOverCard) hoverHideTimer.restart();
-					}
-				}
-			}
-		}
-	}
 
-	Rectangle {
-		id: mixer
-		visible: win.edge === "left" && win.mixerOpen
-		x: 42 * win.uiScale
-		y: Math.round((win.height - height) / 2)
-		width: win.mixerWidth
-		height: 196 * win.uiScale
-		topRightRadius: 18 * win.uiScale
-		bottomRightRadius: 18 * win.uiScale
-		color: Theme.bg
-		HoverHandler {
-			id: mixerHover
-			onHoveredChanged: {
-				if (hovered) win.keepOpen();
-				else win.leaveCard();
+		OsdCard {
+			id: card
+			edge: win.edge
+			scale: win.uiScale
+			transformOrigin: win.edge === "left" ? Item.TopLeft : Item.TopRight
+			x: win.edge === "left" ? 0 : cardBox.width - width
+			theme: Theme
+			light: Theme.isLight
+			shown: win.shown
+			value: win.edge === "left" ? Audio.volume : Brightness.percent / 100
+			muted: win.edge === "left" && Audio.muted
+			mixerOpen: win.mixerOpen
+			sessions: win.edge === "left" ? Audio.mixerRows.slice(0, 12).map(r => ({
+				id: r.id, name: r.name, volume: r.volume, muted: r.muted,
+				icon: r.iconName ? Quickshell.iconPath(r.iconName, true) : ""
+			})) : []
+			onValueChosen: value => {
+				if (win.edge === "left") Audio.setVolume(value);
+				else Brightness.setPercent(value * 100);
 			}
-		}
-		Grid {
-			anchors.fill: parent
-			anchors.leftMargin: 8 * win.uiScale
-			anchors.rightMargin: 8 * win.uiScale
-			anchors.topMargin: 16 * win.uiScale
-			anchors.bottomMargin: 14 * win.uiScale
-			columns: win.mixerColumns
-			rowSpacing: 4 * win.uiScale
-			columnSpacing: 4 * win.uiScale
-			Repeater {
-				model: Audio.mixerRows.slice(0, 12)
-				delegate: Item {
-					required property var modelData
-					width: (mixer.width - 16 * win.uiScale) / win.mixerColumns - 4 * win.uiScale
-					height: (mixer.height - 30 * win.uiScale) / Math.max(1, Math.ceil(win.mixerCount / win.mixerColumns)) - 4 * win.uiScale
-					Rectangle {
-						id: streamRail
-						anchors.horizontalCenter: parent.horizontalCenter
-						width: 10 * win.uiScale
-						height: parent.height - 24 * win.uiScale
-						radius: width / 2
-						color: Theme.isLight ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(1, 1, 1, 0.2)
-						clip: true
-						Rectangle {
-							anchors.bottom: parent.bottom
-							width: parent.width
-							height: parent.height * (modelData.muted ? 0 : Math.max(0, Math.min(1, modelData.volume)))
-							radius: width / 2
-							color: Theme.text
-						}
-					}
-					MouseArea {
-						x: streamRail.x - 8 * win.uiScale
-						y: streamRail.y
-						width: streamRail.width + 16 * win.uiScale
-						height: streamRail.height
-						cursorShape: Qt.PointingHandCursor
-						function apply(mouseY) { Audio.setStreamVolume(modelData.id, Math.max(0, Math.min(1, (height - mouseY) / height))); }
-						onPressed: mouse => apply(mouse.y)
-						onPositionChanged: mouse => { if (pressed) apply(mouse.y); }
-					}
-					Rectangle {
-						anchors.horizontalCenter: parent.horizontalCenter
-						anchors.bottom: parent.bottom
-						width: 20 * win.uiScale
-						height: 20 * win.uiScale
-						radius: 5 * win.uiScale
-						color: Theme.groupBg
-						Image {
-							id: streamIcon
-							anchors.centerIn: parent
-							width: 18 * win.uiScale
-							height: 18 * win.uiScale
-							source: modelData.iconName ? Quickshell.iconPath(modelData.iconName, true) : ""
-							visible: status === Image.Ready
-							opacity: modelData.muted ? 0.35 : 1
-							fillMode: Image.PreserveAspectFit
-						}
-						Text {
-							anchors.centerIn: parent
-							text: modelData.name.slice(0, 1).toUpperCase()
-							color: Theme.text
-							font.pixelSize: 10 * win.uiScale
-							font.bold: true
-							visible: !streamIcon.visible
-						}
-						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Audio.toggleStreamMute(modelData.id) }
-					}
-				}
+			onMixerToggled: {
+				win.mixerOpen = !win.mixerOpen;
+				if (win.mixerOpen) win.keepOpen();
+				else if (!win.pointerOverCard) hoverHideTimer.restart();
 			}
+			onSessionVolumeChosen: (id, volume) => Audio.setStreamVolume(id, volume)
+			onSessionMuteToggled: id => Audio.toggleStreamMute(id)
 		}
-		Text { anchors.centerIn: parent; visible: Audio.mixerRows.length === 0; text: "No apps with audio"; color: Theme.textMuted; font.pixelSize: 11 * win.uiScale }
 	}
 }

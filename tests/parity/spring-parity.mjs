@@ -21,7 +21,13 @@ const SPRINGS = [
 	{ name: "dock layout", stiffness: 300, damping: 25, mass: 1 },
 	{ name: "hover y", stiffness: 500, damping: 25, mass: 1 },
 	{ name: "hover scale", stiffness: 550, damping: 30, mass: 1 },
-	{ name: "add app card", stiffness: 300, damping: 28, mass: 0.9 }
+	{ name: "add app card", stiffness: 300, damping: 28, mass: 0.9 },
+	{ name: "OSD card", stiffness: 450, damping: 25, mass: 0.7 },
+	{ name: "OSD fill", stiffness: 300, damping: 35, mass: 1 },
+	{ name: "OSD sun", stiffness: 200, damping: 25, mass: 1 },
+	// framer's duration-based spring (Overlay.tsx: the card growing for the
+	// mixer, { type: "spring", bounce: 0, duration: 0.35 }).
+	{ name: "OSD card width", duration: 0.35, bounce: 0 }
 ];
 
 const ctx = {};
@@ -30,7 +36,10 @@ vm.runInContext(readFileSync(new URL("../../shell/common/spring.js", import.meta
 
 let failed = false;
 for (const s of SPRINGS) {
-	const framer = spring({ keyframes: [0, 100], stiffness: s.stiffness, damping: s.damping, mass: s.mass });
+	if (s.duration !== undefined) Object.assign(s, ctx.springFromDuration(s.duration, s.bounce), { mass: 1 });
+	const framer = s.duration !== undefined
+		? spring({ keyframes: [0, 100], duration: s.duration * 1000, bounce: s.bounce })
+		: spring({ keyframes: [0, 100], stiffness: s.stiffness, damping: s.damping, mass: s.mass });
 	let worst = 0;
 	let t = 0;
 	for (; t <= 10000; t++) {

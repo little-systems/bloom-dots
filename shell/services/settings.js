@@ -214,8 +214,8 @@ var SCHEMA = {
 		doc: "JSON object of the drawing picked for an audio device, by device name (Connected devices' Looks like)."
 	},
 	"bloom-osd-timeout": {
-		type: "number", min: 250, max: 10000, default: 1000,
-		doc: "Milliseconds an OSD stays visible after a volume or brightness change."
+		type: "number", min: 250, max: 10000, default: 2000,
+		doc: "Milliseconds an OSD stays visible after a volume or brightness change (Bloom: 2000)."
 	},
 	"bloom-volume-protection-enabled": {
 		type: "bool", default: false,

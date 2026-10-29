@@ -328,3 +328,32 @@ var clock = {
 	heartbeat: { ms: 1900, scale: 1.07 },
 	red: "#ff453a"
 };
+
+// The volume and brightness HUDs (Bloom Overlay.tsx, Overlay.css).
+var osd = {
+	card: { width: 42, height: 196, radius: 18 },
+	// .volume-notch padding 16 0 14; .brightness-notch padding 16 0.
+	volumePad: { top: 16, bottom: 14 },
+	brightnessPad: 16,
+	bar: { width: 10, radius: 5, track: 0.2, trackLight: 0.12 },
+	// The brightness bar is 136 px with a 4 px margin, but flexbox shrinks it
+	// to fit the 20 px sun and its 10 px margin in the card: 130.
+	brightnessBar: { top: 4, height: 130 },
+	sun: { size: 20, top: 10, turn: 180 },
+	action: { height: 20, top: 2, icon: 16, iconOpacity: 0.8, mixerFrom: 0.82, text: 10, tracking: -0.2, ms: 160 },
+	enter: { stiffness: 450, damping: 25, mass: 0.7, scaleYFrom: 0.5, blur: 12 },
+	exit: { ms: 200, scaleY: 0.8, blur: 12, ease: [0.32, 0.72, 0, 1] },
+	exitMixer: { ms: 220, x: -64, blur: 8 },
+	content: { x: 10, delayMs: 50, ms: 200, exitX: 5, exitMs: 150 },
+	fill: { stiffness: 300, damping: 35 },
+	sunSpring: { stiffness: 200, damping: 25 },
+	percentMs: 1200,
+	hideMs: 2000, leaveMs: 1500, leaveMixerMs: 700,
+	mixer: {
+		column: 44, gap: 4, pad: { top: 16, side: 8, bottom: 14 }, maxColumns: 4, emptyColumns: 2,
+		rowMin: 70, barMin: 48, icon: 18, iconRadius: 5, fallbackText: 9, percentText: 9,
+		mutedOpacity: 0.35, pressScale: 0.94, empty: 11,
+		widthSpring: { duration: 0.35, bounce: 0 },
+		exitX: -18, exitXMs: 280, exitOpacityMs: 180, exitOpacityDelay: 100
+	}
+};

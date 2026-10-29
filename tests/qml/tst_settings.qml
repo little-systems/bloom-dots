@@ -59,7 +59,7 @@ TestCase {
 
 	function test_osdAndNotificationDefaultsAndBounds() {
 		const d = Settings.defaults();
-		compare(d["bloom-osd-timeout"], 1000);
+		compare(d["bloom-osd-timeout"], 2000, "Bloom's 2 s");
 		compare(d["bloom-volume-protection-enabled"], false);
 		compare(d["bloom-volume-max-jump"], 10);
 		compare(d["bloom-volume-max-level"], 99);

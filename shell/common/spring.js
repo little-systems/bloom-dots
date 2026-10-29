@@ -49,3 +49,34 @@ function restThresholds(granular, restDelta, restSpeed) {
 		restSpeed >= 0 ? restSpeed : granular ? 0.01 : 2
 	];
 }
+
+// framer-motion's duration-based spring ({ type: "spring", duration, bounce }):
+// the stiffness and damping its findSpring solves for (motion-dom), at rest
+// to start and mass 1. Returns { stiffness, damping }.
+function springFromDuration(duration, bounce) {
+	const safeMin = 0.001;
+	const ratio = Math.max(0.05, Math.min(1, 1 - bounce));
+	const t = Math.max(0.01, Math.min(10, duration));
+	let envelope;
+	let derivative;
+	if (ratio < 1) {
+		const angular = w => w * Math.sqrt(1 - ratio * ratio);
+		envelope = w => safeMin - ((w * ratio) / angular(w)) * Math.exp(-w * ratio * t);
+		derivative = w => {
+			const e = ratio * ratio * w * w * t;
+			const f = Math.exp(-w * ratio * t);
+			const g = angular(w * w);
+			const factor = -envelope(w) + safeMin > 0 ? -1 : 1;
+			return (factor * (-e * f)) / g;
+		};
+	} else {
+		envelope = w => -safeMin + Math.exp(-w * t) * (w * t + 1);
+		derivative = w => Math.exp(-w * t) * (-w * t * t);
+	}
+	let w = 5 / t;
+	for (let i = 1; i < 12; i++)
+		w = w - envelope(w) / derivative(w);
+	if (isNaN(w))
+		return { stiffness: 100, damping: 10 };
+	return { stiffness: w * w, damping: ratio * 2 * w };
+}

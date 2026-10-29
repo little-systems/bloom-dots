@@ -44,7 +44,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-extras-folders` | string | `"downloads"` | text, up to 8192 characters | Comma-separated XDG user folders to show, such as downloads and documents. |
 | `bloom-dock-extras-custom-folders` | string | `"[]"` | text, up to 8192 characters | JSON array of custom folder paths to show in dock extras. |
 | `bloom-device-looks` | string | `"{}"` | text, up to 8192 characters | JSON object of the drawing picked for an audio device, by device name (Connected devices' Looks like). |
-| `bloom-osd-timeout` | number | `1000` | 250 to 10000 | Milliseconds an OSD stays visible after a volume or brightness change. |
+| `bloom-osd-timeout` | number | `2000` | 250 to 10000 | Milliseconds an OSD stays visible after a volume or brightness change (Bloom: 2000). |
 | `bloom-volume-protection-enabled` | bool | `false` | `true`, `false` | Limit sudden output-volume increases and enforce a maximum level. |
 | `bloom-volume-max-jump` | number | `10` | 1 to 100 | Largest allowed output-volume increase in percentage points at once when protection is enabled. |
 | `bloom-volume-max-level` | number | `99` | 0 to 200 | Maximum output volume in percent when protection is enabled. |
