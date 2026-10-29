@@ -27,6 +27,10 @@ Item {
 	signal switchLayout()
 
 	readonly property var _c: Tokens.music.classic
+	// One device pixel: Chromium draws the art's 0.5 px border that thick,
+	// outside the 96 px of art (content-box). The owner sets 1 / scale.
+	property real hairline: 1
+	readonly property real _frame: root._c.art + 2 * root.hairline
 
 	Row {
 		anchors.verticalCenter: parent.verticalCenter
@@ -34,8 +38,9 @@ Item {
 
 		PressArea {
 			objectName: "bigArt"
-			width: root._c.art
-			height: root._c.art
+			anchors.verticalCenter: parent.verticalCenter
+			width: root._frame
+			height: root._frame
 			hoverScale: 1.05
 			tapScale: 0.95
 			onClicked: root.switchLayout()
@@ -48,10 +53,21 @@ Item {
 				color: Qt.rgba(0, 0, 0, 0.4)
 			}
 
+			// box-shadow 0 0 0 0.5px rgba(255, 255, 255, 0.08): a ring outside.
+			Rectangle {
+				anchors.fill: parent
+				anchors.margins: -0.5
+				radius: root._c.artRadius + 0.5
+				color: "transparent"
+				border.width: 0.5
+				border.color: Qt.rgba(1, 1, 1, 0.08)
+			}
+
 			AlbumArt {
 				anchors.fill: parent
+				anchors.margins: root.hairline
 				source: root.media.artUrl
-				radius: root._c.artRadius
+				radius: root._c.artRadius - root.hairline
 				noteScale: 32 / root._c.art
 				noteColor: Qt.rgba(1, 1, 1, 0.65)
 				placeholderTop: Qt.rgba(1, 1, 1, 0.08)
@@ -62,14 +78,14 @@ Item {
 				anchors.fill: parent
 				radius: root._c.artRadius
 				color: "transparent"
-				border.width: 0.5
+				border.width: root.hairline
 				border.color: Qt.rgba(1, 1, 1, 0.1)
 			}
 		}
 
 		Column {
 			anchors.verticalCenter: parent.verticalCenter
-			width: root.width - root._c.art - root._c.gap
+			width: root.width - root._frame - root._c.gap
 			spacing: root._c.columnGap
 
 			Item {
@@ -81,22 +97,32 @@ Item {
 					width: parent.width - 30 - 12
 					spacing: 1
 
-					TitleMarquee {
+					// .premium-title-wrap: a 20 px line whose strut sets the
+					// 14.5 px title 2 px down.
+					Item {
 						width: parent.width
-						text: root.media.title
-						color: root.textColor
-						pixelSize: 14.5
-						weight: Font.DemiBold
-						letterSpacing: -0.15
+						height: 20
+
+						TitleMarquee {
+							y: 2
+							width: parent.width
+							text: root.media.title
+							color: root.textColor
+							pixelSize: 14.5
+							weight: Font.DemiBold
+							letterSpacing: -0.15
+						}
 					}
 
 					Text {
+						objectName: "artist"
 						width: parent.width
 						elide: Text.ElideRight
 						text: root.media.artist
 						color: root.textMuted
 						font.family: Tokens.type.family
 						font.pixelSize: 12
+						font.weight: Font.Normal
 					}
 				}
 
@@ -109,6 +135,7 @@ Item {
 					HoverHandler { id: vizHover }
 
 					Visualizer {
+						anchors.horizontalCenter: parent.horizontalCenter
 						visible: root.visualizer
 						active: visible && root.visible
 						playing: root.media.isPlaying

@@ -357,6 +357,34 @@ Item {
 			tryCompare(v, "hidden", true, 4000);
 		}
 
+		// Bloom's glow fades out over 0.15 s as the player closes, and
+		// enters afresh (from scale 1.1) when it opens again.
+		function test_ambienceFadesWhenThePlayerCloses() {
+			const live = playing();
+			live.artUrl = Qt.resolvedUrl("../../shell/assets/device-art/anim/mouse.png");
+			const v = make({ media: live, layout: "compact" });
+			settle(v);
+			v.openMusic();
+			const glow = findChild(v, "ambience");
+			verify(glow, "has the ambience");
+			tryCompare(glow, "opacity", 1, 1000);
+			// The pointer leaving closes the player, as it would live.
+			v.open = false;
+			wait(60);
+			verify(glow.visible && glow.opacity < 1 && glow.opacity > 0, `fading, ${glow.opacity}`);
+			tryCompare(glow, "visible", false, 500);
+			v.openMusic();
+			tryVerify(() => glow.zoom < 1.8, 1000, "the art enters again");
+		}
+
+		// The art's hairline border is one device pixel, as Chromium draws it.
+		function test_classicHairlineIsOneDevicePixel() {
+			const v = make({ media: playing(), uiScale: 1.25 });
+			settle(v);
+			v.openMusic();
+			fuzzyCompare(findChild(v, "bigArt").width, 96 + 2 * 0.8, 0.001);
+		}
+
 		function test_musicOffFallsBackToStatus() {
 			const v = make({ media: playing() });
 			settle(v);

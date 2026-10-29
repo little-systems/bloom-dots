@@ -547,9 +547,12 @@ Item {
 			}
 
 			Ambience {
+				objectName: "ambience"
 				anchors.fill: parent
-				visible: root.open && root.panel === "" && root.ambienceEnabled && root.media.artUrl !== ""
-				source: visible ? root.media.artUrl : ""
+				// Fades out as the player closes, and its art enters afresh on
+				// the next open, as Bloom's remounted glow does.
+				active: root.open && root.panel === "" && root.ambienceEnabled && root.media.artUrl !== ""
+				source: active ? root.media.artUrl : ""
 				bg: root.bgExpanded
 				radius: Tokens.sizes.farRadius
 			}
@@ -891,6 +894,7 @@ Item {
 	Component {
 		id: classicComponent
 		ClassicPlayer {
+			hairline: 1 / root.uiScale
 			media: root.media
 			positionMs: root.positionMs
 			levels: root.levels

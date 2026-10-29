@@ -70,54 +70,71 @@ Item {
 				}
 			}
 
-			Column {
+			// .cmp-track: the title's 20 px line (its strut sets the title 2 px
+			// down), 1 px, then the artist. CSS's line-height: 1.2 is a box of
+			// 1.2 × the font size with the glyphs centred in it; Qt's
+			// lineHeight scales the font's own line instead, so each text is
+			// placed in its CSS box by hand.
+			Item {
 				width: parent.width - root._c.art - (root.visualizer ? 30 + root._c.infoGap : 0) - root._c.infoGap
+				height: 20 + 1 + 12 * 1.2
 				y: (root._c.art - height) / 2
-				spacing: 1
 
 				TitleMarquee {
+					y: 2 + (15 * 1.2 - implicitHeight) / 2
 					width: parent.width
 					text: root.media.title
 					color: root.textColor
 					pixelSize: 15
 					weight: Font.DemiBold
 					letterSpacing: -0.2
-					lineHeight: 1.2
 				}
 
 				Text {
+					objectName: "artist"
+					y: 21 + (12 * 1.2 - implicitHeight) / 2
 					width: parent.width
 					elide: Text.ElideRight
 					text: root.media.artist
 					color: root.textMuted
 					font.family: Tokens.type.family
 					font.pixelSize: 12
-					lineHeight: 1.2
+					font.weight: Font.Normal
 				}
 			}
 
-			Visualizer {
+			// .cmp-visualizer: 30 px, its bars centred.
+			Item {
 				visible: root.visualizer
-				active: visible && root.visible
-				y: (root._c.art - height) / 2
-				opacity: 0.7
-				playing: root.media.isPlaying
-				levels: root.levels
-				barHeight: root._c.vizHeight
-				color: root.textColor
+				width: 30
+				height: root._c.art
+
+				Visualizer {
+					anchors.centerIn: parent
+					visible: root.visualizer
+					active: visible && root.visible
+					opacity: 0.7
+					playing: root.media.isPlaying
+					levels: root.levels
+					barHeight: root._c.vizHeight
+					color: root.textColor
+				}
 			}
 		}
 
+		// .cmp-row-progress: 3 px above and below a 14 px line.
 		Row {
 			objectName: "progressRow"
 			visible: root.hasProgress
 			width: parent.width
-			height: visible ? 16 : 0
+			height: visible ? 2 * root._c.progressPad + 14 : 0
 			spacing: root._c.progressGap
 
+			// min-width: 30px; a longer time widens its box.
 			Text {
+				id: elapsed
 				objectName: "elapsed"
-				width: root._c.timeWidth
+				width: Math.max(root._c.timeWidth, implicitWidth)
 				anchors.verticalCenter: parent.verticalCenter
 				horizontalAlignment: Text.AlignHCenter
 				text: Fmt.formatTime(root._shownMs)
@@ -131,12 +148,13 @@ Item {
 			Item {
 				objectName: "progressBar"
 				anchors.verticalCenter: parent.verticalCenter
-				width: parent.width - 2 * root._c.timeWidth - 2 * root._c.progressGap
+				width: parent.width - elapsed.width - remaining.width - 2 * root._c.progressGap
 				height: 12
 
 				HoverHandler { id: barHover }
 
 				Rectangle {
+					objectName: "progressTrack"
 					anchors.verticalCenter: parent.verticalCenter
 					width: parent.width
 					height: barHover.hovered ? root._c.barHover : root._c.bar
@@ -168,8 +186,9 @@ Item {
 			}
 
 			Text {
+				id: remaining
 				objectName: "remaining"
-				width: root._c.timeWidth
+				width: Math.max(root._c.timeWidth, implicitWidth)
 				anchors.verticalCenter: parent.verticalCenter
 				horizontalAlignment: Text.AlignHCenter
 				text: Fmt.formatRemaining(root._shownMs, root.media.lengthMs)

@@ -118,7 +118,7 @@ var music = {
 	compact: { padding: 3, art: 50, artRadius: 10, infoGap: 8, infoBelow: 6, progressGap: 6, progressPad: 3, controlsAbove: 8, sideIcon: 22, skipBox: 32, skipIcon: 30, playBox: 44, playIcon: 26, mainGap: 4, buttonPadding: 5, bar: 3, barHover: 6, volumeTrack: 4, volumeTrackHover: 5, time: 11, timeWidth: 30, vizHeight: 16, volumeHeight: 36 },
 	marquee: { speed: 30, minSeconds: 5, fade: 8 },
 	slide: { distance: 30, ms: 180, curve: [0.4, 0, 0.2, 1] },
-	ambience: { blur: 52, scale: 1.8, opacity: 0.85, fadeMs: 600 }
+	ambience: { blur: 52, scale: 1.8, saturate: 3.5, contrast: 1.1, brightness: 1.4, opacity: 1, enterScale: 1.1, artMs: 300, fadeMs: 150 }
 };
 
 // Pulses (Bloom App.tsx/App.css @ b5fb962).

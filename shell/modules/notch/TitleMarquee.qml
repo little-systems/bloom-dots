@@ -16,11 +16,14 @@ Item {
 	property real letterSpacing: -0.15
 	property real lineHeight: 1
 
-	readonly property real overflow: Math.max(0, Math.ceil(label.implicitWidth - root.width))
+	// Qt sizes fonts in whole pixels: draw at the next whole size and scale
+	// the glyphs down to Bloom's fractional one (14.5 px), as FracText does.
+	readonly property real _k: root.pixelSize / Math.ceil(root.pixelSize)
+	readonly property real overflow: Math.max(0, Math.ceil(label.implicitWidth * root._k - root.width))
 	readonly property bool scrolling: root.overflow > 0 && root.width > 0
 	readonly property real cycleMs: Music.marqueeDuration(root.overflow) * 1000
 
-	implicitHeight: label.implicitHeight
+	implicitHeight: label.implicitHeight * root._k
 	clip: true
 	layer.enabled: true
 	layer.effect: MultiEffect {
@@ -34,10 +37,12 @@ Item {
 		text: root.text
 		color: root.color
 		font.family: Tokens.type.family
-		font.pixelSize: root.pixelSize
+		font.pixelSize: Math.ceil(root.pixelSize)
 		font.weight: root.weight
-		font.letterSpacing: root.letterSpacing
+		font.letterSpacing: root.letterSpacing / root._k
 		lineHeight: root.lineHeight
+		scale: root._k
+		transformOrigin: Item.TopLeft
 	}
 
 	// A running animation keeps the distances it started with, so a new title
