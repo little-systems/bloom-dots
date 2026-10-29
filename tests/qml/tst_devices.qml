@@ -103,4 +103,21 @@ TestCase {
 		compare(entries[1].buds.left, { level: 80, charging: false });
 		compare(entries[1].buds.case, null);
 	}
+
+	// Bloom alerts for Bluetooth, USB devices and the jack, never for the
+	// built-in sound card or a display's HDMI/DisplayPort audio.
+	function test_audioAlertsOnlyForUsbAudio() {
+		const builtIn = { id: 1, isStream: false, description: "Built-in Audio Analog Stereo", name: "alsa_output.pci-0000_00_1f.3.analog-stereo", properties: { "media.class": "Audio/Sink" } };
+		const hdmi = { id: 2, isStream: false, description: "HDMI / DisplayPort 1 Output", name: "alsa_output.pci-0000_00_1f.3.hdmi-stereo", properties: { "media.class": "Audio/Sink" } };
+		const usb = { id: 3, isStream: false, description: "USB Headset", name: "alsa_output.usb-Logi_Headset-00.analog-stereo", properties: { "media.class": "Audio/Sink" } };
+		compare(Devices.audioAlert([], [builtIn]), null);
+		compare(Devices.audioAlert([builtIn], [builtIn, hdmi]), null);
+		compare(Devices.audioAlert([builtIn], [builtIn, usb]).name, "USB Headset");
+		compare(Devices.audioAlert([usb], [usb]), null);
+	}
+	function test_udevSkipsUsbAudio() {
+		// A USB headset alerts once, as audio (above), not also as a USB device.
+		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Headset", "ID_USB_INTERFACES=:010100:010200:030000:"]), null);
+		verify(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Drive", "ID_USB_INTERFACES=:080650:"]) !== null);
+	}
 }

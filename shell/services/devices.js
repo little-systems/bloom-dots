@@ -25,6 +25,8 @@ function udevEvent(lines) {
 		if (at > 0) props[line.slice(0, at)] = line.slice(at + 1);
 	}
 	if (props.ACTION !== "add" || props.DEVTYPE !== "usb_device") return null;
+	// Audio-class devices (interface class 01) alert as audio instead.
+	if (/:01/.test(props.ID_USB_INTERFACES || "")) return null;
 	const name = (props.ID_MODEL_FROM_DATABASE || props.ID_MODEL || props.PRODUCT || "USB device").replace(/_/g, " ").slice(0, 90);
 	return { kind: "usb", title: "Device connected", detail: name };
 }
@@ -148,6 +150,13 @@ function wiredAudio(nodes, jackHeadphones) {
 		out.push({ id: "usb:" + name, name, kind: "audio", wired: true, art: input ? "microphone" : "headphones-wired" });
 	}
 	return out;
+}
+
+// The USB audio device that just appeared, for its alert; the built-in sound
+// card and display audio never alert.
+function audioAlert(beforeNodes, afterNodes) {
+	const before = wiredAudio(beforeNodes, false).map(d => d.id);
+	return wiredAudio(afterNodes, false).find(d => before.indexOf(d.id) < 0) || null;
 }
 
 function wiredSub(entry) {

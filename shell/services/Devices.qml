@@ -34,10 +34,13 @@ Singleton {
 		}
 		root._knownBluetooth = current;
 	}
-	onAudioDevicesChanged: {
-		const current = root.audioDevices;
+	// Only USB audio alerts (Bloom's wired audio); the built-in sound card and
+	// a display's HDMI audio coming and going never do.
+	readonly property var _audioNodes: Pipewire.nodes.values.filter(n => n && !n.isStream)
+	on_AudioNodesChanged: {
+		const current = root._audioNodes.map(n => ({ id: n.id, isStream: false, description: n.description, nickname: n.nickname, name: n.name, properties: n.properties }));
 		if (root._knownAudio !== null) {
-			const added = current.find(d => !root._knownAudio.some(old => old.id === d.id));
+			const added = Logic.audioAlert(root._knownAudio, current);
 			if (added) root.showAlert("Audio device connected", added.name, "audio");
 		}
 		root._knownAudio = current;
