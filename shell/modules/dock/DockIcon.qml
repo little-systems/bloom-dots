@@ -72,7 +72,8 @@ Item {
 		onTriggered: root.shown = root.present
 	}
 
-	HoverHandler { id: hover }
+	// Bloom .dock-icon-wrapper { cursor: pointer }
+	HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
 	TapHandler {
 		id: tap
 		acceptedButtons: Qt.LeftButton

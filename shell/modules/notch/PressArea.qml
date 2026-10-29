@@ -26,7 +26,7 @@ Item {
 		initial: 1
 	}
 
-	HoverHandler { id: hover }
+	HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
 
 	TapHandler {
 		id: left

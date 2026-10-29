@@ -97,6 +97,7 @@ PanelWindow {
 		x: win.edge === "left" ? 0 : win.width - width
 		width: 8 * win.uiScale
 		height: win.height
+		// cursor: default — the screen-edge reveal band
 		MouseArea {
 			id: edgeArea
 			anchors.fill: parent

@@ -89,7 +89,7 @@ Item {
 				font.weight: Font.DemiBold
 			}
 
-			HoverHandler { id: cellHover }
+			HoverHandler { id: cellHover; cursorShape: Qt.PointingHandCursor }
 			TapHandler {
 				acceptedButtons: Qt.LeftButton
 				onTapped: root.switchTo(cell.modelData)
@@ -134,6 +134,7 @@ Item {
 			}
 		}
 	}
+	HoverHandler { cursorShape: Qt.PointingHandCursor }
 	TapHandler {
 		acceptedButtons: Qt.RightButton
 		onTapped: eventPoint => {

@@ -63,7 +63,7 @@ PanelWindow {
 					elide: Text.ElideRight
 					color: Theme.textMuted
 					font.pixelSize: 11 * win.uiScale
-						MouseArea { anchors.fill: parent; enabled: card.modelData.items.length > 1; onClicked: win.hub.openHistory() }
+						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: card.modelData.items.length > 1; onClicked: win.hub.openHistory() }
 				}
 				Text {
 					x: 14 * win.uiScale
@@ -117,7 +117,7 @@ PanelWindow {
 					text: "×"
 					color: Theme.text
 					font.pixelSize: 17 * win.uiScale
-					MouseArea { anchors.fill: parent; onClicked: win.hub.dismiss(card.latest.id) }
+					MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.hub.dismiss(card.latest.id) }
 				}
 				Row {
 					x: 14 * win.uiScale
@@ -133,7 +133,7 @@ PanelWindow {
 							radius: 5 * win.uiScale
 							color: Theme.groupBg
 							Text { id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: 10 * win.uiScale }
-							MouseArea { anchors.fill: parent; onClicked: win.hub.invoke(card.latest.id, actionButton.modelData.identifier) }
+							MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.hub.invoke(card.latest.id, actionButton.modelData.identifier) }
 						}
 					}
 				}

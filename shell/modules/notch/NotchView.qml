@@ -474,6 +474,7 @@ Item {
 			opacity: pillLayer.opacity
 
 			HoverHandler { id: pillHover }
+			// cursor: default — the notch body (Bloom .bloom { cursor: default })
 			TapHandler {
 				onTapped: if (root.panel === "" && !root.open) root.openPanel("")
 			}
@@ -538,7 +539,8 @@ Item {
 						font.letterSpacing: Tokens.type.clock.tracking
 						scale: clockTap.pressed ? 0.95 : 1
 						Behavior on scale { NumberAnimation { duration: 100 } }
-						HoverHandler { id: clockHover }
+						// Bloom .time-flip-container { cursor: pointer }
+						HoverHandler { id: clockHover; cursorShape: Qt.PointingHandCursor }
 						TapHandler { id: clockTap; onTapped: root.openPanel("calendar") }
 					}
 					Row {
@@ -593,7 +595,8 @@ Item {
 						Behavior on opacity { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
 						Behavior on scale { NumberAnimation { duration: Tokens.music.collapsedArt.appearMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] } }
 
-						HoverHandler { id: artHover }
+						// Bloom .album-art { cursor: pointer }
+						HoverHandler { id: artHover; cursorShape: Qt.PointingHandCursor }
 
 						// Bloom's glow: the art itself, blurred and saturated, behind the button.
 						Image {
@@ -751,7 +754,7 @@ Item {
 				x: pillArea.width - width - 2; y: 2
 				color: Tokens.status.green
 				Text { anchors.centerIn: parent; text: root.notificationUnread > 9 ? "9+" : root.notificationUnread; color: "black"; font.pixelSize: 9; font.bold: true }
-				MouseArea { anchors.fill: parent; onClicked: root.notificationHistoryRequested() }
+				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.notificationHistoryRequested() }
 			}
 		}
 

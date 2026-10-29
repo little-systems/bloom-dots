@@ -63,6 +63,7 @@ Item {
 					clip: true
 					MouseArea {
 						anchors.fill: parent
+						cursorShape: Qt.PointingHandCursor
 						onClicked: root.focusRequested(card.candidate.address)
 					}
 
@@ -117,6 +118,7 @@ Item {
 						MouseArea {
 							id: closeTap
 							anchors.fill: parent
+							cursorShape: Qt.PointingHandCursor
 							hoverEnabled: true
 							onClicked: root.closeRequested(card.candidate.address)
 						}

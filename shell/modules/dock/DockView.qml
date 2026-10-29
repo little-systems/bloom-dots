@@ -545,6 +545,7 @@ Item {
 					}
 				}
 			}
+			// cursor: default — empty dock space (Bloom .dock-container); slots set their own
 			TapHandler {
 				acceptedButtons: Qt.RightButton
 				onTapped: eventPoint => {
@@ -571,6 +572,7 @@ Item {
 			anchors.fill: parent
 			z: 8
 			visible: root.grabWanted
+			// cursor: default — an invisible catcher for outside clicks
 			TapHandler {
 				id: catcher
 				property bool startedInside: false

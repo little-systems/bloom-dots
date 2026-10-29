@@ -151,8 +151,10 @@ Item {
 					}
 				}
 
+				// Bloom .cmp-seek { cursor: pointer }
 				MouseArea {
 					anchors.fill: parent
+					cursorShape: root.media.canSeek ? Qt.PointingHandCursor : Qt.ArrowCursor
 					enabled: root.media.canSeek
 					function at(mx) { return Math.max(0, Math.min(1, mx / width)) * root.media.lengthMs; }
 					onPressed: mouse => { root._seeking = true; root._seekMs = at(mouse.x); }

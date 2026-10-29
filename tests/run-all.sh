@@ -59,6 +59,11 @@ if [[ -f "$ROOT/tools/gen-icons.mjs" ]] && need node; then
 	node "$ROOT/tools/gen-icons.mjs" --check
 fi
 
+step "every clickable shows Bloom's cursor"
+if need node; then
+	node "$ROOT/tools/check-cursors.mjs"
+fi
+
 step "integration tests (real shell, offscreen)"
 for t in "$ROOT"/tests/integration/test_*.sh; do
 	[[ -e "$t" ]] || continue

@@ -70,6 +70,7 @@ Item {
 
 		HoverHandler {
 			id: hover
+			cursorShape: Qt.PointingHandCursor
 			// A top-level item (its Loader sits in `column`) closes the submenu;
 			// the submenu's own items keep it open.
 			onHoveredChanged: if (hover.hovered) root._submenu = item.entry.kind === "submenu" ? item.entry.key : (item.parent && item.parent.parent === column ? "" : root._submenu)

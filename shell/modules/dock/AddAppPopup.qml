@@ -233,6 +233,7 @@ Item {
 
 								HoverHandler {
 									id: rowHover
+									cursorShape: Qt.PointingHandCursor
 									onHoveredChanged: if (rowHover.hovered) root.selectedIndex = row.index
 								}
 								TapHandler { onTapped: root._choose(row.modelData) }

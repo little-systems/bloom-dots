@@ -55,8 +55,10 @@ Row {
 			}
 		}
 
+		// Bloom .premium-slider { cursor: pointer }
 		MouseArea {
 			anchors.fill: parent
+			cursorShape: Qt.PointingHandCursor
 			function set(mx) { root.moved(Math.max(0, Math.min(1, mx / width))); }
 			onPressed: mouse => set(mouse.x)
 			onPositionChanged: mouse => { if (pressed) set(mouse.x); }

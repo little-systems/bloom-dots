@@ -37,7 +37,7 @@ Item {
 			x: 16; y: 80; width: 105; height: 34; radius: 7
 			color: Qt.rgba(1, 1, 1, 0.12)
 			Text { anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: 12 }
-			MouseArea { anchors.fill: parent; onClicked: root.opened = false }
+			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.opened = false }
 		}
 		Rectangle {
 			id: empty
@@ -45,7 +45,7 @@ Item {
 			x: 139; y: 80; width: 105; height: 34; radius: 7
 			color: "#d94343"
 			Text { anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: 12 }
-			MouseArea { anchors.fill: parent; onClicked: { root.opened = false; root.confirmed(); } }
+			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.opened = false; root.confirmed(); } }
 		}
 	}
 }
