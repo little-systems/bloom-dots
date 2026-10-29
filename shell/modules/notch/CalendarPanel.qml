@@ -3,14 +3,12 @@ import qs.services
 import "../../common"
 import "calendar.js" as Calendar
 
-// The original Bloom calendar and timer share a split surface. Tasks live in
-// the timer column as an optional view so the default layout stays familiar.
+// The original Bloom calendar and timer share a split surface.
 Item {
 	id: root
 	readonly property date shown: new Date()
 	readonly property var dates: Calendar.monthGrid((new Date()).getFullYear(), (new Date()).getMonth())
 	readonly property int rows: dates.length / 7
-	property bool showTasks: false
 	property bool editing: false
 	property real tick: Date.now()
 	readonly property int remaining: Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, tick)
@@ -47,14 +45,13 @@ Item {
 		id: side
 		x: calendarColumn.x + calendarColumn.width + 33; y: 16; width: Math.max(0, root.width - x - 16); height: Math.max(0, root.height - 32)
 		Text {
-			text: root.showTasks ? "Tasks" : root.editing ? "Set duration" : root.finished ? "Time's up"
+			text: root.editing ? "Set duration" : root.finished ? "Time's up"
 				: CalendarState.running ? "ends " + Qt.formatTime(new Date(CalendarState.deadlineMs), "h:mm AP")
 				: CalendarState.pausedSec !== CalendarState.durationSec ? "Paused" : "Click to edit"
 			color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 10
 		}
-		Text { anchors.right: parent.right; text: root.showTasks ? "Timer" : "Tasks"; color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 10; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.showTasks = !root.showTasks } }
 		Item {
-			visible: !root.showTasks; anchors.fill: parent
+			anchors.fill: parent
 			Text {
 				id: countdown; y: 28; anchors.horizontalCenter: parent.horizontalCenter
 				text: Calendar.timerText(root.remaining); color: root.finished ? "#ff453a" : Theme.text
@@ -90,24 +87,6 @@ Item {
 					delegate: Rectangle { required property int modelData; width: (side.width - 12) / 4; height: 24; radius: 7; color: CalendarState.durationSec === modelData * 60 ? Theme.text : Theme.groupBg
 						Text { anchors.centerIn: parent; text: modelData + "m"; color: CalendarState.durationSec === modelData * 60 ? Theme.bgExpanded : Theme.textMuted; font.family: "Inter"; font.pixelSize: 10; font.weight: Font.DemiBold }
 						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { CalendarState.setDuration(modelData * 60); CalendarState.start(); } }
-					}
-				}
-			}
-		}
-		Item {
-			visible: root.showTasks; y: 27; width: parent.width; height: parent.height - y
-			Rectangle { width: parent.width; height: 27; radius: 8; color: Theme.groupBg
-				TextInput { id: todoInput; anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8; verticalAlignment: TextInput.AlignVCenter; color: Theme.text; font.pixelSize: 10; onAccepted: { if (CalendarState.addTodo(text) === "ok") text = ""; } }
-				Text { x: 8; anchors.verticalCenter: parent.verticalCenter; visible: !todoInput.text && !todoInput.activeFocus; text: "Add task"; color: Theme.textMuted; font.pixelSize: 10 }
-			}
-			Flickable { y: 32; width: parent.width; height: parent.height - 32; contentHeight: todoList.implicitHeight; clip: true
-				Column { id: todoList; width: parent.width; spacing: 4
-					Repeater { model: CalendarState.todos
-						delegate: Row { required property var modelData; width: todoList.width; height: 24; spacing: 4
-							Text { width: 18; text: modelData.done ? "☑" : "□"; color: Theme.text; font.pixelSize: 14; MouseArea { anchors.fill: parent; onClicked: CalendarState.toggleTodo(modelData.id) } }
-							Text { width: parent.width - 40; text: modelData.text; elide: Text.ElideRight; color: modelData.done ? Theme.textMuted : Theme.text; font.pixelSize: 10; font.strikeout: modelData.done }
-							Text { text: "×"; color: Theme.textMuted; font.pixelSize: 14; MouseArea { anchors.fill: parent; onClicked: CalendarState.removeTodo(modelData.id) } }
-						}
 					}
 				}
 			}

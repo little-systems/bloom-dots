@@ -20,7 +20,7 @@ TestCase {
 	}
 	function test_restoreRejectsMalformedState() {
 		const got = Calendar.restored({ todos: [{ id: 1, text: "write", done: false }, { id: 2, text: "", done: false }], durationSec: 999999, deadlineMs: 999999999, pausedSec: -5 }, 1000);
-		compare(got.todos.length, 1);
+		compare(got.todos, undefined, "Bloom has no task list (owner, 2026-10-29); old todos are dropped");
 		compare(got.durationSec, 1500);
 		compare(got.deadlineMs, 0);
 		compare(got.pausedSec, 1500);

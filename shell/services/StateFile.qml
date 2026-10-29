@@ -4,7 +4,7 @@ import Quickshell.Io
 import "../common/paths.js" as Paths
 import "state.js" as Logic
 
-// One JSON document of UI state in $XDG_STATE_HOME/bloom/<name>.json (todos,
+// One JSON document of UI state in $XDG_STATE_HOME/bloom/<name>.json (timer,
 // dock order, notification history...), kept apart from settings so a
 // settings reset never touches it. A corrupt file is moved to
 // <name>.json.bak and the default is used, so one bad file can't break a panel.

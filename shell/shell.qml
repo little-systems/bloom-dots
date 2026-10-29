@@ -93,8 +93,7 @@ ShellRoot {
 
 	IpcHandler {
 		target: "calendar"
-		function state(): string { return JSON.stringify({ todos: CalendarState.todos, durationSec: CalendarState.durationSec, deadlineMs: CalendarState.deadlineMs, pausedSec: CalendarState.pausedSec }); }
-		function addTodo(text: string): string { return CalendarState.addTodo(text); }
+		function state(): string { return JSON.stringify({ durationSec: CalendarState.durationSec, deadlineMs: CalendarState.deadlineMs, pausedSec: CalendarState.pausedSec }); }
 		function start(): string { CalendarState.start(); return "ok"; }
 		function pause(): string { CalendarState.pause(); return "ok"; }
 		function reset(): string { CalendarState.reset(); return "ok"; }

@@ -63,7 +63,7 @@ var SCHEMA = {
 	},
 	"bloom-calendar-enabled": {
 		type: "bool", default: true,
-		doc: "Show the Calendar, Pomodoro and Todo panel in the notch."
+		doc: "Show the Calendar and timer panel in the notch."
 	},
 	"bloom-notch-command-center-enabled": {
 		type: "bool", default: true,

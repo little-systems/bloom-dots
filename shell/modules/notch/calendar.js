@@ -32,11 +32,9 @@ function timerText(seconds) {
 }
 
 function restored(raw, nowMs) {
-	const todos = Array.isArray(raw?.todos) ? raw.todos.filter(t => t && Number.isSafeInteger(t.id)
-		&& typeof t.text === "string" && t.text.length > 0 && t.text.length <= 240 && typeof t.done === "boolean").slice(0, 100) : [];
 	const durationSec = Number.isInteger(raw?.durationSec) && raw.durationSec >= 1 && raw.durationSec <= 180 * 60 ? raw.durationSec : 1500;
 	const expired = Number.isFinite(raw?.deadlineMs) && raw.deadlineMs > 0 && raw.deadlineMs <= nowMs;
 	const deadlineMs = Number.isFinite(raw?.deadlineMs) && raw.deadlineMs > nowMs && raw.deadlineMs <= nowMs + 180 * 60 * 1000 ? raw.deadlineMs : 0;
 	const pausedSec = Number.isInteger(raw?.pausedSec) && raw.pausedSec >= 0 && raw.pausedSec <= 180 * 60 ? raw.pausedSec : durationSec;
-	return { todos, durationSec, deadlineMs, pausedSec: expired ? 0 : deadlineMs ? pausedSec : Math.min(pausedSec, durationSec), expired };
+	return { durationSec, deadlineMs, pausedSec: expired ? 0 : deadlineMs ? pausedSec : Math.min(pausedSec, durationSec), expired };
 }
