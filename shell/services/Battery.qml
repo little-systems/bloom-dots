@@ -30,6 +30,7 @@ Singleton {
 		}
 		return "";
 	}
+	readonly property bool energySaver: PowerProfiles.profile === PowerProfile.PowerSaver
 	readonly property string tooltip: Logic.tooltip({
 		level: root.level,
 		charging: root.charging,
@@ -38,6 +39,12 @@ Singleton {
 		secondsToFull: root.device?.timeToFull ?? 0,
 		healthPercent: root.device?.healthSupported ? Math.round(root.device.healthPercentage) : null,
 		powerMode: root.powerMode,
-		energySaver: PowerProfiles.profile === PowerProfile.PowerSaver
+		energySaver: root.energySaver
 	})
+
+	// The Command Center's Energy Saver button: power-profiles-daemon's
+	// power-saver, back to balanced when turned off.
+	function setEnergySaver(on) {
+		PowerProfiles.profile = on ? PowerProfile.PowerSaver : PowerProfile.Balanced;
+	}
 }

@@ -1,45 +1,198 @@
 import QtQuick
-import qs.services
 import "../../common"
+import "../../common/tokens.js" as Tokens
+import "qp"
 
-Rectangle {
+// .cc-pill-tile: a Command Center tile (icon circle, title, status) with an
+// optional chevron that opens its detail panel. An active tile inverts to
+// `text` and keeps that on hover.
+Item {
 	id: root
+
+	property QtObject theme: QpTheme {}
 	property string title: ""
-	property string detail: ""
-	property string icon: ""
+	property string status: ""
+	required property string icon
+	// The Wi-Fi icon dims when the radio is off or not connected.
+	property real glyphOpacity: 1
 	property bool active: false
-	property bool available: true
 	property bool hasMore: false
-	property color textColor: "white"
-	property color mutedColor: Qt.rgba(1, 1, 1, 0.6)
+
 	signal clicked()
+	signal rightClicked()
 	signal moreClicked()
-	height: 34
-	radius: 10
-	color: active ? root.textColor : Theme.groupBg
-	border.width: 1
-	border.color: active ? root.textColor : Theme.border
-	opacity: available ? 1 : 0.5
-	Behavior on color { ColorAnimation { duration: 180 } }
-	Rectangle { x: 8; anchors.verticalCenter: parent.verticalCenter; width: 20; height: 20; radius: 10; color: active ? Qt.rgba(Theme.bgExpanded.r, Theme.bgExpanded.g, Theme.bgExpanded.b, 0.08) : Theme.groupBg
-		SvgIcon { anchors.centerIn: parent; name: root.icon; color: active ? Theme.bgExpanded : root.textColor; size: 12 }
+
+	readonly property bool _pressed: pointer.pressed || (moreLoader.item?.pressed ?? false)
+	// :hover lifts by half a pixel; :active replaces it with the press scale.
+	readonly property real lift: liftValue
+	property real liftValue: pointer.hovered && !root._pressed ? Tokens.cc.tile.hoverLift : 0
+
+	scale: root._pressed ? Tokens.cc.tile.pressScale : 1
+	transform: Translate {
+		y: root.liftValue
 	}
-	Text {
-		x: 36; y: 6; width: parent.width - (root.hasMore ? 60 : 42)
-		text: root.title; color: active ? Theme.bgExpanded : root.textColor; elide: Text.ElideRight
-		font.family: "Inter"; font.pixelSize: 9; font.weight: Font.DemiBold
+
+	Behavior on liftValue {
+		NumberAnimation {
+			duration: Tokens.cc.tile.ms
+			easing.type: Easing.BezierSpline
+			easing.bezierCurve: Tokens.cc.easeOut.concat([1, 1])
+		}
 	}
-	Text {
-		x: 36; y: 18; width: parent.width - (root.hasMore ? 60 : 42)
-		text: root.detail; color: active ? Qt.rgba(Theme.bgExpanded.r, Theme.bgExpanded.g, Theme.bgExpanded.b, 0.55) : root.mutedColor; elide: Text.ElideRight
-		font.family: "Inter"; font.pixelSize: 8
+
+	Behavior on scale {
+		NumberAnimation {
+			duration: Tokens.cc.tile.ms
+			easing.type: Easing.BezierSpline
+			easing.bezierCurve: Tokens.cc.easeOut.concat([1, 1])
+		}
 	}
-	MouseArea { anchors.fill: parent; enabled: root.available; cursorShape: Qt.PointingHandCursor; onClicked: root.clicked() }
-	PressArea {
-		anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-		anchors.rightMargin: 5; width: 18; height: 18
-		visible: root.hasMore; hoverScale: 1.1
-		onClicked: root.moreClicked()
-		SvgIcon { anchors.centerIn: parent; name: "chevron-right"; color: active ? Theme.bgExpanded : root.textColor; size: 12 }
+
+	Rectangle {
+		objectName: "background"
+		anchors.fill: parent
+		radius: Tokens.cc.tile.radius
+		border.width: 1
+		border.color: root.active ? root.theme.text : root.theme.border
+		color: root.active ? root.theme.text : pointer.hovered ? root.theme.border : root.theme.groupBg
+
+		Behavior on color {
+			ColorAnimation {
+				duration: Tokens.cc.tile.ms
+				easing.type: Easing.BezierSpline
+				easing.bezierCurve: Tokens.cc.easeOut.concat([1, 1])
+			}
+		}
+	}
+
+	PointerArea {
+		id: pointer
+		objectName: "pointer"
+		anchors.fill: parent
+		onClicked: root.clicked()
+		onRightClicked: root.rightClicked()
+	}
+
+	// 1 px border + 8 px padding on each side.
+	readonly property real _inset: 1 + Tokens.cc.tile.padH
+
+	Rectangle {
+		id: iconCircle
+		objectName: "iconCircle"
+		x: root._inset
+		anchors.verticalCenter: parent.verticalCenter
+		width: Tokens.cc.tileIcon.size
+		height: Tokens.cc.tileIcon.size
+		radius: width / 2
+		color: root.theme.groupBg
+
+		SvgIcon {
+			objectName: "glyph"
+			anchors.centerIn: parent
+			name: root.icon
+			size: Tokens.cc.tileIcon.glyph
+			strokeWidth: 2.5
+			opacity: root.glyphOpacity
+			color: root.active ? root.theme.bgExpanded : root.theme.text
+
+			Behavior on color {
+				ColorAnimation {
+					duration: Tokens.cc.tile.ms
+					easing.type: Easing.BezierSpline
+					easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1]
+				}
+			}
+		}
+	}
+
+	Column {
+		id: info
+		x: iconCircle.x + iconCircle.width + Tokens.cc.tile.gap
+		anchors.verticalCenter: parent.verticalCenter
+		// Shrinks to its text, up to the room before the chevron.
+		readonly property real room: (root.hasMore ? root.width - root._inset - Tokens.cc.more.size - Tokens.cc.tile.gap : root.width - root._inset) - x
+		width: Math.max(0, Math.min(Math.max(title.implicitWidth, status.implicitWidth), room))
+
+		FracText {
+			id: title
+			objectName: "title"
+			width: parent.width
+			height: Tokens.cc.title * Tokens.cc.lineHeight
+			verticalAlignment: Text.AlignVCenter
+			text: root.title
+			color: root.active ? root.theme.bgExpanded : root.theme.text
+			elide: Text.ElideRight
+			maximumLineCount: 1
+			font.family: Tokens.type.family
+			font.weight: Font.DemiBold
+			pixelSize: Tokens.cc.title
+		}
+
+		FracText {
+			id: status
+			objectName: "status"
+			width: parent.width
+			height: Tokens.cc.status * Tokens.cc.lineHeight
+			verticalAlignment: Text.AlignVCenter
+			text: root.status
+			color: root.active ? root.theme.bgExpanded : root.theme.textMuted
+			elide: Text.ElideRight
+			maximumLineCount: 1
+			font.family: Tokens.type.family
+			font.weight: Font.Medium
+			pixelSize: Tokens.cc.status
+		}
+	}
+
+	Loader {
+		id: moreLoader
+		active: root.hasMore
+		x: root.width - root._inset - Tokens.cc.more.size
+		anchors.verticalCenter: parent.verticalCenter
+
+		sourceComponent: Item {
+			objectName: "more"
+			readonly property bool pressed: morePointer.pressed
+			width: Tokens.cc.more.size
+			height: Tokens.cc.more.size
+			opacity: morePointer.hovered ? 1 : Tokens.cc.more.opacity
+
+			Behavior on opacity {
+				NumberAnimation {
+					duration: Tokens.qp.hoverMs
+					easing.type: Easing.BezierSpline
+					easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1]
+				}
+			}
+
+			Rectangle {
+				objectName: "moreBackground"
+				anchors.fill: parent
+				radius: Tokens.cc.more.radius
+				color: morePointer.hovered ? root.theme.groupBg : "transparent"
+
+				Behavior on color {
+					ColorAnimation {
+						duration: Tokens.qp.hoverMs
+						easing.type: Easing.BezierSpline
+						easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1]
+					}
+				}
+			}
+
+			SvgIcon {
+				objectName: "moreGlyph"
+				anchors.centerIn: parent
+				name: "chevron-right"
+				size: Tokens.cc.more.glyph
+				color: root.active ? root.theme.bgExpanded : root.theme.text
+			}
+
+			PointerArea {
+				id: morePointer
+				anchors.fill: parent
+				onClicked: root.moreClicked()
+			}
+		}
 	}
 }

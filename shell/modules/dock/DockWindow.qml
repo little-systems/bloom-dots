@@ -63,6 +63,10 @@ PanelWindow {
 		function onCleared() { view.closeMenus(); }
 	}
 	Connections {
+		target: Dock
+		function onRevealRequested(ms) { view.reveal(ms); }
+	}
+	Connections {
 		target: DockExtras
 		function onToastSerialChanged() { Dock.notify(DockExtras.toast); }
 	}

@@ -188,6 +188,11 @@ Singleton {
 			next.id > 0 ? root.switchWorkspace(next.id) : root.switchWorkspaceNamed(next.tip);
 	}
 
+	// Shows the dock for `ms` (the Command Center's System Tray button: tray
+	// apps live in the dock here).
+	signal revealRequested(int ms)
+	function reveal(ms) { root.revealRequested(ms); }
+
 	function restartShell() { Apps.run(["systemctl", "--user", "restart", "bloom-shell"], "bloom-restart"); }
 	function quitShell() { Apps.run(["systemctl", "--user", "stop", "bloom-shell"], "bloom-quit"); }
 

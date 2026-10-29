@@ -208,8 +208,18 @@ Item {
 	// An edge reveal lets go once the pointer reaches the pill, or after the
 	// hand-off time if it never does (Wayland reports hover only on movement).
 	onBandActiveChanged: if (!root.bandActive && root.edgeArmed) handoff.restart()
-	onPillHoveredChanged: if (root.pillHovered) { handoff.stop(); root.edgeArmed = false; }
+	onPillHoveredChanged: if (root.pillHovered) { handoff.stop(); revealTimer.stop(); root.edgeArmed = false; }
 	Timer { id: handoff; interval: Tokens.dock.edgeHandoffMs; onTriggered: root.edgeArmed = false }
+
+	// Shown for `ms` as if from the edge (the Command Center's System Tray
+	// button); reaching the pill takes over as an edge reveal does.
+	function reveal(ms) {
+		handoff.stop();
+		root.edgeArmed = true;
+		revealTimer.interval = Math.max(1, ms);
+		revealTimer.restart();
+	}
+	Timer { id: revealTimer; onTriggered: root.edgeArmed = false }
 
 	// Slots: the row's items with framer AnimatePresence. A leaving slot keeps
 	// its place until its exit has played (exitMs), then the row closes up.
