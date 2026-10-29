@@ -20,6 +20,8 @@ Item {
 	property bool dragging: false
 	property bool anyDragging: false
 	property bool iconOnly: false
+	// This app's window preview is open; Bloom drops the text tooltip then.
+	property bool previewing: false
 	property bool light: false
 	property color textColor: "white"
 	property color tooltipBg: Qt.rgba(0, 0, 0, Tokens.dock.tooltip.alpha)
@@ -208,7 +210,7 @@ Item {
 	Rectangle {
 		id: tip
 		objectName: "dock-tooltip"
-		readonly property bool showing: root.hovered && root.shown && !root.anyDragging
+		readonly property bool showing: root.hovered && root.shown && !root.anyDragging && !root.previewing
 		x: (root.width - width) / 2
 		y: -Tokens.dock.tooltip.offset
 		z: 1

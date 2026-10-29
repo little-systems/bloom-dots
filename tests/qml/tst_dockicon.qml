@@ -90,6 +90,21 @@ Item {
 			tryCompare(tip, "opacity", 0, 600);
 		}
 
+		// Bloom (Dock.tsx): the text tooltip is the fallback when no preview
+		// shows; an open preview of this app hides it.
+		function test_previewHidesTheTooltip() {
+			const v = make();
+			tryCompare(v, "shown", true, 400);
+			const tip = findChild(v, "dock-tooltip");
+			mouseMove(v, 18, 18);
+			tryCompare(tip, "opacity", 1, 600);
+			v.previewing = true;
+			tryCompare(tip, "opacity", 0, 600);
+			v.previewing = false;
+			tryCompare(tip, "opacity", 1, 600);
+			mouseMove(host, 0, 0);
+		}
+
 		function test_dots() {
 			const v = make({ windows: 0 });
 			compare(findChild(v, "dock-dots").count, 0);

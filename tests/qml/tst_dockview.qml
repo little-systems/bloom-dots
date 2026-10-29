@@ -190,6 +190,8 @@ Item {
 			const point = slot.mapToItem(v, slot.width / 2, slot.height / 2);
 			mouseMove(v, point.x, point.y);
 			tryCompare(v, "previewOpen", true, 1000);
+			// The preview replaces the hovered app's text tooltip (Bloom).
+			tryCompare(findChild(slot, "dock-tooltip"), "opacity", 0, 600);
 			compare(v.previewItem.candidates.map(c => c.address), ["0x1"]);
 			const focus = createTemporaryObject(spyComponent, host, { target: v, signalName: "previewFocus" });
 			v.previewItem.focusRequested("0x1");

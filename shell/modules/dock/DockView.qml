@@ -509,6 +509,7 @@ Item {
 							dragging: root._dragKey === slot.key
 							anyDragging: root._dragKey !== ""
 							iconOnly: root.iconOnly
+							previewing: root.previewOpen && root._previewId === slot.key
 							light: root.light
 							textColor: root.textColor
 							tooltipBg: root.tooltipBg
