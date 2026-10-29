@@ -414,6 +414,16 @@ Item {
 		onTriggered: root.edgeArmed = false
 	}
 
+	// Bloom's bottom corners: 28 for the calendar, else 18, on a 1000/40 spring.
+	Spring {
+		id: farS
+		objectName: "farRadius"
+		stiffness: Tokens.springs.radius.stiffness
+		damping: Tokens.springs.radius.damping
+		initial: Tokens.sizes.farRadius
+		target: root.panel === "calendar" ? Tokens.sizes.calendarFarRadius : Tokens.sizes.farRadius
+	}
+
 	Spring {
 		id: wS
 		stiffness: Tokens.springs.pillWidth.stiffness
@@ -476,8 +486,7 @@ Item {
 				pillWidth: Math.max(0, wS.value)
 				pillHeight: Math.max(0, hS.value)
 				edgeRadius: rS.value
-				farRadius: root.panel === "calendar" ? Tokens.sizes.calendarFarRadius : Tokens.sizes.farRadius
-				Behavior on farRadius { NumberAnimation { duration: 180 } }
+				farRadius: farS.value
 				flares: root.impacted
 				color: root.statusHover || root.open || root.panel !== "" || root.alertVisible ? root.bgExpanded : root.bg
 				Behavior on color {
@@ -723,9 +732,31 @@ Item {
 				Behavior on opacity { NumberAnimation { duration: 100 } }
 				sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
 			}
+			// The pill's rounded shape, for masking a panel while the pill moves.
+			Item {
+				id: panelMask
+				anchors.fill: parent
+				visible: false
+				layer.enabled: panelLoader.layer.enabled
+
+				Rectangle {
+					anchors.fill: parent
+					bottomLeftRadius: farS.value
+					bottomRightRadius: farS.value
+					color: "black"
+				}
+			}
 			Loader {
 				id: panelLoader
+				objectName: "panelLoader"
 				anchors.fill: parent
+				// Bloom's panels: overflow hidden with the pill's radius. Only
+				// while the pill moves; a mask costs a pass at rest.
+				layer.enabled: active && (!wS.settled || !hS.settled || !farS.settled)
+				layer.effect: MultiEffect {
+					maskEnabled: true
+					maskSource: panelMask
+				}
 				// Stays a moment after a close so the last panel fades out.
 				active: root.panel !== "" || panelLinger.running
 				source: active ? "PanelHost.qml" : ""

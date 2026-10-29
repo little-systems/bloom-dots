@@ -455,6 +455,33 @@ Item {
 			compare(v.panel, "", "a finished timer only resets");
 		}
 
+		// Bloom's bottom corners spring (1000/40) between 18 and the calendar's 28.
+		function test_bottomRadiusSprings() {
+			const v = make();
+			settle(v);
+			const far = findChild(v, "farRadius");
+			compare(far.stiffness, 1000);
+			compare(far.damping, 40);
+			compare(far.value, 18);
+			mouseMove(v, 500, 18);
+			v.openPanel("calendar");
+			tryCompare(far, "value", 28, 1000);
+		}
+
+		// Bloom's panels have overflow: hidden with the pill's radius: while the
+		// pill moves the content is masked to its rounded shape; at rest the mask
+		// is off (it costs a pass).
+		function test_panelMaskedWhileThePillMoves() {
+			const v = make();
+			settle(v);
+			const loader = findChild(v, "panelLoader");
+			compare(loader.layer.enabled, false);
+			mouseMove(v, 500, 18);
+			v.openPanel("command-center");
+			verify(loader.layer.enabled, "masked while springing");
+			tryVerify(() => !loader.layer.enabled, 2000, "unmasked at rest");
+		}
+
 		// Bloom's first alert frame has no clock: the row goes at once, not
 		// over the 0.3 s fade.
 		function test_alertHidesTheClockAtOnce() {
