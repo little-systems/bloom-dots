@@ -5,6 +5,12 @@ import "shelf.js" as Logic
 
 Item {
 	id: root
+	// Bloom ignores the wheel over the shelf: it doesn't switch panels.
+	MouseArea {
+		anchors.fill: parent
+		acceptedButtons: Qt.NoButton
+		onWheel: wheel => wheel.accepted = true
+	}
 	DropArea {
 		anchors.fill: parent
 		onDropped: drop => {

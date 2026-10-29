@@ -127,6 +127,14 @@ Item {
 		width: root._calWidth
 		height: root._innerHeight
 
+		// Bloom ignores the wheel over the calendar and the timer: it doesn't
+		// switch panels from here.
+		MouseArea {
+			anchors.fill: parent
+			acceptedButtons: Qt.NoButton
+			onWheel: wheel => wheel.accepted = true
+		}
+
 		Text {
 			id: month
 			objectName: "month"
@@ -217,6 +225,14 @@ Item {
 		y: root._top
 		width: root._timerWidth
 		height: root._innerHeight
+
+		// Bloom ignores the wheel over the calendar and the timer: it doesn't
+		// switch panels from here.
+		MouseArea {
+			anchors.fill: parent
+			acceptedButtons: Qt.NoButton
+			onWheel: wheel => wheel.accepted = true
+		}
 
 		Column {
 			y: (parent.height - height) / 2

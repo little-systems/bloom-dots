@@ -108,6 +108,23 @@ Item {
 	}
 	Timer { id: scriptedPanelClose; interval: 5000; onTriggered: root.closePanel() }
 
+	// Bloom's handleWheel. dx, dy in browser terms (positive = right, down):
+	// the larger one decides; a scroll opens the notch to the panel it would
+	// open, then cycles the panels; tiny moves are ignored, and it takes at
+	// most one step every 250 ms.
+	property real _lastWheel: 0
+	function wheelStep(dx, dy) {
+		const now = Date.now();
+		if (now - root._lastWheel < 250) return false;
+		const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+		if (Math.abs(delta) < 5) return false;
+		const dir = delta > 0 ? 1 : -1;
+		const result = Panels.ORDER.indexOf(root.panel) >= 0 ? root.cyclePanel(dir) : root.openPanel("");
+		if (result !== "ok") return false;
+		root._lastWheel = now;
+		return true;
+	}
+
 	signal togglePlay()
 	signal previousTrack()
 	signal nextTrack()
@@ -513,6 +530,17 @@ Item {
 			opacity: pillLayer.opacity
 
 			HoverHandler { id: pillHover }
+			// Anywhere on the notch; lists and the calendar keep their own.
+			WheelHandler {
+				target: null
+				acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+				onWheel: event => {
+					const px = event.pixelDelta;
+					const touch = px.x !== 0 || px.y !== 0;
+					// Qt's deltas point the other way; a wheel notch is 120 units.
+					root.wheelStep(touch ? -px.x : -event.angleDelta.x / 1.2, touch ? -px.y : -event.angleDelta.y / 1.2);
+				}
+			}
 			// cursor: default — the notch body (Bloom .bloom { cursor: default })
 			TapHandler {
 				onTapped: if (root.panel === "" && !root.open) root.openPanel("")

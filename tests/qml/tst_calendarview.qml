@@ -30,6 +30,10 @@ Item {
 		remainingSec: 0
 	}
 
+	// The notch's wheel handler, beneath the panel.
+	property int notchWheels: 0
+	WheelHandler { target: null; onWheel: host.notchWheels++ }
+
 	SignalSpy { id: primary; target: cal; signalName: "primaryRequested" }
 	SignalSpy { id: resets; target: cal; signalName: "resetRequested" }
 	SignalSpy { id: presets; target: cal; signalName: "presetChosen" }
@@ -407,6 +411,16 @@ Item {
 			compare(resets.count, 1);
 			verify(cal.editing);
 			compare(digits(), "2500");
+		}
+
+		// Bloom ignores the wheel over the calendar grid and the timer: it
+		// doesn't reach the notch to switch panels.
+		function test_wheelDoesNotLeaveTheCalendar() {
+			host.notchWheels = 0;
+			const day = part(cal, "day-10");
+			mouseWheel(day, 5, 5, 0, -120);
+			mouseWheel(part(cal, "play"), 5, 5, 0, -120);
+			compare(host.notchWheels, 0);
 		}
 
 		function test_restDrawsNoFrames() {

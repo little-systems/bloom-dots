@@ -28,6 +28,18 @@ Item {
 	Component.onCompleted: root._last = root._percent
 	Timer { id: flashTimer; interval: Tokens.osd.percentMs; onTriggered: root._flash = false }
 
+	// Scrolling an app's tile changes its volume, 5 % a notch.
+	MouseArea {
+		anchors.fill: parent
+		acceptedButtons: Qt.NoButton
+		onWheel: wheel => {
+			const px = wheel.pixelDelta.y;
+			const notches = px !== 0 ? px / 100 : wheel.angleDelta.y / 120;
+			root.volumeChosen(Math.max(0, Math.min(1, root.session.volume + notches * 0.05)));
+			wheel.accepted = true;
+		}
+	}
+
 	Rectangle {
 		id: bar
 		objectName: "tileBar"

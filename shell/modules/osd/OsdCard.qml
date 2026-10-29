@@ -32,6 +32,14 @@ Item {
 	readonly property bool onScreen: card.visible
 
 	signal valueChosen(real value)
+
+	// A wheel notch (120 units) is 5 % (owner, 2026-10-29); touchpads scroll
+	// by pixels, 100 px a notch.
+	function _wheelValue(from, wheel) {
+		const px = wheel.pixelDelta.y;
+		const notches = px !== 0 ? px / 100 : wheel.angleDelta.y / 120;
+		return Math.max(0, Math.min(1, from + notches * 0.05));
+	}
 	signal mixerToggled()
 	signal sessionVolumeChosen(var id, real volume)
 	signal sessionMuteToggled(var id)
@@ -169,6 +177,16 @@ Item {
 			width: surface.pillRect.width
 			height: surface.pillRect.height
 			clip: true
+
+			// Scrolling the card changes the value (Bloom has no wheel here).
+			MouseArea {
+				anchors.fill: parent
+				acceptedButtons: Qt.NoButton
+				onWheel: wheel => {
+					root.valueChosen(root._wheelValue(root.value, wheel));
+					wheel.accepted = true;
+				}
+			}
 
 			// .volume-notch-content-group: slides in 10 px from the edge.
 			Item {

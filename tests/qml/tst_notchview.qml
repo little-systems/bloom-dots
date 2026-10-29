@@ -455,6 +455,39 @@ Item {
 			compare(v.panel, "", "a finished timer only resets");
 		}
 
+		// Bloom's handleWheel: scrolling the notch opens it (to the panel it
+		// would open), then cycles the panels, at most every 250 ms; tiny moves
+		// are ignored.
+		function test_wheelCyclesPanels() {
+			const v = make({ defaultPanel: "calendar", rememberPanel: false });
+			settle(v);
+			mouseMove(v, 500, 18);
+			compare(v.wheelStep(0, 2), false, "a tiny move does nothing");
+			compare(v.panel, "");
+			verify(v.wheelStep(0, 100));
+			compare(v.panel, "calendar");
+			compare(v.wheelStep(0, 100), false, "within 250 ms");
+			compare(v.panel, "calendar");
+			wait(260);
+			v.wheelStep(0, 100);
+			compare(v.panel, "command-center");
+			wait(260);
+			v.wheelStep(0, -100);
+			compare(v.panel, "calendar");
+			wait(260);
+			// A sideways trackpad swipe counts too.
+			v.wheelStep(120, 10);
+			compare(v.panel, "command-center");
+		}
+
+		function test_wheelEventsReachIt() {
+			const v = make({ defaultPanel: "command-center", rememberPanel: false });
+			settle(v);
+			mouseMove(v, 500, 18);
+			mouseWheel(v, 500, 18, 0, -120);
+			tryCompare(v, "panel", "command-center", 500);
+		}
+
 		// Bloom's open panels keep the main row's side widgets (weather left,
 		// battery right) beside the panel header's clock and arrows.
 		function test_panelKeepsTheStatusWidgets() {

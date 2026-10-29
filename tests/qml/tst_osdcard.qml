@@ -167,6 +167,31 @@ Item {
 			compare(part(volume, "barPointer").cursorShape, Qt.PointingHandCursor);
 		}
 
+		// Scrolling the card moves the value 5 % a notch (owner, 2026-10-29).
+		function test_wheelChangesTheValue() {
+			mouseWheel(part(volume, "card"), 21, 60, 0, 120);
+			compare(chosen.count, 1);
+			fuzzyCompare(chosen.signalArguments[0][0], 0.5, 0.001);
+			mouseWheel(part(volume, "card"), 21, 60, 0, -240);
+			fuzzyCompare(chosen.signalArguments[1][0], 0.35, 0.001);
+			// Clamped.
+			volume.value = 0.98;
+			mouseWheel(part(volume, "card"), 21, 60, 0, 120);
+			compare(chosen.signalArguments[2][0], 1);
+			volume.value = 0.45;
+		}
+
+		function test_wheelOverAnApp() {
+			volume.mixerOpen = true;
+			const tile = part(part(volume, "mixer"), "tile-1");
+			// Once the card has grown to show it (a clipped tile takes no input).
+			wait(400);
+			mouseWheel(tile, 22, 50, 0, -120);
+			compare(sessionVolume.signalArguments[0][0], 1);
+			fuzzyCompare(sessionVolume.signalArguments[0][1], 0.75, 0.001);
+			compare(chosen.count, 0, "an app's scroll isn't the main volume");
+		}
+
 		function test_actionOpensTheMixer() {
 			mouseClick(part(volume, "action"));
 			compare(mixerToggled.count, 1);

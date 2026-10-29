@@ -50,9 +50,6 @@ Item {
 		// go to the calendar.
 		onClicked: CalendarState.finished ? CalendarState.reset() : root.subpanelRequested("calendar")
 
-		WheelHandler {
-			onWheel: event => event.angleDelta.y < 0 ? root.nextRequested() : root.previousRequested()
-		}
 	}
 
 	// The panel content, crossfading as Bloom's AnimatePresence does.
