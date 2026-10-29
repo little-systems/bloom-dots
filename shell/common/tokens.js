@@ -201,6 +201,117 @@ var dock = {
 	workspaces: { padding: 6, cell: 24, cellRadius: 8, gap: 2, size: 12, idleOpacity: 0.55, highlightAlpha: 0.15 },
 	preview: { width: 220, imageHeight: 130, gap: 12, maxVisible: 3, dwellMs: 300, retainMs: 100, bridge: 20, motionMs: 150 },
 	extras: { tile: 36 },
+	// The Command Center's System Tray button shows the dock this long (as long
+	// as the notch's event peek; Bloom opens Windows' tray flyout instead).
+	revealMs: 3000,
 	// Bloom's drag variant.
 	drag: { y: -10, scale: 1.1, opacity: 0.8 }
+};
+
+// Notch panels, copied from Bloom @ b5fb962 (App.css, components/QuickPanel.css).
+// Each group names the CSS rule it comes from.
+
+// Shared by every panel below the 36 px clock strip.
+var panel = {
+	strip: 36,
+	bottomRadius: 18 // .qp, .command-center-content-minimal: border-radius 0 0 18 18
+};
+
+// components/QuickPanel.css (.qp-*), the Wi-Fi, Bluetooth and Devices panels.
+var qp = {
+	padding: { top: 4, side: 12, bottom: 8 }, // .qp padding 4px 12px 8px
+	gap: 6, // .qp gap
+	text: 11, // .qp font-size
+	header: { gap: 4, title: 12 }, // .qp-header, .qp-title 12/600
+	iconButton: { size: 24, radius: 8, glyph: 14, disabledOpacity: 0.4 }, // .qp-icon-btn
+	switch: { width: 30, height: 17, radius: 9, knob: 13, inset: 2, travel: 13, ms: 200, margin: 4 }, // .qp-switch
+	list: { gap: 2, scrollbar: 4, rightPad: 2 }, // .qp-list
+	row: { radius: 10, padV: 5, padH: 8, gap: 9, icon: 24, glyph: 13, sub: 9.5, lineHeight: 1.25, badge: 11 }, // .qp-row*
+	actions: { gap: 6, left: 41, side: 8, bottom: 8 }, // .qp-row-actions padding 0 8 8 41
+	button: { minWidth: 64, height: 24, padH: 10, radius: 8, text: 10.5, glyph: 13, disabledOpacity: 0.45, primaryHoverOpacity: 0.9 }, // .qp-btn
+	input: { height: 26, padH: 9, radius: 8 }, // .qp-input
+	chip: { height: 20, padH: 8, radius: 10, text: 10, gap: 4 }, // .qp-chip, .qp-chips
+	note: 10, // .qp-note
+	error: { color: "#ff8a80", text: 10, left: 41, side: 8, bottom: 7 }, // .qp-error
+	empty: { gap: 8, padH: 24, glyph: 18 }, // .qp-empty
+	footer: { padV: 2, padH: 8, radius: 6, text: 10 }, // .qp-footer
+	spinMs: 900, // .qp-spin 0.9s linear
+	hoverMs: 150 // background/colour transitions 0.15s ease
+};
+
+// Bloom's "battery hub" (QuickPanel.css .bh-*), the Connected devices panel.
+var bh = {
+	titleIcon: 22, // .bh-title-icon
+	groupGap: 8, // .bh-list gap
+	groupTitle: { text: 9.5, tracking: 0.38, padH: 8, low: "#ff453a" }, // .bh-group-title (0.04em of 9.5)
+	row: { padV: 4, padH: 8, gap: 9, radius: 10 }, // .bh-row
+	looksLeft: 47, // .bh-looks padding-left
+	art: 30, artGlyph: 18, // .bh-art
+	meters: { gap: 8, width: 40, gapV: 3, value: 10.5, label: 9, bolt: 9, bar: 3, barRadius: 2, track: 0.14, fillMs: 400 }, // .bh-meter*
+	green: "#32d74b",
+	red: "#ff453a",
+	unknown: 9.5 // .bh-unknown
+};
+
+// App.css .command-center-content-minimal and .cc-*.
+var cc = {
+	padding: { v: 12, h: 14 },
+	grid: { gap: 10, height: 78 }, // .cc-pills-grid
+	tile: { height: 34, padV: 5, padH: 8, gap: 8, radius: 10, hoverLift: -0.5, pressScale: 0.98, ms: 150 }, // .cc-pill-tile
+	tileIcon: { size: 20, glyph: 12 }, // .cc-pill-icon-wrapper
+	title: 9, status: 7.5, lineHeight: 1.15, activeStatusAlpha: 0.5, // .cc-pill-title/status
+	more: { size: 18, radius: 6, glyph: 12, opacity: 0.55 }, // .cc-pill-more
+	round: { size: 32, glyph: 14, hoverLift: -1, pressScale: 0.95, ms: 200, sidePad: 4 }, // .cc-circular-*
+	sliders: { gap: 8, rowHeight: 18, rowGap: 10, label: 75, labelGap: 6, text: 9, glyph: 12, glyphOpacity: 0.7, track: 6, trackRadius: 3, percent: 28 }, // .cc-classic-*
+	easeOut: [0.16, 1, 0.3, 1] // cubic-bezier(0.16, 1, 0.3, 1)
+};
+
+// App.css .calendar-*: the calendar column.
+var calendar = {
+	padding: 16, gap: 16, topMargin: 1, bottomRadius: 28, // .calendar-timer-content.split-view
+	columns: [1.2, 1], // .calendar-column flex 1.2, .timer-column flex 1
+	month: { text: 13, opacity: 0.9, below: 8 }, // .month-year, .calendar-header margin
+	grid: { gap: 2 }, // .calendar-grid
+	dayName: { text: 9, opacity: 0.4, below: 2 }, // .day-name
+	day: { text: 10, radius: 4 } // .calendar-day
+};
+
+// App.css .timer-*, .roll-*: the timer column.
+var timer = {
+	sectionGap: 18, mainGap: 4, // .timer-section-new, .timer-main
+	status: { height: 14, text: 10, tracking: 0.2, opacity: 0.4, finishedOpacity: 0.9 }, // .timer-status
+	digit: { width: 34, height: 58, text: 36, tracking: -0.5, gap: 5 }, // .roll-digit, .roll-num, .timer-clock gap
+	compact: { width: 26, height: 46, text: 28 }, // .roll-digit.compact
+	colon: { text: 32, opacity: 0.3, padH: 2 }, // .timer-colon
+	roll: { travel: 0.72, angle: 50, ms: 400, ease: [0.22, 1, 0.36, 1] }, // RollDigit
+	underline: { height: 2, width: 0.74, opacity: 0.3, ms: 250 }, // .timer-edit-underline
+	controls: { gap: 8, spacer: 32 }, // .timer-controls-row
+	play: { height: 44, radius: 22, text: 12, gap: 7, glyph: 14, hoverOpacity: 0.9, pressScale: 0.97, ms: 150 }, // .timer-btn-play
+	reset: { size: 32, glyph: 14, opacity: 0.35, hoverOpacity: 0.8, disabledOpacity: 0.08, pressScale: 0.9 }, // .timer-btn-reset
+	presets: { gap: 4, padV: 6, radius: 7, text: 10, opacity: 0.5 }, // .timer-preset-*
+	red: "#ff453a",
+	pulse: { ms: 1900, delay: 650 } // .state-finished .timer-clock animation
+};
+
+// App.css .shelf-*.
+var shelf = {
+	padding: { v: 12, h: 14 },
+	empty: { text: 12, opacity: 0.55, border: 0.25, radius: 12 }, // .shelf-empty
+	gap: 8, scrollbar: 5, // .shelf-items-grid
+	tile: { width: 104, pad: 6, gap: 4, radius: 12, bg: 0.06, hoverBg: 0.12 }, // .shelf-tile
+	preview: { height: 84, radius: 8, bg: 0.05, opacity: 0.85, textBg: 0.075, textLine: 0.16, text: 10, lineHeight: 1.45, fade: 0.72 }, // .shelf-tile-preview/-text
+	name: { text: 11, opacity: 0.85 }, // .shelf-tile-name
+	remove: { size: 18, inset: 4, bg: 0.55, ms: 120 }, // .shelf-tile-remove
+	notice: { bottom: 10, padV: 5, padH: 12, bg: 0.75, text: 11 } // .shelf-notice
+};
+
+// App.css .panel-arrow: the arrows beside the clock while a panel is open.
+var panelArrow = { size: 18, gap: 4, glyph: 12, ms: 150, slide: 4 };
+
+// App.css .device-alert*.
+var alert = {
+	pad: { left: 14, right: 18 }, gap: 12,
+	name: 13.5, status: 12,
+	ring: { size: 28, stroke: 2.6, track: 0.14, ms: 600, text: 9.5 },
+	buds: { gap: 7, label: 9 }
 };
