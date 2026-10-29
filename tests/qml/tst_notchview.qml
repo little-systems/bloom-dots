@@ -455,6 +455,17 @@ Item {
 			compare(v.panel, "", "a finished timer only resets");
 		}
 
+		// Bloom's first alert frame has no clock: the row goes at once, not
+		// over the 0.3 s fade.
+		function test_alertHidesTheClockAtOnce() {
+			const v = make();
+			settle(v);
+			const row = findChild(v, "mainRow");
+			compare(row.opacity, 1);
+			v.deviceAlert = { id: "/a", name: "AirPods Pro", art: "stem-buds", status: "Connected", connected: true, wired: false, bluetooth: true, battery: 72, buds: null, runId: 1 };
+			compare(row.opacity, 0);
+		}
+
 		// Bloom's handleMouseLeave: a panel closes as soon as the pointer leaves
 		// the notch, unless something in it is being typed into.
 		function test_leavingClosesAnOpenPanel() {

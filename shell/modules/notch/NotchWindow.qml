@@ -95,7 +95,7 @@ PanelWindow {
 	NotchView {
 		id: view
 		anchors.fill: parent
-		onDeviceAlertDismissed: Devices.alert = null
+		onDeviceAlertDismissed: Devices.dismissAlert()
 		timer: ({
 			// Bloom: timerSeconds > 0 (running or paused) || isTimerFinished.
 			active: CalendarState.running || CalendarState.pausedSec > 0 || CalendarState.finished,

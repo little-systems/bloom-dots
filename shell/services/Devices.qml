@@ -13,7 +13,6 @@ Singleton {
 	readonly property var privacy: Logic.privacy(Pipewire.nodes.values)
 	property var alert: null
 	property var _eventLines: []
-	property var _knownBluetooth: null
 	property var _knownAudio: null
 	property var _jackPorts: null
 	readonly property var connectedBluetooth: Bluetooth.devices.filter(d => d.connected)
@@ -24,16 +23,20 @@ Singleton {
 	onActiveChanged: {
 		Bluetooth.hold("device-alerts", root.active);
 		if (root.active) root.refreshJacks();
-		else { root._knownBluetooth = null; root._knownAudio = null; root._jackPorts = null; }
+		else { root._knownAll = null; root._knownAudio = null; root._jackPorts = null; }
 	}
-	onConnectedBluetoothChanged: {
-		const current = root.connectedBluetooth;
-		if (root._knownBluetooth !== null) {
-			const added = current.find(d => !root._knownBluetooth.some(old => old.path === d.path));
-			if (added) root.showAlert("Bluetooth connected", added.name, "bluetooth", added.battery, added.buds);
+	// Bloom alerts when a Bluetooth device connects or disconnects.
+	property var _knownAll: null
+	readonly property var _allBluetooth: Bluetooth.devices.filter(d => d.paired || d.connected)
+	on_AllBluetoothChanged: {
+		const current = root._allBluetooth;
+		if (root._knownAll !== null) {
+			for (const change of Logic.connectionChanges(root._knownAll, current))
+				root.showAlert(Object.assign({ id: change.device.path }, Logic.bluetoothAlert(change.device, change.connected, root._looks)));
 		}
-		root._knownBluetooth = current;
+		root._knownAll = current;
 	}
+	readonly property var _looks: Logic.parseLooks(Settings.values["bloom-device-looks"])
 	// Only USB audio alerts (Bloom's wired audio); the built-in sound card and
 	// a display's HDMI audio coming and going never do.
 	readonly property var _audioNodes: Pipewire.nodes.values.filter(n => n && !n.isStream)
@@ -41,7 +44,7 @@ Singleton {
 		const current = root._audioNodes.map(n => ({ id: n.id, isStream: false, description: n.description, nickname: n.nickname, name: n.name, properties: n.properties }));
 		if (root._knownAudio !== null) {
 			const added = Logic.audioAlert(root._knownAudio, current);
-			if (added) root.showAlert("Audio device connected", added.name, "audio");
+			if (added) root.showAlert(Object.assign({ id: added.id }, Logic.wiredAlert(added.name, added.art, true, root._looks)));
 		}
 		root._knownAudio = current;
 	}
@@ -50,12 +53,35 @@ Singleton {
 		if (wanted) next[key] = true; else delete next[key];
 		root._holders = next;
 	}
-	function showAlert(title, detail, kind, battery, buds) {
-		root.alert = { title, detail, kind, battery: Number.isInteger(battery) ? battery : null, buds: buds || null };
+	// Bloom's showDeviceAlert: { id, name, art, status, connected, wired,
+	// bluetooth, battery, buds } plus a runId that replays the art.
+	property var _alertQueue: []
+	function showAlert(alert) {
+		const next = Logic.queueAlert(root.alert, root._alertQueue, alert);
+		root._alertQueue = next.queue;
+		if (next.show) root._present(next.show);
+	}
+	function _present(alert) {
+		root.alert = Object.assign({ runId: Date.now() }, alert);
+		clearAlert.interval = Logic.alertMs(alert.connected);
 		clearAlert.restart();
 	}
+	// A click on the alert, or a panel opening: it goes, and so does the queue.
+	function dismissAlert() {
+		root._alertQueue = [];
+		root.alert = null;
+		clearAlert.stop();
+	}
 	function refreshJacks() { if (root.active && !jackQuery.running) jackQuery.running = true; }
-	Timer { id: clearAlert; interval: 4300; onTriggered: root.alert = null }
+	Timer {
+		id: clearAlert
+		onTriggered: {
+			const next = root._alertQueue[0];
+			root._alertQueue = root._alertQueue.slice(1);
+			if (next) root._present(next);
+			else root.alert = null;
+		}
+	}
 	Process {
 		running: root.active
 		command: [Quickshell.env("BLOOM_PACTL") || "pactl", "subscribe"]
@@ -71,7 +97,7 @@ Singleton {
 			const next = Logic.headphonePorts(jackOutput.text);
 			const change = Logic.jackChange(root._jackPorts, next);
 			root._jackPorts = next;
-			if (change) root.showAlert("Headphones " + change, "Audio output changed", "audio");
+			if (change) root.showAlert(Object.assign({ id: "jack" }, Logic.wiredAlert("Headphones", "earbuds-jack", change === "connected", root._looks)));
 		}
 	}
 	Process {
@@ -82,7 +108,7 @@ Singleton {
 				if (line.trim()) { root._eventLines.push(line.trim()); return; }
 				const event = Logic.udevEvent(root._eventLines);
 				root._eventLines = [];
-				if (event) root.showAlert(event.title, event.detail, event.kind);
+				if (event) root.showAlert(Object.assign({ id: "usb:" + event.detail }, Logic.usbAlert(event.detail, true)));
 			}
 		}
 	}

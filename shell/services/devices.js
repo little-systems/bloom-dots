@@ -197,3 +197,61 @@ function entries(pc, bluetooth, wired, looks) {
 		out.push({ id: d.id, name: d.name, kind: d.kind, wired: true, art: (d.kind === "audio" && (looks || {})[d.name]) || d.art, guess: d.art, level: null, charging: false, buds: null });
 	return out;
 }
+
+// ---- Bloom's device alert (App.tsx showDeviceAlert, deviceAlertStatus) ----
+
+var PLUGGED_ART = ["headphones-wired", "earbuds-usbc", "earbuds-jack", "flash-drive", "ssd", "hub", "webcam", "microphone"];
+
+function alertStatus(art, connected, wired) {
+	if (art === "sd-card") return connected ? "Inserted" : "Removed";
+	// A wired device is plugged in whatever it was picked to look like.
+	if (wired || PLUGGED_ART.indexOf(art) >= 0) return connected ? "Plugged in" : "Unplugged";
+	return connected ? "Connected" : "Disconnected";
+}
+
+// How long an alert stays (Bloom DEVICE_ALERT_MS).
+function alertMs(connected) {
+	return connected ? 4200 : 2600;
+}
+
+function _alert(name, art, connected, wired, extra) {
+	return Object.assign({ name, art, connected, wired, bluetooth: false, battery: null, buds: null, status: alertStatus(art, connected, wired) }, extra || {});
+}
+
+function bluetoothAlert(device, connected, looks) {
+	const art = (looks || {})[device.name] || Art.artForKind(device.kind || "other", device.name);
+	const buds = device.buds && (Number.isInteger(device.buds.left) || Number.isInteger(device.buds.right)) ? device.buds : null;
+	return _alert(device.name, art, connected, false, {
+		bluetooth: true,
+		battery: connected && Number.isInteger(device.battery) ? device.battery : null,
+		buds: connected ? buds : null
+	});
+}
+
+function wiredAlert(name, art, connected, looks) {
+	return _alert(name, (looks || {})[name] || art, connected, true);
+}
+
+// Bluetooth devices whose connection changed, by path.
+function connectionChanges(before, after) {
+	const out = [];
+	for (const d of after || []) {
+		const old = (before || []).find(o => o.path === d.path);
+		if (old && old.connected !== d.connected) out.push({ device: d, connected: d.connected });
+		else if (!old && d.connected) out.push({ device: d, connected: true });
+	}
+	return out;
+}
+
+// Bloom's queue: the same device replaces its alert; another device waits
+// behind the one showing, at most DEVICE_ALERT_QUEUE (3), newest last.
+function queueAlert(current, queue, alert) {
+	if (current && current.id !== alert.id)
+		return { show: null, queue: (queue || []).filter(q => q.id !== alert.id).concat([alert]).slice(-3) };
+	return { show: alert, queue: queue || [] };
+}
+
+// A USB device plugged in (udev): drawn by name as Bloom's usbArtFor.
+function usbAlert(name, connected) {
+	return _alert(name, Art.artFor(name, "usb"), connected, true);
+}

@@ -120,4 +120,52 @@ TestCase {
 		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Headset", "ID_USB_INTERFACES=:010100:010200:030000:"]), null);
 		verify(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Drive", "ID_USB_INTERFACES=:080650:"]) !== null);
 	}
+
+	// Bloom's deviceAlertStatus: wired devices plug in, cards insert,
+	// everything else connects.
+	function test_alertStatus() {
+		compare(Devices.alertStatus("round-buds", true, false), "Connected");
+		compare(Devices.alertStatus("mouse", false, false), "Disconnected");
+		compare(Devices.alertStatus("flash-drive", true, false), "Plugged in");
+		compare(Devices.alertStatus("headphones", false, true), "Unplugged", "wired whatever it looks like");
+		compare(Devices.alertStatus("sd-card", true, true), "Inserted");
+		compare(Devices.alertStatus("sd-card", false, true), "Removed");
+	}
+	// The alert a Bluetooth change raises: the art by kind (or the user's pick).
+	function test_bluetoothAlert() {
+		const a = Devices.bluetoothAlert({ path: "/m", name: "MX Master 3", kind: "mouse", battery: 15, buds: {} }, true, {});
+		compare(a.name, "MX Master 3");
+		compare(a.art, "mouse");
+		compare(a.connected, true);
+		compare(a.status, "Connected");
+		compare(a.battery, 15);
+		compare(a.wired, false);
+		compare(a.bluetooth, true);
+		const off = Devices.bluetoothAlert({ path: "/a", name: "AirPods Pro", kind: "audio", battery: null, buds: {} }, false, { "AirPods Pro": "round-buds" });
+		compare(off.art, "round-buds");
+		compare(off.status, "Disconnected");
+		compare(off.battery, null);
+	}
+	function test_connectionChanges() {
+		const before = [{ path: "/a", name: "A", connected: true }, { path: "/b", name: "B", connected: false }];
+		const after = [{ path: "/a", name: "A", connected: false }, { path: "/b", name: "B", connected: true }];
+		compare(Devices.connectionChanges(before, after).map(c => [c.device.path, c.connected]), [["/a", false], ["/b", true]]);
+		compare(Devices.connectionChanges(after, after), []);
+	}
+	function test_alertDurations() {
+		// Bloom DEVICE_ALERT_MS.
+		compare(Devices.alertMs(true), 4200);
+		compare(Devices.alertMs(false), 2600);
+	}
+
+	// Bloom's showDeviceAlert: the same device replaces its alert; another
+	// waits behind it, at most 3, newest last.
+	function test_alertQueue() {
+		const a = { id: "a" }, b = { id: "b" }, c = { id: "c" }, d = { id: "d" }, e = { id: "e" };
+		compare(Devices.queueAlert(null, [], a), { show: a, queue: [] });
+		compare(Devices.queueAlert(a, [], { id: "a", v: 2 }), { show: { id: "a", v: 2 }, queue: [] });
+		compare(Devices.queueAlert(a, [], b), { show: null, queue: [b] });
+		compare(Devices.queueAlert(a, [b, c], { id: "b", v: 2 }).queue, [c, { id: "b", v: 2 }]);
+		compare(Devices.queueAlert(a, [b, c, d], e).queue, [c, d, e]);
+	}
 }

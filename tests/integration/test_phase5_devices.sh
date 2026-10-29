@@ -38,8 +38,8 @@ chmod +x "$TEST_TMP/bin/udevadm" "$TEST_TMP/bin/pactl"
 export BLOOM_UDEVADM="$TEST_TMP/bin/udevadm" BLOOM_PACTL="$TEST_TMP/bin/pactl" BLOOM_FAKE_JACK="$TEST_TMP/jack" BLOOM_USB_OBSERVED="$TEST_TMP/usb-observed"
 start_shell
 
-usb_alert() { ipc notch state | jq -e '.[0].deviceAlert.kind == "usb" and .[0].deviceAlert.detail == "Test USB Drive"' >/dev/null; }
-jack_alert() { ipc notch state | jq -e '.[0].deviceAlert.title == "Headphones connected"' >/dev/null; }
+usb_alert() { ipc notch state | jq -e '.[0].deviceAlert.name == "Test USB Drive" and .[0].deviceAlert.art == "flash-drive" and .[0].deviceAlert.status == "Plugged in"' >/dev/null; }
+jack_alert() { ipc notch state | jq -e '.[0].deviceAlert.name == "Headphones" and .[0].deviceAlert.status == "Plugged in"' >/dev/null; }
 WAIT_S=6 wait_for "USB alert" usb_alert
 pass "USB event opens a transient device alert"
 touch "$BLOOM_USB_OBSERVED"

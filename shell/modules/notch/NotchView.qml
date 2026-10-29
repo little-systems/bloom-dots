@@ -7,7 +7,6 @@ import "notch.js" as Logic
 import "music.js" as Music
 import "pulses.js" as Pulses
 import "panels.js" as Panels
-import "device-art.js" as DeviceArtLogic
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -78,7 +77,8 @@ Item {
 	property var deviceAlert: null
 	signal deviceAlertDismissed()
 	readonly property bool alertVisible: root.deviceAlert !== null && root.panel === "" && !root.open
-	onDeviceAlertChanged: if (root.deviceAlert && root.mode === "peek") root.peek(4300)
+	// Bloom peeks a hidden notch for as long as the alert shows.
+	onDeviceAlertChanged: if (root.deviceAlert && root.mode === "peek") root.peek(root.deviceAlert.connected === false ? 2600 : 4200)
 	signal panelRemembered(string panel)
 	function openPanel(name) {
 		const choice = name || Panels.opening(root.lastPanel, root.defaultPanel, root.rememberPanel, root.enabledPanels);
@@ -493,6 +493,7 @@ Item {
 		// The pill's box: hover, input mask and content.
 		Item {
 			id: pillArea
+			objectName: "pillArea"
 			x: (stage.width - width) / 2
 			y: yS.value
 			width: Math.max(0, wS.value)
@@ -515,6 +516,7 @@ Item {
 
 			Item {
 				id: mainRow
+				objectName: "mainRow"
 				x: Tokens.sizes.padding
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: Tokens.sizes.mainRow
@@ -524,7 +526,10 @@ Item {
 				// Input follows the state, not the fade: a fading row doesn't
 				// take clicks meant for what replaces it.
 				enabled: showing
+				// An alert takes the pill at once (Bloom's first alert frame has
+				// no clock); otherwise the row fades.
 				Behavior on opacity {
+					enabled: !root.alertVisible
 					NumberAnimation {
 						duration: Tokens.easing.framerDefaultMs
 						easing.type: Easing.BezierSpline
@@ -735,35 +740,19 @@ Item {
 					root.devicesHeight = Qt.binding(() => item?.devicesHeight ?? 150);
 				}
 			}
-			Item {
+			DeviceAlert {
 				id: alertSurface
-				anchors.fill: parent; visible: root.alertVisible
-				readonly property var budNames: ["left", "right", "case"].filter(k => Number.isInteger(root.deviceAlert?.buds?.[k]))
-				DeviceArt { x: 8; anchors.verticalCenter: parent.verticalCenter; art: DeviceArtLogic.artFor(root.deviceAlert?.detail ?? "", root.deviceAlert?.kind ?? "") }
-				Column { x: 74; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 118 - alertSurface.budNames.length * 35; spacing: 2
-					Text { width: parent.width; text: root.deviceAlert?.detail ?? ""; color: root.textColor; font.family: "Inter"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
-					Text { width: parent.width; text: root.deviceAlert?.title ?? ""; color: root.textMuted; font.family: "Inter"; font.pixelSize: 12; elide: Text.ElideRight }
+				objectName: "deviceAlert"
+				anchors.fill: parent
+				alert: root.alertVisible ? root.deviceAlert : null
+				textColor: root.textColor
+				textMuted: root.textMuted
+				// Bloom: a Bluetooth device opens its list; USB ones just go.
+				onClicked: {
+					const bluetooth = root.deviceAlert?.bluetooth;
+					root.deviceAlertDismissed();
+					if (bluetooth) root.openPanel("bluetooth");
 				}
-				BatteryRing {
-					anchors.right: parent.right; anchors.rightMargin: 18; anchors.verticalCenter: parent.verticalCenter
-					visible: alertSurface.budNames.length === 0 && Number.isInteger(root.deviceAlert?.battery)
-					level: root.deviceAlert?.battery ?? 0
-					textColor: root.textColor
-				}
-				Row {
-					anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
-					spacing: 7; visible: alertSurface.budNames.length > 0
-					Repeater {
-						model: alertSurface.budNames
-						delegate: Item {
-							required property string modelData
-							width: 28; height: 42
-							BatteryRing { level: root.deviceAlert?.buds?.[modelData] ?? 0; textColor: root.textColor }
-							Text { y: 31; anchors.horizontalCenter: parent.horizontalCenter; text: modelData === "case" ? "Case" : modelData[0].toUpperCase(); color: root.textMuted; font.family: "Inter"; font.pixelSize: 9; font.weight: Font.DemiBold }
-						}
-					}
-				}
-				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { const kind = root.deviceAlert?.kind; root.deviceAlertDismissed(); if (kind === "bluetooth") root.openPanel("bluetooth"); } }
 			}
 			Connections {
 				target: panelLoader.item
