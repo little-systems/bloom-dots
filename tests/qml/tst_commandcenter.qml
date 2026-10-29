@@ -409,6 +409,20 @@ Item {
 			compare(brightnessChosen.count, 0);
 		}
 
+		// Bloom's fill is a percentage width: resizing the panel (the pill
+		// springing between panels) moves it with the track, not after it.
+		function test_fillFollowsAResizeAtOnce() {
+			const row = part(cc, "slider-volume");
+			cc.width = 452;
+			wait(200);
+			cc.width = 322;
+			compare(part(row, "fill").width, part(row, "track").width * 0.25);
+			// A new value still eases in over 0.05 s.
+			cc.volume = 0.75;
+			verify(part(row, "fill").width < part(row, "track").width * 0.75);
+			tryCompare(part(row, "fill"), "width", part(row, "track").width * 0.75, 500);
+		}
+
 		function test_restDrawsNoFrames() {
 			settleFrames();
 			compare(framesIn(1000), 0);

@@ -100,6 +100,16 @@ Item {
 		}
 			// A visualizer that isn't on screen must not animate: a running spring
 		// redraws the whole surface every frame (about 12 % of a core here).
+		// The fill is a share of the track: a resize (the player springing
+		// open) moves it at once; only a new volume eases.
+		function test_volumeFillFollowsAResize() {
+			const fill = findChild(vol, "volumeFill");
+			verify(fill);
+			vol.width = 300;
+			compare(fill.width, fill.parent.width * vol.volume);
+			vol.width = 200;
+		}
+
 		function test_inactiveVisualizerDoesNotAnimate() {
 			const spring = findChild(idleViz, "barScale0");
 			verify(spring !== null, "bar spring");

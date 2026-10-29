@@ -343,13 +343,15 @@ Item {
 						objectName: "underline"
 						anchors.horizontalCenter: parent.horizontalCenter
 						y: parent.height + 1 - height
-						width: root.editing ? parent.width * Tokens.timer.underline.width : 0
+						// width: 74% in Bloom: the fraction eases, a resize doesn't.
+						property real fraction: root.editing ? Tokens.timer.underline.width : 0
+						width: parent.width * fraction
 						height: Tokens.timer.underline.height
 						radius: 2
 						color: root._sectionColor
 						opacity: root.editing ? Tokens.timer.underline.opacity : 0
 
-						Behavior on width {
+						Behavior on fraction {
 							NumberAnimation {
 								duration: Tokens.timer.underline.ms
 								easing.type: Easing.BezierSpline

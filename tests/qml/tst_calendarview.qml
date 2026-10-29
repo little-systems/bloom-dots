@@ -340,6 +340,18 @@ Item {
 			compare([commits.signalArguments[0][0], commits.signalArguments[0][1]], [90, true]);
 		}
 
+		// The underline is 74% of the row (Bloom's width: 74%): a resize moves
+		// it at once.
+		function test_underlineFollowsAResize() {
+			mouseClick(part(cal, "clock"));
+			const underline = part(cal, "underline");
+			tryCompare(underline, "opacity", 0.3, 1000);
+			cal.width = 520;
+			fuzzyCompare(underline.width, part(cal, "timerColumn").width * 0.74, 0.5);
+			cal.width = 480;
+			keyClick(Qt.Key_Escape);
+		}
+
 		function test_editInvalidTurnsRed() {
 			mouseClick(part(cal, "clock"));
 			keyClick(Qt.Key_0);

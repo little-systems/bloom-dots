@@ -88,13 +88,15 @@ Item {
 		Rectangle {
 			id: fill
 			objectName: "fill"
-			width: root.available ? track.width * Math.max(0, Math.min(1, root.value)) : 0
+			// A percentage width, as Bloom's: a resize moves it with the track
+			// and only a new value eases (transition: width 0.05s linear).
+			property real fraction: root.available ? Math.max(0, Math.min(1, root.value)) : 0
+			width: track.width * fraction
 			height: parent.height
 			radius: parent.radius
 			color: root.theme.text
 
-			// transition: width 0.05s linear.
-			Behavior on width {
+			Behavior on fraction {
 				NumberAnimation {
 					duration: 50
 				}

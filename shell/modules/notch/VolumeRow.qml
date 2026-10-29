@@ -45,11 +45,15 @@ Row {
 			clip: true
 
 			Rectangle {
+				objectName: "volumeFill"
+				// A share of the track, as Bloom's percentage width: the share
+				// eases, a resize doesn't.
+				property real fraction: Math.max(0, Math.min(1, root.volume))
 				height: parent.height
 				radius: parent.radius
-				width: parent.width * Math.max(0, Math.min(1, root.volume))
+				width: parent.width * fraction
 				color: root.color
-				Behavior on width {
+				Behavior on fraction {
 					NumberAnimation { duration: 100; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] }
 				}
 			}
