@@ -25,6 +25,12 @@ ShellRoot {
 			}
 		}
 	}
+	// A persisted Pomodoro deadline must survive a shell restart even when the
+	// Calendar panel stays closed. CalendarState schedules one expiry timer.
+	LazyLoader {
+		active: _modules.indexOf("notch") >= 0 && Settings.values["bloom-calendar-enabled"]
+		component: Scope { Component.onCompleted: CalendarState.remaining() }
+	}
 
 	LazyLoader {
 		id: dockLoader
@@ -83,6 +89,24 @@ ShellRoot {
 		function ping(): string {
 			return "pong";
 		}
+	}
+
+	IpcHandler {
+		target: "calendar"
+		function state(): string { return JSON.stringify({ todos: CalendarState.todos, durationSec: CalendarState.durationSec, deadlineMs: CalendarState.deadlineMs, pausedSec: CalendarState.pausedSec }); }
+		function addTodo(text: string): string { return CalendarState.addTodo(text); }
+		function start(): string { CalendarState.start(); return "ok"; }
+		function pause(): string { CalendarState.pause(); return "ok"; }
+		function reset(): string { CalendarState.reset(); return "ok"; }
+		function setDuration(seconds: int): string { return CalendarState.setDuration(seconds); }
+	}
+
+	IpcHandler {
+		target: "shelf"
+		function state(): string { return JSON.stringify(ShelfState.items); }
+		function addText(text: string): string { return ShelfState.addText(text); }
+		function addFile(path: string): string { return ShelfState.addFile(path); }
+		function remove(index: int): string { ShelfState.remove(index); return "ok"; }
 	}
 
 	IpcHandler {

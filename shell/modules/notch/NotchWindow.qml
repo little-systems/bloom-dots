@@ -99,6 +99,7 @@ PanelWindow {
 		lastPanel: PanelState.lastPanel
 		rememberPanel: Settings.values["bloom-notch-panel-memory"]
 		deviceCount: Devices.count
+		shelfCount: ShelfState.items.length
 		privacy: Devices.privacy
 		deviceAlert: Devices.alert
 		enabledPanels: ({ calendar: Settings.values["bloom-calendar-enabled"], "command-center": Settings.values["bloom-notch-command-center-enabled"], devices: Settings.values["bloom-notch-devices-enabled"] })

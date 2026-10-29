@@ -15,11 +15,13 @@ Singleton {
 	property var _eventLines: []
 	property var _knownBluetooth: null
 	property var _knownAudio: null
+	property var _jackPorts: null
 	readonly property var connectedBluetooth: Bluetooth.devices.filter(d => d.connected)
 	readonly property int count: root.audioDevices.length + root.connectedBluetooth.length
 	onActiveChanged: {
 		Bluetooth.hold("device-alerts", root.active);
-		if (!root.active) { root._knownBluetooth = null; root._knownAudio = null; }
+		if (root.active) root.refreshJacks();
+		else { root._knownBluetooth = null; root._knownAudio = null; root._jackPorts = null; }
 	}
 	onConnectedBluetoothChanged: {
 		const current = root.connectedBluetooth;
@@ -46,10 +48,29 @@ Singleton {
 		root.alert = { title, detail, kind };
 		clearAlert.restart();
 	}
+	function refreshJacks() { if (root.active && !jackQuery.running) jackQuery.running = true; }
 	Timer { id: clearAlert; interval: 4300; onTriggered: root.alert = null }
 	Process {
 		running: root.active
-		command: ["udevadm", "monitor", "--udev", "--property", "--subsystem-match=usb", "--subsystem-match=sound"]
+		command: [Quickshell.env("BLOOM_PACTL") || "pactl", "subscribe"]
+		stdout: SplitParser { onRead: line => { if (/on (sink|card) #/.test(line)) jackDebounce.restart(); } }
+	}
+	Timer { id: jackDebounce; interval: 200; onTriggered: root.refreshJacks() }
+	Process {
+		id: jackQuery
+		command: ["timeout", "-k", "1s", "5s", Quickshell.env("BLOOM_PACTL") || "pactl", "list", "sinks"]
+		stdout: StdioCollector { id: jackOutput }
+		onExited: code => {
+			if (code !== 0) return;
+			const next = Logic.headphonePorts(jackOutput.text);
+			const change = Logic.jackChange(root._jackPorts, next);
+			root._jackPorts = next;
+			if (change) root.showAlert("Headphones " + change, "Audio output changed", "audio");
+		}
+	}
+	Process {
+		running: root.active
+		command: [Quickshell.env("BLOOM_UDEVADM") || "udevadm", "monitor", "--udev", "--property", "--subsystem-match=usb", "--subsystem-match=sound"]
 		stdout: SplitParser {
 			onRead: line => {
 				if (line.trim()) { root._eventLines.push(line.trim()); return; }

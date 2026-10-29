@@ -58,5 +58,5 @@ Singleton {
 			finished.running = true;
 		}
 	}
-	Process { id: finished; command: ["notify-send", "-a", "Bloom", "Pomodoro finished", "Time for a break"] }
+	Process { id: finished; command: ["timeout", "-k", "1s", "5s", "notify-send", "-a", "Bloom", "Pomodoro finished", "Time for a break"] }
 }

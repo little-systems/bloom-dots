@@ -27,7 +27,7 @@ Item {
 					SvgIcon { x: 7; anchors.verticalCenter: parent.verticalCenter; name: "bluetooth"; color: Theme.text; size: 16 }
 					Text { x: 32; y: 4; width: parent.width - 80; elide: Text.ElideRight; text: modelData.name; color: Theme.text; font.family: "Inter"; font.pixelSize: 11 }
 					Text { x: 32; y: 22; text: modelData.connected ? "Connected" : modelData.paired ? "Paired" : "Available"; color: Theme.textMuted; font.pixelSize: 9 }
-					Text { anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: modelData.battery === null ? "" : modelData.battery + "%"; color: Theme.textMuted; font.pixelSize: 9 }
+					Text { anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; text: modelData.batteryLabel; color: Theme.textMuted; font.pixelSize: 9 }
 					MouseArea { anchors.fill: parent; enabled: Bluetooth.powered; cursorShape: Qt.PointingHandCursor; onClicked: Bluetooth.setConnected(modelData.path, !modelData.connected) }
 				}
 			}

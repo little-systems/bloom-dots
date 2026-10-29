@@ -20,4 +20,11 @@ TestCase {
 		compare(Devices.udevEvent(["ACTION=remove", "DEVTYPE=usb_device"]), null);
 		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_interface"]), null);
 	}
+	function test_headphoneJackChanges() {
+		const before = Devices.headphonePorts("Sink #53\n  Active Port: analog-output-speaker\n");
+		const after = Devices.headphonePorts("Sink #53\n  Active Port: analog-output-headphones\n");
+		compare(Devices.jackChange(before, after), "connected");
+		compare(Devices.jackChange(after, before), "disconnected");
+		compare(Devices.jackChange(null, after), "");
+	}
 }

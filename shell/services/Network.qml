@@ -28,20 +28,20 @@ Singleton {
 		if (!root.active) return;
 		if (!statusQuery.running) statusQuery.running = true;
 		if (!listQuery.running) {
-			listQuery.command = ["nmcli", "-t", "--escape", "yes", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "--rescan", rescan ? "yes" : "no"];
+			listQuery.command = ["timeout", "-k", "1s", "15s", "nmcli", "-t", "--escape", "yes", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "--rescan", rescan ? "yes" : "no"];
 			listQuery.running = true;
 		}
 	}
 	function setWifi(enabled) {
 		if (change.running) return "network change in progress";
-		change.command = ["nmcli", "radio", "wifi", enabled ? "on" : "off"];
+		change.command = ["timeout", "-k", "1s", "10s", "nmcli", "radio", "wifi", enabled ? "on" : "off"];
 		change.running = true;
 		return "ok";
 	}
 	function connect(ssid) {
 		if (change.running) return "network change in progress";
 		if (!root.networks.some(n => n.ssid === ssid)) return "unknown network";
-		change.command = ["nmcli", "-w", "12", "device", "wifi", "connect", ssid];
+		change.command = ["timeout", "-k", "1s", "15s", "nmcli", "-w", "12", "device", "wifi", "connect", ssid];
 		change.running = true;
 		return "ok";
 	}
@@ -56,7 +56,7 @@ Singleton {
 	Timer { id: debounce; interval: 200; onTriggered: root.refresh(false) }
 	Process {
 		id: statusQuery
-		command: ["nmcli", "-t", "-f", "WIFI,STATE", "general", "status"]
+		command: ["timeout", "-k", "1s", "5s", "nmcli", "-t", "-f", "WIFI,STATE", "general", "status"]
 		stdout: StdioCollector { id: statusOut }
 		onExited: code => {
 			root.available = code === 0;

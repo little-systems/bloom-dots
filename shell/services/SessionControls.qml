@@ -15,13 +15,13 @@ Singleton {
 	function setNight(enabled) { return root._set("hyprsunset.service", enabled); }
 	function _set(unit, enabled) {
 		if (change.running) return "service change in progress";
-		change.command = ["systemctl", "--user", enabled ? "start" : "stop", unit];
+		change.command = ["timeout", "-k", "1s", "8s", "systemctl", "--user", enabled ? "start" : "stop", unit];
 		change.running = true;
 		return "ok";
 	}
 	Process {
 		id: query
-		command: ["systemctl", "--user", "is-active", "hypridle.service", "hyprsunset.service"]
+		command: ["timeout", "-k", "1s", "5s", "systemctl", "--user", "is-active", "hypridle.service", "hyprsunset.service"]
 		stdout: StdioCollector { id: output }
 		onExited: {
 			const lines = output.text.trim().split("\n");

@@ -1,6 +1,13 @@
 # Phase 5: notch panels
 
-Status: implementation in `codex/phase-5-notch-panels`. Owner requested Phase 5 on 2026-10-28. The live shell stays on `main` until all panels and services pass review and an owner-visible live check is ready. No push.
+Status: implemented and reviewed in `codex/phase-5-notch-panels`. Owner requested Phase 5 on 2026-10-28 and authorized enabling the live Bloom config on 2026-10-29. No push.
+
+## Review and verification (2026-10-29)
+
+- Standards review closed panel isolation and finite-command timeout findings. Each panel now loads by URL in its own Loader; a failing child leaves the host and other panels available.
+- Spec review closed Shelf external drop/drag, Pomodoro restart scheduling, unread badge overlap, headphone jack alerts, optional per-bud battery display, and adaptive Shelf height findings.
+- `CI=true tests/run-all.sh` passed: 405 QML tests, integration, CLI, and systemd checks. Focused fake USB and headphone events opened transient alerts; a saved Pomodoro expired and notified once without opening Calendar; Todo and Shelf state checks passed.
+- Headless Sway screenshots of Calendar, Command Center, and Shelf were inspected. The owner's live settings were backed up as `~/.config/bloom/settings.json.phase5-2026-10-29.bak` before the live merge.
 
 ## Target
 

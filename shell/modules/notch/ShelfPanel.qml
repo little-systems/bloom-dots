@@ -7,7 +7,6 @@ Item {
 	id: root
 	DropArea {
 		anchors.fill: parent
-		keys: ["text/uri-list", "text/plain"]
 		onDropped: drop => {
 			if (drop.urls.length) {
 				for (const url of drop.urls) { const path = Logic.filePath(url.toString()); if (path) ShelfState.addFile(path); }
@@ -35,6 +34,7 @@ Item {
 					required property int index
 					width: entries.width; height: 26; radius: 7; color: Theme.groupBg
 					Drag.active: dragSource.drag.active
+					Drag.dragType: Drag.Automatic
 					Drag.supportedActions: Qt.CopyAction
 					Drag.mimeData: modelData.kind === "file"
 						? ({ "text/uri-list": Logic.fileUrl(modelData.value) })

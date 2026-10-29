@@ -58,6 +58,7 @@ Item {
 	property var enabledPanels: ({ calendar: true, "command-center": true, devices: true })
 	property int calendarRows: 5
 	property int deviceCount: 0
+	property int shelfCount: 0
 	property var privacy: ({ microphone: false, screen: false })
 	property var deviceAlert: null
 	readonly property bool alertVisible: root.deviceAlert !== null && root.panel === "" && !root.open
@@ -126,7 +127,7 @@ Item {
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
 		{ ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
-		(root.panel ? Panels.size(root.panel, root.calendarRows, root.deviceCount) : root.alertVisible ? { width: 330, height: 76 } : {
+		(root.panel ? Panels.size(root.panel, root.calendarRows, root.deviceCount, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
 				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
@@ -291,7 +292,7 @@ Item {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			overlapped: root.overlapped, visible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open, panel: root.panel,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
@@ -535,8 +536,8 @@ Item {
 					Row {
 						x: clock.x + clock.width + 5; y: 10; spacing: 3
 						visible: root.privacy.microphone || root.privacy.screen
-						Rectangle { visible: root.privacy.microphone; width: 5; height: 5; radius: 2.5; color: "#ff8c3a" }
-						Rectangle { visible: root.privacy.screen; width: 5; height: 5; radius: 2.5; color: "#63df91" }
+						Rectangle { objectName: "privacy-mic-dot"; visible: root.privacy.microphone; width: 5; height: 5; radius: 2.5; color: "#ff8c3a" }
+						Rectangle { objectName: "privacy-screen-dot"; visible: root.privacy.screen; width: 5; height: 5; radius: 2.5; color: "#63df91" }
 					}
 
 					Row {
@@ -711,7 +712,7 @@ Item {
 			}
 			Rectangle {
 				objectName: "notification-unread"
-				visible: root.notificationUnread > 0 && root.expanded && !root.hidden && !root.open
+				visible: root.notificationUnread > 0 && root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible
 				width: 16; height: 16; radius: 8
 				x: pillArea.width - width - 2; y: 2
 				color: Tokens.status.green

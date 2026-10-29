@@ -25,3 +25,24 @@ function udevEvent(lines) {
 	const name = (props.ID_MODEL_FROM_DATABASE || props.ID_MODEL || props.PRODUCT || "USB device").replace(/_/g, " ").slice(0, 90);
 	return { kind: "usb", title: "Device connected", detail: name };
 }
+
+function headphonePorts(text) {
+	const ports = {};
+	let sink = "";
+	for (const line of (text || "").split("\n")) {
+		const header = /^Sink #(\d+)/.exec(line);
+		if (header) { sink = header[1]; continue; }
+		const port = /^\s+Active Port:\s*(\S+)/.exec(line);
+		if (port && sink) ports[sink] = /headphone|headset/i.test(port[1]);
+	}
+	return ports;
+}
+
+function jackChange(before, after) {
+	if (!before) return "";
+	for (const [sink, connected] of Object.entries(after)) {
+		if (!(sink in before) || before[sink] === connected) continue;
+		return connected ? "connected" : "disconnected";
+	}
+	return "";
+}

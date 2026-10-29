@@ -27,7 +27,7 @@ Item {
 					width: list.width; height: 36; radius: 9; color: Theme.groupBg
 					SvgIcon { x: 9; anchors.verticalCenter: parent.verticalCenter; name: "bluetooth"; color: Theme.text; size: 16 }
 					Text { x: 34; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 100; elide: Text.ElideRight; text: modelData.name; color: Theme.text; font.family: "Inter"; font.pixelSize: 11 }
-					Text { anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.battery === null ? "Connected" : modelData.battery + "%"; color: Theme.textMuted; font.pixelSize: 10 }
+					Text { anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.batteryLabel || "Connected"; color: Theme.textMuted; font.pixelSize: 10 }
 				}
 			}
 			Text { visible: Devices.count === 0; text: "No connected devices"; color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 11 }

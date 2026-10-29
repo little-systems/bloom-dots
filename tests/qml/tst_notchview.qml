@@ -100,6 +100,21 @@ Item {
 			compare(spy.count, 1);
 		}
 
+		function test_privacyDotsClearPromptly() {
+			const v = make();
+			settle(v);
+			const mic = findChild(v, "privacy-mic-dot");
+			const screen = findChild(v, "privacy-screen-dot");
+			compare(mic.visible, false);
+			compare(screen.visible, false);
+			v.privacy = { microphone: true, screen: true };
+			compare(mic.visible, true);
+			compare(screen.visible, true);
+			v.privacy = { microphone: false, screen: false };
+			compare(mic.visible, false);
+			compare(screen.visible, false);
+		}
+
 		function test_twentyFourHourClockIsNarrower() {
 			const v = make({ use24h: true });
 			settle(v);

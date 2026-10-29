@@ -13,7 +13,7 @@ Singleton {
 	function addFile(path) {
 		if (!path || !path.startsWith("/") || path.includes("\0")) return "invalid path";
 		if (check.running) return "busy";
-		check.command = ["test", "-f", path];
+		check.command = ["timeout", "-k", "1s", "3s", "test", "-f", path];
 		check.pendingPath = path;
 		check.running = true;
 		return "checking";
@@ -22,8 +22,8 @@ Singleton {
 	function activate(index) {
 		const item = root.items[index];
 		if (!item) return "no item";
-		if (item.kind === "file") Quickshell.execDetached(["xdg-open", item.value]);
-		else Quickshell.execDetached(["wl-copy", "--", item.value]);
+		if (item.kind === "file") Quickshell.execDetached(["timeout", "-k", "1s", "8s", "xdg-open", item.value]);
+		else Quickshell.execDetached(["timeout", "-k", "1s", "8s", "wl-copy", "--", item.value]);
 		return "ok";
 	}
 	StateFile { id: state; name: "shelf"; defaultValue: []; onLoadedChanged: if (loaded && Settings.values["bloom-shelf-persist"]) root.items = Logic.clean(value) }

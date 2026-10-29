@@ -26,14 +26,14 @@ Singleton {
 	function setPowered(powered) {
 		if (!root.adapter) return "Bluetooth adapter unavailable";
 		if (change.running) return "Bluetooth change in progress";
-		change.command = ["busctl", "--system", "set-property", "org.bluez", root.adapter, "org.bluez.Adapter1", "Powered", "b", powered ? "true" : "false"];
+		change.command = ["timeout", "-k", "1s", "8s", "busctl", "--system", "set-property", "org.bluez", root.adapter, "org.bluez.Adapter1", "Powered", "b", powered ? "true" : "false"];
 		change.running = true;
 		return "ok";
 	}
 	function setConnected(path, wanted) {
 		if (!root.devices.some(d => d.path === path)) return "unknown device";
 		if (change.running) return "Bluetooth change in progress";
-		change.command = ["busctl", "--system", "call", "org.bluez", path, "org.bluez.Device1", wanted ? "Connect" : "Disconnect"];
+		change.command = ["timeout", "-k", "1s", "15s", "busctl", "--system", "call", "org.bluez", path, "org.bluez.Device1", wanted ? "Connect" : "Disconnect"];
 		change.running = true;
 		return "ok";
 	}
@@ -47,7 +47,7 @@ Singleton {
 	Timer { id: debounce; interval: 200; onTriggered: root.refresh() }
 	Process {
 		id: snapshot
-		command: ["busctl", "--system", "--json=short", "call", "org.bluez", "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"]
+		command: ["timeout", "-k", "1s", "5s", "busctl", "--system", "--json=short", "call", "org.bluez", "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"]
 		stdout: StdioCollector { id: snapshotOut }
 		onExited: code => {
 			const s = code === 0 ? Logic.managed(snapshotOut.text) : Logic.managed("");

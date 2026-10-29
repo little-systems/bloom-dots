@@ -23,5 +23,8 @@ TestCase {
 		compare(Panels.size("command-center", 0, 0), { width: 350, height: 230 });
 		compare(Panels.size("wifi", 0, 0), { width: 350, height: 300 });
 		compare(Panels.size("devices", 0, 99), { width: 350, height: 300 });
+		compare(Panels.size("shelf", 0, 0, 0), { width: 380, height: 130 });
+		compare(Panels.size("shelf", 0, 0, 1), { width: 380, height: 176 });
+		compare(Panels.size("shelf", 0, 0, 2), { width: 380, height: 190 });
 	}
 }

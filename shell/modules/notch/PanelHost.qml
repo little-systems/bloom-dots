@@ -68,16 +68,24 @@ Item {
 		y: 36
 		width: parent.width - 24
 		height: parent.height - 44
-		sourceComponent: root.panel === "command-center" ? commandComponent
-			: root.panel === "wifi" ? wifiComponent
-			: root.panel === "bluetooth" ? bluetoothComponent
-			: root.panel === "calendar" ? calendarComponent
-			: root.panel === "devices" ? devicesComponent : shelfComponent
+		source: root.panel === "command-center" ? "CommandCenter.qml"
+			: root.panel === "wifi" ? "WifiPanel.qml"
+			: root.panel === "bluetooth" ? "BluetoothPanel.qml"
+			: root.panel === "calendar" ? "CalendarPanel.qml"
+			: root.panel === "devices" ? "ConnectedDevicesPanel.qml"
+			: root.panel === "shelf" ? "ShelfPanel.qml" : ""
 	}
-	Component { id: commandComponent; CommandCenter { onSubpanelRequested: name => root.subpanelRequested(name) } }
-	Component { id: wifiComponent; WifiPanel {} }
-	Component { id: bluetoothComponent; BluetoothPanel {} }
-	Component { id: calendarComponent; CalendarPanel {} }
-	Component { id: devicesComponent; ConnectedDevicesPanel {} }
-	Component { id: shelfComponent; ShelfPanel {} }
+	Connections {
+		target: content.item
+		ignoreUnknownSignals: true
+		function onSubpanelRequested(name) { root.subpanelRequested(name); }
+	}
+	Text {
+		anchors.centerIn: content
+		visible: content.status === Loader.Error
+		text: root.title + " is unavailable"
+		color: root.textMuted
+		font.family: "Inter"
+		font.pixelSize: 11
+	}
 }
