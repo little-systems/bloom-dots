@@ -25,7 +25,7 @@ start_shell
 # A calendar.json from before the task list was removed (owner, 2026-10-29)
 # still restores its timer; its todos are dropped.
 timer_restored() { ipc calendar state | jq -e '.durationSec == 1500 and (has("todos") | not)' >/dev/null; }
-timer_finished() { ipc calendar state | jq -e '.deadlineMs == 0 and .pausedSec == 0' >/dev/null; }
+timer_finished() { ipc calendar state | jq -e '.deadlineMs == 0 and .pausedSec == 0 and .finished' >/dev/null; }
 wait_for "the timer restored without opening Calendar" timer_restored
 WAIT_S=9 wait_for "Pomodoro expiry after restart" timer_finished
 wait_for "one local completion notification" test -f "$BLOOM_NOTIFY_LOG"
