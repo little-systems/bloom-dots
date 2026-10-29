@@ -51,6 +51,24 @@ Item {
 			compare(emptyTitle.overflow, 0);
 		}
 
+		// At rest only the icon in place shows: the copy waiting 30 px aside
+		// would poke 2 px into the 32 px box (Bloom has it only mid-push).
+		function test_skipShowsOneIconAtRest() {
+			const shown = b => b.children.find(c => c.clip).children.filter(c => c.visible);
+			for (const b of [next, prev]) {
+				const icons = shown(b);
+				compare(icons.length, 1, b.forward ? "next" : "prev");
+				compare(icons[0].x, 0);
+			}
+			mouseClick(prev);
+			wait(60);
+			compare(shown(prev).length, 2, "both mid-push");
+			wait(300);
+			const icons = shown(prev);
+			compare(icons.length, 1);
+			compare(icons[0].x, 0);
+		}
+
 		function test_skipPushesThenActivates() {
 			mouseClick(next);
 			compare(nextSpy.count, 0, "the skip is sent once the slide ends");

@@ -39,8 +39,11 @@ PressArea {
 		height: root.boxHeight
 		clip: true
 
+		// The incoming copy exists only mid-push, as in Bloom's AnimatePresence;
+		// parked 30 px aside it would poke into the 32 px box.
 		SvgIcon {
 			id: back
+			visible: slide.running
 			x: root.forward ? -root._d : root._d
 			y: (root.boxHeight - height) / 2
 			name: root._icon
@@ -69,6 +72,11 @@ PressArea {
 			target: back; property: "x"; to: 0; duration: Tokens.music.slide.ms
 			easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1]
 		}
-		onFinished: root.activated()
+		onFinished: {
+			// Back to one icon in place.
+			front.x = 0;
+			back.x = root.forward ? -root._d : root._d;
+			root.activated();
+		}
 	}
 }
