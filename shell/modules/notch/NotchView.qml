@@ -130,7 +130,10 @@ Item {
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible, compactNotch: root.compactNotch
 	})
 	// Bloom showCompactMusicIcons: the collapsed row shows music, not widgets.
-	readonly property bool _musicIcons: (root.bloomMode === "music" && !root.open) || root.musicOnHover
+	readonly property bool _musicIcons: root.panel === "" && ((root.bloomMode === "music" && !root.open) || root.musicOnHover)
+	// An open panel keeps the main row's side widgets (Bloom's main row stays);
+	// the panel header draws the clock with its arrows.
+	readonly property bool _panelHeader: root.panel !== "" && !root.alertVisible
 	// Set once the surface is on screen; starts the drop-in.
 	property bool ready: false
 
@@ -530,7 +533,7 @@ Item {
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: Tokens.sizes.mainRow
 				clip: true
-				readonly property bool showing: root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible
+				readonly property bool showing: (root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible) || root._panelHeader
 				opacity: showing ? 1 : 0
 				// Input follows the state, not the fade: a fading row doesn't
 				// take clicks meant for what replaces it.
@@ -553,10 +556,11 @@ Item {
 
 					Row {
 						id: leftGroup
+						objectName: "statusLeft"
 						anchors.left: parent.left
 						anchors.verticalCenter: parent.verticalCenter
 						spacing: Tokens.statusStrip.groupGap
-						opacity: root.statusHover && !root._musicIcons ? 1 : 0
+						opacity: (root.statusHover && !root._musicIcons) || root._panelHeader ? 1 : 0
 						visible: opacity > 0
 						Behavior on opacity {
 							NumberAnimation {
@@ -574,6 +578,7 @@ Item {
 					NotchClock {
 						id: clock
 						objectName: "notchClock"
+						visible: !root._panelHeader
 						anchors.centerIn: parent
 						now: root.now
 						use24h: root.use24h
@@ -593,6 +598,7 @@ Item {
 
 					Row {
 						id: rightGroup
+						objectName: "statusRight"
 						anchors.right: parent.right
 						anchors.verticalCenter: parent.verticalCenter
 						spacing: Tokens.statusStrip.groupGap

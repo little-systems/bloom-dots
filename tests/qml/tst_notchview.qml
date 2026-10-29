@@ -455,6 +455,25 @@ Item {
 			compare(v.panel, "", "a finished timer only resets");
 		}
 
+		// Bloom's open panels keep the main row's side widgets (weather left,
+		// battery right) beside the panel header's clock and arrows.
+		function test_panelKeepsTheStatusWidgets() {
+			const v = make();
+			settle(v);
+			mouseMove(v, 500, 18);
+			v.openPanel("calendar");
+			const row = findChild(v, "mainRow");
+			tryCompare(row, "opacity", 1, 1000);
+			tryCompare(findChild(v, "statusLeft"), "opacity", 1, 1000);
+			tryCompare(findChild(v, "statusRight"), "opacity", 1, 1000);
+			verify(!findChild(v, "notchClock").visible, "the panel header draws the clock");
+			// Leaving closes the panel; with the pointer away the widgets go.
+			mouseMove(v, 500, 470);
+			tryCompare(v, "panel", "", 1000);
+			tryCompare(findChild(v, "statusLeft"), "opacity", 0, 1000);
+			verify(findChild(v, "notchClock").visible);
+		}
+
 		// Bloom's bottom corners spring (1000/40) between 18 and the calendar's 28.
 		function test_bottomRadiusSprings() {
 			const v = make();
