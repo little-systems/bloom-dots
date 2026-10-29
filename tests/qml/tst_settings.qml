@@ -23,7 +23,7 @@ TestCase {
 		compare(d["bloom-temp-unit"], "celsius");
 		compare(d["bloom-time-format-24h"], false);
 		compare(d["bloom-low-battery-threshold"], 20);
-		compare(d["bloom-scale"], 1);
+		compare(d["bloom-scale"], 1.15, "the owner's size against Bloom at 125 %");
 		compare(Object.keys(d).sort(), Settings.keys().sort());
 	}
 

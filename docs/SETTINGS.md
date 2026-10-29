@@ -51,7 +51,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-notifications-dnd` | bool | `false` | `true`, `false` | Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear. |
 | `bloom-notifications-timeout` | number | `7000` | 1000 to 60000 | Default notification card timeout in milliseconds when the sender does not specify one. |
 | `bloom-notifications-history-limit` | number | `200` | 0 to 500 | Maximum number of non-transient notifications retained in local history. |
-| `bloom-scale` | number | `1` | 0.8 to 1.3 | Size of Bloom's surfaces. |
+| `bloom-scale` | number | `1.15` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |
 | `bloom-media-layout` | enum | `"classic"` | `classic`, `compact` | Music player layout: classic = large album art; compact = small art with a progress bar. |

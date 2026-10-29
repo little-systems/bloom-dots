@@ -245,7 +245,8 @@ var SCHEMA = {
 		type: "number",
 		min: 0.8,
 		max: 1.3,
-		default: 1,
+		// Chosen by the owner against Bloom on Windows at 125 % (2026-10-29).
+		default: 1.15,
 		doc: "Size of Bloom's surfaces."
 	},
 	"bloom-music-mode-enabled": {
