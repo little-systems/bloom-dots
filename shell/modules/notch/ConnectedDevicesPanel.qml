@@ -19,7 +19,7 @@ DevicesView {
 
 	theme: Theme
 	threshold: Settings.values["bloom-low-battery-threshold"]
-	entries: Logic.entries(root._pc, Bluetooth.devices, Devices.wiredAudio, root._looks)
+	entries: Logic.entries(root._pc, Bluetooth.devices, Devices.wired, root._looks)
 	pcStatus: Logic.pcStatus(root._pc)
 
 	Component.onCompleted: {

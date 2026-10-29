@@ -18,19 +18,6 @@ function privacy(nodes) {
 	};
 }
 
-function udevEvent(lines) {
-	const props = {};
-	for (const line of lines || []) {
-		const at = line.indexOf("=");
-		if (at > 0) props[line.slice(0, at)] = line.slice(at + 1);
-	}
-	if (props.ACTION !== "add" || props.DEVTYPE !== "usb_device") return null;
-	// Audio-class devices (interface class 01) alert as audio instead.
-	if (/:01/.test(props.ID_USB_INTERFACES || "")) return null;
-	const name = (props.ID_MODEL_FROM_DATABASE || props.ID_MODEL || props.PRODUCT || "USB device").replace(/_/g, " ").slice(0, 90);
-	return { kind: "usb", title: "Device connected", detail: name };
-}
-
 function headphonePorts(text) {
 	const ports = {};
 	let sink = "";
@@ -135,30 +122,6 @@ function bluetoothKind(icon) {
 	return Bluetooth.bluetoothKind(icon);
 }
 
-// Bloom lists wired audio as USB devices and what's in the 3.5 mm jack, not
-// the built-in sound card. One row per USB device (its sink and source).
-function wiredAudio(nodes, jackHeadphones) {
-	const out = jackHeadphones ? [{ id: "jack", name: "Headphones", kind: "audio", wired: true, art: "earbuds-jack" }] : [];
-	const seen = {};
-	for (const n of nodes || []) {
-		if (!n || n.isStream || !n.properties || !/^Audio\/(Sink|Source)$/.test(n.properties["media.class"] || "")) continue;
-		if (!/^alsa_(output|input)\.usb-/.test(n.name || "")) continue;
-		const name = n.description || n.nickname || "USB audio";
-		if (seen[name]) continue;
-		seen[name] = true;
-		const input = n.properties["media.class"] === "Audio/Source";
-		out.push({ id: "usb:" + name, name, kind: "audio", wired: true, art: input ? "microphone" : "headphones-wired" });
-	}
-	return out;
-}
-
-// The USB audio device that just appeared, for its alert; the built-in sound
-// card and display audio never alert.
-function audioAlert(beforeNodes, afterNodes) {
-	const before = wiredAudio(beforeNodes, false).map(d => d.id);
-	return wiredAudio(afterNodes, false).find(d => before.indexOf(d.id) < 0) || null;
-}
-
 function wiredSub(entry) {
 	return entry.id === "jack" ? "Headphone jack" : "USB";
 }
@@ -251,7 +214,76 @@ function queueAlert(current, queue, alert) {
 	return { show: alert, queue: queue || [] };
 }
 
-// A USB device plugged in (udev): drawn by name as Bloom's usbArtFor.
-function usbAlert(name, connected) {
-	return _alert(name, Art.artFor(name, "usb"), connected, true);
+// ---- USB devices (shell/scripts/usb-devices.sh; Bloom usb.rs, usbArtFor.ts) ----
+
+function parseUsb(text) {
+	const out = [];
+	for (const line of (text || "").split("\n")) {
+		const f = line.split("\t");
+		if (f.length < 3 || !f[0] || !f[1]) continue;
+		out.push({ id: "usb:" + f[0], class: f[1], name: f.slice(2).join("\t") });
+	}
+	return out;
+}
+
+var _SSD = /\b(ssd|pssd|nvme|t[579]\b|extreme portable|portable ssd|x[56]\b)/i;
+var _CARD = /\b(sd|sdhc|sdxc|micro ?sd|card|reader|mmc|compactflash|cf)\b/i;
+var _EARBUDS = /\b(buds?|pods|earbuds?|earphones?|in-?ear)\b/i;
+
+function usbArtFor(d) {
+	switch (d.class) {
+	case "camera": return "webcam";
+	case "audio-in": return "microphone";
+	case "audio-out": return _EARBUDS.test(d.name) ? "earbuds-usbc" : "headphones-wired";
+	case "jack-headset": return "earbuds-jack";
+	case "jack-headphones": return "headphones-wired";
+	default:
+		if (_SSD.test(d.name)) return "ssd";
+		if (_CARD.test(d.name)) return "sd-card";
+		return "flash-drive";
+	}
+}
+
+// A readable name; a generic one says nothing the drawing doesn't.
+function usbDisplayName(d) {
+	const cleaned = (d.name || "")
+		.replace(/\s+(usb|scsi)(\s+disk)?\s+device$/i, "")
+		.replace(/^(usb\s+)?(mass\s+storage|disk|drive)(\s+device)?$/i, "")
+		.trim();
+	if (cleaned) return cleaned;
+	switch (d.class) {
+	case "camera": return "USB camera";
+	case "audio-in": return "USB microphone";
+	case "audio-out": return "USB audio";
+	default: return "USB drive";
+	}
+}
+
+function _isAudio(cls) {
+	return cls === "audio-out" || cls === "audio-in" || cls.startsWith("jack-");
+}
+
+// Devices plugged in or removed between two lists.
+function usbChanges(before, after) {
+	const out = [];
+	for (const d of after || [])
+		if (!(before || []).some(b => b.id === d.id)) out.push({ device: d, connected: true });
+	for (const d of before || [])
+		if (!(after || []).some(a => a.id === d.id)) out.push({ device: d, connected: false });
+	return out;
+}
+
+// A USB device's alert; an audio device's look can be picked.
+function usbAlert(d, connected, looks) {
+	const name = usbDisplayName(d);
+	const art = (_isAudio(d.class) && (looks || {})[name]) || usbArtFor(d);
+	return _alert(name, art, connected, true);
+}
+
+// The panel's wired devices: what's in the jack, then USB devices.
+function wiredDevices(usb, jackHeadphones) {
+	const out = jackHeadphones ? [{ id: "jack", name: "Headphones", kind: "audio", wired: true, art: "earbuds-jack" }] : [];
+	for (const d of usb || [])
+		out.push({ id: d.id, name: usbDisplayName(d), kind: _isAudio(d.class) ? "audio" : "usb", wired: true, art: usbArtFor(d) });
+	return out;
 }

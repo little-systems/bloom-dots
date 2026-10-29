@@ -32,7 +32,7 @@ fi
 
 step "shellcheck"
 if need shellcheck; then
-	mapfile -d '' sh_files < <(find "$ROOT/bin" "$ROOT/tests" -type f \( -name '*.sh' -o -name bloom \) -print0 2>/dev/null)
+	mapfile -d '' sh_files < <(find "$ROOT/bin" "$ROOT/tests" "$ROOT/shell/scripts" -type f \( -name '*.sh' -o -name bloom \) -print0 2>/dev/null)
 	shellcheck -x -P SCRIPTDIR --severity=warning "${sh_files[@]}"
 	echo "ok"
 fi
@@ -63,6 +63,11 @@ step "every clickable shows Bloom's cursor"
 if need node; then
 	node "$ROOT/tools/check-cursors.mjs"
 fi
+
+step "shell scripts"
+for t in "$ROOT"/tests/scripts/test_*.sh; do
+	bash "$t"
+done
 
 step "integration tests (real shell, offscreen)"
 for t in "$ROOT"/tests/integration/test_*.sh; do

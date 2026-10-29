@@ -22,7 +22,13 @@ Singleton {
 		root._holders = next;
 		if (wanted) root.refresh();
 	}
-	function refresh() { if (root.active && !snapshot.running) snapshot.running = true; }
+	// A change that arrives while a snapshot runs reads again after it, so a
+	// connect is never missed until the next signal.
+	function refresh() {
+		if (!root.active) return;
+		if (snapshot.running) snapshot.again = true;
+		else snapshot.running = true;
+	}
 	function setPowered(powered) {
 		if (!root.adapter) return "Bluetooth adapter unavailable";
 		if (change.running) return "Bluetooth change in progress";
@@ -47,6 +53,7 @@ Singleton {
 	Timer { id: debounce; interval: 200; onTriggered: root.refresh() }
 	Process {
 		id: snapshot
+		property bool again: false
 		command: ["timeout", "-k", "1s", "5s", "busctl", "--system", "--json=short", "call", "org.bluez", "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"]
 		stdout: StdioCollector { id: snapshotOut }
 		onExited: code => {
@@ -54,6 +61,10 @@ Singleton {
 			root.available = s.available; root.powered = s.powered; root.adapter = s.adapter; root.devices = s.devices;
 			if (!s.available) root.error = "Bluetooth adapter unavailable";
 			else root.error = "";
+			if (again) {
+				again = false;
+				running = true;
+			}
 		}
 	}
 	Process {

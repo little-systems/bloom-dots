@@ -239,6 +239,20 @@ ShellRoot {
 	}
 
 	IpcHandler {
+		target: "devices"
+
+		// What the device alerts and Connected devices see now.
+		function state(): string {
+			return JSON.stringify({
+				alert: Devices.alert,
+				usb: Devices.usb,
+				wired: Devices.wired,
+				bluetooth: Bluetooth.devices.map(d => ({ name: d.name, kind: d.kind, paired: d.paired, connected: d.connected, battery: d.battery }))
+			});
+		}
+	}
+
+	IpcHandler {
 		target: "dock"
 
 		function _windows() {

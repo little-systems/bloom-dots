@@ -15,11 +15,6 @@ TestCase {
 		compare(Devices.privacy(nodes).screen, true);
 		compare(Devices.privacy(nodes.slice(0, 1)).microphone, false);
 	}
-	function test_udevFiltering() {
-		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=USB_Camera"]).detail, "USB Camera");
-		compare(Devices.udevEvent(["ACTION=remove", "DEVTYPE=usb_device"]), null);
-		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_interface"]), null);
-	}
 	function test_headphoneJackChanges() {
 		const before = Devices.headphonePorts("Sink #53\n  Active Port: analog-output-speaker\n");
 		const after = Devices.headphonePorts("Sink #53\n  Active Port: analog-output-headphones\n");
@@ -75,22 +70,6 @@ TestCase {
 		compare(Devices.bluetoothKind("phone"), "phone");
 		compare(Devices.bluetoothKind(""), "other");
 	}
-	function test_wiredAudioSkipsTheBuiltInCard() {
-		const nodes = [
-			{ id: 1, isStream: false, description: "Built-in Audio Analog Stereo", name: "alsa_output.pci-0000_00_1f.3.analog-stereo", properties: { "media.class": "Audio/Sink" } },
-			{ id: 2, isStream: false, description: "USB Headset", name: "alsa_output.usb-Logi_Headset-00.analog-stereo", properties: { "media.class": "Audio/Sink" } },
-			{ id: 3, isStream: false, description: "USB Headset", name: "alsa_input.usb-Logi_Headset-00.mono-fallback", properties: { "media.class": "Audio/Source" } },
-			{ id: 4, isStream: false, description: "AirPods", name: "bluez_output.AA_BB", properties: { "media.class": "Audio/Sink" } }
-		];
-		const wired = Devices.wiredAudio(nodes, false);
-		compare(wired.length, 1, "one USB headset, no built-in card, no Bluetooth");
-		compare(wired[0].name, "USB Headset");
-		compare(wired[0].wired, true);
-		const withJack = Devices.wiredAudio(nodes, true);
-		compare(withJack.map(d => d.id), ["jack", "usb:USB Headset"]);
-		compare(Devices.wiredSub(withJack[0]), "Headphone jack");
-		compare(Devices.wiredSub(withJack[1]), "USB");
-	}
 	function test_entriesFromSources() {
 		const entries = Devices.entries(
 			{ present: true, level: 73, charging: true },
@@ -104,22 +83,6 @@ TestCase {
 		compare(entries[1].buds.case, null);
 	}
 
-	// Bloom alerts for Bluetooth, USB devices and the jack, never for the
-	// built-in sound card or a display's HDMI/DisplayPort audio.
-	function test_audioAlertsOnlyForUsbAudio() {
-		const builtIn = { id: 1, isStream: false, description: "Built-in Audio Analog Stereo", name: "alsa_output.pci-0000_00_1f.3.analog-stereo", properties: { "media.class": "Audio/Sink" } };
-		const hdmi = { id: 2, isStream: false, description: "HDMI / DisplayPort 1 Output", name: "alsa_output.pci-0000_00_1f.3.hdmi-stereo", properties: { "media.class": "Audio/Sink" } };
-		const usb = { id: 3, isStream: false, description: "USB Headset", name: "alsa_output.usb-Logi_Headset-00.analog-stereo", properties: { "media.class": "Audio/Sink" } };
-		compare(Devices.audioAlert([], [builtIn]), null);
-		compare(Devices.audioAlert([builtIn], [builtIn, hdmi]), null);
-		compare(Devices.audioAlert([builtIn], [builtIn, usb]).name, "USB Headset");
-		compare(Devices.audioAlert([usb], [usb]), null);
-	}
-	function test_udevSkipsUsbAudio() {
-		// A USB headset alerts once, as audio (above), not also as a USB device.
-		compare(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Headset", "ID_USB_INTERFACES=:010100:010200:030000:"]), null);
-		verify(Devices.udevEvent(["ACTION=add", "DEVTYPE=usb_device", "ID_MODEL=Drive", "ID_USB_INTERFACES=:080650:"]) !== null);
-	}
 
 	// Bloom's deviceAlertStatus: wired devices plug in, cards insert,
 	// everything else connects.
@@ -167,5 +130,52 @@ TestCase {
 		compare(Devices.queueAlert(a, [], b), { show: null, queue: [b] });
 		compare(Devices.queueAlert(a, [b, c], { id: "b", v: 2 }).queue, [c, { id: "b", v: 2 }]);
 		compare(Devices.queueAlert(a, [b, c, d], e).queue, [c, d, e]);
+	}
+
+	// USB devices from shell/scripts/usb-devices.sh (Bloom usb.rs, usbArtFor.ts).
+	function test_parseUsb() {
+		compare(Devices.parseUsb("1-2\taudio-out\tAB13X USB Audio\n1-5\tdisk\tSanDisk Cruzer Blade\n\nbad line\n"),
+			[{ id: "usb:1-2", class: "audio-out", name: "AB13X USB Audio" }, { id: "usb:1-5", class: "disk", name: "SanDisk Cruzer Blade" }]);
+		compare(Devices.parseUsb(""), []);
+	}
+	function test_usbArtAndName() {
+		compare(Devices.usbArtFor({ class: "camera", name: "C920" }), "webcam");
+		compare(Devices.usbArtFor({ class: "audio-in", name: "Yeti" }), "microphone");
+		compare(Devices.usbArtFor({ class: "audio-out", name: "USB-C Earbuds" }), "earbuds-usbc");
+		compare(Devices.usbArtFor({ class: "audio-out", name: "AB13X USB Audio" }), "headphones-wired");
+		compare(Devices.usbArtFor({ class: "disk", name: "Samsung Portable SSD T7" }), "ssd");
+		compare(Devices.usbArtFor({ class: "disk", name: "SD Card Reader" }), "sd-card");
+		compare(Devices.usbArtFor({ class: "disk", name: "SanDisk Cruzer Blade" }), "flash-drive");
+		compare(Devices.usbDisplayName({ class: "disk", name: "Mass Storage" }), "USB drive");
+		compare(Devices.usbDisplayName({ class: "camera", name: "" }), "USB camera");
+		compare(Devices.usbDisplayName({ class: "disk", name: "Kingston DataTraveler" }), "Kingston DataTraveler");
+	}
+	function test_usbChanges() {
+		const a = { id: "usb:1-2", class: "audio-out", name: "Dongle" }, b = { id: "usb:1-5", class: "disk", name: "Stick" };
+		compare(Devices.usbChanges([a], [a, b]), [{ device: b, connected: true }]);
+		compare(Devices.usbChanges([a, b], [a]), [{ device: b, connected: false }]);
+		compare(Devices.usbChanges([a], [a]), []);
+	}
+	function test_usbAlert() {
+		const alert = Devices.usbAlert({ id: "usb:1-5", class: "disk", name: "SanDisk Cruzer Blade" }, true, {});
+		compare(alert.name, "SanDisk Cruzer Blade");
+		compare(alert.art, "flash-drive");
+		compare(alert.status, "Plugged in");
+		compare(alert.wired, true);
+		compare(Devices.usbAlert({ id: "usb:1-9", class: "disk", name: "SD Card Reader" }, false, {}).status, "Removed");
+		// An audio device's look can be picked; a drive's can't.
+		compare(Devices.usbAlert({ id: "usb:1-2", class: "audio-out", name: "Dongle" }, true, { Dongle: "earbuds-usbc" }).art, "earbuds-usbc");
+	}
+	function test_usbInThePanel() {
+		const usb = [{ id: "usb:1-2", class: "audio-out", name: "AB13X USB Audio" }, { id: "usb:1-5", class: "disk", name: "Mass Storage" }];
+		const wired = Devices.wiredDevices(usb, true);
+		compare(wired.map(d => [d.id, d.kind, d.name, d.art]), [
+			["jack", "audio", "Headphones", "earbuds-jack"],
+			["usb:1-2", "audio", "AB13X USB Audio", "headphones-wired"],
+			["usb:1-5", "usb", "USB drive", "flash-drive"]
+		]);
+		const groups = Devices.groupDevices(Devices.entries(null, [], wired, {}), 20);
+		compare(groups.map(g => g.key), ["audio", "usb"]);
+		compare(Devices.wiredSub(wired[2]), "USB");
 	}
 }
