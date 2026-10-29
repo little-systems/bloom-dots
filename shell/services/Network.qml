@@ -38,10 +38,20 @@ Singleton {
 		change.running = true;
 		return "ok";
 	}
-	function connect(ssid) {
+	function connect(ssid, password) {
 		if (change.running) return "network change in progress";
 		if (!root.networks.some(n => n.ssid === ssid)) return "unknown network";
-		change.command = ["timeout", "-k", "1s", "15s", "nmcli", "-w", "12", "device", "wifi", "connect", ssid];
+		if (password && (password.length < 8 || password.length > 63 || /[\r\n\0]/.test(password))) return "invalid password";
+		change.pendingPassword = password || "";
+		// --ask reads the secret from stdin; it must never appear in argv.
+		change.command = Logic.connectCommand(ssid, password);
+		change.running = true;
+		return "ok";
+	}
+	function disconnect(ssid) {
+		if (change.running) return "network change in progress";
+		if (!root.networks.some(n => n.ssid === ssid && n.active)) return "not connected";
+		change.command = ["timeout", "-k", "1s", "10s", "nmcli", "connection", "down", "id", ssid];
 		change.running = true;
 		return "ok";
 	}
@@ -78,7 +88,16 @@ Singleton {
 	}
 	Process {
 		id: change
+		property string pendingPassword: ""
+		stdinEnabled: true
+		onStarted: {
+			if (pendingPassword) {
+				change.write(pendingPassword + "\n");
+				pendingPassword = "";
+			}
+		}
 		onExited: code => {
+			pendingPassword = "";
 			root.error = code === 0 ? "" : "Wi-Fi change failed; check NetworkManager or credentials";
 			root.refresh(false);
 		}

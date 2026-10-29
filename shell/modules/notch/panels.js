@@ -2,7 +2,8 @@
 var ORDER = ["calendar", "command-center", "devices"];
 
 function available(settings) {
-	return ORDER.filter(p => settings[p] !== false);
+	const panels = ORDER.filter(p => settings[p] !== false);
+	return panels.length ? panels : ["command-center"];
 }
 
 function opening(last, preferred, remember, enabled) {

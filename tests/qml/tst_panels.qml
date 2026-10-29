@@ -9,7 +9,7 @@ TestCase {
 		compare(Panels.opening("command-center", "calendar", true, enabled), "command-center");
 		compare(Panels.opening("devices", "calendar", true, enabled), "calendar");
 		compare(Panels.opening("command-center", "calendar", false, enabled), "calendar");
-		compare(Panels.opening("calendar", "devices", false, { calendar: false, "command-center": false, devices: false }), "");
+		compare(Panels.opening("calendar", "devices", false, { calendar: false, "command-center": false, devices: false }), "command-center");
 	}
 	function test_cycleSkipsDisabledPanels() {
 		const enabled = ({ calendar: true, "command-center": false, devices: true });

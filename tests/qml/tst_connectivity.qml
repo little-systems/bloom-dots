@@ -13,6 +13,12 @@ TestCase {
 			{ ssid: "Open", signal: 50, secured: false, active: false }
 		]);
 	}
+	function test_passwordNeverAppearsInNmcliArguments() {
+		const command = Network.connectCommand("Cafe:North", "correct horse battery staple");
+		verify(command.includes("--ask"));
+		verify(!command.includes("correct horse battery staple"));
+		compare(command[command.length - 1], "Cafe:North");
+	}
 	function test_bluezSnapshotAndOptionalBattery() {
 		const data = { type: "a{oa{sa{sv}}}", data: [{
 			"/org/bluez/hci0": { "org.bluez.Adapter1": { Powered: { data: true } } },

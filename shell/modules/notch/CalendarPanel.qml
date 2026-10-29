@@ -3,84 +3,111 @@ import qs.services
 import "../../common"
 import "calendar.js" as Calendar
 
+// The original Bloom calendar and timer share a split surface. Tasks live in
+// the timer column as an optional view so the default layout stays familiar.
 Item {
 	id: root
-	property date shown: new Date()
-	property string tab: "calendar"
-	readonly property int rows: Calendar.monthRows(shown.getFullYear(), shown.getMonth())
-	function moveMonth(amount) { shown = new Date(shown.getFullYear(), shown.getMonth() + amount, 1); }
+	readonly property date shown: new Date()
+	readonly property var dates: Calendar.monthGrid((new Date()).getFullYear(), (new Date()).getMonth())
+	readonly property int rows: dates.length / 7
+	property bool showTasks: false
+	property bool editing: false
+	property real tick: Date.now()
+	readonly property int remaining: Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, tick)
+	readonly property bool finished: !CalendarState.running && CalendarState.pausedSec === 0
+	Timer { interval: 1000; repeat: true; running: root.visible && CalendarState.running; onTriggered: root.tick = Date.now() }
 
-	Row {
-		id: tabs; spacing: 6; anchors.horizontalCenter: parent.horizontalCenter
-		Repeater {
-			model: ["calendar", "pomodoro", "todo"]
-			delegate: Rectangle {
-				required property string modelData
-				width: 76; height: 24; radius: 8
-				color: root.tab === modelData ? Qt.rgba(1, 1, 1, 0.17) : "transparent"
-				Text { anchors.centerIn: parent; text: modelData.charAt(0).toUpperCase() + modelData.slice(1); color: Theme.text; font.family: "Inter"; font.pixelSize: 10 }
-				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = modelData }
-			}
-		}
-	}
 	Item {
-		visible: root.tab === "calendar"; y: 31; width: parent.width; height: parent.height - y
-		Row {
-			id: monthHeader; width: parent.width; height: 28
-			Text { width: parent.width - 64; text: Qt.formatDate(root.shown, "MMMM yyyy"); color: Theme.text; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold }
-			Text { width: 32; text: "‹"; color: Theme.text; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; MouseArea { anchors.fill: parent; onClicked: root.moveMonth(-1) } }
-			Text { width: 32; text: "›"; color: Theme.text; font.pixelSize: 20; horizontalAlignment: Text.AlignHCenter; MouseArea { anchors.fill: parent; onClicked: root.moveMonth(1) } }
-		}
+		id: calendarColumn
+		x: 16; y: 16; width: Math.max(0, Math.round((root.width - 48) * 0.54)); height: Math.max(0, root.height - 32)
+		Text { id: month; text: Qt.formatDate(root.shown, "MMMM yyyy"); color: Theme.text; opacity: 0.9; font.family: "Inter"; font.pixelSize: 13; font.weight: Font.DemiBold }
 		Grid {
-			y: 30; width: parent.width; columns: 7; rowSpacing: 2
+			y: month.height + 8; width: parent.width; columns: 7; rowSpacing: 2; columnSpacing: 2
 			Repeater {
 				model: ["S", "M", "T", "W", "T", "F", "S"]
-				delegate: Text { required property string modelData; width: 64; height: 20; text: modelData; horizontalAlignment: Text.AlignHCenter; color: Theme.textMuted; font.pixelSize: 10 }
+				delegate: Text { required property string modelData; width: Math.max(0, (calendarColumn.width - 12) / 7); height: 14; text: modelData; horizontalAlignment: Text.AlignHCenter; color: Theme.textMuted; opacity: 0.65; font.family: "Inter"; font.pixelSize: 9; font.weight: Font.DemiBold }
 			}
 			Repeater {
-				model: Calendar.monthGrid(root.shown.getFullYear(), root.shown.getMonth())
+				id: datesRepeater
+				model: root.dates.length
 				delegate: Rectangle {
-					required property var modelData
-					width: 64; height: 25; radius: 8
-					readonly property bool today: modelData.inMonth && new Date().getDate() === modelData.day && new Date().getMonth() === root.shown.getMonth() && new Date().getFullYear() === root.shown.getFullYear()
-					color: today ? Qt.rgba(1, 1, 1, 0.2) : "transparent"
-					Text { anchors.centerIn: parent; text: modelData.inMonth ? modelData.day : ""; color: Theme.text; font.family: "Inter"; font.pixelSize: 11; font.weight: today ? Font.Bold : Font.Normal }
+					required property int index
+					readonly property var dayInfo: root.dates[index]
+					width: Math.max(0, (calendarColumn.width - 12) / 7); height: width; radius: 4
+					readonly property bool today: dayInfo.inMonth && new Date().getDate() === dayInfo.day
+						&& new Date().getMonth() === root.shown.getMonth() && new Date().getFullYear() === root.shown.getFullYear()
+					color: today ? Theme.text : "transparent"
+					Text { anchors.centerIn: parent; text: dayInfo.inMonth ? dayInfo.day : ""; color: today ? Theme.bgExpanded : Theme.text; font.family: "Inter"; font.pixelSize: 10; font.weight: today ? Font.DemiBold : Font.Normal }
 				}
 			}
 		}
 	}
+	Rectangle { x: calendarColumn.x + calendarColumn.width + 16; y: 16; width: 1; height: root.height - 32; color: Theme.border }
 	Item {
-		visible: root.tab === "pomodoro"; y: 36; width: parent.width; height: parent.height - y
-		property real tick: Date.now()
-		Timer { interval: 1000; repeat: true; running: parent.visible && CalendarState.running; onTriggered: parent.tick = Date.now() }
-		Text { id: countdown; anchors.horizontalCenter: parent.horizontalCenter; y: 27; text: Calendar.timerText(Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, parent.tick)); color: Theme.text; font.family: "Inter"; font.pixelSize: 35; font.weight: Font.DemiBold }
-		Row {
-			y: 90; anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
-			TextInput { id: digits; width: 75; height: 28; color: Theme.text; font.pixelSize: 13; horizontalAlignment: TextInput.AlignHCenter; verticalAlignment: TextInput.AlignVCenter; maximumLength: 6; inputMethodHints: Qt.ImhDigitsOnly; text: "2500"; onAccepted: { const sec = Calendar.timerDigits(text); if (sec !== null) CalendarState.setDuration(sec); } }
-			Rectangle { width: 72; height: 28; radius: 8; color: Theme.groupBg
-				Text { anchors.centerIn: parent; text: CalendarState.running ? "Pause" : "Start"; color: Theme.text; font.pixelSize: 11 }
-				MouseArea { anchors.fill: parent; onClicked: CalendarState.running ? CalendarState.pause() : CalendarState.start() }
+		id: side
+		x: calendarColumn.x + calendarColumn.width + 33; y: 16; width: Math.max(0, root.width - x - 16); height: Math.max(0, root.height - 32)
+		Text {
+			text: root.showTasks ? "Tasks" : root.editing ? "Set duration" : root.finished ? "Time's up"
+				: CalendarState.running ? "ends " + Qt.formatTime(new Date(CalendarState.deadlineMs), "h:mm AP")
+				: CalendarState.pausedSec !== CalendarState.durationSec ? "Paused" : "Click to edit"
+			color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 10
+		}
+		Text { anchors.right: parent.right; text: root.showTasks ? "Timer" : "Tasks"; color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 10; MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.showTasks = !root.showTasks } }
+		Item {
+			visible: !root.showTasks; anchors.fill: parent
+			Text {
+				id: countdown; y: 28; anchors.horizontalCenter: parent.horizontalCenter
+				text: Calendar.timerText(root.remaining); color: root.finished ? "#ff453a" : Theme.text
+				font.family: "Inter"; font.pixelSize: 36; font.weight: Font.DemiBold
+				MouseArea { anchors.fill: parent; cursorShape: Qt.IBeamCursor; onClicked: { root.editing = true; digits.text = String(Math.floor(root.remaining / 60)) + String(root.remaining % 60).padStart(2, "0"); digits.forceActiveFocus(); digits.selectAll(); } }
 			}
-			Rectangle { width: 72; height: 28; radius: 8; color: Theme.groupBg
-				Text { anchors.centerIn: parent; text: "Reset"; color: Theme.text; font.pixelSize: 11 }
-				MouseArea { anchors.fill: parent; onClicked: CalendarState.reset() }
+			TextInput {
+				id: digits; x: countdown.x; y: countdown.y; width: countdown.width; height: countdown.height
+				visible: root.editing; color: Theme.text; font.family: "Inter"; font.pixelSize: 36; font.weight: Font.DemiBold
+				horizontalAlignment: TextInput.AlignHCenter; verticalAlignment: TextInput.AlignVCenter
+				maximumLength: 6; inputMethodHints: Qt.ImhDigitsOnly
+				onAccepted: commit()
+				onActiveFocusChanged: if (!activeFocus && root.editing) commit()
+				function commit() { const sec = Calendar.timerDigits(text); if (sec !== null) CalendarState.setDuration(sec); root.editing = false; }
+			}
+			Rectangle { x: countdown.x + 15; y: 76; width: countdown.width - 30; height: 2; radius: 1; color: Theme.text; opacity: root.editing ? 0.3 : 0 }
+			Row {
+				y: 102; width: parent.width; spacing: 8
+				Item { width: 24; height: 44 }
+				Rectangle {
+					width: side.width - 64; height: 44; radius: 22; color: Theme.text
+					Row { anchors.centerIn: parent; spacing: 7
+						SvgIcon { anchors.verticalCenter: parent.verticalCenter; name: CalendarState.running ? "sf-pause.fill" : "sf-play.fill"; color: Theme.bgExpanded; size: 14 }
+						Text { text: CalendarState.running ? "Pause" : root.finished ? "Restart" : "Start"; color: Theme.bgExpanded; font.family: "Inter"; font.pixelSize: 12; font.weight: Font.DemiBold }
+					}
+					MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: CalendarState.running ? CalendarState.pause() : CalendarState.start() }
+				}
+				PressArea { width: 32; height: 44; onClicked: CalendarState.reset(); SvgIcon { anchors.centerIn: parent; name: "rotate-ccw"; color: Theme.textMuted; size: 14 } }
+			}
+			Row {
+				y: 162; width: parent.width; spacing: 4
+				Repeater { model: [5, 15, 25, 50]
+					delegate: Rectangle { required property int modelData; width: (side.width - 12) / 4; height: 24; radius: 7; color: CalendarState.durationSec === modelData * 60 ? Theme.text : Theme.groupBg
+						Text { anchors.centerIn: parent; text: modelData + "m"; color: CalendarState.durationSec === modelData * 60 ? Theme.bgExpanded : Theme.textMuted; font.family: "Inter"; font.pixelSize: 10; font.weight: Font.DemiBold }
+						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { CalendarState.setDuration(modelData * 60); CalendarState.start(); } }
+					}
+				}
 			}
 		}
-		Text { y: 135; anchors.horizontalCenter: parent.horizontalCenter; text: "Enter mmss to set a timer"; color: Theme.textMuted; font.pixelSize: 10 }
-	}
-	Item {
-		visible: root.tab === "todo"; y: 34; width: parent.width; height: parent.height - y
-		Rectangle { id: inputBg; width: parent.width; height: 30; radius: 8; color: Theme.groupBg
-			TextInput { id: todoInput; anchors.fill: parent; anchors.leftMargin: 10; anchors.rightMargin: 10; verticalAlignment: TextInput.AlignVCenter; color: Theme.text; font.pixelSize: 11; onAccepted: { if (CalendarState.addTodo(text) === "ok") text = ""; } }
-			Text { anchors.verticalCenter: parent.verticalCenter; x: 10; visible: !todoInput.text && !todoInput.activeFocus; text: "Add a task and press Enter"; color: Theme.textMuted; font.pixelSize: 11 }
-		}
-		Flickable { y: 38; width: parent.width; height: parent.height - y; contentHeight: todoList.implicitHeight; clip: true
-			Column { id: todoList; width: parent.width; spacing: 4
-				Repeater { model: CalendarState.todos
-					delegate: Row { required property var modelData; width: todoList.width; height: 26; spacing: 6
-						Text { width: 18; text: modelData.done ? "☑" : "□"; color: Theme.text; font.pixelSize: 15; MouseArea { anchors.fill: parent; onClicked: CalendarState.toggleTodo(modelData.id) } }
-						Text { width: parent.width - 54; text: modelData.text; elide: Text.ElideRight; color: modelData.done ? Theme.textMuted : Theme.text; font.pixelSize: 11; font.strikeout: modelData.done }
-						Text { text: "×"; color: Theme.textMuted; font.pixelSize: 16; MouseArea { anchors.fill: parent; onClicked: CalendarState.removeTodo(modelData.id) } }
+		Item {
+			visible: root.showTasks; y: 27; width: parent.width; height: parent.height - y
+			Rectangle { width: parent.width; height: 27; radius: 8; color: Theme.groupBg
+				TextInput { id: todoInput; anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8; verticalAlignment: TextInput.AlignVCenter; color: Theme.text; font.pixelSize: 10; onAccepted: { if (CalendarState.addTodo(text) === "ok") text = ""; } }
+				Text { x: 8; anchors.verticalCenter: parent.verticalCenter; visible: !todoInput.text && !todoInput.activeFocus; text: "Add task"; color: Theme.textMuted; font.pixelSize: 10 }
+			}
+			Flickable { y: 32; width: parent.width; height: parent.height - 32; contentHeight: todoList.implicitHeight; clip: true
+				Column { id: todoList; width: parent.width; spacing: 4
+					Repeater { model: CalendarState.todos
+						delegate: Row { required property var modelData; width: todoList.width; height: 24; spacing: 4
+							Text { width: 18; text: modelData.done ? "☑" : "□"; color: Theme.text; font.pixelSize: 14; MouseArea { anchors.fill: parent; onClicked: CalendarState.toggleTodo(modelData.id) } }
+							Text { width: parent.width - 40; text: modelData.text; elide: Text.ElideRight; color: modelData.done ? Theme.textMuted : Theme.text; font.pixelSize: 10; font.strikeout: modelData.done }
+							Text { text: "×"; color: Theme.textMuted; font.pixelSize: 14; MouseArea { anchors.fill: parent; onClicked: CalendarState.removeTodo(modelData.id) } }
+						}
 					}
 				}
 			}

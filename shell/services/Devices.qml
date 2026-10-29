@@ -17,7 +17,7 @@ Singleton {
 	property var _knownAudio: null
 	property var _jackPorts: null
 	readonly property var connectedBluetooth: Bluetooth.devices.filter(d => d.connected)
-	readonly property int count: root.audioDevices.length + root.connectedBluetooth.length
+	readonly property int count: (Battery.available && Battery.ready ? 1 : 0) + root.audioDevices.length + root.connectedBluetooth.length
 	onActiveChanged: {
 		Bluetooth.hold("device-alerts", root.active);
 		if (root.active) root.refreshJacks();
@@ -27,7 +27,7 @@ Singleton {
 		const current = root.connectedBluetooth;
 		if (root._knownBluetooth !== null) {
 			const added = current.find(d => !root._knownBluetooth.some(old => old.path === d.path));
-			if (added) root.showAlert("Bluetooth connected", added.name, "bluetooth");
+			if (added) root.showAlert("Bluetooth connected", added.name, "bluetooth", added.battery, added.buds);
 		}
 		root._knownBluetooth = current;
 	}
@@ -44,8 +44,8 @@ Singleton {
 		if (wanted) next[key] = true; else delete next[key];
 		root._holders = next;
 	}
-	function showAlert(title, detail, kind) {
-		root.alert = { title, detail, kind };
+	function showAlert(title, detail, kind, battery, buds) {
+		root.alert = { title, detail, kind, battery: Number.isInteger(battery) ? battery : null, buds: buds || null };
 		clearAlert.restart();
 	}
 	function refreshJacks() { if (root.active && !jackQuery.running) jackQuery.running = true; }

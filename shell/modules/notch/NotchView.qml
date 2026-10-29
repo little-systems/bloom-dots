@@ -7,6 +7,7 @@ import "notch.js" as Logic
 import "music.js" as Music
 import "pulses.js" as Pulses
 import "panels.js" as Panels
+import "device-art.js" as DeviceArtLogic
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -61,6 +62,7 @@ Item {
 	property int shelfCount: 0
 	property var privacy: ({ microphone: false, screen: false })
 	property var deviceAlert: null
+	signal deviceAlertDismissed()
 	readonly property bool alertVisible: root.deviceAlert !== null && root.panel === "" && !root.open
 	onDeviceAlertChanged: if (root.deviceAlert && root.mode === "peek") root.peek(4300)
 	signal panelRemembered(string panel)
@@ -68,7 +70,9 @@ Item {
 		const choice = name || Panels.opening(root.lastPanel, root.defaultPanel, root.rememberPanel, root.enabledPanels);
 		if (!choice) return "no enabled panels";
 		if (Panels.ORDER.indexOf(choice) < 0 && choice !== "wifi" && choice !== "bluetooth" && choice !== "shelf") return "unknown panel";
-		if (Panels.ORDER.indexOf(choice) >= 0 && root.enabledPanels[choice] === false) return "panel disabled";
+		if (Panels.ORDER.indexOf(choice) >= 0 && root.enabledPanels[choice] === false
+			&& !(choice === "command-center" && Panels.available(root.enabledPanels).length === 1
+				&& Panels.available(root.enabledPanels)[0] === "command-center")) return "panel disabled";
 		if ((choice === "wifi" || choice === "bluetooth") && root.enabledPanels["command-center"] === false) return "panel disabled";
 		root.open = false;
 		root.panel = choice;
@@ -446,7 +450,8 @@ Item {
 				pillWidth: Math.max(0, wS.value)
 				pillHeight: Math.max(0, hS.value)
 				edgeRadius: rS.value
-				farRadius: Tokens.sizes.farRadius
+				farRadius: root.panel === "calendar" ? Tokens.sizes.calendarFarRadius : Tokens.sizes.farRadius
+				Behavior on farRadius { NumberAnimation { duration: 180 } }
 				flares: root.impacted
 				color: root.statusHover || root.open || root.panel !== "" || root.alertVisible ? root.bgExpanded : root.bg
 				Behavior on color {
@@ -469,6 +474,9 @@ Item {
 			opacity: pillLayer.opacity
 
 			HoverHandler { id: pillHover }
+			TapHandler {
+				onTapped: if (root.panel === "" && !root.open) root.openPanel("")
+			}
 
 			Ambience {
 				anchors.fill: parent
@@ -531,7 +539,7 @@ Item {
 						scale: clockTap.pressed ? 0.95 : 1
 						Behavior on scale { NumberAnimation { duration: 100 } }
 						HoverHandler { id: clockHover }
-						TapHandler { id: clockTap; onTapped: root.openPanel("") }
+						TapHandler { id: clockTap; onTapped: root.openPanel("calendar") }
 					}
 					Row {
 						x: clock.x + clock.width + 5; y: 10; spacing: 3
@@ -690,16 +698,39 @@ Item {
 					item.enabledPanels = Qt.binding(() => root.enabledPanels);
 					item.textColor = Qt.binding(() => root.textColor);
 					item.textMuted = Qt.binding(() => root.textMuted);
+					item.use24h = Qt.binding(() => root.use24h);
 					root.calendarRows = item.calendarRowCount;
 				}
 			}
 			Item {
+				id: alertSurface
 				anchors.fill: parent; visible: root.alertVisible
-				SvgIcon { x: 15; anchors.verticalCenter: parent.verticalCenter; name: root.deviceAlert?.kind === "bluetooth" ? "bluetooth" : root.deviceAlert?.kind === "usb" ? "usb" : "volume-2"; color: root.textColor; size: 20 }
-				Column { x: 47; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 62; spacing: 3
-					Text { width: parent.width; text: root.deviceAlert?.title ?? ""; color: root.textColor; font.family: "Inter"; font.pixelSize: 12; font.weight: Font.DemiBold; elide: Text.ElideRight }
-					Text { width: parent.width; text: root.deviceAlert?.detail ?? ""; color: root.textMuted; font.family: "Inter"; font.pixelSize: 10; elide: Text.ElideRight }
+				readonly property var budNames: ["left", "right", "case"].filter(k => Number.isInteger(root.deviceAlert?.buds?.[k]))
+				DeviceArt { x: 8; anchors.verticalCenter: parent.verticalCenter; art: DeviceArtLogic.artFor(root.deviceAlert?.detail ?? "", root.deviceAlert?.kind ?? "") }
+				Column { x: 74; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 118 - alertSurface.budNames.length * 35; spacing: 2
+					Text { width: parent.width; text: root.deviceAlert?.detail ?? ""; color: root.textColor; font.family: "Inter"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
+					Text { width: parent.width; text: root.deviceAlert?.title ?? ""; color: root.textMuted; font.family: "Inter"; font.pixelSize: 12; elide: Text.ElideRight }
 				}
+				BatteryRing {
+					anchors.right: parent.right; anchors.rightMargin: 18; anchors.verticalCenter: parent.verticalCenter
+					visible: alertSurface.budNames.length === 0 && Number.isInteger(root.deviceAlert?.battery)
+					level: root.deviceAlert?.battery ?? 0
+					textColor: root.textColor
+				}
+				Row {
+					anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
+					spacing: 7; visible: alertSurface.budNames.length > 0
+					Repeater {
+						model: alertSurface.budNames
+						delegate: Item {
+							required property string modelData
+							width: 28; height: 42
+							BatteryRing { level: root.deviceAlert?.buds?.[modelData] ?? 0; textColor: root.textColor }
+							Text { y: 31; anchors.horizontalCenter: parent.horizontalCenter; text: modelData === "case" ? "Case" : modelData[0].toUpperCase(); color: root.textMuted; font.family: "Inter"; font.pixelSize: 9; font.weight: Font.DemiBold }
+						}
+					}
+				}
+				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { const kind = root.deviceAlert?.kind; root.deviceAlertDismissed(); if (kind === "bluetooth") root.openPanel("bluetooth"); } }
 			}
 			Connections {
 				target: panelLoader.item
@@ -707,7 +738,10 @@ Item {
 				function onCloseRequested() { root.closePanel(); }
 				function onNextRequested() { root.cyclePanel(1); }
 				function onPreviousRequested() { root.cyclePanel(-1); }
-				function onSubpanelRequested(name) { root.openPanel(name); }
+				function onSubpanelRequested(name) {
+					if (name === "notifications") root.notificationHistoryRequested();
+					else root.openPanel(name);
+				}
 				function onCalendarRowCountChanged() { root.calendarRows = panelLoader.item?.calendarRowCount ?? 5; }
 			}
 			Rectangle {

@@ -28,7 +28,7 @@ PanelWindow {
 	// draws over fullscreen windows, so while one is in front the notch drops
 	// to Top, which Hyprland keeps under fullscreen windows.
 	WlrLayershell.layer: win._fullscreen ? WlrLayer.Top : WlrLayer.Overlay
-	WlrLayershell.keyboardFocus: view.panel === "calendar" || view.panel === "shelf" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+	WlrLayershell.keyboardFocus: view.panel === "calendar" || view.panel === "shelf" || view.panel === "wifi" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
@@ -94,6 +94,7 @@ PanelWindow {
 	NotchView {
 		id: view
 		anchors.fill: parent
+		onDeviceAlertDismissed: Devices.alert = null
 		mode: Settings.values["bloom-notch-mode"]
 		defaultPanel: Settings.values["bloom-notch-default-panel"]
 		lastPanel: PanelState.lastPanel

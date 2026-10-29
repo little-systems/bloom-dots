@@ -31,3 +31,10 @@ function wifiList(text) {
 	}
 	return Array.from(seen.values()).sort((a, b) => Number(b.active) - Number(a.active) || b.signal - a.signal || a.ssid.localeCompare(b.ssid));
 }
+
+// Passwords travel through Process.write to nmcli --ask, never through argv.
+function connectCommand(ssid, password) {
+	return password
+		? ["timeout", "-k", "1s", "20s", "nmcli", "--ask", "-w", "18", "device", "wifi", "connect", ssid]
+		: ["timeout", "-k", "1s", "15s", "nmcli", "-w", "12", "device", "wifi", "connect", ssid];
+}
