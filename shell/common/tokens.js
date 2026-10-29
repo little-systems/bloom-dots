@@ -315,3 +315,16 @@ var alert = {
 	ring: { size: 28, stroke: 2.6, track: 0.14, ms: 600, text: 9.5 },
 	buds: { gap: 7, label: 9 }
 };
+
+// App.css .time-flip-container, .compact-timer and the finished timer's
+// keyframes (timer-pop, timer-heartbeat, bell-wiggle).
+var clock = {
+	box: { minWidth: 60, height: 24 },
+	pressScale: 0.95, pressMs: 100, colorMs: 200,
+	flip: { stiffness: 600, damping: 30 },
+	timerGap: 5,
+	bell: { size: 13, stroke: 2.5, originY: 0.12, ms: 850, loops: 3, angles: [0, -16, 13, -10, 7, -4, 0] },
+	pop: { ms: 650, ease: [0.22, 1, 0.36, 1], scales: [1, 1.22, 0.97, 1], at: [0, 0.35, 0.7, 1] },
+	heartbeat: { ms: 1900, scale: 1.07 },
+	red: "#ff453a"
+};

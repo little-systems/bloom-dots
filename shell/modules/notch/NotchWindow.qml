@@ -5,6 +5,7 @@ import qs.services
 import "."
 import "../../common/tokens.js" as Tokens
 import "notch.js" as Logic
+import "calendar.js" as CalendarLogic
 
 // One notch per screen: a fixed-size top layer surface (it never resizes,
 // spec §3.3) whose input mask is the pill, or the edge band while hidden.
@@ -95,6 +96,13 @@ PanelWindow {
 		id: view
 		anchors.fill: parent
 		onDeviceAlertDismissed: Devices.alert = null
+		timer: ({
+			// Bloom: timerSeconds > 0 (running or paused) || isTimerFinished.
+			active: CalendarState.running || CalendarState.pausedSec > 0 || CalendarState.finished,
+			seconds: CalendarLogic.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, view.now.getTime()),
+			finished: CalendarState.finished
+		})
+		onTimerResetRequested: CalendarState.reset()
 		mode: Settings.values["bloom-notch-mode"]
 		defaultPanel: Settings.values["bloom-notch-default-panel"]
 		lastPanel: PanelState.lastPanel

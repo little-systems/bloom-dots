@@ -389,6 +389,8 @@ Item {
 			compare(watched.signalArguments[watched.count - 1][0], true);
 			const big = findChild(v, "bigArt");
 			const p = big.mapToItem(v, big.width / 2, big.height / 2);
+			// The art sits over the fading clock row: the row takes no input
+			// once it's on its way out.
 			mouseClick(v, p.x, p.y);
 			compare(layouts.count, 1);
 			compare(layouts.signalArguments[0][0], "compact");
@@ -423,6 +425,34 @@ Item {
 			verify(v.open);
 			verify(!v.hidden, "a hidden notch shows while the player is open");
 			tryCompare(v, "open", false, 6000);
+		}
+
+		// Bloom's time-center shows the timer while it runs, is paused or has
+		// finished.
+		function test_clockShowsTheTimer() {
+			const v = make();
+			settle(v);
+			const clock = findChild(v, "notchClock");
+			compare(clock.timerActive, false);
+			v.timer = { active: true, seconds: 300, finished: false };
+			compare(clock.timerActive, true);
+			compare(clock.timerSeconds, 300);
+		}
+
+		// Bloom's toggleCalendarMode.
+		function test_clockClick() {
+			const v = make({ defaultPanel: "command-center", rememberPanel: false });
+			settle(v);
+			v.clockClicked();
+			compare(v.panel, "command-center", "a closed notch opens as a click anywhere does");
+			v.clockClicked();
+			compare(v.panel, "calendar", "an open one goes to the calendar");
+			v.closePanel();
+			const resets = spy(v, "timerResetRequested");
+			v.timer = { active: true, seconds: 0, finished: true };
+			v.clockClicked();
+			compare(resets.count, 1);
+			compare(v.panel, "", "a finished timer only resets");
 		}
 
 		// Bloom's handleMouseLeave: a panel closes as soon as the pointer leaves

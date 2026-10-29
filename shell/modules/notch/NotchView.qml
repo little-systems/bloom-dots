@@ -58,6 +58,19 @@ Item {
 	property bool rememberPanel: true
 	property var enabledPanels: ({ calendar: true, "command-center": true, devices: true })
 	property int calendarRows: 5
+	// The Pomodoro timer for the clock: shown while it runs or has finished.
+	property var timer: ({ active: false, seconds: 0, finished: false })
+	signal timerResetRequested()
+	// Bloom's toggleCalendarMode: a finished timer resets; a closed notch
+	// opens as a click anywhere does; an open one goes to the calendar.
+	function clockClicked() {
+		if (root.timer.finished) {
+			root.timerResetRequested();
+			return;
+		}
+		if (root.panel === "" && !root.open) root.openPanel("");
+		else root.openPanel("calendar");
+	}
 	// The Devices panel's measured height (DevicesView.panelHeight).
 	property real devicesHeight: 150
 	property int shelfCount: 0
@@ -506,7 +519,11 @@ Item {
 				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 				height: Tokens.sizes.mainRow
 				clip: true
-				opacity: root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible ? 1 : 0
+				readonly property bool showing: root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible
+				opacity: showing ? 1 : 0
+				// Input follows the state, not the fade: a fading row doesn't
+				// take clicks meant for what replaces it.
+				enabled: showing
 				Behavior on opacity {
 					NumberAnimation {
 						duration: Tokens.easing.framerDefaultMs
@@ -540,24 +557,21 @@ Item {
 						}
 					}
 
-					Text {
+					NotchClock {
 						id: clock
+						objectName: "notchClock"
 						anchors.centerIn: parent
-						text: Logic.clockText(root.now, root.use24h)
-						color: clockHover.hovered ? root.textMuted : root.textColor
-						Behavior on color { ColorAnimation { duration: 200 } }
-						font.family: Tokens.type.family
-						font.pixelSize: Tokens.type.clock.size
-						font.weight: Font.Medium
-						font.letterSpacing: Tokens.type.clock.tracking
-						scale: clockTap.pressed ? 0.95 : 1
-						Behavior on scale { NumberAnimation { duration: 100 } }
-						// Bloom .time-flip-container { cursor: pointer }
-						HoverHandler { id: clockHover; cursorShape: Qt.PointingHandCursor }
-						TapHandler { id: clockTap; onTapped: root.openPanel("calendar") }
+						now: root.now
+						use24h: root.use24h
+						timerActive: root.timer.active
+						timerSeconds: root.timer.seconds
+						timerFinished: root.timer.finished
+						textColor: root.textColor
+						textMuted: root.textMuted
+						onClicked: root.clockClicked()
 					}
 					Row {
-						x: clock.x + clock.width + 5; y: 10; spacing: 3
+						x: clock.x + (clock.width + clock.textWidth) / 2 + 5; y: 10; spacing: 3
 						visible: root.privacy.microphone || root.privacy.screen
 						Rectangle { objectName: "privacy-mic-dot"; visible: root.privacy.microphone; width: 5; height: 5; radius: 2.5; color: "#ff8c3a" }
 						Rectangle { objectName: "privacy-screen-dot"; visible: root.privacy.screen; width: 5; height: 5; radius: 2.5; color: "#63df91" }
@@ -776,7 +790,7 @@ Item {
 
 		// Bloom statusFitWidth: grows during a hover so a shrinking live label
 		// doesn't make the notch jitter.
-		readonly property real _needed: Logic.fitWidth(clock.implicitWidth, leftGroup.implicitWidth, rightGroup.implicitWidth)
+		readonly property real _needed: Logic.fitWidth(clock.textWidth, leftGroup.implicitWidth, rightGroup.implicitWidth)
 		on_NeededChanged: if (root.statusHover && stage._needed > root.fitWidth) root.fitWidth = stage._needed
 
 		StatusTooltip {

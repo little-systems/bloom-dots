@@ -29,40 +29,29 @@ Item {
 		: panel === "wifi" ? "Wi-Fi" : panel === "bluetooth" ? "Bluetooth"
 		: panel === "devices" ? "Connected Devices" : panel === "calendar" ? "Calendar" : "Shelf"
 
-	Item {
+	// Bloom's time-center: the notch clock (or timer), with the panel arrows
+	// while a tool panel is open.
+	NotchClock {
 		id: header
-		// Gone with the panel; the notch's own clock takes over as it closes.
 		visible: root.panel !== ""
 		anchors.horizontalCenter: parent.horizontalCenter
 		y: 6
-		width: 96
-		height: 24
-		WheelHandler { onWheel: event => event.angleDelta.y < 0 ? root.nextRequested() : root.previousRequested() }
+		now: root.now
+		use24h: root.use24h
+		timerActive: CalendarState.running || CalendarState.pausedSec > 0 || CalendarState.finished
+		timerSeconds: Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, root.now.getTime())
+		timerFinished: CalendarState.finished
+		textColor: root.textColor
+		textMuted: root.textMuted
+		arrows: root.toolPanel && Panels.available(root.enabledPanels).length > 1
+		onPrevious: root.previousRequested()
+		onNext: root.nextRequested()
+		// toggleCalendarMode with the notch open: reset a finished timer, else
+		// go to the calendar.
+		onClicked: CalendarState.finished ? CalendarState.reset() : root.subpanelRequested("calendar")
 
-		PressArea {
-			x: -22; y: 3; width: 18; height: 18
-			hoverScale: 1.1
-			visible: root.toolPanel && Panels.available(root.enabledPanels).length > 1
-			onClicked: root.previousRequested()
-			SvgIcon { anchors.centerIn: parent; name: "chevron-left"; color: root.textMuted; size: 12 }
-		}
-		Text {
-			anchors.centerIn: parent
-			text: CalendarState.running || CalendarState.pausedSec > 0
-				? Calendar.timerText(Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, root.now.getTime()))
-				: Qt.formatTime(root.now, root.use24h ? "HH:mm" : "h:mm AP")
-			color: root.textColor
-			font.family: "Inter"
-			font.pixelSize: 13
-			font.weight: Font.Medium
-			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.subpanelRequested("calendar") }
-		}
-		PressArea {
-			x: parent.width + 4; y: 3; width: 18; height: 18
-			hoverScale: 1.1
-			visible: root.toolPanel && Panels.available(root.enabledPanels).length > 1
-			onClicked: root.nextRequested()
-			SvgIcon { anchors.centerIn: parent; name: "chevron-right"; color: root.textMuted; size: 12 }
+		WheelHandler {
+			onWheel: event => event.angleDelta.y < 0 ? root.nextRequested() : root.previousRequested()
 		}
 	}
 

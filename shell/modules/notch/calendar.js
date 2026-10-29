@@ -75,11 +75,6 @@ function remaining(deadlineMs, pausedSec, nowMs) {
 	return Math.max(0, Math.floor(pausedSec));
 }
 
-function timerText(seconds) {
-	const safe = Math.max(0, Math.floor(seconds));
-	return String(Math.floor(safe / 60)).padStart(2, "0") + ":" + String(safe % 60).padStart(2, "0");
-}
-
 // Bloom's states from the saved file: running (a deadline), paused (time
 // left), idle (pausedSec 0, the clock shows the duration) or finished.
 function restored(raw, nowMs) {
