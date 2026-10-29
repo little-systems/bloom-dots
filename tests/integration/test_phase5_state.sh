@@ -22,17 +22,18 @@ chmod +x "$TEST_TMP/bin/notify-send"
 export PATH="$TEST_TMP/bin:$PATH" BLOOM_NOTIFY_LOG="$TEST_TMP/notifications.log"
 start_shell
 
-todo_loaded() { ipc calendar state | jq -e '(.todos | length) == 1 and .todos[0].text == "restored task"' >/dev/null; }
+# A calendar.json from before the task list was removed (owner, 2026-10-29)
+# still restores its timer; its todos are dropped.
+timer_restored() { ipc calendar state | jq -e '.durationSec == 1500 and (has("todos") | not)' >/dev/null; }
 timer_finished() { ipc calendar state | jq -e '.deadlineMs == 0 and .pausedSec == 0' >/dev/null; }
-wait_for "restored todo without opening Calendar" todo_loaded
+wait_for "the timer restored without opening Calendar" timer_restored
 WAIT_S=9 wait_for "Pomodoro expiry after restart" timer_finished
 wait_for "one local completion notification" test -f "$BLOOM_NOTIFY_LOG"
 assert_eq "$(wc -l < "$BLOOM_NOTIFY_LOG")" "1" "single completion notification"
 pass "Pomodoro resumes and expires once without opening Calendar"
 
-assert_eq "$(ipc calendar addTodo 'added task')" "ok" "add todo"
-wait_for "todo persisted" jq -e '.todos | any(.text == "added task")' "$XDG_STATE_HOME/bloom/calendar.json"
-pass "Todo additions persist to local state"
+wait_for "the saved state drops the old todos" jq -e 'has("todos") | not' "$XDG_STATE_HOME/bloom/calendar.json"
+pass "old saved todos are dropped"
 
 assert_eq "$(ipc shelf addText 'temporary note')" "ok" "add temporary shelf text"
 assert_eq "$(ipc shelf state | jq -r '.[0].value')" "temporary note" "shelf state"
