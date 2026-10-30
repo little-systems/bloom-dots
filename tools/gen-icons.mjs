@@ -7,7 +7,8 @@ const ICONS = [
 	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search", "sliders-horizontal",
 	"chevron-left", "chevron-right", "x", "wifi", "wifi-off", "bluetooth", "volume-2",
 	"calendar-days", "timer", "folder", "usb", "mic", "screen-share", "bell-off", "bell", "rotate-ccw", "lock-keyhole", "monitor-smartphone", "laptop",
-	"loader-circle", "refresh-cw", "plus", "bell-ring"
+	"loader-circle", "refresh-cw", "plus", "bell-ring",
+	"wifi-high", "wifi-low", "wifi-zero", "lock", "headphones", "smartphone", "keyboard", "mouse", "gamepad-2", "watch"
 ];
 
 const root = new URL("../", import.meta.url);
