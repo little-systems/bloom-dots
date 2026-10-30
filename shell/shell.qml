@@ -262,6 +262,41 @@ ShellRoot {
 		}
 	}
 
+	// The Wi-Fi panel's service. Passwords are never taken here: IPC
+	// arguments show in the process list.
+	IpcHandler {
+		target: "wifi"
+
+		function state(): string {
+			return JSON.stringify({ enabled: Network.wifiEnabled, ssid: Network.ssid, scanning: Network.scanning,
+				busy: Network.busy, error: Network.lastError, networks: Network.networks });
+		}
+		// Keeps the service watching without a panel open (scripts, tests).
+		function hold(wanted: bool): string { Network.hold("ipc", wanted); return "ok"; }
+		function scan(): string { Network.refresh(true); return "ok"; }
+		function connect(ssid: string): string { return Network.connect(ssid, ""); }
+		function disconnect(ssid: string): string { return Network.disconnect(ssid); }
+		function forget(ssid: string): string { return Network.forget(ssid); }
+	}
+
+	// The Bluetooth panel's service: devices by path.
+	IpcHandler {
+		target: "bluetooth"
+
+		function state(): string {
+			const brief = d => ({ path: d.path, name: d.name, kind: d.kind, connected: d.connected, battery: d.battery });
+			return JSON.stringify({ powered: Bluetooth.powered, discovering: Bluetooth.discovering, busy: Bluetooth.busy,
+				pairing: Bluetooth.pairing, prompt: Bluetooth.prompt, error: Bluetooth.lastError,
+				paired: Bluetooth.paired.map(brief), nearby: Bluetooth.nearby.map(brief) });
+		}
+		function hold(wanted: bool): string { Bluetooth.hold("ipc", wanted); return "ok"; }
+		function discover(wanted: bool): string { return Bluetooth.discover(wanted); }
+		function pair(path: string): string { return Bluetooth.pair(path); }
+		function respond(accept: bool, pin: string): string { return Bluetooth.respond(accept, pin); }
+		function unpair(path: string): string { return Bluetooth.unpair(path); }
+		function connect(path: string, wanted: bool): string { return Bluetooth.setConnected(path, wanted); }
+	}
+
 	IpcHandler {
 		target: "dock"
 

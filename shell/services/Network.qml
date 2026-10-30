@@ -16,6 +16,13 @@ Singleton {
 	property string ssid: ""
 	property var networks: []
 	property string error: ""
+	// Bloom's panel state: a scan running, the network a change is for, and
+	// the last failure as { ssid, code } (network.js connectError codes).
+	readonly property bool scanning: listQuery.running && listQuery.rescan
+	property string busy: ""
+	property var lastError: null
+	property var _saved: []
+	property string _listText: ""
 
 	function hold(key, wanted) {
 		const next = Object.assign({}, root._holders);
@@ -27,7 +34,12 @@ Singleton {
 	function refresh(rescan) {
 		if (!root.active) return;
 		if (!statusQuery.running) statusQuery.running = true;
-		if (!listQuery.running) {
+		if (!savedQuery.running) savedQuery.running = true;
+		if (listQuery.running) {
+			// A scan asked for during a plain listing runs after it.
+			if (rescan && !listQuery.rescan) listQuery.pendingRescan = true;
+		} else {
+			listQuery.rescan = rescan;
 			listQuery.command = ["timeout", "-k", "1s", "15s", "nmcli", "-t", "--escape", "yes", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list", "--rescan", rescan ? "yes" : "no"];
 			listQuery.running = true;
 		}
@@ -41,21 +53,39 @@ Singleton {
 	function connect(ssid, password) {
 		if (change.running) return "network change in progress";
 		if (!root.networks.some(n => n.ssid === ssid)) return "unknown network";
-		if (password && (password.length < 8 || password.length > 63 || /[\r\n\0]/.test(password))) return "invalid password";
+		if (password && (password.length < 8 || password.length > 63 || /[\r\n\0]/.test(password))) {
+			root.lastError = { ssid: ssid, code: "password-length" };
+			return "invalid password";
+		}
 		change.pendingPassword = password || "";
 		// --ask reads the secret from stdin; it must never appear in argv.
-		change.command = Logic.connectCommand(ssid, password);
-		change.running = true;
+		root._start(ssid, "connect", Logic.connectCommand(ssid, password), !!password);
 		return "ok";
 	}
 	function disconnect(ssid) {
 		if (change.running) return "network change in progress";
-		if (!root.networks.some(n => n.ssid === ssid && n.active)) return "not connected";
-		change.command = ["timeout", "-k", "1s", "10s", "nmcli", "connection", "down", "id", ssid];
-		change.running = true;
+		if (!root.networks.some(n => n.ssid === ssid && n.connected)) return "not connected";
+		root._start(ssid, "disconnect", ["timeout", "-k", "1s", "10s", "nmcli", "connection", "down", "id", ssid], false);
 		return "ok";
 	}
-	onActiveChanged: if (!active) { root.networks = []; root.ssid = ""; }
+	// Bloom's Forget: the saved profile goes.
+	function forget(ssid) {
+		if (change.running) return "network change in progress";
+		if (!root._saved.includes(ssid)) return "not saved";
+		root._start(ssid, "forget", ["timeout", "-k", "1s", "10s", "nmcli", "connection", "delete", "id", ssid], false);
+		return "ok";
+	}
+	function clearError() { root.lastError = null; }
+	function _start(ssid, action, command, withPassword) {
+		root.busy = ssid;
+		root.lastError = null;
+		change.action = action;
+		change.withPassword = withPassword;
+		change.command = command;
+		change.running = true;
+	}
+	function _networks() { root.networks = Logic.wifiList(root._listText, root._saved); }
+	onActiveChanged: if (!active) { root.networks = []; root.ssid = ""; root._listText = ""; }
 
 	Process {
 		id: monitor
@@ -79,17 +109,37 @@ Singleton {
 		}
 	}
 	Process {
+		id: savedQuery
+		command: ["timeout", "-k", "1s", "5s", "nmcli", "-t", "--escape", "yes", "-f", "NAME,TYPE", "connection", "show"]
+		stdout: StdioCollector { id: savedOut }
+		onExited: code => {
+			root._saved = code === 0 ? Logic.savedNames(savedOut.text) : [];
+			root._networks();
+		}
+	}
+	Process {
 		id: listQuery
+		property bool rescan: false
+		property bool pendingRescan: false
 		stdout: StdioCollector { id: listOut }
 		onExited: code => {
-			root.networks = code === 0 ? Logic.wifiList(listOut.text) : [];
-			root.ssid = root.networks.find(n => n.active)?.ssid ?? "";
+			root._listText = code === 0 ? listOut.text : "";
+			root._networks();
+			root.ssid = root.networks.find(n => n.connected)?.ssid ?? "";
+			if (pendingRescan) {
+				pendingRescan = false;
+				root.refresh(true);
+			}
 		}
 	}
 	Process {
 		id: change
 		property string pendingPassword: ""
+		property string action: ""
+		property bool withPassword: false
 		stdinEnabled: true
+		stdout: StdioCollector { id: changeOut }
+		stderr: StdioCollector { id: changeErr }
 		onStarted: {
 			if (pendingPassword) {
 				change.write(pendingPassword + "\n");
@@ -99,6 +149,9 @@ Singleton {
 		onExited: code => {
 			pendingPassword = "";
 			root.error = code === 0 ? "" : "Wi-Fi change failed; check NetworkManager or credentials";
+			if (code !== 0)
+				root.lastError = { ssid: root.busy, code: action === "connect" ? Logic.connectError(changeErr.text + changeOut.text, code, withPassword) : "failed" };
+			root.busy = "";
 			root.refresh(false);
 		}
 	}
