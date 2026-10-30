@@ -33,10 +33,11 @@ function size(panel, calendarRows, devicesHeight, shelfCount) {
 }
 
 // The content's inset from the pill's sides. Bloom's panel content box pads
-// 12 px, and its .qp (Wi-Fi, Bluetooth) sits inside it; the Command Center
-// and shelf use 14; the calendar lays out edge to edge.
+// 12 px, and its .qp (Wi-Fi, Bluetooth) and .shelf-content (which pads
+// itself 14 × 12) sit inside it; the Command Center uses 14; the calendar
+// lays out edge to edge.
 function inset(panel) {
 	if (panel === "calendar") return 0;
-	if (panel === "command-center" || panel === "shelf") return 14;
+	if (panel === "command-center") return 14;
 	return 12;
 }

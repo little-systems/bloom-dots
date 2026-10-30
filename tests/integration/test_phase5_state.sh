@@ -42,3 +42,30 @@ ipc settings set bloom-shelf-persist true >/dev/null
 assert_eq "$(ipc shelf addText 'saved note')" "ok" "add saved shelf text"
 wait_for "shelf persisted after opt-in" jq -e '.[0].value == "saved note" and .[1].value == "temporary note"' "$XDG_STATE_HOME/bloom/shelf.json"
 pass "Shelf persistence follows its setting"
+
+# Bloom's shelf rules through the real service: files dropped together all
+# go on (each checked to exist), folders too, newest first; a duplicate is
+# skipped; a text file shows its opening; a full shelf refuses with Bloom's
+# notice.
+SHELF_DIR="$TEST_TMP/shelf-files"
+mkdir -p "$SHELF_DIR/Photos"
+printf 'first line\nsecond line\n' > "$SHELF_DIR/notes.md"
+printf 'x' > "$SHELF_DIR/clip.mp4"
+assert_eq "$(ipc shelf addFile "$SHELF_DIR/notes.md")" "checking" "add a text file"
+assert_eq "$(ipc shelf addFile "$SHELF_DIR/Photos")" "checking" "add a folder right after"
+assert_eq "$(ipc shelf addFile "$SHELF_DIR/clip.mp4")" "checking" "and a third"
+three_files() { ipc shelf state | jq -e --arg d "$SHELF_DIR" '[.[] | select(.kind == "file") | .value] == [$d + "/clip.mp4", $d + "/Photos", $d + "/notes.md"]' >/dev/null; }
+wait_for "all three files, newest first" three_files
+pass "files added back to back all go on, folders included"
+assert_eq "$(ipc shelf addFile "$SHELF_DIR/notes.md")" "checking" "add a file again"
+sleep 1
+assert_eq "$(ipc shelf state | jq --arg p "$SHELF_DIR/notes.md" '[.[] | select(.value == $p)] | length')" "1" "a duplicate is skipped"
+previews() { ipc shelf details | jq -e --arg d "$SHELF_DIR" '.previews[$d + "/notes.md"] == {"kind":"text","thumb":"","text":"first line\nsecond line\n"} and .previews[$d + "/Photos"].kind == "folder"' >/dev/null; }
+wait_for "previews for the text file and the folder" previews
+pass "a text file shows its opening and a folder is a folder"
+for i in 1 2 3 4 5; do ipc shelf addText "filler $i" >/dev/null; done
+assert_eq "$(ipc shelf state | jq length)" "10" "the shelf is full"
+assert_eq "$(ipc shelf addText 'one too many')" "Shelf is full (10) — remove an item first" "a full shelf refuses"
+assert_eq "$(ipc shelf details | jq -r .notice)" "Shelf is full (10) — remove an item first" "with Bloom's notice"
+assert_eq "$(ipc shelf state | jq length)" "10" "and keeps every item"
+pass "a full shelf refuses new items with Bloom's notice"

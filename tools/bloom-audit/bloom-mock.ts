@@ -78,6 +78,10 @@ mockIPC(
 			const key = Object.keys(ICONS).find(k => String(a.path || a.name || "").toLowerCase().includes(k.split("-")[0].replace("apple", "music"))) ;
 			return key ? ICONS[key] : null;
 		}
+		// A shelf tile's preview by path (window.__shelfPreviews), and every
+		// saved file still exists.
+		if (cmd === "shelf_thumbnail") return (window as any).__shelfPreviews?.[(args as any)?.path] ?? { thumb: null, text: null, folder: false };
+		if (cmd === "shelf_prune") return (args as any)?.paths ?? [];
 		if (cmd === "plugin:window|is_visible") return true;
 		if (cmd.startsWith("plugin:window|scale_factor")) return 1.25;
 		return null;

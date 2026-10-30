@@ -113,6 +113,8 @@ ShellRoot {
 	IpcHandler {
 		target: "shelf"
 		function state(): string { return JSON.stringify(ShelfState.items); }
+		// The items with the notice line and each file's preview.
+		function details(): string { return JSON.stringify({ items: ShelfState.items, notice: ShelfState.notice, previews: ShelfState.previews }); }
 		function addText(text: string): string { return ShelfState.addText(text); }
 		function addFile(path: string): string { return ShelfState.addFile(path); }
 		function remove(index: int): string { ShelfState.remove(index); return "ok"; }
