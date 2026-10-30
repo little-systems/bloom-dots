@@ -14,6 +14,7 @@ Item {
 	property string sub: ""
 	// A trailing icon, such as the lock on a secured network.
 	property string badge: ""
+	property bool badgeSpinning: false
 	property bool active: false
 	property bool expanded: false
 	// .qp-row-main:disabled keeps the default cursor and takes no clicks.
@@ -117,6 +118,16 @@ Item {
 			name: root.badge || "lock-keyhole"
 			size: Tokens.qp.row.badge
 			color: root.theme.textMuted
+
+			// .qp-spin
+			RotationAnimation on rotation {
+				running: root.badgeSpinning && badgeIcon.visible
+				loops: Animation.Infinite
+				from: 0
+				to: 360
+				duration: Tokens.qp.spinMs
+				onRunningChanged: if (!running) badgeIcon.rotation = 0
+			}
 		}
 
 		PointerArea {

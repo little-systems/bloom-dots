@@ -196,6 +196,18 @@ Item {
 			tryCompare(glyph, "rotation", 0, 1000);
 		}
 
+		// Bloom's pairing row: a LoaderCircle badge with .qp-spin.
+		function test_rowBadgeSpins() {
+			row.badge = "loader-circle";
+			row.badgeSpinning = true;
+			const badge = part(row, "badge");
+			wait(100);
+			verify(badge.rotation > 0, "spinning");
+			row.badgeSpinning = false;
+			tryCompare(badge, "rotation", 0, 1000);
+			row.badge = "";
+		}
+
 		function test_rowHeights() {
 			// padding 5 + max(24 px icon, the text block) + 5, at line-height 1.25.
 			compare(row.height, 5 + 11 * 1.25 + 9.5 * 1.25 + 5);
