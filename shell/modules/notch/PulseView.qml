@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
 import "pulses.js" as Pulses
+import "../../common/render"
 
 // Bloom's pulse slot in the collapsed row (AnimatePresence mode="wait"): the
 // view on screen leaves before the next one enters, 300 ms each way.
@@ -54,7 +55,7 @@ Item {
 
 	component Label: Text {
 		objectName: "pulse-label"
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Tokens.pulse.labelSize
 		font.weight: Font.DemiBold
 		color: root.textColor

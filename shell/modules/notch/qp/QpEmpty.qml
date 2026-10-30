@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../common"
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-empty: a centred message filling the panel body ("Wi-Fi is off"), with
 // an optional icon above and room for a button below.
@@ -34,7 +35,7 @@ Item {
 			wrapMode: Text.Wrap
 			text: root.text
 			color: root.theme.textMuted
-			font.family: Tokens.type.family
+			font.family: Fonts.family
 			font.pixelSize: Tokens.qp.text
 		}
 	}

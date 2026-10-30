@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../common"
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-btn: a row action (Connect, Disconnect, Forget). A busy button shows
 // the spinning loader in place of its label, as Bloom's does.
@@ -14,7 +15,7 @@ Item {
 
 	signal clicked()
 
-	readonly property real _content: root.busy ? Tokens.qp.button.glyph : Math.ceil(label.implicitWidth)
+	readonly property real _content: root.busy ? Tokens.qp.button.glyph : label.implicitWidth
 
 	// Border-box, as Chromium sizes a button: text, padding and the 1 px border.
 	width: Math.max(Tokens.qp.button.minWidth, root._content + Tokens.qp.button.padH * 2 + 2)
@@ -53,7 +54,7 @@ Item {
 		anchors.centerIn: parent
 		text: root.text
 		color: root.primary ? root.theme.bgExpanded : root.theme.text
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.weight: Font.DemiBold
 		pixelSize: Tokens.qp.button.text
 	}

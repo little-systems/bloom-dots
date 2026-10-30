@@ -38,7 +38,7 @@ Item {
 		objectName: "marqueeLabel"
 		text: root.text
 		color: root.color
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(root.weight)
 		font.pixelSize: Math.ceil(root.pixelSize)
 		font.weight: root.weight
 		font.letterSpacing: root.letterSpacing / root._k

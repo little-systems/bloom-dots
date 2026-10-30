@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../common"
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-footer: the "More … settings" link under a panel. No transition.
 Item {
@@ -11,7 +12,7 @@ Item {
 
 	signal clicked()
 
-	width: Math.ceil(label.implicitWidth) + Tokens.qp.footer.padH * 2
+	width: label.implicitWidth + Tokens.qp.footer.padH * 2
 	height: Math.ceil(label.implicitHeight) + Tokens.qp.footer.padV * 2
 
 	Text {
@@ -20,7 +21,7 @@ Item {
 		anchors.centerIn: parent
 		text: root.text
 		color: pointer.hovered ? root.theme.text : root.theme.textMuted
-		font.family: Tokens.type.family
+		font.family: Fonts.family
 		font.pixelSize: Tokens.qp.footer.text
 	}
 

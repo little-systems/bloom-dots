@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
 import "qp"
+import "../../common/render"
 
 // Bloom's Wi-Fi panel (WifiPanel.tsx, QuickPanel.css .qp): the header with
 // scan and the radio switch, the networks (connected, saved, then by
@@ -203,7 +204,7 @@ Item {
 								wrapMode: Text.Wrap
 								text: "This network needs a sign-in your network settings handle."
 								color: root.theme.textMuted
-								font.family: Tokens.type.family
+								font.family: Fonts.family
 								font.pixelSize: Tokens.qp.note
 							}
 							Loader {
@@ -287,7 +288,7 @@ Item {
 							wrapMode: Text.Wrap
 							text: root.error ? (root._errorText[root.error.code] ?? root.error.code) : ""
 							color: Tokens.qp.error.color
-							font.family: Tokens.type.family
+							font.family: Fonts.family
 							font.pixelSize: Tokens.qp.error.text
 						}
 					}

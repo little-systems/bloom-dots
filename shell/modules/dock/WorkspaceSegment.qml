@@ -3,6 +3,7 @@ import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
+import "../../common/render"
 
 // The workspace switcher (spec D7) at the start of the dock: one cell per
 // workspace on this monitor in the icon tile's look; the active highlight
@@ -84,7 +85,7 @@ Item {
 				color: root.textColor
 				opacity: cell.modelData.active ? 1 : Tokens.dock.workspaces.idleOpacity
 				Behavior on opacity { NumberAnimation { duration: 200 } }
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.DemiBold)
 				font.pixelSize: Tokens.dock.workspaces.size
 				font.weight: Font.DemiBold
 			}
@@ -111,7 +112,7 @@ Item {
 					anchors.centerIn: parent
 					text: cell.modelData.tip
 					color: root.tooltipText
-					font.family: Tokens.type.family
+					font.family: Fonts.family
 					font.pixelSize: Tokens.dock.tooltip.size
 				}
 			}

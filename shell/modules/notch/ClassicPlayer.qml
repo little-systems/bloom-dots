@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's classic player (App.tsx compact-premium-layout): large album art
 // beside the title, artist, visualizer, controls and volume. Clicking the art
@@ -120,7 +121,7 @@ Item {
 						elide: Text.ElideRight
 						text: root.media.artist
 						color: root.textMuted
-						font.family: Tokens.type.family
+						font.family: Fonts.familyFor(Font.Normal)
 						font.pixelSize: 12
 						font.weight: Font.Normal
 					}

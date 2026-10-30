@@ -1,5 +1,6 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's dock toast (Dock.css .dock-toast): a red message for 4 s that
 // rises 10 px and fades in, shown again for each new serial.
@@ -33,7 +34,7 @@ Rectangle {
 		anchors.centerIn: parent
 		text: root.message
 		color: Tokens.dock.toast.color
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.Medium)
 		font.pixelSize: Tokens.dock.toast.size
 		font.weight: Font.Medium
 	}

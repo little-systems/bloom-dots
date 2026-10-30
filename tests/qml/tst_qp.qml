@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import "../../shell/common"
 import "../../shell/modules/notch/qp"
+import "../../shell/common/render"
 
 // Bloom's quick-panel parts (components/QuickPanel.css .qp-*) against the
 // reference values in docs/plans/2026-10-29-ui-parity-1-cursor-and-panels.md.
@@ -61,8 +62,8 @@ Item {
 	QpChip { id: chipOn; theme: colours; x: 80; y: 340; text: "Over-ear"; on: true }
 	QpInput { id: input; theme: colours; y: 370; width: 200; placeholder: "Password" }
 	QpFooter { id: footer; theme: colours; y: 410; text: "More Wi-Fi settings" }
-	FracText { id: frac; y: 495; text: "Connect"; pixelSize: 10.5; font.family: "Inter" }
-	Text { id: whole; y: 495; text: "Connect"; font.pixelSize: 11; font.family: "Inter" }
+	FracText { id: frac; y: 495; text: "Connect"; pixelSize: 10.5; font.family: Fonts.family }
+	Text { id: whole; y: 495; text: "Connect"; font.pixelSize: 11; font.family: Fonts.family }
 	QpEmpty { id: empty; theme: colours; y: 430; width: 300; height: 60; text: "Wi-Fi is off" }
 
 	SignalSpy { id: toggled; target: sw; signalName: "toggled" }
@@ -338,9 +339,9 @@ Item {
 
 		function test_buttonGrowsForLongLabels() {
 			const label = part(inRow, "label");
-			// A button is border-box: text, 10 px padding and the 1 px border
+			// Unrounded, as Chromium on Windows lays text out. A button is border-box: text, 10 px padding and the 1 px border
 			// each side (Chromium measured "Disconnect" at 79).
-			compare(inRow.width, Math.max(64, Math.ceil(label.implicitWidth) + 20 + 2));
+			compare(inRow.width, Math.max(64, label.implicitWidth + 20 + 2));
 		}
 
 		function test_chips() {
@@ -354,7 +355,7 @@ Item {
 			compare(label.font.pixelSize, 10);
 			compare(label.font.weight, Font.DemiBold);
 			// Border-box too: 8 px padding and the 1 px border each side.
-			compare(chipOff.width, Math.ceil(label.implicitWidth) + 16 + 2);
+			compare(chipOff.width, label.implicitWidth + 16 + 2);
 			compare(part(chipOn, "background").color, colours.text);
 			compare(part(chipOn, "background").border.color, colours.text);
 			compare(part(chipOn, "label").color, colours.bgExpanded);
@@ -388,7 +389,7 @@ Item {
 			compare(label.font.pixelSize, 10);
 			compare(label.color, colours.textMuted);
 			compare(footer.height, Math.ceil(label.implicitHeight) + 4);
-			compare(footer.width, Math.ceil(label.implicitWidth) + 16);
+			compare(footer.width, label.implicitWidth + 16);
 			hoverOver(footer);
 			// .qp-footer has no transition.
 			compare(label.color, colours.text);

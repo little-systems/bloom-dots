@@ -293,7 +293,7 @@ Item {
 						text: (root.muted ? 0 : Math.round(root.value * 100)) + "%"
 						color: root.theme.text
 						opacity: root.showingPercent ? 1 : 0
-						font.family: Tokens.type.family
+						font.family: Fonts.familyFor(Font.Bold)
 						font.pixelSize: Tokens.osd.action.text
 						font.weight: Font.Bold
 						font.letterSpacing: Tokens.osd.action.tracking
@@ -366,7 +366,7 @@ Item {
 						wrapMode: Text.Wrap
 						text: "No apps with audio"
 						color: root.theme.textMuted
-						font.family: Tokens.type.family
+						font.family: Fonts.familyFor(Font.Medium)
 						font.pixelSize: Tokens.osd.mixer.empty
 						font.weight: Font.Medium
 					}

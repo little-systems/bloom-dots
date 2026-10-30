@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's status tooltip card: display only, hung 8 px under the pill and
 // centred on its widget, fading in with a 4 px slide after 400 ms.
@@ -75,7 +76,7 @@ Item {
 			y: Tokens.statusStrip.tooltip.paddingV
 			text: root.text
 			color: root.textColor
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.Medium)
 			font.pixelSize: Tokens.statusStrip.tooltip.size
 			font.weight: Font.Medium
 			lineHeight: Tokens.statusStrip.tooltip.lineHeight

@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import "../../common/screens.js" as Screens
+import "../../common/render"
 
 // The history sheet opens below Bloom's notch. Old entries remain text-only;
 // action buttons exist solely while their source notification is live.
@@ -42,6 +43,7 @@ PanelWindow {
 		border.color: Theme.border
 		border.width: 1
 		Text {
+			font.family: Fonts.familyFor(Font.Bold)
 			x: 16 * win.uiScale; y: 12 * win.uiScale
 			text: "Notifications"; color: Theme.text; font.bold: true; font.pixelSize: 16 * win.uiScale
 		}
@@ -98,8 +100,8 @@ PanelWindow {
 				radius: 9 * win.uiScale
 				color: Theme.groupBg
 				Rectangle { width: 5 * win.uiScale; height: parent.height; radius: 2; color: item.modelData.read ? "transparent" : Theme.accent }
-				Text { x: 14 * win.uiScale; y: 7 * win.uiScale; width: parent.width - 28 * win.uiScale; text: item.modelData.app + " · " + item.modelData.summary; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.bold: true; font.pixelSize: 12 * win.uiScale }
-				Text { x: 14 * win.uiScale; y: 28 * win.uiScale; width: parent.width - 28 * win.uiScale; height: 32 * win.uiScale; text: item.modelData.body; textFormat: Text.PlainText; wrapMode: Text.Wrap; elide: Text.ElideRight; color: Theme.textMuted; font.pixelSize: 11 * win.uiScale }
+				Text { font.family: Fonts.familyFor(Font.Bold); x: 14 * win.uiScale; y: 7 * win.uiScale; width: parent.width - 28 * win.uiScale; text: item.modelData.app + " · " + item.modelData.summary; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.bold: true; font.pixelSize: 12 * win.uiScale }
+				Text { font.family: Fonts.family; x: 14 * win.uiScale; y: 28 * win.uiScale; width: parent.width - 28 * win.uiScale; height: 32 * win.uiScale; text: item.modelData.body; textFormat: Text.PlainText; wrapMode: Text.Wrap; elide: Text.ElideRight; color: Theme.textMuted; font.pixelSize: 11 * win.uiScale }
 				Row {
 					x: 14 * win.uiScale; y: 61 * win.uiScale; spacing: 8 * win.uiScale
 					Repeater {

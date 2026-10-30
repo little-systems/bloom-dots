@@ -3,6 +3,7 @@ import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
+import "../../common/render"
 
 // One dock app (Bloom Dock.tsx .dock-icon-wrapper): the tile and image that
 // lift on hover and sink on press, a text tooltip, and one dot per window.
@@ -170,7 +171,7 @@ Item {
 				visible: !image.visible
 				text: root.name.slice(0, 1).toUpperCase()
 				color: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, Tokens.dock.fallback.opacity)
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.DemiBold)
 				font.pixelSize: Tokens.dock.fallback.size
 				font.weight: Font.DemiBold
 			}
@@ -243,7 +244,7 @@ Item {
 			anchors.centerIn: parent
 			text: root.name
 			color: root.tooltipText
-			font.family: Tokens.type.family
+			font.family: Fonts.family
 			font.pixelSize: Tokens.dock.tooltip.size
 		}
 	}

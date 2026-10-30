@@ -3,6 +3,7 @@ import "../../common/tokens.js" as Tokens
 import "../../services/bluetooth.js" as Logic
 import "device-art.js" as Art
 import "qp"
+import "../../common/render"
 
 // Bloom's Bluetooth panel (BluetoothPanel.tsx, QuickPanel.css .qp): paired
 // devices with Connect/Disconnect/Remove and an audio device's "Looks like"
@@ -207,7 +208,7 @@ Item {
 												anchors.alignWhenCentered: false
 												text: "Looks like"
 												color: root.theme.textMuted
-												font.family: Tokens.type.family
+												font.family: Fonts.family
 												font.pixelSize: Tokens.qp.note
 											}
 										}
@@ -319,7 +320,7 @@ Item {
 			textFormat: Text.StyledText
 			text: "Type " + root._pin(root.prompt?.pin) + " on the device, then press Enter on it."
 			color: root.theme.textMuted
-			font.family: Tokens.type.family
+			font.family: Fonts.family
 			font.pixelSize: Tokens.qp.note
 		}
 	}
@@ -336,7 +337,7 @@ Item {
 				textFormat: Text.StyledText
 				text: "Does the device show " + root._pin(root.prompt?.pin) + "?"
 				color: root.theme.textMuted
-				font.family: Tokens.type.family
+				font.family: Fonts.family
 				font.pixelSize: Tokens.qp.note
 			}
 			Row {
@@ -388,7 +389,7 @@ Item {
 			wrapMode: Text.Wrap
 			text: root.error ? Logic.errorText(root.error.code) : ""
 			color: Tokens.qp.error.color
-			font.family: Tokens.type.family
+			font.family: Fonts.family
 			font.pixelSize: Tokens.qp.error.text
 		}
 	}

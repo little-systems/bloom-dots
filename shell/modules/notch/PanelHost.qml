@@ -3,6 +3,7 @@ import qs.services
 import "../../common"
 import "panels.js" as Panels
 import "calendar.js" as Calendar
+import "../../common/render"
 
 // Content inside the fixed-size notch surface. The outer NotchView owns the
 // spring geometry, input mask and panel memory; this host is created on open.
@@ -83,7 +84,7 @@ Item {
 		visible: content.status === Loader.Error
 		text: root.title + " is unavailable"
 		color: root.textMuted
-		font.family: "Inter"
+		font.family: Fonts.family
 		font.pixelSize: 11
 	}
 }

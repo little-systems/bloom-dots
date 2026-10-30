@@ -230,8 +230,8 @@ Item {
 			at(findChild(row("Phone"), "badge"), 293, 46.3, 11, 11, "lock badge");
 			at(row("Jio"), 12, 71.6, 300, 35.6, "second row");
 			at(row("Cafe Guest"), 12, 109.3, 300, 67.6, "expanded row");
-			// Its width follows its text: Bloom's Google Inter (v20) runs a
-			// little narrower than the system's 4.1 at 10.5 px.
+			// Its width follows its text, which headless Chromium (the
+			// reference) lays out on whole-pixel glyph advances.
 			at(part(v, "connect"), 53, 144.9, 64, 24, "Connect", 1.5);
 			at(row("Office"), 12, 178.9, 300, 35.6, "row after it");
 		}

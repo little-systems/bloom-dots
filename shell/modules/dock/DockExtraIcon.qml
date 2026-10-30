@@ -1,5 +1,6 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 Item {
 	id: root
@@ -39,6 +40,6 @@ Item {
 		anchors.top: parent.top
 		width: 14; height: 14; radius: 7
 		color: "#e05050"
-		Text { anchors.centerIn: parent; text: root.count > 9 ? "9+" : String(root.count); color: "white"; font.pixelSize: 9 }
+		Text { font.family: Fonts.family; anchors.centerIn: parent; text: root.count > 9 ? "9+" : String(root.count); color: "white"; font.pixelSize: 9 }
 	}
 }

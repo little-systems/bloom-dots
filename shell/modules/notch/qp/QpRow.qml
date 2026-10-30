@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../common"
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-row: a network or device. The main line is a button (icon circle, name,
 // subline, an optional badge); an expanded row shows its actions below,
@@ -89,7 +90,7 @@ Item {
 				color: root.theme.text
 				elide: Text.ElideRight
 				maximumLineCount: 1
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.DemiBold)
 				font.pixelSize: Tokens.qp.text
 				font.weight: Font.DemiBold
 			}
@@ -104,7 +105,7 @@ Item {
 				color: root.theme.textMuted
 				elide: Text.ElideRight
 				maximumLineCount: 1
-				font.family: Tokens.type.family
+				font.family: Fonts.family
 				pixelSize: Tokens.qp.row.sub
 			}
 		}

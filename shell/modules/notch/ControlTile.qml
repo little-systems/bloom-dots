@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "qp"
+import "../../common/render"
 
 // .cc-pill-tile: a Command Center tile (icon circle, title, status) with an
 // optional chevron that opens its detail panel. An active tile inverts to
@@ -123,7 +124,7 @@ Item {
 			color: root.active ? root.theme.bgExpanded : root.theme.text
 			elide: Text.ElideRight
 			maximumLineCount: 1
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.DemiBold)
 			font.weight: Font.DemiBold
 			pixelSize: Tokens.cc.title
 		}
@@ -138,7 +139,7 @@ Item {
 			color: root.active ? root.theme.bgExpanded : root.theme.textMuted
 			elide: Text.ElideRight
 			maximumLineCount: 1
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.Medium)
 			font.weight: Font.Medium
 			pixelSize: Tokens.cc.status
 		}

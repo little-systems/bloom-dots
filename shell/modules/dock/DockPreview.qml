@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
 import "previews.js" as Preview
+import "../../common/render"
 
 // Window cards are created only after the dock's hover dwell. Each visible
 // card owns its own capture stream; closing the card destroys the stream.
@@ -85,6 +86,7 @@ Item {
 							}
 						}
 						Text {
+							font.family: Fonts.family
 							objectName: "preview-fallback-" + card.candidate.address
 							anchors.centerIn: parent
 							visible: !capture.item || !capture.item.hasContent
@@ -98,6 +100,7 @@ Item {
 					}
 
 					Text {
+						font.family: Fonts.family
 						objectName: "preview-title-" + card.candidate.address
 						x: 10; y: Tokens.dock.preview.imageHeight + 10
 						width: card.width - 44
@@ -114,7 +117,7 @@ Item {
 						width: 30; height: 30
 						radius: 5
 						color: closeTap.containsMouse ? Qt.rgba(1, 1, 1, 0.18) : "transparent"
-						Text { anchors.centerIn: parent; text: "×"; color: root.foreground; font.pixelSize: 18 }
+						Text { font.family: Fonts.family; anchors.centerIn: parent; text: "×"; color: root.foreground; font.pixelSize: 18 }
 						MouseArea {
 							id: closeTap
 							anchors.fill: parent

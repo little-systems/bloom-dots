@@ -867,7 +867,7 @@ Item {
 				width: 16; height: 16; radius: 8
 				x: pillArea.width - width - 2; y: 2
 				color: Tokens.status.green
-				Text { anchors.centerIn: parent; text: root.notificationUnread > 9 ? "9+" : root.notificationUnread; color: "black"; font.pixelSize: 9; font.bold: true }
+				Text { font.family: Fonts.familyFor(Font.Bold); anchors.centerIn: parent; text: root.notificationUnread > 9 ? "9+" : root.notificationUnread; color: "black"; font.pixelSize: 9; font.bold: true }
 				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.notificationHistoryRequested() }
 			}
 		}

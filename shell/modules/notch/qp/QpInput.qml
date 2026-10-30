@@ -1,5 +1,6 @@
 import QtQuick
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-input: a password or PIN field. Focusing the input focuses its field.
 FocusScope {
@@ -53,7 +54,7 @@ FocusScope {
 		selectByMouse: true
 		color: root.theme.text
 		selectionColor: root.theme.textMuted
-		font.family: Tokens.type.family
+		font.family: Fonts.family
 		font.pixelSize: Tokens.qp.text
 		onAccepted: root.accepted()
 		Keys.onEscapePressed: root.escaped()

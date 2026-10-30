@@ -1,1 +1,2 @@
 singleton Render 1.0 Render.qml
+singleton Fonts 1.0 Fonts.qml

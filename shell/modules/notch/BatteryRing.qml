@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's DeviceBatteryRing (App.tsx, .device-alert-battery): a 28 px ring,
 // stroke 2.6 with round caps, the level in the middle. Green, red when low
@@ -53,7 +54,7 @@ Item {
 		anchors.centerIn: parent
 		text: root.level
 		color: root.textColor
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.weight: Font.DemiBold
 		pixelSize: Tokens.alert.ring.text
 	}

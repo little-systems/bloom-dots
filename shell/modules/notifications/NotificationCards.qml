@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import qs.services
 import "notifications.js" as Logic
 import "../../common/screens.js" as Screens
+import "../../common/render"
 
 // One top-right stack on the focused screen. No surface is mapped at rest.
 PanelWindow {
@@ -55,6 +56,7 @@ PanelWindow {
 				border.color: Theme.border
 				border.width: 1
 				Text {
+					font.family: Fonts.family
 					x: 14 * win.uiScale
 					y: 8 * win.uiScale
 					width: parent.width - 48 * win.uiScale
@@ -66,6 +68,7 @@ PanelWindow {
 						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: card.modelData.items.length > 1; onClicked: win.hub.openHistory() }
 				}
 				Text {
+					font.family: Fonts.familyFor(Font.Bold)
 					x: 14 * win.uiScale
 					y: 30 * win.uiScale
 						width: parent.width - 88 * win.uiScale
@@ -77,6 +80,7 @@ PanelWindow {
 					font.pixelSize: 13 * win.uiScale
 				}
 				Text {
+					font.family: Fonts.family
 					x: 14 * win.uiScale
 					y: 50 * win.uiScale
 						width: parent.width - 88 * win.uiScale
@@ -102,6 +106,7 @@ PanelWindow {
 						visible: status === Image.Ready
 					}
 					Text {
+						font.family: Fonts.family
 						anchors.centerIn: parent
 						visible: !cardImage.visible
 						text: card.modelData.app.slice(0, 1).toUpperCase()
@@ -110,6 +115,7 @@ PanelWindow {
 					}
 				}
 				Text {
+					font.family: Fonts.family
 					anchors.right: parent.right
 					anchors.rightMargin: 12 * win.uiScale
 					anchors.top: parent.top
@@ -132,7 +138,7 @@ PanelWindow {
 							height: 19 * win.uiScale
 							radius: 5 * win.uiScale
 							color: Theme.groupBg
-							Text { id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: 10 * win.uiScale }
+							Text { font.family: Fonts.family; id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: 10 * win.uiScale }
 							MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.hub.invoke(card.latest.id, actionButton.modelData.identifier) }
 						}
 					}

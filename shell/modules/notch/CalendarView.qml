@@ -3,6 +3,7 @@ import "../../common"
 import "../../common/tokens.js" as Tokens
 import "calendar.js" as Calendar
 import "qp"
+import "../../common/render"
 
 // Bloom's calendar and timer split view (App.tsx .calendar-timer-content):
 // the month on the left, the Pomodoro timer on the right. Pure: the timer's
@@ -146,7 +147,7 @@ Item {
 			text: Qt.locale().standaloneMonthName(root.now.getMonth(), Locale.LongFormat) + " " + root.now.getFullYear()
 			color: root.theme.text
 			opacity: Tokens.calendar.month.opacity
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.DemiBold)
 			font.pixelSize: Tokens.calendar.month.text
 			font.weight: Font.DemiBold
 		}
@@ -168,7 +169,7 @@ Item {
 					text: modelData
 					color: root.theme.text
 					opacity: Tokens.calendar.dayName.opacity
-					font.family: Tokens.type.family
+					font.family: Fonts.familyFor(Font.DemiBold)
 					font.pixelSize: Tokens.calendar.dayName.text
 					font.weight: Font.DemiBold
 				}
@@ -200,7 +201,7 @@ Item {
 						anchors.centerIn: parent
 						text: parent.label
 						color: parent.today ? root.theme.bgExpanded : root.theme.text
-						font.family: Tokens.type.family
+						font.family: Fonts.familyFor(parent.today ? Font.DemiBold : Font.Normal)
 						font.pixelSize: Tokens.calendar.day.text
 						font.weight: parent.today ? Font.DemiBold : Font.Normal
 					}
@@ -252,7 +253,7 @@ Item {
 					text: Calendar.status({ editing: root.editing, finished: root.finished, running: root.running, remaining: root.remainingSec }, root.now, root.use24h)
 					color: root._sectionColor
 					opacity: root._state === "finished" ? Tokens.timer.status.finishedOpacity : Tokens.timer.status.opacity
-					font.family: Tokens.type.family
+					font.family: Fonts.familyFor(Font.Medium)
 					font.pixelSize: Tokens.timer.status.text
 					font.weight: Font.Medium
 					font.letterSpacing: Tokens.timer.status.tracking
@@ -306,7 +307,7 @@ Item {
 							text: ":"
 							color: root._sectionColor
 							opacity: Tokens.timer.colon.opacity
-							font.family: Tokens.type.family
+							font.family: Fonts.familyFor(Font.DemiBold)
 							font.pixelSize: Tokens.timer.colon.text
 							font.weight: Font.DemiBold
 						}
@@ -444,7 +445,7 @@ Item {
 							anchors.verticalCenter: parent.verticalCenter
 							text: Calendar.primaryLabel(root.running, root.remainingSec, root.finished)
 							color: root.theme.bgExpanded
-							font.family: Tokens.type.family
+							font.family: Fonts.familyFor(Font.DemiBold)
 							font.pixelSize: Tokens.timer.play.text
 							font.weight: Font.DemiBold
 						}
@@ -547,7 +548,7 @@ Item {
 							anchors.centerIn: parent
 							text: preset.modelData + "m"
 							color: root.theme.text
-							font.family: Tokens.type.family
+							font.family: Fonts.familyFor(Font.DemiBold)
 							font.pixelSize: Tokens.timer.presets.text
 							font.weight: Font.DemiBold
 						}

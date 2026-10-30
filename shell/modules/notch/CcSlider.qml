@@ -3,6 +3,7 @@ import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "qp"
+import "../../common/render"
 
 // .cc-classic-slider-row: a label, a 6 px track with its fill, and the
 // percentage. Bloom's range input is invisible over the track: a press sets
@@ -51,7 +52,7 @@ Item {
 			anchors.verticalCenter: parent.verticalCenter
 			text: root.label
 			color: root.theme.textMuted
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.DemiBold)
 			font.pixelSize: Tokens.cc.sliders.text
 			font.weight: Font.DemiBold
 		}
@@ -113,7 +114,7 @@ Item {
 		text: root.percentText
 		// No transition on the percentage's hover colour.
 		color: root._hover ? root.theme.text : root.theme.textMuted
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Tokens.cc.sliders.text
 		font.weight: Font.DemiBold
 		font.features: {

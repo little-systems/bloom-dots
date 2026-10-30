@@ -51,7 +51,7 @@ var edge = {
 };
 
 var type = {
-	family: "Inter",
+	// The family comes from common/render Fonts (familyFor(weight)).
 	clock: { size: 13, weight: 500, tracking: 0.3 },
 	widgetLabel: { size: 11, weight: 500, opacity: 0.85 },
 	title: { size: 14.5, weight: 600, tracking: -0.15 },

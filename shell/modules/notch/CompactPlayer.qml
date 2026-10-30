@@ -3,6 +3,7 @@ import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "../../services/media.js" as Fmt
+import "../../common/render"
 
 // Bloom's compact player (CompactMediaPlayer.tsx): small art, title and
 // visualizer; a progress bar with seek when the track has a length; side
@@ -97,7 +98,7 @@ Item {
 					elide: Text.ElideRight
 					text: root.media.artist
 					color: root.textMuted
-					font.family: Tokens.type.family
+					font.family: Fonts.familyFor(Font.Normal)
 					font.pixelSize: 12
 					font.weight: Font.Normal
 				}
@@ -139,7 +140,7 @@ Item {
 				horizontalAlignment: Text.AlignHCenter
 				text: Fmt.formatTime(root._shownMs)
 				color: root.textMuted
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: root._c.time
 				font.weight: Font.Medium
 				font.features: { "tnum": 1 }
@@ -193,7 +194,7 @@ Item {
 				horizontalAlignment: Text.AlignHCenter
 				text: Fmt.formatRemaining(root._shownMs, root.media.lengthMs)
 				color: root.textMuted
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: root._c.time
 				font.weight: Font.Medium
 				font.features: { "tnum": 1 }

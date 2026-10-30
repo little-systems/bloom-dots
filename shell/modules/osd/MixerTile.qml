@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's MixerTile (Overlay.tsx, .volume-mixer-*): an app's volume bar over
 // its logo; a click on the logo mutes it, and the logo flashes the
@@ -113,7 +114,7 @@ Item {
 					anchors.centerIn: parent
 					text: (root.session.name || "?").charAt(0).toUpperCase()
 					color: root.theme.text
-					font.family: Tokens.type.family
+					font.family: Fonts.familyFor(Font.Bold)
 					font.pixelSize: Tokens.osd.mixer.fallbackText
 					font.weight: Font.Bold
 				}
@@ -125,7 +126,7 @@ Item {
 			text: root._percent + "%"
 			color: root.theme.text
 			opacity: root._flash ? 1 : 0
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.Bold)
 			font.pixelSize: Tokens.osd.mixer.percentText
 			font.weight: Font.Bold
 			font.letterSpacing: Tokens.osd.action.tracking

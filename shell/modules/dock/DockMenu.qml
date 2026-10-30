@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
+import "../../common/render"
 
 // Bloom's dock context menu (Dock.css .context-menu): items, dividers and one
 // level of submenu to the right, opened just above the pointer.
@@ -89,11 +90,12 @@ Item {
 			anchors.verticalCenter: parent.verticalCenter
 			text: item.entry.label
 			color: root.textColor
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.Medium)
 			font.pixelSize: Tokens.dock.menu.item.size
 			font.weight: Font.Medium
 		}
 		Text {
+			font.family: Fonts.family
 			id: arrow
 			visible: item.entry.kind === "submenu"
 			anchors.right: parent.right

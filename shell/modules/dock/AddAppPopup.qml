@@ -3,6 +3,7 @@ import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
+import "../../common/render"
 
 // Bloom's Add App card (Dock.tsx AddAppPopup): a search field over Running
 // and All apps, fused into the top of the dock. It rises with a scaleY
@@ -164,7 +165,7 @@ Item {
 				anchors.verticalCenter: parent.verticalCenter
 				width: parent.width - x - Tokens.dock.popup.search.paddingH
 				color: root.textColor
-				font.family: Tokens.type.family
+				font.family: Fonts.family
 				font.pixelSize: Tokens.dock.popup.search.size
 				clip: true
 				onTextChanged: debounce.restart()
@@ -207,7 +208,7 @@ Item {
 							topPadding: Tokens.dock.popup.label.top
 							bottomPadding: Tokens.dock.popup.label.bottom
 							color: root.textMuted
-							font.family: Tokens.type.family
+							font.family: Fonts.familyFor(Font.DemiBold)
 							font.pixelSize: Tokens.dock.popup.label.size
 							font.weight: Font.DemiBold
 							font.letterSpacing: Tokens.dock.popup.label.tracking
@@ -262,7 +263,7 @@ Item {
 										visible: rowImage.status !== Image.Ready
 										text: row.modelData.name.slice(0, 1)
 										color: root.textMuted
-										font.family: Tokens.type.family
+										font.family: Fonts.familyFor(Font.DemiBold)
 										font.pixelSize: Tokens.dock.popup.row.initial
 										font.weight: Font.DemiBold
 									}
@@ -275,12 +276,13 @@ Item {
 									text: row.modelData.name
 									elide: Text.ElideRight
 									color: root.textColor
-									font.family: Tokens.type.family
+									font.family: Fonts.familyFor(Font.Medium)
 									font.pixelSize: Tokens.dock.popup.row.name
 									font.weight: Font.Medium
 								}
 
 								Text {
+									font.family: Fonts.familyFor(Font.Medium)
 									id: pinGlyph
 									anchors.right: parent.right
 									anchors.rightMargin: Tokens.dock.popup.row.paddingH
@@ -309,7 +311,7 @@ Item {
 				wrapMode: Text.WordWrap
 				text: root._query.trim() ? "No results" : "Running apps show up here — search to pin anything else"
 				color: root.textMuted
-				font.family: Tokens.type.family
+				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: Tokens.dock.popup.empty.size
 				font.weight: Font.Medium
 			}

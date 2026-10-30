@@ -1,5 +1,6 @@
 import QtQuick
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-header: back, a title that fills the row, then the panel's actions
 // (refresh or add, and the switch), 4 px apart.
@@ -30,7 +31,7 @@ Item {
 		text: root.title
 		color: root.theme.text
 		elide: Text.ElideRight
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Tokens.qp.header.title
 		font.weight: Font.DemiBold
 	}

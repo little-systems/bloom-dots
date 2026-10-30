@@ -3,6 +3,7 @@ import "../../common"
 import "../../common/tokens.js" as Tokens
 import "notch.js" as Logic
 import "calendar.js" as Calendar
+import "../../common/render"
 
 // Bloom's notch time (App.tsx .time-center): the clock, or the Pomodoro
 // timer while one runs or has finished, flipping between them on a 600/30
@@ -69,7 +70,7 @@ Item {
 		color: root._timeColor
 		opacity: 1 - flip.value
 		visible: opacity > 0
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.Medium)
 		font.pixelSize: Tokens.type.clock.size
 		font.weight: Font.Medium
 		font.letterSpacing: Tokens.type.clock.tracking
@@ -115,7 +116,7 @@ Item {
 			text: Calendar.clockText(root.timerSeconds)
 			// .timer-finished { color: #ff453a !important }
 			color: root.timerFinished ? Tokens.clock.red : root._timeColor
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.Medium)
 			font.pixelSize: Tokens.type.clock.size
 			font.weight: Font.Medium
 			font.letterSpacing: Tokens.type.clock.tracking

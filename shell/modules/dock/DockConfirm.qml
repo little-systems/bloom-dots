@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/render"
 
 Item {
 	id: root
@@ -18,6 +19,7 @@ Item {
 		border.width: 1
 		border.color: Qt.rgba(1, 1, 1, 0.1)
 		Text {
+			font.family: Fonts.familyFor(Font.Bold)
 			x: 16; y: 16
 			text: "Empty Trash?"
 			color: root.foreground
@@ -25,6 +27,7 @@ Item {
 			font.bold: true
 		}
 		Text {
+			font.family: Fonts.family
 			x: 16; y: 44
 			text: "This permanently removes the items."
 			color: root.foreground
@@ -36,7 +39,7 @@ Item {
 			objectName: "confirm-cancel"
 			x: 16; y: 80; width: 105; height: 34; radius: 7
 			color: Qt.rgba(1, 1, 1, 0.12)
-			Text { anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: 12 }
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: 12 }
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.opened = false }
 		}
 		Rectangle {
@@ -44,7 +47,7 @@ Item {
 			objectName: "confirm-empty"
 			x: 139; y: 80; width: 105; height: 34; radius: 7
 			color: "#d94343"
-			Text { anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: 12 }
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: 12 }
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.opened = false; root.confirmed(); } }
 		}
 	}

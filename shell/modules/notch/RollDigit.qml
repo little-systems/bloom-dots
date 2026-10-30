@@ -1,5 +1,6 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's RollDigit (App.tsx): an odometer digit. On a change the old digit
 // rolls up and out while the new one rolls in from below with a 3D tilt.
@@ -28,7 +29,7 @@ Item {
 		horizontalAlignment: Text.AlignHCenter
 		verticalAlignment: Text.AlignVCenter
 		color: root.color
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: root._size.text
 		font.weight: Font.DemiBold
 		font.letterSpacing: Tokens.timer.digit.tracking

@@ -1,6 +1,7 @@
 import QtQuick
 import "../../../common"
 import "../../../common/tokens.js" as Tokens
+import "../../../common/render"
 
 // .qp-chip: one choice in a row of chips ("Looks like" for a Bluetooth device).
 Item {
@@ -13,7 +14,7 @@ Item {
 	signal clicked()
 
 	// Border-box, as Chromium sizes a button: text, padding and the 1 px border.
-	width: Math.ceil(label.implicitWidth) + Tokens.qp.chip.padH * 2 + 2
+	width: label.implicitWidth + Tokens.qp.chip.padH * 2 + 2
 	height: Tokens.qp.chip.height
 
 	Rectangle {
@@ -39,7 +40,7 @@ Item {
 		anchors.centerIn: parent
 		text: root.text
 		color: root.on ? root.theme.bgExpanded : pointer.hovered ? root.theme.text : root.theme.textMuted
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Tokens.qp.chip.text
 		font.weight: Font.DemiBold
 

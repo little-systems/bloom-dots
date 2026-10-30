@@ -252,10 +252,11 @@ Item {
 			at(part(v, "row:/a"), 12, 34, 300, 117.6, "expanded row");
 			at(part(v, "looksNote"), 53, 73.6, undefined, undefined, "Looks like");
 			verify(part(v, "look-stem-buds").on, "Bloom's guess for AirPods Pro");
-			// Chip boxes follow their text, and Bloom draws Google's Inter
-			// (v20) where the shell has the system's (4.1): at 10 px the two
-			// differ by up to ~2 px a word, so text-placed boxes get 2 px (3 for
-			// the third chip on a line, which carries two words of drift).
+			// Chip boxes follow their text. The reference is headless Chromium,
+			// which rounds every glyph advance to a whole pixel; Chromium on
+			// Windows and the shell don't (same font: tst_fonts). At 10 px that
+			// is up to ~1.5 px a word, so text-placed boxes get 2 px (3 for the
+			// third chip on a line, which carries two words of it).
 			at(part(v, "look-headphones"), 103, 69.6, 79, 20, "Headphones chip", 2);
 			at(part(v, "look-round-buds"), 186, 69.6, 58, 20, "Earbuds chip", 2);
 			at(part(v, "look-stem-buds"), 53, 93.6, 71, 20, "Stem buds chip (second line)", 2);

@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's device alert (App.tsx .device-alert): the device's art playing its
 // connect or disconnect animation, its name and status, and its battery as a
@@ -67,7 +68,7 @@ Item {
 			color: root.textColor
 			elide: Text.ElideRight
 			maximumLineCount: 1
-			font.family: Tokens.type.family
+			font.family: Fonts.familyFor(Font.DemiBold)
 			font.weight: Font.DemiBold
 			pixelSize: Tokens.alert.name
 		}
@@ -78,7 +79,7 @@ Item {
 			text: root._shown?.status ?? ""
 			color: root.textMuted
 			elide: Text.ElideRight
-			font.family: Tokens.type.family
+			font.family: Fonts.family
 			font.pixelSize: Tokens.alert.status
 		}
 	}
@@ -121,7 +122,7 @@ Item {
 					anchors.horizontalCenter: parent.horizontalCenter
 					text: parent.modelData === "case" ? "Case" : parent.modelData[0].toUpperCase()
 					color: root.textMuted
-					font.family: Tokens.type.family
+					font.family: Fonts.familyFor(Font.DemiBold)
 					font.pixelSize: Tokens.alert.buds.label
 					font.weight: Font.DemiBold
 				}

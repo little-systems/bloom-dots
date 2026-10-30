@@ -4,6 +4,7 @@ import "../../common/tokens.js" as Tokens
 import "../../services/devices.js" as Devices
 import "device-art.js" as Art
 import "qp"
+import "../../common/render"
 
 // Bloom's battery hub (ConnectedDevicesPanel.tsx, QuickPanel.css .bh-*):
 // connected devices grouped by priority with their battery meters. An audio
@@ -75,7 +76,7 @@ Item {
 		anchors.verticalCenter: titleIcon.verticalCenter
 		text: "Connected devices"
 		color: root.theme.text
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Tokens.qp.header.title
 		font.weight: Font.DemiBold
 	}
@@ -123,7 +124,7 @@ Item {
 						height: implicitHeight + 2
 						text: group.modelData.title.toUpperCase()
 						color: group.modelData.key === "low" ? Tokens.bh.red : root.theme.textMuted
-						font.family: Tokens.type.family
+						font.family: Fonts.familyFor(Font.DemiBold)
 						font.weight: Font.DemiBold
 						font.letterSpacing: Tokens.bh.groupTitle.tracking
 						pixelSize: Tokens.bh.groupTitle.text
@@ -201,7 +202,7 @@ Item {
 										color: root.theme.text
 										elide: Text.ElideRight
 										maximumLineCount: 1
-										font.family: Tokens.type.family
+										font.family: Fonts.familyFor(Font.DemiBold)
 										font.pixelSize: Tokens.qp.text
 										font.weight: Font.DemiBold
 									}
@@ -215,7 +216,7 @@ Item {
 										color: root.theme.textMuted
 										elide: Text.ElideRight
 										maximumLineCount: 1
-										font.family: Tokens.type.family
+										font.family: Fonts.family
 										pixelSize: Tokens.qp.row.sub
 									}
 								}
@@ -235,7 +236,7 @@ Item {
 										visible: row.parts.length === 0
 										text: "No battery info"
 										color: root.theme.textMuted
-										font.family: Tokens.type.family
+										font.family: Fonts.family
 										pixelSize: Tokens.bh.unknown
 									}
 
@@ -268,7 +269,7 @@ Item {
 														rightPadding: 2
 														text: meter.modelData.label
 														color: root.theme.textMuted
-														font.family: Tokens.type.family
+														font.family: Fonts.family
 														font.pixelSize: Tokens.bh.meters.label
 													}
 
@@ -277,7 +278,7 @@ Item {
 														anchors.verticalCenter: parent.verticalCenter
 														text: meter.modelData.part.level + "%"
 														color: meter.low ? Tokens.bh.red : root.theme.text
-														font.family: Tokens.type.family
+														font.family: Fonts.familyFor(Font.DemiBold)
 														font.weight: Font.DemiBold
 														font.features: {
 															"tnum": 1
@@ -354,7 +355,7 @@ Item {
 									verticalAlignment: Text.AlignVCenter
 									text: "Looks like"
 									color: root.theme.textMuted
-									font.family: Tokens.type.family
+									font.family: Fonts.family
 									font.pixelSize: Tokens.qp.note
 								}
 

@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // One status widget (Bloom .passive-feature): a 12 px icon and an 11 px label.
 // The battery widget draws Bloom's battery glyph instead of a Lucide icon.
@@ -47,7 +48,7 @@ Row {
 		text: root.label
 		color: root.textColor
 		opacity: Tokens.statusStrip.labelOpacity
-		font.family: Tokens.type.family
+		font.family: Fonts.familyFor(Font.Medium)
 		font.pixelSize: Tokens.statusStrip.labelSize
 		font.weight: Font.Medium
 	}

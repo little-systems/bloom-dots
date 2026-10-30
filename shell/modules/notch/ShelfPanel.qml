@@ -2,6 +2,7 @@ import QtQuick
 import qs.services
 import "../../common"
 import "shelf.js" as Logic
+import "../../common/render"
 
 Item {
 	id: root
@@ -23,7 +24,7 @@ Item {
 		x: 0; y: 12; width: parent.width; height: parent.height - 24
 		visible: ShelfState.items.length === 0
 		radius: 12; color: "transparent"; border.width: 1; border.color: Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.25)
-		Text { anchors.centerIn: parent; text: "Drop files or selected text here"; color: Theme.textMuted; font.family: "Inter"; font.pixelSize: 12 }
+		Text { anchors.centerIn: parent; text: "Drop files or selected text here"; color: Theme.textMuted; font.family: Fonts.family; font.pixelSize: 12 }
 	}
 	Flickable {
 		id: strip
@@ -61,13 +62,13 @@ Item {
 						Text {
 							visible: modelData.kind === "text"; x: 8; y: 7; width: parent.width - 16; height: parent.height - 14
 							text: modelData.value; wrapMode: Text.WrapAnywhere; elide: Text.ElideRight
-							color: Theme.text; font.family: "Inter"; font.pixelSize: 10; lineHeight: 1.45
+							color: Theme.text; font.family: Fonts.family; font.pixelSize: 10; lineHeight: 1.45
 						}
 					}
 					Text {
 						x: 6; y: tile.height - 20; width: 92
 						text: modelData.kind === "file" ? modelData.value.split("/").pop() : modelData.value
-						color: Theme.text; opacity: 0.85; font.family: "Inter"; font.pixelSize: 11; elide: Text.ElideRight
+						color: Theme.text; opacity: 0.85; font.family: Fonts.family; font.pixelSize: 11; elide: Text.ElideRight
 					}
 					MouseArea {
 						id: dragSource; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
@@ -79,7 +80,7 @@ Item {
 						anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 4
 						width: 18; height: 18; radius: 9; color: Qt.rgba(0, 0, 0, 0.55)
 						visible: hover.hovered
-						Text { anchors.centerIn: parent; text: "×"; color: "white"; font.pixelSize: 14 }
+						Text { font.family: Fonts.family; anchors.centerIn: parent; text: "×"; color: "white"; font.pixelSize: 14 }
 						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: ShelfState.remove(index) }
 					}
 				}
