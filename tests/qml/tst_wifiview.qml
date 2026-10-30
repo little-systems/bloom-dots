@@ -200,6 +200,42 @@ Item {
 			verify(!v.pinned, "collapsing lets it close");
 		}
 
+		// Bloom's panel as Chromium lays it out (tools/bloom-audit/
+		// record-panels.cjs; the .qp box at the pill's 12, 36), with Cafe
+		// Guest (open) expanded.
+		function test_matchesBloomsLayout() {
+			const v = make({ height: 264, width: 326, networks: [
+				{ ssid: "Phone", signal: 90, security: "wpa2", connected: true, saved: true },
+				{ ssid: "Jio", signal: 62, security: "wpa2", connected: false, saved: true },
+				{ ssid: "Cafe Guest", signal: 40, security: "open", connected: false, saved: false },
+				{ ssid: "Office", signal: 20, security: "enterprise", connected: false, saved: false }] });
+			clickRow(v, "Cafe Guest");
+			waitForRendering(host);
+			function at(item, x, y, w, h, what, tolerance) {
+				const t = tolerance || 0.51;
+				const p = item.mapToItem(v, 0, 0);
+				fuzzyCompare(p.x, x, t, what + " x");
+				fuzzyCompare(p.y, y, t, what + " y");
+				if (w !== undefined) fuzzyCompare(item.width, w, t, what + " width");
+				if (h !== undefined) fuzzyCompare(item.height, h, t, what + " height");
+			}
+			at(part(v, "header"), 12, 4, 302, 24, "header");
+			at(part(v, "refresh"), 252, 4, 24, 24, "refresh");
+			at(findChild(part(v, "switch"), "track"), 284, 7.5, 30, 17, "switch track");
+			const row = name => part(v, "row:" + name);
+			at(row("Phone"), 12, 34, 300, 35.6, "first row");
+			at(findChild(row("Phone"), "icon"), 20, 39.8, 24, 24, "row icon");
+			at(findChild(row("Phone"), "name"), 53, 39, undefined, undefined, "row name");
+			at(findChild(row("Phone"), "sub"), 53, 52.8, undefined, undefined, "row sub");
+			at(findChild(row("Phone"), "badge"), 293, 46.3, 11, 11, "lock badge");
+			at(row("Jio"), 12, 71.6, 300, 35.6, "second row");
+			at(row("Cafe Guest"), 12, 109.3, 300, 67.6, "expanded row");
+			// Its width follows its text: Bloom's Google Inter (v20) runs a
+			// little narrower than the system's 4.1 at 10.5 px.
+			at(part(v, "connect"), 53, 144.9, 64, 24, "Connect", 1.5);
+			at(row("Office"), 12, 178.9, 300, 35.6, "row after it");
+		}
+
 		function test_footer() {
 			verify(!part(make({ settingsAvailable: false }), "footer").visible, "hidden without a settings tool");
 			const v = make({ settingsAvailable: true });

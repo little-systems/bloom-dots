@@ -16,7 +16,8 @@ Item {
 
 	readonly property real _content: root.busy ? Tokens.qp.button.glyph : Math.ceil(label.implicitWidth)
 
-	width: Math.max(Tokens.qp.button.minWidth, root._content + Tokens.qp.button.padH * 2)
+	// Border-box, as Chromium sizes a button: text, padding and the 1 px border.
+	width: Math.max(Tokens.qp.button.minWidth, root._content + Tokens.qp.button.padH * 2 + 2)
 	height: Tokens.qp.button.height
 	opacity: !enabled ? Tokens.qp.button.disabledOpacity : root.primary && pointer.hovered ? Tokens.qp.button.primaryHoverOpacity : 1
 

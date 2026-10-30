@@ -17,6 +17,17 @@ TestCase {
 		compare(Panels.cycle("calendar", -1, enabled), "devices");
 		compare(Panels.cycle("devices", 1, enabled), "calendar");
 	}
+	// The content's inset from the pill's sides: Bloom's panel content box
+	// pads 12 px (its .qp, the Wi-Fi and Bluetooth panels, sits inside it);
+	// the Command Center and shelf use 14, the calendar lays out edge to edge.
+	function test_insets() {
+		compare(Panels.inset("wifi"), 12);
+		compare(Panels.inset("bluetooth"), 12);
+		compare(Panels.inset("devices"), 12);
+		compare(Panels.inset("command-center"), 14);
+		compare(Panels.inset("shelf"), 14);
+		compare(Panels.inset("calendar"), 0);
+	}
 	function test_sizes() {
 		compare(Panels.size("calendar", 5, 0), { width: 480, height: 273 });
 		compare(Panels.size("calendar", 6, 0), { width: 480, height: 305 });

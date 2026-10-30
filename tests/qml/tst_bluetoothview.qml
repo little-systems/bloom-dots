@@ -231,6 +231,41 @@ Item {
 			compare(String(e.color), "#ff8a80");
 		}
 
+		// Bloom's panel as Chromium lays it out (tools/bloom-audit/
+		// record-panels.cjs; the .qp box at the pill's 12, 36), AirPods Pro
+		// expanded: "Looks like" and five chips over two lines, then the buttons.
+		function test_matchesBloomsLayout() {
+			const v = make({ width: 326, height: 264, devices: [
+				{ path: "/a", name: "AirPods Pro", kind: "audio", connected: true, battery: 72 },
+				{ path: "/m", name: "MX Master 3", kind: "mouse", connected: true, battery: 15 }] });
+			clickRow(v, "/a");
+			waitForRendering(host);
+			function at(item, x, y, w, h, what, tolerance) {
+				const t = tolerance || 0.51;
+				const p = item.mapToItem(v, 0, 0);
+				fuzzyCompare(p.x, x, t, what + " x");
+				fuzzyCompare(p.y, y, t, what + " y");
+				if (w !== undefined) fuzzyCompare(item.width, w, t, what + " width");
+				if (h !== undefined) fuzzyCompare(item.height, h, t, what + " height");
+			}
+			at(part(v, "add"), 252, 4, 24, 24, "add");
+			at(part(v, "row:/a"), 12, 34, 300, 117.6, "expanded row");
+			at(part(v, "looksNote"), 53, 73.6, undefined, undefined, "Looks like");
+			verify(part(v, "look-stem-buds").on, "Bloom's guess for AirPods Pro");
+			// Chip boxes follow their text, and Bloom draws Google's Inter
+			// (v20) where the shell has the system's (4.1): at 10 px the two
+			// differ by up to ~2 px a word, so text-placed boxes get 2 px (3 for
+			// the third chip on a line, which carries two words of drift).
+			at(part(v, "look-headphones"), 103, 69.6, 79, 20, "Headphones chip", 2);
+			at(part(v, "look-round-buds"), 186, 69.6, 58, 20, "Earbuds chip", 2);
+			at(part(v, "look-stem-buds"), 53, 93.6, 71, 20, "Stem buds chip (second line)", 2);
+			at(part(v, "look-neckband"), 128, 93.6, 68, 20, "Neckband chip", 2);
+			at(part(v, "look-speaker"), 200, 93.6, 59, 20, "Speaker chip", 3);
+			at(part(v, "disconnect"), 53, 119.6, 79, 24, "Disconnect", 2);
+			at(part(v, "remove"), 138, 119.6, 64, 24, "Remove", 2);
+			at(part(v, "row:/m"), 12, 153.6, 300, 35.6, "next row");
+		}
+
 		function test_footer() {
 			verify(!part(make({ settingsAvailable: false }), "footer").visible);
 			const v = make({ settingsAvailable: true });

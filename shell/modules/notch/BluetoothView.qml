@@ -195,13 +195,21 @@ Item {
 										readonly property string shown: root.looks[device.d.name] || root.guessFor(device.d)
 										spacing: Tokens.qp.chip.gap
 
-										Text {
+										// .qp-note, centred on the chips' line.
+										Item {
+											width: looksNote.implicitWidth
 											height: Tokens.qp.chip.height
-											verticalAlignment: Text.AlignVCenter
-											text: "Looks like"
-											color: root.theme.textMuted
-											font.family: Tokens.type.family
-											font.pixelSize: Tokens.qp.note
+
+											Text {
+												id: looksNote
+												objectName: "looksNote"
+												anchors.verticalCenter: parent.verticalCenter
+												anchors.alignWhenCentered: false
+												text: "Looks like"
+												color: root.theme.textMuted
+												font.family: Tokens.type.family
+												font.pixelSize: Tokens.qp.note
+											}
 										}
 										Repeater {
 											model: Art.DEVICE_LOOKS

@@ -40,5 +40,14 @@ Item {
 		anchors.right: parent.right
 		anchors.verticalCenter: parent.verticalCenter
 		spacing: Tokens.qp.header.gap
+		// align-items: center: each action sits mid-row (the 17 px switch
+		// beside 24 px buttons).
+		onChildrenChanged: {
+			for (const child of children) {
+				// Unrounded, as Chromium places it (3.5 px down).
+				child.anchors.alignWhenCentered = false;
+				child.anchors.verticalCenter = actionRow.verticalCenter;
+			}
+		}
 	}
 }

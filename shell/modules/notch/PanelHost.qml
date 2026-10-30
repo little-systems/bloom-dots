@@ -67,12 +67,9 @@ Item {
 			: panel === "devices" ? "ConnectedDevicesPanel.qml"
 			: panel === "shelf" ? "ShelfPanel.qml" : "";
 	}
-	function _inset(panel) {
-		return panel === "calendar" || panel === "wifi" || panel === "bluetooth" ? 0 : panel === "command-center" || panel === "shelf" ? 14 : 12;
-	}
 	function _showPanel() {
 		const source = root._source(root.panel);
-		content.show(source ? Qt.resolvedUrl(source) : "", root._inset(root.panel));
+		content.show(source ? Qt.resolvedUrl(source) : "", Panels.inset(root.panel));
 	}
 	onPanelChanged: root._showPanel()
 	Component.onCompleted: root._showPanel()

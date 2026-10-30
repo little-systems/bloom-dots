@@ -29,6 +29,7 @@ Item {
 		y: 30
 		title: "Wi-Fi"
 		QpIconButton { id: refresh; theme: colours; icon: "refresh-cw" }
+		QpSwitch { id: headerSwitch; theme: colours }
 	}
 	QpRow { id: row; theme: colours; width: 326; y: 70; icon: "wifi"; name: "Home"; sub: "Connected" }
 	QpRow { id: bare; theme: colours; width: 326; y: 110; icon: "wifi"; name: "No subline" }
@@ -159,8 +160,12 @@ Item {
 			// gap 4: back, title (fills), actions.
 			compare(title.x, 28);
 			compare(refresh.width, 24);
-			compare(refresh.mapToItem(header, 0, 0).x, 350 - 24);
-			compare(title.width, 350 - 28 - 4 - 24);
+			// align-items: center: the 17 px switch sits mid-row, ending flush right.
+			const track = part(headerSwitch, "track");
+			compare(track.mapToItem(header, 0, 0).y, (24 - 17) / 2);
+			compare(track.mapToItem(header, 0, 0).x + 30, 350);
+			compare(refresh.mapToItem(header, 0, 0).x, 350 - 34 - 4 - 24);
+			compare(title.width, 350 - 28 - 4 - (24 + 4 + 34));
 			backs.clear();
 			const p = centre(back);
 			mouseClick(host, p.x, p.y);
@@ -333,7 +338,9 @@ Item {
 
 		function test_buttonGrowsForLongLabels() {
 			const label = part(inRow, "label");
-			compare(inRow.width, Math.max(64, Math.ceil(label.implicitWidth) + 20));
+			// A button is border-box: text, 10 px padding and the 1 px border
+			// each side (Chromium measured "Disconnect" at 79).
+			compare(inRow.width, Math.max(64, Math.ceil(label.implicitWidth) + 20 + 2));
 		}
 
 		function test_chips() {
@@ -346,7 +353,8 @@ Item {
 			compare(label.color, colours.textMuted);
 			compare(label.font.pixelSize, 10);
 			compare(label.font.weight, Font.DemiBold);
-			compare(chipOff.width, Math.ceil(label.implicitWidth) + 16);
+			// Border-box too: 8 px padding and the 1 px border each side.
+			compare(chipOff.width, Math.ceil(label.implicitWidth) + 16 + 2);
 			compare(part(chipOn, "background").color, colours.text);
 			compare(part(chipOn, "background").border.color, colours.text);
 			compare(part(chipOn, "label").color, colours.bgExpanded);

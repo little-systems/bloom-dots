@@ -12,7 +12,8 @@ Item {
 
 	signal clicked()
 
-	width: Math.ceil(label.implicitWidth) + Tokens.qp.chip.padH * 2
+	// Border-box, as Chromium sizes a button: text, padding and the 1 px border.
+	width: Math.ceil(label.implicitWidth) + Tokens.qp.chip.padH * 2 + 2
 	height: Tokens.qp.chip.height
 
 	Rectangle {
