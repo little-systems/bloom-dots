@@ -13,6 +13,8 @@ Item {
 	SvgIcon { id: thick; x: 30; name: "cpu"; color: "white"; size: 24; strokeWidth: 2.2 }
 	Component { id: missingComponent; SvgIcon { name: "no-such-icon" } }
 
+	// Bloom's muted icons: white at 0.6 (the theme's textMuted).
+	SvgIcon { id: muted; x: 56; name: "plus"; color: Qt.rgba(1, 1, 1, 0.6); size: 24 }
 	SvgIcon { id: play; x: 0; y: 0; name: "sf-play.fill"; color: "#00ff00"; size: 24; visible: false }
 
 	TestCase {
@@ -24,6 +26,16 @@ Item {
 			const img = grabImage(host);
 			// The sun's top ray runs from (12, 2) to (12, 4) in the 24 px box.
 			verify(Qt.colorEqual(img.pixel(12, 3), "#ff0000"), `got ${img.pixel(12, 3)}`);
+		}
+
+		// A translucent colour draws translucent: SVG takes no alpha in a
+		// colour, so it goes on as the drawing's opacity.
+		function test_colourAlphaIsKept() {
+			tryCompare(muted, "status", Image.Ready, 3000);
+			const img = grabImage(host);
+			// The plus's strokes cross at the box's centre (68, 12).
+			const c = img.pixel(68, 12);
+			fuzzyCompare(c.r, 0.6, 0.05, `white at 0.6 over black, got ${c}`);
 		}
 
 		function test_strokeWidthIsApplied() {
