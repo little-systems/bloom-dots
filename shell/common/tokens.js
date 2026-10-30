@@ -112,7 +112,8 @@ var music = {
 	peekMs: 3000,
 	flipCurve: [0.42, 0, 0.58, 1], // framer easeInOut
 	flipMs: 300,
-	collapsedArt: { size: 24, pausedSize: 20, radius: 6, sizeMs: 200, flipMs: 250, appearMs: 120, glowInset: 4, glowHoverInset: 6 },
+	collapsedArt: { size: 24, pausedSize: 20, radius: 6, sizeMs: 200, flipMs: 250, appearMs: 120, glowInset: 4, glowHoverInset: 6, glowRadius: 10,
+		glow: { blur: 6, saturate: 2.5, brightness: 0.8, opacity: 0.6 }, glowHover: { blur: 8, saturate: 3, brightness: 0.9, opacity: 0.7 }, glowMs: 400 },
 	visualizer: { bars: 5, barWidth: 3, gap: 2.5, height: 20, idleLevel: 0.18 },
 	classic: { art: 96, artRadius: 12, gap: 22, columnGap: 5, controlsGap: 24, buttonPadding: 8, playBox: 44, playIcon: 26, skipWidth: 32, skipHeight: 16, volumeRow: 12, track: 5, vizHeight: 18 },
 	compact: { padding: 3, art: 50, artRadius: 10, infoGap: 8, infoBelow: 6, progressGap: 6, progressPad: 3, controlsAbove: 8, sideIcon: 22, skipBox: 32, skipIcon: 30, playBox: 44, playIcon: 26, mainGap: 4, buttonPadding: 5, bar: 3, barHover: 6, volumeTrack: 4, volumeTrackHover: 5, time: 11, timeWidth: 30, vizHeight: 16, volumeHeight: 36 },

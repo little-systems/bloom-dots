@@ -1,7 +1,7 @@
 #version 440
-// The second blur pass, then CSS's filter chain on the result, as Bloom's
-// .notch-ambient-glow img: saturate() contrast() brightness() (Filter
-// Effects 1 matrices, each clamped), then the image's opacity.
+// The second blur pass, then CSS's filter chain on the result:
+// saturate() contrast() brightness() (Filter Effects 1 matrices, each
+// clamped), then the element's opacity.
 layout(location = 0) in vec2 qt_TexCoord0;
 layout(location = 0) out vec4 fragColor;
 layout(std140, binding = 0) uniform buf {

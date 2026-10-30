@@ -9,9 +9,7 @@ import "../../common/tokens.js" as Tokens
 // 0.85 opacity is overridden by framer's animate to 1),
 // then a radial vignette that fades into the notch colour, clipped to the
 // pill's rounded bottom. CSS filters before it transforms, so the blur is
-// enlarged with the art: a true Gaussian of σ 52 × 1.8 (two shader passes at
-// eighth resolution), with the art's surroundings transparent as in
-// Chromium; shaders/*.frag hold the maths.
+// enlarged with the art: σ 52 × 1.8, by FilterBlur at eighth resolution.
 // Motion (App.tsx): the glow fades over 0.15 s with `active`; each art enters
 // over 0.3 s, opacity 0 → 1 and scale 1.1 → 1.8, once the previous art has
 // faded out (AnimatePresence mode="wait"); all framer's default easeInOut.
@@ -28,9 +26,6 @@ Item {
 	property real zoom: Tokens.music.ambience.scale
 	property real artOpacity: 0
 	readonly property real _sigma: Tokens.music.ambience.blur * root.zoom
-	// Room for the widest blur.
-	readonly property real _pad: 3 * Tokens.music.ambience.blur * Tokens.music.ambience.scale
-	readonly property size _texture: Qt.size(Math.max(1, Math.ceil(artLayer.width / 8)), Math.max(1, Math.ceil(artLayer.height / 8)))
 	readonly property var _easeInOut: [0.42, 0, 0.58, 1, 1, 1]
 
 	opacity: root.active && root.shown ? 1 : 0
@@ -70,21 +65,18 @@ Item {
 		maskSource: pillShape
 	}
 
-	// The art with 3σ of transparent margin on every side, so the blur
-	// fades its edges as the browser's does.
-	Item {
-		id: artLayer
-		x: -root._pad
-		y: -root._pad
-		width: root.width + 2 * root._pad
-		height: root.height + 2 * root._pad
-		visible: false
-		layer.enabled: true
-		layer.smooth: true
-		layer.textureSize: root._texture
-		// Half floats: the filters stretch dark values about 5×, which
-		// shows 8-bit steps as bands.
-		layer.format: ShaderEffectSource.RGBA16F
+	FilterBlur {
+		id: glow
+		objectName: "glow"
+		anchors.fill: parent
+		sigma: root._sigma
+		maxSigma: Tokens.music.ambience.blur * Tokens.music.ambience.scale
+		saturate: Tokens.music.ambience.saturate
+		contrast: Tokens.music.ambience.contrast
+		brightness: Tokens.music.ambience.brightness
+		alpha: Tokens.music.ambience.opacity
+		downscale: 8
+		opacity: root.artOpacity
 
 		Image {
 			id: art
@@ -96,41 +88,6 @@ Item {
 			sourceSize: Qt.size(128, 128)
 			smooth: true
 		}
-	}
-
-	ShaderEffect {
-		id: across
-		x: artLayer.x
-		y: artLayer.y
-		width: artLayer.width
-		height: artLayer.height
-		visible: false
-		layer.enabled: true
-		layer.smooth: true
-		layer.textureSize: root._texture
-		// Half floats: the filters stretch dark values about 5×, which
-		// shows 8-bit steps as bands.
-		layer.format: ShaderEffectSource.RGBA16F
-		property var source: artLayer
-		property vector2d delta: Qt.vector2d(root._sigma / Math.max(1, width), 0)
-		fragmentShader: "shaders/blur.frag.qsb"
-	}
-
-	ShaderEffect {
-		id: glow
-		objectName: "glow"
-		x: artLayer.x
-		y: artLayer.y
-		width: artLayer.width
-		height: artLayer.height
-		property var source: across
-		property vector2d delta: Qt.vector2d(0, root._sigma / Math.max(1, height))
-		property real saturate: Tokens.music.ambience.saturate
-		property real contrast: Tokens.music.ambience.contrast
-		property real brightness: Tokens.music.ambience.brightness
-		property real alpha: Tokens.music.ambience.opacity
-		opacity: root.artOpacity
-		fragmentShader: "shaders/ambience.frag.qsb"
 	}
 
 	// radial-gradient(ellipse at center, …): the ellipse reaches the

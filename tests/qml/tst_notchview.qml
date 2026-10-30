@@ -385,6 +385,47 @@ Item {
 			fuzzyCompare(findChild(v, "bigArt").width, 96 + 2 * 0.8, 0.001);
 		}
 
+		// Bloom's .album-art-glow-bg: the art 4 px past the tile under
+		// blur(6px) saturate(2.5) brightness(0.8) at 0.6; hovered, 6 px past
+		// under blur(8px) saturate(3) brightness(0.9) at 0.7.
+		function test_collapsedArtGlowIsBloomsFilter() {
+			const live = playing();
+			live.artUrl = Qt.resolvedUrl("../../shell/assets/device-art/anim/mouse.png");
+			const v = make({ media: live });
+			settle(v);
+			const art = findChild(v, "musicArt");
+			const glow = findChild(v, "musicArtGlow");
+			verify(glow, "has the glow");
+			tryVerify(() => glow.visible, 1000, "the glow shows with art");
+			compare(glow.width, art.width + 8);
+			compare([glow.sigma, glow.saturate, glow.brightness, glow.contrast], [6, 2.5, 0.8, 1]);
+			// The rounded fill takes the art as laid out in the glow's box: a
+			// shape maps its fill texture at the texture's pixel size, so the
+			// raw decoded image showed only a corner of the art.
+			const tex = findChild(v, "musicArtGlowTexture");
+			verify(tex.sourceItem instanceof Image);
+			compare([tex.width, tex.height], [glow.width, glow.height]);
+			tryCompare(glow, "opacity", 0.6, 1000);
+			const p = art.mapToItem(v, art.width / 2, art.height / 2);
+			mouseMove(v, p.x, p.y);
+			compare(glow.width, art.width + 12);
+			compare([glow.sigma, glow.saturate, glow.brightness], [8, 3, 0.9]);
+			tryCompare(glow, "opacity", 0.7, 1000);
+		}
+
+		// Bloom's main row doesn't clip; only the pill does, so the art's
+		// glow spills into the pill's padding.
+		function test_collapsedArtGlowIsClippedByThePillOnly() {
+			const v = make({ media: playing() });
+			settle(v);
+			let p = findChild(v, "musicArtGlow").parent;
+			while (p && !p.clip) p = p.parent;
+			verify(p, "something clips the row");
+			const pill = findChild(v, "pillArea");
+			const box = p.mapToItem(pill, 0, 0);
+			compare([box.x, box.y, p.width, p.height], [0, 0, pill.width, pill.height]);
+		}
+
 		function test_musicOffFallsBackToStatus() {
 			const v = make({ media: playing() });
 			settle(v);

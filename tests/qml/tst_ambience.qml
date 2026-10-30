@@ -33,7 +33,7 @@ Item {
 		function test_blurScalesWithTheArt() {
 			// CSS applies filter before transform: blur(52px) under scale(1.8).
 			const f = findChild(amb, "glow");
-			fuzzyCompare(f.delta.y * f.height, 52 * 1.8, 0.01);
+			fuzzyCompare(f.sigma, 52 * 1.8, 0.01);
 		}
 
 		function init() {
@@ -48,7 +48,7 @@ Item {
 			verify(moving.zoom >= 1.1, `starts at 1.1, ${moving.zoom}`);
 			// The blur grows with the art.
 			const f = findChild(moving, "glow");
-			fuzzyCompare(f.delta.y * f.height, 52 * moving.zoom, 0.5);
+			fuzzyCompare(f.sigma, 52 * moving.zoom, 0.01);
 			wait(150);
 			verify(moving.zoom > 1.25 && moving.zoom < 1.75, `midway at 150 ms, ${moving.zoom}`);
 			wait(250);
