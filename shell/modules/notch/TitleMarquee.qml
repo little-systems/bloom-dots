@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common/tokens.js" as Tokens
 import "music.js" as Music
+import "../../common/render"
 
 // A track title that scrolls when it doesn't fit (Bloom TitleMarquee): hold,
 // slide to the end, hold, slide back, hold, at 30 px/s and never quicker than
@@ -26,6 +27,7 @@ Item {
 	implicitHeight: label.implicitHeight * root._k
 	clip: true
 	layer.enabled: true
+	layer.textureSize: Render.texture(width, height)
 	layer.effect: MultiEffect {
 		maskEnabled: true
 		maskSource: fade
@@ -78,6 +80,7 @@ Item {
 		anchors.fill: parent
 		visible: false
 		layer.enabled: true
+		layer.textureSize: Render.texture(width, height)
 		Rectangle {
 			anchors.fill: parent
 			gradient: Gradient {

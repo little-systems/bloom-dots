@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/render"
 
 // CSS `filter: blur(σ) saturate() contrast() brightness()` and `opacity` on
 // its children, computed as Chromium does (checked against Bloom's renders):
@@ -21,10 +22,11 @@ Item {
 	property real downscale: 1
 
 	readonly property real _pad: Math.ceil(3 * root.maxSigma)
-	readonly property size _texture: Qt.size(Math.max(1, Math.ceil(source.width / root.downscale)), Math.max(1, Math.ceil(source.height / root.downscale)))
+	readonly property size _texture: Render.texture(source.width / root.downscale, source.height / root.downscale)
 
 	Item {
 		id: source
+		objectName: "filterBlurSource"
 		x: -root._pad
 		y: -root._pad
 		width: root.width + 2 * root._pad
@@ -48,6 +50,7 @@ Item {
 
 	ShaderEffect {
 		id: across
+		objectName: "filterBlurAcross"
 		x: source.x
 		y: source.y
 		width: source.width

@@ -9,10 +9,17 @@ import qs.services
 import "modules/notch"
 import "modules/dock"
 import "modules/osd"
+import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
 ShellRoot {
+	// Layers render at the scale the stages are drawn (common/render).
+	Binding {
+		target: Render
+		property: "scale"
+		value: (Settings.values["bloom-scale"] || 1) * Math.max(1, ...Quickshell.screens.map(s => s.devicePixelRatio || 1))
+	}
 	Component.onCompleted: console.log(`bloom: shell started (theme ${Theme.mode}, settings ${Settings.path})`)
 
 	readonly property var _modules: Settings.values["bloom-enabled-modules"]

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's panel AnimatePresence: each panel arrives with its opacity on a
 // 400/30 spring; the one it replaces fades and blurs out (0 → 4 px) over
@@ -76,6 +77,7 @@ Item {
 			}
 
 			layer.enabled: slot.leaving
+			layer.textureSize: Render.texture(width, height)
 			layer.effect: MultiEffect {
 				blurEnabled: true
 				blurMax: 8

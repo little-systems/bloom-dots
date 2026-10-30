@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Shapes
 import "tokens.js" as Tokens
+import "render"
 
 // Background of a surface attached to a screen edge (notch, dock, OSD): the
 // pill plus two concave flares that bridge it to the edge, as Bloom's
@@ -31,6 +32,7 @@ Item {
 	height: horizontal ? pillHeight : pillHeight + 2 * _f
 
 	layer.enabled: true
+	layer.textureSize: Render.texture(width, height)
 	opacity: color.a
 
 	Rectangle {

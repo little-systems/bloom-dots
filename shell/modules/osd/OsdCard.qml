@@ -4,6 +4,7 @@ import "../../common"
 import "."
 import "../../common/tokens.js" as Tokens
 import "../../common/spring.js" as SpringMath
+import "../../common/render"
 
 // Bloom's volume (left edge) and brightness (right edge) HUDs: Overlay.tsx
 // VolumeNotch, BrightnessNotch and MixerTile, Overlay.css. Drawn at 1x; the
@@ -142,6 +143,7 @@ Item {
 		]
 		// filter: blur(), only while it moves.
 		layer.enabled: blS.value > 0.05
+		layer.textureSize: Render.texture(width, height)
 		layer.effect: MultiEffect {
 			blurEnabled: true
 			blurMax: 24

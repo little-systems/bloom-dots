@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Album art that flips when the track's art changes, like Bloom's
 // AnimatePresence "wait": the old art turns away, then the new one turns in,
@@ -44,6 +45,7 @@ Item {
 		opacity: 1 - Math.abs(root._angle) / 90
 		transform: Scale { origin.x: face.width / 2; xScale: Math.cos(root._angle * Math.PI / 180) }
 		layer.enabled: true
+		layer.textureSize: Render.texture(width, height)
 		layer.effect: MultiEffect {
 			maskEnabled: true
 			maskSource: mask
@@ -84,6 +86,7 @@ Item {
 		anchors.fill: parent
 		visible: false
 		layer.enabled: true
+		layer.textureSize: Render.texture(width, height)
 		Rectangle { anchors.fill: parent; radius: root.radius }
 	}
 }

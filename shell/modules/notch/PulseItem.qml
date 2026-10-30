@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // One AnimatePresence child of Bloom's pulse: enters from opacity 0, scale
 // 0.95, blur 4 px; leaves to 0, 1.05, 4 px. framer gives these values no
@@ -50,6 +51,7 @@ Item {
 		anchors.fill: parent
 		scale: scaleSpring.value
 		layer.enabled: root.blurPx > 0.01
+		layer.textureSize: Render.texture(width, height)
 		layer.effect: MultiEffect {
 			blurEnabled: true
 			blurMax: Tokens.pulse.blurMax

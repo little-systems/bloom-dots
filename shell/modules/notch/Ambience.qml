@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Effects
 import QtQuick.Shapes
 import "../../common/tokens.js" as Tokens
+import "../../common/render"
 
 // Bloom's ambient glow behind the open player (.notch-ambient-glow): the album
 // art, cover-fitted and enlarged 1.8×, under CSS's
@@ -60,6 +61,7 @@ Item {
 		ScriptAction { script: root._show() }
 	}
 	layer.enabled: true
+	layer.textureSize: Render.texture(width, height)
 	layer.effect: MultiEffect {
 		maskEnabled: true
 		maskSource: pillShape
@@ -124,6 +126,7 @@ Item {
 		anchors.fill: parent
 		visible: false
 		layer.enabled: true
+		layer.textureSize: Render.texture(width, height)
 		Rectangle {
 			anchors.fill: parent
 			bottomLeftRadius: root.radius

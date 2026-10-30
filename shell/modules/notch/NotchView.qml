@@ -8,6 +8,7 @@ import "notch.js" as Logic
 import "music.js" as Music
 import "pulses.js" as Pulses
 import "panels.js" as Panels
+import "../../common/render"
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -799,6 +800,7 @@ Item {
 				anchors.fill: parent
 				visible: false
 				layer.enabled: panelLoader.layer.enabled
+				layer.textureSize: Render.texture(width, height)
 
 				Rectangle {
 					anchors.fill: parent
@@ -814,6 +816,7 @@ Item {
 				// Bloom's panels: overflow hidden with the pill's radius. Only
 				// while the pill moves; a mask costs a pass at rest.
 				layer.enabled: active && (!wS.settled || !hS.settled || !farS.settled)
+				layer.textureSize: Render.texture(width, height)
 				layer.effect: MultiEffect {
 					maskEnabled: true
 					maskSource: panelMask
