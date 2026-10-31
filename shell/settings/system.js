@@ -52,6 +52,18 @@ function withOption(overrides, path, value) {
 	return next;
 }
 
+function withoutOption(overrides, path) {
+	const next = JSON.parse(JSON.stringify(overrides));
+	const keys = path.split(".");
+	let node = next;
+	for (const key of keys.slice(0, -1)) {
+		if (!node[key]) return next;
+		node = node[key];
+	}
+	delete node[keys[keys.length - 1]];
+	return next;
+}
+
 function option(overrides, path, fallback) {
 	let node = overrides;
 	for (const key of path.split(".")) {
@@ -117,4 +129,27 @@ function parseInfo(text) {
 		if (at > 0 && line.slice(0, at) in out) out[line.slice(0, at)] = line.slice(at + 1).trim();
 	});
 	return out;
+}
+
+// Options read back from Hyprland as numbers or booleans; floats lose digits.
+function sameValue(a, b) {
+	if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) < 0.01;
+	return a === b;
+}
+
+// `checkupdates; echo exit=$?`. It exits 2 for "nothing to do"; anything else is
+// a failure, which must never read as up to date. -2 means the check failed.
+function parseUpdates(text) {
+	const lines = text.split("\n").filter(l => l.trim() !== "");
+	const last = lines.pop() || "";
+	const m = last.match(/^exit=(\d+)$/);
+	if (!m) return -2;
+	if (m[1] === "2") return 0;
+	return m[1] === "0" ? lines.length : -2;
+}
+
+function updatesLabel(count) {
+	if (count === -1) return "Checking for Updates";
+	if (count === -2) return "Couldn't Check for Updates";
+	return count === 0 ? "Up to Date" : count + (count === 1 ? " Update Available" : " Updates Available");
 }

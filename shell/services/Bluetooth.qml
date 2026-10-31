@@ -15,6 +15,8 @@ Singleton {
 	property var _holders: ({})
 	readonly property bool active: Object.keys(_holders).length > 0
 	property bool available: false
+	// False until the first answer: not yet known isn't the same as absent.
+	property bool loaded: false
 	property bool powered: false
 	property string adapter: ""
 	property var devices: []
@@ -136,6 +138,7 @@ Singleton {
 		stdout: StdioCollector { id: snapshotOut }
 		onExited: code => {
 			const s = code === 0 ? Logic.managed(snapshotOut.text) : Logic.managed("");
+			root.loaded = true;
 			root.available = s.available; root.powered = s.powered; root.adapter = s.adapter; root.devices = s.devices; root.discovering = s.discovering;
 			if (!s.available) root.error = "Bluetooth adapter unavailable";
 			else root.error = "";

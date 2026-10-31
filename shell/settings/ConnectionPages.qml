@@ -20,24 +20,31 @@ Column {
 
 	width: parent.width
 
-	Component.onCompleted: {
-		if (root.page === "network") {
+	// One object serves both pages, so watching follows the page, not the object:
+	// moving Network to Bluetooth must start Bluetooth or it reads as no adapter.
+	property string _watching: ""
+	function _watch(next) {
+		if (next === root._watching) return;
+		if (root._watching === "network") root.net.hold("settings", false);
+		if (root._watching === "bluetooth") {
+			root.bt.discover(false);
+			root.bt.hold("settings", false);
+		}
+		root._watching = next;
+		root._openNet = "";
+		root._openDevice = "";
+		if (next === "network") {
 			root.net.clearError();
 			root.net.hold("settings", true);
 			if (root.net.wifiEnabled) root.net.refresh(true);
-		} else {
+		} else if (next === "bluetooth") {
 			root.bt.clearError();
 			root.bt.hold("settings", true);
 		}
 	}
-	Component.onDestruction: {
-		if (root.page === "network") {
-			root.net.hold("settings", false);
-		} else {
-			root.bt.discover(false);
-			root.bt.hold("settings", false);
-		}
-	}
+	onPageChanged: root._watch(root.page)
+	Component.onCompleted: root._watch(root.page)
+	Component.onDestruction: root._watch("")
 
 	function _wifiIcon(signal) {
 		return signal >= 67 ? "wifi" : signal >= 34 ? "wifi-high" : signal >= 10 ? "wifi-low" : "wifi-zero";
@@ -87,14 +94,14 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "wifi"; label: "Wi-Fi"; divider: false
-				desc: !root.net.wifiEnabled ? "Off" : root.net.connected ? "Connected to " + root.net.ssid : "Not connected"
-				SToggle { objectName: "wifi"; accessibleName: "Wi-Fi"; theme: root.theme; checked: root.net.wifiEnabled; onToggled: root.net.setWifi(!root.net.wifiEnabled) }
+				desc: !root.net.loaded ? "Checking…" : !root.net.available ? "No Wi-Fi adapter found" : !root.net.wifiEnabled ? "Off" : root.net.connected ? "Connected to " + root.net.ssid : "Not connected"
+				SToggle { objectName: "wifi"; accessibleName: "Wi-Fi"; theme: root.theme; enabled: root.net.loaded && root.net.available; checked: root.net.wifiEnabled; onToggled: root.net.setWifi(!root.net.wifiEnabled) }
 			}
 		}
 
-		SGroupLabel { visible: root.net.wifiEnabled; theme: root.theme; text: "Networks" }
+		SGroupLabel { visible: root.net.loaded && root.net.wifiEnabled; theme: root.theme; text: "Networks" }
 		SGroup {
-			visible: root.net.wifiEnabled
+			visible: root.net.loaded && root.net.wifiEnabled
 			theme: root.theme
 			SRow {
 				objectName: "scan"
@@ -202,8 +209,8 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "bluetooth"; label: "Bluetooth"; divider: false
-				desc: !root.bt.available ? "No Bluetooth adapter" : root.bt.powered ? "On" : "Off"
-				SToggle { objectName: "bluetooth"; accessibleName: "Bluetooth"; theme: root.theme; enabled: root.bt.available; checked: root.bt.powered; onToggled: root.bt.setPowered(!root.bt.powered) }
+				desc: !root.bt.loaded ? "Checking…" : root.bt.error ? "Couldn't read Bluetooth" : !root.bt.available ? "No Bluetooth adapter found" : root.bt.powered ? "On" : "Off"
+				SToggle { objectName: "bluetooth"; accessibleName: "Bluetooth"; theme: root.theme; enabled: root.bt.loaded && root.bt.available; checked: root.bt.powered; onToggled: root.bt.setPowered(!root.bt.powered) }
 			}
 		}
 

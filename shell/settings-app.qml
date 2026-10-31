@@ -19,7 +19,6 @@ ShellRoot {
 
 	// What a reset leaves alone: which surfaces run, and the chosen wallpaper.
 	readonly property var _keep: ["bloom-enabled-modules", "bloom-wallpaper", "bloom-wallpaper-dir", "bloom-device-looks"]
-	property bool autostart: false
 	property string version: ""
 	property string exportLabel: "Export Settings"
 	property string importLabel: "Import Settings"
@@ -81,6 +80,14 @@ ShellRoot {
 	}
 
 	SystemStore { id: store }
+	// Settings.set reports a refused write; dropping that would show a change
+	// that never happened.
+	property string saveError: ""
+	QtObject {
+		id: checkedStore
+		readonly property var values: Settings.values
+		function set(key, value) { app.saveError = Settings.set(key, value) || ""; }
+	}
 	Binding {
 		target: Render
 		property: "reduceMotion"
@@ -106,17 +113,16 @@ ShellRoot {
 			scale: win.uiScale
 			transformOrigin: Item.TopLeft
 			theme: Theme
-			store: Settings
-			autostart: app.autostart
+			store: checkedStore
+			saveError: app.saveError
+			onErrorDismissed: app.saveError = ""
+			autostart: store.autostart
 			version: app.version
 			exportLabel: app.exportLabel
 			importLabel: app.importLabel
 			onCloseRequested: Qt.quit()
 			onDragRequested: win.startSystemMove()
-			onAutostartToggled: enabled => {
-				app.run(["systemctl", "--user", enabled ? "enable" : "disable", "bloom-shell"]);
-				app.autostart = enabled;
-			}
+			onAutostartToggled: enabled => store.setAutostart(enabled)
 			onResetConfirmed: app.reset()
 			onRestartRequested: app.run(["systemctl", "--user", "restart", "bloom-shell"])
 			onQuitRequested: app.run(["systemctl", "--user", "stop", "bloom-shell"])
@@ -192,11 +198,6 @@ ShellRoot {
 
 	Process {
 		running: true
-		command: ["systemctl", "--user", "is-enabled", "bloom-shell"]
-		stdout: StdioCollector { onStreamFinished: app.autostart = text.trim() === "enabled" }
-	}
-	Process {
-		running: true
 		command: ["cat", Quickshell.shellPath("../VERSION")]
 		stdout: StdioCollector { onStreamFinished: app.version = text.trim() }
 	}
@@ -204,7 +205,7 @@ ShellRoot {
 	IpcHandler {
 		target: "settingsapp"
 		function state(): string {
-			return JSON.stringify({ tab: view.tab, autostart: app.autostart, version: app.version, width: win.implicitWidth });
+			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version, width: win.implicitWidth });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
 		function preview(open: bool): string {

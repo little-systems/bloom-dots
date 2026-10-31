@@ -45,6 +45,9 @@ Item {
 		property var monitors: [{ name: "eDP-1", description: "Panel", width: 1920, height: 1080, refreshRate: 60.05, scale: 1, x: 0, y: 0, availableModes: ["1920x1080@60.05Hz", "1280x720@60.00Hz"] }]
 		property var disks: [{ path: "/", size: 2e11, used: 1e11 }]
 		property var hypr: ({})
+		property bool hyprLoaded: true
+		property string lastError: ""
+		function clearError() { lastError = ""; }
 		property var hyprLive: ({ "general.gaps_in": 9 })
 		property var pendingDisplay: null
 		property int pendingSeconds: 15
@@ -81,6 +84,8 @@ Item {
 	}
 	QtObject {
 		id: fakeNet
+		property bool loaded: true
+		property bool available: true
 		property bool wifiEnabled: true
 		property bool connected: true
 		property string ssid: "Home"
@@ -93,7 +98,8 @@ Item {
 		]
 		property var calls: []
 		function clearError() { lastError = null; }
-		function hold(k, w) {}
+		property var holds: []
+		function hold(k, w) { holds.push(w); }
 		function refresh(r) { calls.push(["refresh"]); }
 		function setWifi(on) { calls.push(["wifi", on]); }
 		function connect(s, p) { calls.push(["connect", s, p]); }
@@ -102,6 +108,8 @@ Item {
 	}
 	QtObject {
 		id: fakeBt
+		property bool loaded: true
+		property string error: ""
 		property bool available: true
 		property bool powered: true
 		property bool discovering: false
@@ -112,8 +120,9 @@ Item {
 		property var paired: [{ path: "/a", name: "Buds", connected: false, icon: "audio-headset" }]
 		property var nearby: [{ path: "/b", name: "Mouse", icon: "input-mouse" }]
 		property var calls: []
+		property var holds: []
 		function clearError() {}
-		function hold(k, w) {}
+		function hold(k, w) { holds.push(w); }
 		function discover(w) { calls.push(["discover", w]); }
 		function setPowered(on) {}
 		function setConnected(p, w) { calls.push(["connected", p, w]); }
@@ -566,9 +575,11 @@ Item {
 			const v = make("bluetooth");
 			click(v, "device:Buds");
 			click(v, "deviceConnect:Buds");
-			compare(fakeBt.calls[0], ["connected", "/a", true]);
+			// The last test's page stops discovery as it goes.
+			const calls = () => fakeBt.calls.filter(c => c[0] !== "discover");
+			compare(calls()[0], ["connected", "/a", true]);
 			click(v, "nearby:Mouse");
-			compare(fakeBt.calls[1], ["pair", "/b"]);
+			compare(calls()[1], ["pair", "/b"]);
 		}
 
 		function test_pairingConfirm() {
@@ -578,9 +589,60 @@ Item {
 			fakeBt.prompt = { kind: "confirm", pin: "123456" };
 			compare(part(v, "pairPrompt").text, "Does the device show 123456?");
 			click(v, "pairYes");
-			compare(fakeBt.calls[0][0], "respond");
+			compare(fakeBt.calls.filter(c => c[0] !== "discover")[0][0], "respond");
 			fakeBt.pairing = "";
 			fakeBt.prompt = null;
+		}
+
+		// The same page object serves both tabs.
+		function test_movingToBluetoothStartsWatchingIt() {
+			const v = make("network");
+			fakeBt.holds = [];
+			fakeNet.holds = [];
+			v.tab = "bluetooth";
+			compare(fakeNet.holds, [false]);
+			compare(fakeBt.holds, [true]);
+		}
+
+		function test_notYetKnownIsNotAbsent() {
+			const v = make("bluetooth");
+			fakeBt.loaded = false;
+			fakeBt.available = false;
+			compare(findChild(part(v, "row:Bluetooth"), "desc").text, "Checking…");
+			verify(!part(v, "bluetooth").enabled);
+			fakeBt.loaded = true;
+			compare(findChild(part(v, "row:Bluetooth"), "desc").text, "No Bluetooth adapter found");
+			fakeBt.available = true;
+		}
+
+		function test_noInventedHyprlandValues() {
+			const v = make("hyprland");
+			fakeSys.hyprLoaded = false;
+			verify(part(v, "hyprNotice").visible);
+			verify(!part(v, "gapsIn").enabled);
+			verify(!part(v, "animations").enabled);
+			fakeSys.hyprLoaded = true;
+			verify(part(v, "gapsIn").enabled);
+		}
+
+		function test_failuresAreShown() {
+			const v = make();
+			verify(!part(v, "errorBanner").visible);
+			fakeSys.lastError = "Couldn't change automatic time";
+			verify(part(v, "errorBanner").visible);
+			compare(part(v, "errorText").text, "Couldn't change automatic time");
+			fakeSys.lastError = "";
+			v.saveError = "bloom-scale: too big";
+			compare(part(v, "errorText").text, "bloom-scale: too big");
+		}
+
+		function test_ntpWaitsForTheSystem() {
+			fakeSys.calls = [];
+			fakeSys.ntp = false;
+			const v = make("time");
+			click(v, "ntp");
+			compare(fakeSys.calls, [["ntp", true]]);
+			verify(!part(v, "ntp").checked, "stays until the read-back says otherwise");
 		}
 
 		function test_closeSignals() {

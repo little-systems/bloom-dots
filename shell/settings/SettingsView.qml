@@ -33,6 +33,8 @@ Rectangle {
 	property var bt
 	signal cheatsheetRequested()
 
+	property string saveError: ""
+	signal errorDismissed()
 	signal cityQueried(string text)
 	signal addFolderRequested()
 	signal closeRequested()
@@ -317,6 +319,48 @@ Rectangle {
 				y: Tokens.settings.content.top
 				width: parent.width - 2 * Tokens.settings.content.h
 
+				// Bloom's .settings-save-error, for anything that didn't take effect.
+				Rectangle {
+					objectName: "errorBanner"
+					readonly property string message: root.saveError || (root.sys ? root.sys.lastError : "") || ""
+					visible: message !== ""
+					width: parent.width
+					height: visible ? errorText.implicitHeight + 22 : 0
+					radius: 10
+					color: Qt.rgba(239 / 255, 96 / 255, 96 / 255, 0.12)
+					border.width: 1
+					border.color: Qt.rgba(239 / 255, 96 / 255, 96 / 255, 0.45)
+					Accessible.role: Accessible.AlertMessage
+					Accessible.name: message
+
+					Text {
+						id: errorText
+						objectName: "errorText"
+						x: 12
+						y: 11
+						width: parent.width - 48
+						text: parent.message
+						textFormat: Text.PlainText
+						wrapMode: Text.Wrap
+						color: root.theme.text
+						font.family: Fonts.ui
+						font.pixelSize: 12
+					}
+					SvgIcon {
+						x: parent.width - width - 12
+						anchors.verticalCenter: parent.verticalCenter
+						name: "x"
+						size: 14
+						color: root.theme.text
+						TapHandler {
+							onTapped: {
+								root.errorDismissed();
+								if (root.sys) root.sys.clearError();
+							}
+						}
+						HoverHandler { cursorShape: Qt.PointingHandCursor }
+					}
+				}
 				Column {
 					width: parent.width
 					leftPadding: Tokens.settings.heading.h

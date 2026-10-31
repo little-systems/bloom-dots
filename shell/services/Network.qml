@@ -11,6 +11,8 @@ Singleton {
 	property var _holders: ({})
 	readonly property bool active: Object.keys(_holders).length > 0
 	property bool available: false
+	// False until the first answer: not yet known isn't the same as absent.
+	property bool loaded: false
 	property bool wifiEnabled: false
 	property bool connected: false
 	property string ssid: ""
@@ -100,6 +102,7 @@ Singleton {
 		stdout: StdioCollector { id: statusOut }
 		onExited: code => {
 			root.available = code === 0;
+			root.loaded = true;
 			if (code === 0) {
 				const s = Logic.status(statusOut.text);
 				root.wifiEnabled = s.wifiEnabled;

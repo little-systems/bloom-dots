@@ -30,6 +30,7 @@ Item {
 	property real value: 0
 	signal moved(real value)
 
+	opacity: root.enabled ? 1 : 0.4
 	width: Tokens.settings.slider.width
 	height: Tokens.settings.slider.thumb
 	readonly property real _fraction: (root.value - root.from) / (root.to - root.from)
@@ -58,7 +59,8 @@ Item {
 	}
 	MouseArea {
 		anchors.fill: parent
-		cursorShape: Qt.PointingHandCursor
+		enabled: root.enabled
+		cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
 		onPressed: mouse => root.moved(root._fromX(mouse.x))
 		onPositionChanged: mouse => { if (pressed) root.moved(root._fromX(mouse.x)); }
 	}

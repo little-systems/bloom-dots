@@ -42,4 +42,23 @@ TestCase {
 	function test_infoSurvivesAMissingTool() {
 		compare(Sys.parseInfo("kernel=7.2\ncpu=Intel = fast\nmemory=11.5 GB\n"), { hostname: "", kernel: "7.2", cpu: "Intel = fast", memory: "11.5 GB" });
 	}
+
+	function test_updatesNeverFakeUpToDate() {
+		compare(Sys.parseUpdates("a 1 -> 2\nb 1 -> 2\nexit=0\n"), 2);
+		compare(Sys.parseUpdates("exit=2\n"), 0);
+		compare(Sys.parseUpdates("exit=1\n"), -2);
+		compare(Sys.parseUpdates(""), -2);
+		compare(Sys.updatesLabel(-1), "Checking for Updates");
+		compare(Sys.updatesLabel(-2), "Couldn't Check for Updates");
+		compare(Sys.updatesLabel(0), "Up to Date");
+		compare(Sys.updatesLabel(1), "1 Update Available");
+	}
+
+	function test_readBack() {
+		verify(Sys.sameValue(0.7, 0.700001));
+		verify(!Sys.sameValue(4, 5));
+		verify(Sys.sameValue(true, true));
+		verify(!Sys.sameValue(undefined, 4));
+		compare(Sys.withoutOption({ general: { gaps_in: 1, gaps_out: 2 } }, "general.gaps_in"), { general: { gaps_out: 2 } });
+	}
 }

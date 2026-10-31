@@ -22,6 +22,7 @@ Column {
 		const value = Sys.option(root._h, path, undefined);
 		return value !== undefined ? value : root.sys.hyprLive[path] ?? fallback;
 	}
+	readonly property bool _hyprKnown: root.sys.hyprLoaded
 
 	component Page: Column {
 		required property string pageId
@@ -29,6 +30,19 @@ Column {
 		visible: root.page === pageId
 		width: root.width
 	}
+	// Input and Windows only show what Hyprland reported; without that they show
+	// this and lock, rather than offering made-up values.
+	component HyprNotice: Text {
+		visible: !root.sys.hyprLoaded
+		width: parent.width
+		bottomPadding: 12
+		leftPadding: 6
+		text: "Couldn't read Hyprland's settings, so these are locked."
+		color: "#ff8a80"
+		font.family: Fonts.ui
+		font.pixelSize: 12
+	}
+
 	Page {
 		pageId: "display"
 		// Nothing a bad mode can't undo by itself: no answer puts it back.
@@ -205,16 +219,17 @@ Column {
 
 	Page {
 		pageId: "input"
+		HyprNotice {}
 		SGroupLabel { theme: root.theme; text: "Keyboard"; above: 0 }
 		SGroup {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Repeat Delay"; desc: root.hOpt("input.repeat_delay", 250) + " ms before a held key repeats"
-				SSlider { accessibleName: "Repeat Delay"; theme: root.theme; from: 100; to: 800; step: 25; value: root.hOpt("input.repeat_delay", 250); onMoved: value => root.sys.setHypr("input.repeat_delay", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Repeat Delay"; theme: root.theme; from: 100; to: 800; step: 25; value: root.hOpt("input.repeat_delay", 250); onMoved: value => root.sys.setHypr("input.repeat_delay", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Repeat Rate"; desc: root.hOpt("input.repeat_rate", 35) + " characters a second"; divider: false
-				SSlider { accessibleName: "Repeat Rate"; objectName: "repeatRate"; theme: root.theme; from: 10; to: 60; step: 5; value: root.hOpt("input.repeat_rate", 35); onMoved: value => root.sys.setHypr("input.repeat_rate", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Repeat Rate"; objectName: "repeatRate"; theme: root.theme; from: 10; to: 60; step: 5; value: root.hOpt("input.repeat_rate", 35); onMoved: value => root.sys.setHypr("input.repeat_rate", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Touchpad" }
@@ -222,15 +237,15 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "mouse-pointer-2"; label: "Natural Scrolling"; desc: "Content follows your fingers"
-				SToggle { accessibleName: "Natural Scrolling"; objectName: "natural"; theme: root.theme; checked: root.hOpt("input.touchpad.natural_scroll", true); onToggled: value => root.sys.setHypr("input.touchpad.natural_scroll", value) }
+				SToggle { enabled: root._hyprKnown; accessibleName: "Natural Scrolling"; objectName: "natural"; theme: root.theme; checked: root.hOpt("input.touchpad.natural_scroll", true); onToggled: value => root.sys.setHypr("input.touchpad.natural_scroll", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Disable While Typing"; desc: "Ignore the touchpad as you type"
-				SToggle { accessibleName: "Disable While Typing"; theme: root.theme; checked: root.hOpt("input.touchpad.disable_while_typing", true); onToggled: value => root.sys.setHypr("input.touchpad.disable_while_typing", value) }
+				SToggle { enabled: root._hyprKnown; accessibleName: "Disable While Typing"; theme: root.theme; checked: root.hOpt("input.touchpad.disable_while_typing", true); onToggled: value => root.sys.setHypr("input.touchpad.disable_while_typing", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "sliders-vertical"; label: "Scroll Speed"; desc: Math.round(root.hOpt("input.touchpad.scroll_factor", 0.7) * 100) + "%"; divider: false
-				SSlider { accessibleName: "Scroll Speed"; theme: root.theme; from: 0.1; to: 2; step: 0.1; value: root.hOpt("input.touchpad.scroll_factor", 0.7); onMoved: value => root.sys.setHypr("input.touchpad.scroll_factor", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Scroll Speed"; theme: root.theme; from: 0.1; to: 2; step: 0.1; value: root.hOpt("input.touchpad.scroll_factor", 0.7); onMoved: value => root.sys.setHypr("input.touchpad.scroll_factor", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Mouse" }
@@ -238,31 +253,32 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "mouse-pointer-2"; label: "Pointer Speed"; desc: root.hOpt("input.sensitivity", 0).toFixed(1); divider: false
-				SSlider { accessibleName: "Pointer Speed"; theme: root.theme; from: -1; to: 1; step: 0.1; value: root.hOpt("input.sensitivity", 0); onMoved: value => root.sys.setHypr("input.sensitivity", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Pointer Speed"; theme: root.theme; from: -1; to: 1; step: 0.1; value: root.hOpt("input.sensitivity", 0); onMoved: value => root.sys.setHypr("input.sensitivity", value) }
 			}
 		}
 	}
 
 	Page {
 		pageId: "hyprland"
+		HyprNotice { objectName: "hyprNotice" }
 		SGroupLabel { theme: root.theme; text: "Windows"; above: 0 }
 		SGroup {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "layout-grid"; label: "Inner Gaps"; desc: root.hOpt("general.gaps_in", 4) + " px between windows"
-				SSlider { accessibleName: "Inner Gaps"; objectName: "gapsIn"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("general.gaps_in", 4); onMoved: value => root.sys.setHypr("general.gaps_in", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Inner Gaps"; objectName: "gapsIn"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("general.gaps_in", 4); onMoved: value => root.sys.setHypr("general.gaps_in", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "layout-grid"; label: "Outer Gaps"; desc: root.hOpt("general.gaps_out", 5) + " px around the screen"
-				SSlider { accessibleName: "Outer Gaps"; theme: root.theme; from: 0; to: 40; step: 1; value: root.hOpt("general.gaps_out", 5); onMoved: value => root.sys.setHypr("general.gaps_out", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Outer Gaps"; theme: root.theme; from: 0; to: 40; step: 1; value: root.hOpt("general.gaps_out", 5); onMoved: value => root.sys.setHypr("general.gaps_out", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "square"; label: "Border Size"; desc: root.hOpt("general.border_size", 1) + " px"
-				SSlider { accessibleName: "Border Size"; theme: root.theme; from: 0; to: 6; step: 1; value: root.hOpt("general.border_size", 1); onMoved: value => root.sys.setHypr("general.border_size", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Border Size"; theme: root.theme; from: 0; to: 6; step: 1; value: root.hOpt("general.border_size", 1); onMoved: value => root.sys.setHypr("general.border_size", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "square"; label: "Corner Rounding"; desc: root.hOpt("decoration.rounding", 18) + " px"; divider: false
-				SSlider { accessibleName: "Corner Rounding"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("decoration.rounding", 18); onMoved: value => root.sys.setHypr("decoration.rounding", value) }
+				SSlider { enabled: root._hyprKnown; accessibleName: "Corner Rounding"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("decoration.rounding", 18); onMoved: value => root.sys.setHypr("decoration.rounding", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Effects" }
@@ -270,11 +286,11 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "sparkles"; label: "Animations"; desc: "Window and workspace motion"
-				SToggle { accessibleName: "Animations"; objectName: "animations"; theme: root.theme; checked: root.hOpt("animations.enabled", true); onToggled: value => root.sys.setHypr("animations.enabled", value) }
+				SToggle { enabled: root._hyprKnown; accessibleName: "Animations"; objectName: "animations"; theme: root.theme; checked: root.hOpt("animations.enabled", true); onToggled: value => root.sys.setHypr("animations.enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "droplets"; label: "Blur"; desc: "Behind translucent surfaces"; divider: false
-				SToggle { accessibleName: "Blur"; theme: root.theme; checked: root.hOpt("decoration.blur.enabled", true); onToggled: value => root.sys.setHypr("decoration.blur.enabled", value) }
+				SToggle { enabled: root._hyprKnown; accessibleName: "Blur"; theme: root.theme; checked: root.hOpt("decoration.blur.enabled", true); onToggled: value => root.sys.setHypr("decoration.blur.enabled", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Keyboard Shortcuts" }
@@ -323,7 +339,7 @@ Column {
 			SRow {
 				objectName: "runUpdates"
 				theme: root.theme; icon: "package"; action: true; divider: false
-				label: root.sys.updates < 0 ? "Checking for Updates" : root.sys.updates === 0 ? "Up to Date" : root.sys.updates + " Updates Available"
+				label: Sys.updatesLabel(root.sys.updates)
 				desc: "Open a terminal and run pacman"
 				onClicked: root.sys.runUpdates()
 			}

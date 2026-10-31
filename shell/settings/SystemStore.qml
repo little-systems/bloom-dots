@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Pipewire
+import Quickshell.Services.UPower
 import qs.services
 import "system.js" as Sys
 
@@ -24,6 +25,13 @@ Scope {
 	property var hypr: ({})
 	property var hyprLive: ({})
 	property var pendingDisplay: null
+	// Only what was read back counts: false until the first read says otherwise.
+	property bool hyprLoaded: false
+	property bool autostart: false
+	property bool autostartLoaded: false
+	property string lastError: ""
+	property var _checks: []
+	property var _queue: []
 	property int pendingSeconds: 0
 	property var _monitorLines: []
 
@@ -35,7 +43,8 @@ Scope {
 	readonly property var mixer: Audio.mixerRows
 	readonly property bool brightnessAvailable: Brightness.available
 	readonly property real brightness: Brightness.percent / 100
-	readonly property string powerMode: Battery.powerMode
+	readonly property string powerMode: PowerProfiles.profile === PowerProfile.PowerSaver ? "power-saver"
+		: PowerProfiles.profile === PowerProfile.Performance ? "performance" : "balanced"
 	readonly property bool batteryAvailable: Battery.available
 	readonly property int batteryLevel: Battery.level
 
@@ -50,16 +59,44 @@ Scope {
 	function setBrightness(v) { Brightness.setPercent(v * 100); }
 	function setSink(name) { Pipewire.preferredDefaultAudioSink = root.sinks.find(n => n.name === name) ?? null; }
 	function setSource(name) { Pipewire.preferredDefaultAudioSource = root.sources.find(n => n.name === name) ?? null; }
-	function setPowerMode(mode) { Quickshell.execDetached(["powerprofilesctl", "set", mode]); }
-	function setNtp(on) {
-		Quickshell.execDetached(["timedatectl", "set-ntp", on ? "true" : "false"]);
-		root.ntp = on;
+	function setPowerMode(mode) {
+		PowerProfiles.profile = mode === "power-saver" ? PowerProfile.PowerSaver : mode === "performance" ? PowerProfile.Performance : PowerProfile.Balanced;
 	}
-	function setDefault(mime, desktopId) { Quickshell.execDetached(["xdg-mime", "default", desktopId, mime]); }
+	// The switch only moves when the read-back says so.
+	function setNtp(on) {
+		root._run(["timedatectl", "set-ntp", on ? "true" : "false"], "Couldn't change automatic time", () => { timeProc.running = true; });
+	}
+	function setAutostart(on) {
+		root._run(["systemctl", "--user", on ? "enable" : "disable", "bloom-shell"], "Couldn't change Launch at Login", () => { autostartProc.running = true; });
+	}
+	function clearError() { root.lastError = ""; }
+	// One at a time, in order, so a failure belongs to the change that caused it.
+	function _run(argv, failure, after) {
+		root._queue = root._queue.concat([{ argv: argv, failure: failure, after: after }]);
+		root._next();
+	}
+	function _next() {
+		if (actionProc.running || root._queue.length === 0) return;
+		actionProc.job = root._queue[0];
+		root._queue = root._queue.slice(1);
+		actionProc.command = actionProc.job.argv;
+		actionProc.running = true;
+	}
 	function runUpdates() { Quickshell.execDetached(["kitty", "-e", "sudo", "pacman", "-Syu"]); }
+	// Shown at once for the slider's sake, kept only if Hyprland reads it back.
 	function setHypr(path, value) {
 		root.hypr = Sys.withOption(root.hypr, path, value);
+		root._checks = root._checks.filter(c => c.path !== path).concat([{ path: path, value: value }]);
 		Quickshell.execDetached(["hyprctl", "eval", Sys.hyprConfig(Sys.withOption({}, path, value))]);
+		verifyTimer.restart();
+	}
+	function _settle() {
+		const failed = root._checks.filter(c => !Sys.sameValue(root.hyprLive[c.path], c.value));
+		root._checks = [];
+		if (failed.length) {
+			failed.forEach(c => { root.hypr = Sys.withoutOption(root.hypr, c.path); });
+			root.lastError = "Hyprland didn't accept that change: " + failed.map(c => c.path).join(", ");
+		}
 		root._save();
 	}
 	// Tried first, saved only on Keep: an unusable mode reverts by itself.
@@ -68,11 +105,11 @@ Scope {
 			root.pendingDisplay = { name: monitor.name, line: Sys.monitorLine(monitor, Sys.currentMode(monitor), monitor.scale) };
 		}
 		const line = Sys.monitorLine(monitor, mode, scale);
-		root.pendingDisplay = Object.assign({}, root.pendingDisplay, { next: line });
+		root.pendingDisplay = Object.assign({}, root.pendingDisplay, { next: line, mode: mode, scale: Number(scale) });
 		root.pendingSeconds = 15;
 		pendingTimer.restart();
 		Quickshell.execDetached(["hyprctl", "eval", line]);
-		monitorsProc.running = true;
+		displayCheck.restart();
 	}
 	function keepDisplay() {
 		const pending = root.pendingDisplay;
@@ -103,6 +140,36 @@ Scope {
 		stateProc.running = true;
 	}
 
+	Process {
+		id: actionProc
+		property var job: null
+		onExited: code => {
+			if (code !== 0) root.lastError = actionProc.job.failure;
+			if (actionProc.job.after) actionProc.job.after();
+			Qt.callLater(root._next);
+		}
+	}
+	Process {
+		id: autostartProc
+		running: true
+		command: ["systemctl", "--user", "is-enabled", "bloom-shell"]
+		stdout: StdioCollector {
+			onStreamFinished: {
+				root.autostart = text.trim() === "enabled";
+				root.autostartLoaded = true;
+			}
+		}
+	}
+	Timer {
+		id: verifyTimer
+		interval: 300
+		onTriggered: optionsProc.running = true
+	}
+	Timer {
+		id: displayCheck
+		interval: 500
+		onTriggered: monitorsProc.running = true
+	}
 	Timer {
 		id: pendingTimer
 		interval: 1000
@@ -115,7 +182,13 @@ Scope {
 	Process {
 		id: optionsProc
 		command: ["sh", "-c", "for o in " + Sys.OPTIONS.join(" ") + "; do printf '%s|' \"$o\"; hyprctl getoption \"$(printf %s \"$o\" | tr . :)\" | head -1; done"]
-		stdout: StdioCollector { onStreamFinished: root.hyprLive = Sys.parseOptions(text) }
+		stdout: StdioCollector {
+			onStreamFinished: {
+				root.hyprLive = Sys.parseOptions(text);
+				root.hyprLoaded = Object.keys(root.hyprLive).length > 0;
+				if (root._checks.length) root._settle();
+			}
+		}
 	}
 	Process {
 		id: stateProc
@@ -136,6 +209,12 @@ Scope {
 		stdout: StdioCollector {
 			onStreamFinished: {
 				try { root.monitors = JSON.parse(text); } catch (e) { root.monitors = []; }
+				const p = root.pendingDisplay;
+				const m = p && p.mode ? root.monitors.find(x => x.name === p.name) : null;
+				if (m && (Sys.currentMode(m) !== p.mode || Math.abs(m.scale - p.scale) > 0.01)) {
+					root.lastError = "That display mode didn't apply, so it was put back";
+					root.revertDisplay();
+				}
 			}
 		}
 	}
@@ -170,8 +249,8 @@ Scope {
 	}
 	Process {
 		id: updatesProc
-		command: ["sh", "-c", "${BLOOM_CHECKUPDATES:-checkupdates} | wc -l"]
-		stdout: StdioCollector { onStreamFinished: root.updates = Number(text.trim()) }
+		command: ["sh", "-c", "${BLOOM_CHECKUPDATES:-checkupdates} 2>/dev/null; echo exit=$?"]
+		stdout: StdioCollector { onStreamFinished: root.updates = Sys.parseUpdates(text) }
 	}
 	Process {
 		id: defaultsProc
