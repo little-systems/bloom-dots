@@ -14,6 +14,7 @@ import "modules/session"
 import "modules/overview"
 import "modules/polkit"
 import "modules/lock"
+import "modules/cheatsheet"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -84,6 +85,17 @@ ShellRoot {
 	}
 
 	// Exclusive with any other polkit agent: only one can register (§3.4).
+	LazyLoader {
+		active: _modules.indexOf("cheatsheet") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/cheatsheet/CheatsheetWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
 	LazyLoader {
 		id: lockLoader
 		active: _modules.indexOf("lock") >= 0
@@ -385,6 +397,16 @@ ShellRoot {
 	}
 
 	// The agent's state, never what's typed: passwords don't come through IPC.
+	IpcHandler {
+		target: "cheatsheet"
+
+		function toggle(): string { Cheatsheet.toggle(); return "ok"; }
+		function close(): string { Cheatsheet.hide(); return "ok"; }
+		function state(): string {
+			return JSON.stringify({ opened: Cheatsheet.opened, groups: Cheatsheet.groups.length, binds: Cheatsheet.groups.reduce((n, g) => n + g.binds.length, 0) });
+		}
+	}
+
 	IpcHandler {
 		target: "lock"
 

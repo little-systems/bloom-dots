@@ -235,6 +235,22 @@ var session = {
 	note: 12
 };
 
+// The keybind cheatsheet (Phase 7): the launcher's card, in three columns.
+var cheatsheet = {
+	width: 1080,
+	margin: 48,
+	padding: 20,
+	gap: 20,
+	rowGap: 7,
+	title: 14,
+	text: 12,
+	cap: 11,
+	capGap: 3,
+	capPadding: 6,
+	capHeight: 20,
+	capRadius: 6
+};
+
 // The workspace overview (Phase 6): the launcher's card over a grid of
 // workspaces, with Bloom's tile radii.
 var overview = {
