@@ -32,6 +32,7 @@ PanelWindow {
 		scale: win.uiScale
 		transformOrigin: Item.TopLeft
 		theme: Theme
+		accent: Theme.accent
 		results: Launcher.results
 		onQueryEdited: text => Launcher.setQuery(text)
 		onChosen: item => Launcher.accept(item)
