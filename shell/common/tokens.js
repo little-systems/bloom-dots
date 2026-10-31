@@ -225,6 +225,16 @@ var launcher = {
 	exitMs: 120
 };
 
+// The session menu (Phase 6): the launcher's card, Command Center's round buttons.
+var session = {
+	padding: 18,
+	gap: 14,
+	label: 11,
+	labelGap: 8,
+	cell: 84,
+	note: 12
+};
+
 // Notch panels, copied from Bloom @ b5fb962 (App.css, components/QuickPanel.css).
 // Each group names the CSS rule it comes from.
 

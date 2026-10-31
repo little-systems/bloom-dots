@@ -10,6 +10,7 @@ import "modules/notch"
 import "modules/dock"
 import "modules/osd"
 import "modules/launcher"
+import "modules/session"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -51,6 +52,18 @@ ShellRoot {
 			delegate: Loader {
 				required property var modelData
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/launcher/LauncherWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	LazyLoader {
+		id: sessionLoader
+		active: _modules.indexOf("session") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/session/SessionWindow.qml"), { modelData: modelData })
 			}
 		}
 	}
@@ -322,6 +335,15 @@ ShellRoot {
 		function state(): string {
 			return JSON.stringify({ opened: Launcher.opened, query: Launcher.query, results: Launcher.results.map(r => ({ id: r.id, name: r.name, sub: r.sub })) });
 		}
+	}
+
+	IpcHandler {
+		target: "session"
+
+		function toggle(): string { Session.toggle(); return "ok"; }
+		function close(): string { Session.hide(); return "ok"; }
+		function run(action: string): string { return Session.run(action); }
+		function state(): string { return JSON.stringify({ opened: Session.opened, busy: Session.busy }); }
 	}
 
 	IpcHandler {

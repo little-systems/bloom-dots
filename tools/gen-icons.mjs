@@ -9,7 +9,7 @@ const ICONS = [
 	"calendar-days", "timer", "folder", "usb", "mic", "screen-share", "bell-off", "bell", "rotate-ccw", "lock-keyhole", "monitor-smartphone", "laptop",
 	"loader-circle", "refresh-cw", "plus", "bell-ring",
 	"wifi-high", "wifi-low", "wifi-zero", "lock", "headphones", "smartphone", "keyboard", "mouse", "gamepad-2", "watch",
-	"type", "file", "file-image", "file-video-camera", "file-music", "file-spreadsheet", "presentation", "file-text", "file-archive", "file-code", "app-window", "disc", "file-type"
+	"type", "log-out", "power", "file", "file-image", "file-video-camera", "file-music", "file-spreadsheet", "presentation", "file-text", "file-archive", "file-code", "app-window", "disc", "file-type"
 ];
 
 const root = new URL("../", import.meta.url);
