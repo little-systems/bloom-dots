@@ -1,6 +1,6 @@
 # Lock screen recovery
 
-**Read this before the first live test.** Bloom's lock has not replaced hyprlock until the owner approves that step.
+**Status:** Bloom's lock became the real lock on 2026-10-31, through `lock_cmd` in `~/.config/hypr/hypridle.conf` (backup: `~/Projects/hypridle.conf.bloom-backup-20261031-201935`). hyprlock stays the fallback.
 
 Hyprland holds the lock, not the shell. If the lock surface dies the session stays locked and shows a solid colour until a lock client takes over. Nothing below needs the graphical session to work.
 

@@ -251,7 +251,7 @@ var overview = {
 // The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
 var lock = {
 	message: 12,
-	blur: { sigma: 30, zoom: 1.1, zoomMs: 400, dim: 0.3, spill: 100, downscale: 4, settleMs: 100 },
+	blur: { sigma: 30, dim: 0.3, spill: 100, downscale: 4, settleMs: 100 },
 	clock: {
 		size: 230, top: 0.2, sides: 9, depth: 0.055, turnMs: 60000,
 		hour: { length: 0.5, width: 14 },
@@ -267,6 +267,7 @@ var lock = {
 		enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.9 }
 	},
 	shake: { ms: 60, steps: [-10, 8, -5, 0] },
+	enter: { coverMs: 250, maxMs: 500 },
 	leave: { viewMs: 200, ms: 400, returnMs: 150 },
 	capsPollMs: 500,
 	clearMs: 10000

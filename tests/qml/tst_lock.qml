@@ -27,6 +27,13 @@ TestCase {
 		compare(Lock.wallpaperFrom("nope"), "");
 	}
 
+	function test_wallpaperZoomFromIi() {
+		compare(Lock.wallpaperZoomFrom('{"background":{"parallax":{"workspaceZoom":1.04}}}'), 1.04);
+		compare(Lock.wallpaperZoomFrom("{}"), 1);
+		compare(Lock.wallpaperZoomFrom('{"background":{"parallax":{"workspaceZoom":0}}}'), 1);
+		compare(Lock.wallpaperZoomFrom("nope"), 1);
+	}
+
 	function test_hands() {
 		compare(Lock.hands(new Date(2026, 9, 31, 3, 0, 0)), { hour: 90, minute: 0, second: 0 });
 		compare(Lock.hands(new Date(2026, 9, 31, 15, 30, 0)), { hour: 105, minute: 180, second: 0 });

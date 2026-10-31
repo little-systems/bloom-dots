@@ -27,6 +27,17 @@ function wallpaperFrom(iiConfigJson) {
 	}
 }
 
+// ii draws the wallpaper this much past the screen; matching it keeps the
+// picture still as the blur comes in.
+function wallpaperZoomFrom(iiConfigJson) {
+	try {
+		const zoom = JSON.parse(iiConfigJson).background.parallax.workspaceZoom;
+		return zoom >= 1 ? zoom : 1;
+	} catch (e) {
+		return 1;
+	}
+}
+
 function hands(time) {
 	const seconds = time.getSeconds();
 	const minutes = time.getMinutes() + seconds / 60;

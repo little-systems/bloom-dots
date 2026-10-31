@@ -36,6 +36,7 @@ Scope {
 	property string _pamNotice: ""
 	property string _pending: ""
 	property bool _leaving: false
+	property bool _covered: false
 	property var _saved: ({})
 	signal failed()
 
@@ -52,6 +53,7 @@ Scope {
 	}
 	function _engage() {
 		root._now = new Date();
+		root._covered = false;
 		session.locked = true;
 	}
 	function _dispatch(script) {
@@ -60,7 +62,7 @@ Scope {
 	function status() {
 		return {
 			enabled: true, locked: session.locked, secure: session.secure, busy: root._busy,
-			leaving: root._leaving, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
+			leaving: root._leaving, covered: root._covered, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
 		};
 	}
 	function submit(response) {
@@ -195,13 +197,18 @@ Scope {
 
 		WlSessionLockSurface {
 			id: surface
-			color: root._leaving ? "transparent" : "black"
+			// See-through only until the backdrop covers the screen, and after a
+			// correct password.
+			color: root._covered && !root._leaving ? "black" : "transparent"
 			readonly property real uiScale: Settings.values["bloom-scale"]
 
 			LockBackdrop {
+				id: backdrop
 				anchors.fill: parent
 				source: root._wallpaper
+				zoom: Lock.wallpaperZoomFrom(iiConfig.text())
 				leaving: root._leaving
+				onCovered: root._covered = true
 			}
 
 			LockView {
@@ -213,7 +220,7 @@ Scope {
 				theme: Theme
 				user: Quickshell.env("USER")
 				layout: root._layout
-				leaving: root._leaving
+				leaving: root._leaving || !backdrop.shown
 				time: root._now
 				clockTurning: root.clockTurning
 				text: root._text

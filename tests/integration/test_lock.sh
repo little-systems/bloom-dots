@@ -74,7 +74,8 @@ pass "locking moves the screen to an empty workspace"
 
 # The surface must paint solidly: a translucent one leaks windows through
 # session_lock_xray. A corner shows the wallpaper, dimmed, at full alpha.
-sleep 1
+wait_for "the backdrop to cover the screen" is .covered true
+sleep 0.5
 grim -t ppm -o HEADLESS-1 "$TEST_TMP/locked.ppm"
 corner="$(python3 - "$TEST_TMP/locked.ppm" <<'PY'
 import sys
@@ -131,7 +132,27 @@ sleep 0.5
 assert_eq "$(state .locked)" "false" "no marker after a clean unlock"
 pass "a clean unlock leaves no marker"
 
+# The cover can't depend on the wallpaper: a missing one still hides the
+# screen, in solid black, and promptly.
+printf '{"bloom-weather-enabled":false,"bloom-lock-wallpaper":"%s"}\n' "$TEST_TMP/missing.png" > "$XDG_CONFIG_HOME/bloom/settings.json"
+wait_for "the setting to load" is .wallpaper "$TEST_TMP/missing.png"
+call lock >/dev/null
+WAIT_S=2 wait_for "a missing wallpaper to still cover the screen" is .covered true
+sleep 0.5
+grim -t ppm -o HEADLESS-1 "$TEST_TMP/black.ppm"
+corner="$(python3 - "$TEST_TMP/black.ppm" <<'PY'
+import sys
+d = open(sys.argv[1], "rb").read()
+parts = d.split(maxsplit=4)
+print(parts[4][0] + parts[4][1] + parts[4][2])
+PY
+)"
+(( corner == 0 )) || fail "a missing wallpaper isn't solid black: $corner"
+enter letmein
+wait_for "the unlock" is .locked false
+pass "a missing wallpaper still covers the screen"
+
 if grep -F "letmein" "$TEST_TMP/shell.log"; then fail "the password reached the log"; fi
 pass "the password never reaches the log"
-if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|wl_keyboard.leave"; then fail "shell log has warnings"; fi
+if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|wl_keyboard.leave|missing.png"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

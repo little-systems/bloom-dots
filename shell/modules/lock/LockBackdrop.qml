@@ -2,22 +2,31 @@ import QtQuick
 import "../../common/tokens.js" as Tokens
 import "../notch"
 
-// The wallpaper, blurred and zoomed in as the screen locks, on solid black.
-// Solid black stays underneath: session_lock_xray shows anything behind a
-// translucent lock surface, so nothing here may ever let the windows through.
+// The wallpaper, blurred, on solid black, placed exactly where the desktop draws
+// it so only the blur appears to change. It fades in over the desktop once the blur is ready, so locking never flashes
+// black, and `covered` says the screen is fully hidden. A wallpaper that's
+// missing or slow doesn't hold that up past enter.maxMs.
 Rectangle {
 	id: root
 
 	property string source: ""
+	property real zoom: 1
 	// Only after a correct password does this let anything through.
 	property bool leaving: false
+	property bool shown: false
+	signal covered()
 
 	objectName: "backdrop"
 	color: "black"
 	clip: true
-	opacity: root.leaving ? 0 : 1
+	// Not quite 0 at first: Qt skips a fully transparent subtree, blur included.
+	opacity: root.leaving ? 0 : root.shown ? 1 : 0.01
+	onOpacityChanged: if (opacity === 1) root.covered()
 	Behavior on opacity {
-		NumberAnimation { duration: Tokens.lock.leave.ms; easing.type: Easing.OutCubic }
+		NumberAnimation {
+			duration: root.leaving ? Tokens.lock.leave.ms : Tokens.lock.enter.coverMs
+			easing.type: Easing.OutCubic
+		}
 	}
 
 	FilterBlur {
@@ -27,11 +36,25 @@ Rectangle {
 		sigma: Tokens.lock.blur.sigma
 		downscale: Tokens.lock.blur.downscale
 
+		// A soft copy past the screen's edge, so the blur has colour to pull in
+		// there instead of darkening towards the transparent surround.
 		Image {
-			id: wallpaper
 			anchors.fill: parent
 			source: root.source
-			sourceSize: Qt.size(root.width, root.height)
+			sourceSize: Qt.size(root.width / 8, root.height / 8)
+			asynchronous: true
+			fillMode: Image.PreserveAspectCrop
+			cache: false
+		}
+		Image {
+			id: wallpaper
+			x: Tokens.lock.blur.spill
+			y: Tokens.lock.blur.spill
+			width: root.width
+			height: root.height
+			scale: root.zoom
+			source: root.source
+			sourceSize: Qt.size(root.width * root.zoom, root.height * root.zoom)
 			asynchronous: true
 			fillMode: Image.PreserveAspectCrop
 			cache: false
@@ -48,12 +71,7 @@ Rectangle {
 		hideSource: true
 		live: false
 		visible: false
-		scale: root.leaving ? 1 : still._zoom
-		property real _zoom: 1
 		textureSize: Qt.size(blur.width / Tokens.lock.blur.downscale, blur.height / Tokens.lock.blur.downscale)
-		Behavior on scale {
-			NumberAnimation { duration: Tokens.lock.blur.zoomMs; easing.type: Easing.OutCubic }
-		}
 	}
 
 	// The blur's own layers need a frame to fill before the still is taken.
@@ -63,8 +81,13 @@ Rectangle {
 		onTriggered: {
 			still.scheduleUpdate();
 			still.visible = true;
-			still._zoom = Tokens.lock.blur.zoom;
+			root.shown = true;
 		}
+	}
+	Timer {
+		interval: Tokens.lock.enter.maxMs - Tokens.lock.enter.coverMs
+		running: true
+		onTriggered: root.shown = true
 	}
 
 	Rectangle {
