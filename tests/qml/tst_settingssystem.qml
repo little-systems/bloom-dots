@@ -69,4 +69,13 @@ TestCase {
 		verify(Sys.lookRules(true)[1].indexOf("no_blur = false") > 0);
 		verify(Sys.lookRules(false)[0].indexOf("bloom:(notch") > 0);
 	}
+
+	function test_helpers() {
+		compare(JSON.stringify(Sys.records("a\tb\tc\nnoise\n", ["x", "y", "z"])), '[{"x":"a","y":"b","z":"c"}]');
+		compare(Sys.matches(["Asia/Kolkata", "Europe/Paris"], "par", 5), ["Europe/Paris"]);
+		compare(Sys.matches(["a"], "", 5), []);
+		compare(Sys.badLayouts("us, zz", ["us", "de"]), ["zz"]);
+		compare(Sys.hyprConfig({ input: { kb_layout: "us,de" } }), 'hl.config({ input = { kb_layout = "us,de" } })');
+		compare(Sys.parseOptions("input.kb_layout|str: us"), { "input.kb_layout": "us" });
+	}
 }

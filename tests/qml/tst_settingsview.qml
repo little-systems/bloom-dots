@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-translucent-apps": false, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-translucent-apps": false, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -45,6 +45,20 @@ Item {
 		property var monitors: [{ name: "eDP-1", description: "Panel", width: 1920, height: 1080, refreshRate: 60.05, scale: 1, x: 0, y: 0, availableModes: ["1920x1080@60.05Hz", "1280x720@60.00Hz"] }]
 		property var disks: [{ path: "/", size: 2e11, used: 1e11 }]
 		property var hypr: ({})
+		property var mixer: [{ id: 1, name: "Music", volume: 0.5 }]
+		property var startup: [{ id: "thing", name: "Thing", state: "on" }]
+		property var vpns: [{ name: "Work", type: "vpn", active: "no" }]
+		property var timezones: ["Asia/Kolkata", "Europe/Paris"]
+		property var layouts: ["us", "de"]
+		property var defaultChoices: ({ browser: [{ value: "firefox.desktop", label: "Firefox" }] })
+		property var installed: [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }]
+		function setStreamVolume(i, v) { calls.push(["stream", i, v]); }
+		function setStartup(i, o) { calls.push(["startup", i, o]); }
+		function setVpn(n, o) { calls.push(["vpn", n, o]); }
+		function setTimezone(z) { calls.push(["zone", z]); }
+		function setDefault(i, m, d) { calls.push(["default", i, d]); }
+		function launch(i) {}
+		function uninstall(i) { calls.push(["uninstall", i]); }
 		property string aiKey: "missing"
 		property string aiCheck: ""
 		function setAiKey(k) { calls.push(["key", k]); }
@@ -703,6 +717,67 @@ Item {
 			click(v, "bluetooth");
 			compare(part(v, "toggleError").text, "Bluetooth adapter unavailable");
 			fakeBt.refuse = "";
+		}
+
+		function test_startupToggles() {
+			fakeSys.calls = [];
+			const v = make("apps");
+			reveal(v, "startup:thing");
+			click(v, "startup:thing");
+			compare(fakeSys.calls[0], ["startup", "thing", false]);
+			verify(part(v, "startup:thing").checked, "stays until the read-back");
+		}
+
+		function test_defaultAppChanges() {
+			fakeSys.calls = [];
+			const v = make("apps");
+			click(v, "default:browser");
+			click(v, "option:firefox.desktop");
+			compare(fakeSys.calls[0], ["default", "browser", "firefox.desktop"]);
+		}
+
+		function test_installedAppsFilter() {
+			const v = make("apps");
+			reveal(v, "appSearch");
+			part(v, "appSearch").text = "alp";
+			tryVerify(() => findChild(v, "app:a") !== null && findChild(v, "app:b") === null, 1000, "filtered");
+		}
+
+		function test_timeZonePicker() {
+			fakeSys.calls = [];
+			const v = make("time");
+			part(v, "zoneSearch").text = "paris";
+			click(v, "zone:Europe/Paris");
+			compare(fakeSys.calls[0], ["zone", "Europe/Paris"]);
+		}
+
+		function test_vpn() {
+			fakeSys.calls = [];
+			const v = make("network");
+			reveal(v, "vpn:Work");
+			click(v, "vpn:Work");
+			compare(fakeSys.calls[0], ["vpn", "Work", true]);
+		}
+
+		function test_badLayoutIsRefused() {
+			fakeSys.calls = [];
+			const v = make("input");
+			part(v, "layouts").text = "us,zz";
+			part(v, "layouts").accepted();
+			compare(fakeSys.calls, []);
+			compare(findChild(part(v, "layoutRow"), "desc").text, "zz isn't a layout");
+		}
+
+		function test_appVolumes() {
+			const v = make("sound");
+			verify(part(v, "stream:Music").visible);
+		}
+
+		function test_nightLight() {
+			const v = make("display");
+			reveal(v, "nightLight");
+			click(v, "nightLight");
+			compare(fakeStore.values["bloom-night-light"], true);
 		}
 
 		function test_closeSignals() {

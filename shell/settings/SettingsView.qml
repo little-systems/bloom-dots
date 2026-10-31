@@ -59,13 +59,13 @@ Rectangle {
 			{ id: "device", label: "Device", icon: "cpu", copy: "This machine." }
 		] },
 		{ label: "Connections", tabs: [
-			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi and saved networks." },
+			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi, saved networks and VPN." },
 			{ id: "bluetooth", label: "Bluetooth", icon: "bluetooth", copy: "Pair and manage devices." }
 		] },
 		{ label: "Desktop", tabs: [
 			{ id: "input", label: "Input", icon: "keyboard", copy: "Keyboard, touchpad and mouse." },
 			{ id: "hyprland", label: "Windows", icon: "layout-grid", copy: "Gaps, borders, corners and effects." },
-			{ id: "apps", label: "Apps", icon: "app-window", copy: "Which app opens what." },
+			{ id: "apps", label: "Apps", icon: "app-window", copy: "Defaults, startup apps and everything installed." },
 			{ id: "ai", label: "AI", icon: "sparkles", copy: "Gemini chat in Spotlight." },
 			{ id: "time", label: "Time", icon: "clock", copy: "Time zone and clock sync." },
 			{ id: "updates", label: "Updates", icon: "package", copy: "Keep the system current." }
@@ -482,7 +482,7 @@ Rectangle {
 					width: parent.width
 					height: active && item ? item.implicitHeight : 0
 					active: (root.tab === "network" || root.tab === "bluetooth") && root.net !== undefined
-					sourceComponent: ConnectionPages { theme: root.theme; net: root.net; bt: root.bt; accent: root.theme.accent ?? "#007aff"; page: root.tab }
+					sourceComponent: ConnectionPages { theme: root.theme; net: root.net; bt: root.bt; sys: root.sys; accent: root.theme.accent ?? "#007aff"; page: root.tab }
 				}
 				Loader {
 					width: parent.width

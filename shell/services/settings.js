@@ -334,6 +334,14 @@ var SCHEMA = {
 		type: "string", maxLength: 20, default: "en",
 		doc: "Language translations go to, as a code such as en or hi. Text is sent to Google."
 	},
+	"bloom-night-light": {
+		type: "bool", default: false,
+		doc: "Warm the screen's colours."
+	},
+	"bloom-night-temperature": {
+		type: "number", min: 2500, max: 6000, default: 4500,
+		doc: "Night light warmth in kelvin. Lower is warmer."
+	},
 	"bloom-low-power": {
 		type: "enum",
 		values: ["off", "auto", "on"],

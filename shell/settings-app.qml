@@ -88,14 +88,13 @@ ShellRoot {
 		interval: 300
 		onTriggered: store.setLook(Settings.values["bloom-theme-opacity"], Settings.values["bloom-translucent-apps"])
 	}
+	// Armed after the first read, so opening Settings changes nothing.
 	Timer {
 		interval: 800
 		running: true
-		onTriggered: {
-			app._lookArmed = true;
-			lookTimer.restart();
-		}
+		onTriggered: app._lookArmed = true
 	}
+
 	// Settings.set reports a refused write; dropping that would show a change
 	// that never happened.
 	property string saveError: ""
@@ -103,16 +102,6 @@ ShellRoot {
 		id: checkedStore
 		readonly property var values: Settings.values
 		function set(key, value) { app.saveError = Settings.set(key, value) || ""; }
-	}
-	Binding {
-		target: Render
-		property: "reduceMotion"
-		value: Settings.values["bloom-reduce-motion"]
-	}
-	Binding {
-		target: Fonts
-		property: "override"
-		value: Settings.values["bloom-font-family"]
 	}
 
 	FloatingWindow {

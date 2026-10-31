@@ -26,6 +26,7 @@ ShellRoot {
 	// Layers render at the scale the stages are drawn (common/render).
 	// Reached once so its chimes are armed whichever surfaces are on.
 	readonly property var _sounds: Sounds
+	readonly property var _nightLight: NightLight
 
 	Binding {
 		target: Render

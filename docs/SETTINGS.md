@@ -71,6 +71,8 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-translucent-apps` | bool | `false` | `true`, `false` | Apply Background Opacity and blur to app windows and the terminal. |
 | `bloom-font-family` | string | `""` | text, up to 200 characters | Font for Bloom's surfaces. Empty uses Bloom's own. |
 | `bloom-translate-to` | string | `"en"` | text, up to 20 characters | Language translations go to, as a code such as en or hi. Text is sent to Google. |
+| `bloom-night-light` | bool | `false` | `true`, `false` | Warm the screen's colours. |
+| `bloom-night-temperature` | number | `4500` | 2500 to 6000 | Night light warmth in kelvin. Lower is warmer. |
 | `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |
 | `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
 | `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

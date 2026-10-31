@@ -31,6 +31,12 @@ Scope {
 	property bool autostartLoaded: false
 	property string lastError: ""
 	property string aiKey: ""
+	property var startup: []
+	property var vpns: []
+	property var timezones: []
+	property var layouts: []
+	property var defaultChoices: ({})
+	readonly property var installed: Apps.all()
 	property string aiCheck: ""
 	property string _wantSink: ""
 	property string _wantSource: ""
@@ -59,7 +65,7 @@ Scope {
 	readonly property string _hyprState: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/bloom/hypr-settings.json"
 
 	function refresh() {
-		for (const p of [monitorsProc, disksProc, infoProc, timeProc, updatesProc, optionsProc]) p.running = true;
+		for (const p of [monitorsProc, disksProc, infoProc, timeProc, updatesProc, optionsProc, startupProc, vpnProc, zonesProc, layoutsProc, choicesProc]) p.running = true;
 		root._loadDefaults();
 	}
 	function setVolume(v) { Audio.setVolume(v); }
@@ -99,6 +105,24 @@ Scope {
 		root._run(["systemctl", "--user", on ? "enable" : "disable", "bloom-shell"], "Couldn't change Launch at Login", () => { autostartProc.running = true; });
 	}
 	function clearError() { root.lastError = ""; }
+	function setStreamVolume(id, value) { Audio.setStreamVolume(id, value); }
+	function setStartup(id, on) {
+		root._run(["sh", root._query, "autostart-set", id, on ? "on" : "off"], "Couldn't change that startup app", () => { startupProc.running = true; });
+	}
+	function setTimezone(zone) {
+		root._run(["timedatectl", "set-timezone", zone], "Couldn't change the time zone", () => { timeProc.running = true; });
+	}
+	function setVpn(name, on) {
+		root._run(["nmcli", "connection", on ? "up" : "down", name], "Couldn't change " + name, () => { vpnProc.running = true; });
+	}
+	function setDefault(id, mime, desktopId) {
+		root._run(["xdg-mime", "default", desktopId, mime], "Couldn't change the default app", () => root._loadDefaults());
+	}
+	function launch(id) { Apps.launch(id); }
+	function uninstall(id) {
+		uninstallProc.command = ["sh", root._query, "package-of", id.replace(/\.desktop$/, "")];
+		uninstallProc.running = true;
+	}
 	// One look for everything: Background Opacity, here and in the shell.
 	function setLook(opacity, translucent) {
 		const windows = translucent ? Sys.windowOpacity(opacity) : 1;
@@ -180,6 +204,57 @@ Scope {
 		stateProc.running = true;
 	}
 
+	readonly property string _query: Quickshell.shellPath("scripts/settings-query.sh")
+	Process {
+		id: startupProc
+		command: ["sh", root._query, "autostart-list"]
+		stdout: StdioCollector { onStreamFinished: root.startup = Sys.records(text, ["id", "name", "state"]) }
+	}
+	Process {
+		id: vpnProc
+		command: ["sh", root._query, "vpn-list"]
+		stdout: StdioCollector { onStreamFinished: root.vpns = Sys.records(text, ["name", "type", "active"]) }
+	}
+	Process {
+		id: zonesProc
+		command: ["timedatectl", "list-timezones"]
+		stdout: StdioCollector { onStreamFinished: root.timezones = text.split("\n").filter(z => z) }
+	}
+	Process {
+		id: layoutsProc
+		command: ["localectl", "list-x11-keymap-layouts"]
+		stdout: StdioCollector { onStreamFinished: root.layouts = text.split("\n").filter(l => l) }
+	}
+	Process {
+		id: choicesProc
+		command: ["sh", "-c", Sys.DEFAULTS.map(d => "echo \"#" + d.id + "\"; sh \"$0\" mime-apps " + d.mime).join("; "), root._query]
+		stdout: StdioCollector {
+			onStreamFinished: {
+				const out = {};
+				let current = "";
+				text.split("\n").forEach(line => {
+					if (line.startsWith("#")) {
+						current = line.slice(1);
+						out[current] = [];
+					} else if (line.includes("\t")) {
+						const [value, label] = line.split("\t");
+						if (!out[current].some(o => o.value === value)) out[current].push({ value: value, label: label });
+					}
+				});
+				root.defaultChoices = out;
+			}
+		}
+	}
+	Process {
+		id: uninstallProc
+		stdout: StdioCollector {
+			onStreamFinished: {
+				const name = text.trim();
+				if (name) Quickshell.execDetached(["kitty", "-e", "sudo", "pacman", "-Rns", name]);
+				else root.lastError = "That app isn't from a package pacman can remove";
+			}
+		}
+	}
 	Process {
 		id: actionProc
 		property var job: null

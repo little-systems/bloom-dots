@@ -11,6 +11,7 @@ Column {
 	required property string page
 	property var net
 	property var bt
+	property var sys
 	property color accent: "#007aff"
 
 	property string _openNet: ""
@@ -235,6 +236,32 @@ Column {
 							}
 						}
 					}
+				}
+			}
+		}
+
+		SGroupLabel { theme: root.theme; text: "VPN" }
+		Text {
+			objectName: "noVpn"
+			visible: !root.sys || root.sys.vpns.length === 0
+			leftPadding: 6
+			text: "No VPNs are set up. Add one with NetworkManager."
+			color: root.theme.textMuted
+			font.family: Fonts.ui
+			font.pixelSize: 12
+		}
+		SGroup {
+			visible: !!root.sys && root.sys.vpns.length > 0
+			theme: root.theme
+			Repeater {
+				model: root.sys ? root.sys.vpns : []
+				delegate: SRow {
+					id: vpnRow
+					required property var modelData
+					required property int index
+					theme: root.theme; icon: "lock"; label: vpnRow.modelData.name; desc: vpnRow.modelData.active === "yes" ? "Connected" : "Not connected"
+					divider: vpnRow.index < root.sys.vpns.length - 1
+					SToggle { objectName: "vpn:" + vpnRow.modelData.name; accessibleName: vpnRow.modelData.name; theme: root.theme; checked: vpnRow.modelData.active === "yes"; onToggled: value => root.sys.setVpn(vpnRow.modelData.name, value) }
 				}
 			}
 		}

@@ -341,6 +341,14 @@ var ROWS = [
 		"tab": "display"
 	},
 	{
+		"label": "Night Light",
+		"tab": "display"
+	},
+	{
+		"label": "Warmth",
+		"tab": "display"
+	},
+	{
 		"label": "Brightness",
 		"tab": "display"
 	},
@@ -398,6 +406,10 @@ var ROWS = [
 	},
 	{
 		"label": "Repeat Rate",
+		"tab": "input"
+	},
+	{
+		"label": "Keyboard Layouts",
 		"tab": "input"
 	},
 	{

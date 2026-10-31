@@ -30,7 +30,7 @@ function gigabytes(bytes) {
 // as the one line that applies them to the running session.
 function _lua(value) {
 	if (typeof value === "object" && value !== null) return "{ " + Object.keys(value).map(k => k + " = " + _lua(value[k])).join(", ") + " }";
-	return String(value);
+	return typeof value === "string" ? JSON.stringify(value) : String(value);
 }
 
 function hyprConfig(overrides) {
@@ -90,7 +90,7 @@ function appName(desktopId) {
 var OPTIONS = [
 	"input.repeat_delay", "input.repeat_rate", "input.sensitivity", "input.touchpad.natural_scroll",
 	"input.touchpad.disable_while_typing", "input.touchpad.scroll_factor", "general.gaps_in", "general.gaps_out",
-	"general.border_size", "decoration.rounding", "decoration.blur.enabled", "animations.enabled",
+	"input.kb_layout", "general.border_size", "decoration.rounding", "decoration.blur.enabled", "animations.enabled",
 	"decoration.active_opacity", "decoration.inactive_opacity"
 ];
 
@@ -105,10 +105,10 @@ function parseOptions(text) {
 	text.split("\n").forEach(line => {
 		const at = line.indexOf("|");
 		if (at < 0) return;
-		const path = line.slice(0, at), m = line.slice(at + 1).match(/^(int|float|bool|custom type|css gap data)[^:]*:\s*(\S+)/);
+		const path = line.slice(0, at), m = line.slice(at + 1).match(/^(int|float|bool|str|custom type|css gap data)[^:]*:\s*(\S+)/);
 		if (!m) return;
 		const value = m[2];
-		out[path] = value === "true" ? true : value === "false" ? false : Number(value);
+		out[path] = value === "true" ? true : value === "false" ? false : isNaN(Number(value)) ? value.replace(/^"|"$/g, "") : Number(value);
 	});
 	return out;
 }
@@ -165,4 +165,23 @@ function lookRules(translucent) {
 	const lines = ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
 	if (translucent) lines.push('hl.window_rule({ match = { class = ".*" }, no_blur = false })');
 	return lines;
+}
+
+// settings-query.sh's tab-separated records.
+function records(text, keys) {
+	return text.split("\n").filter(l => l.includes("\t")).map(line => {
+		const fields = line.split("\t"), row = {};
+		keys.forEach((key, i) => { row[key] = fields[i] ?? ""; });
+		return row;
+	});
+}
+
+function matches(list, query, limit) {
+	const q = String(query).trim().toLowerCase();
+	return q ? list.filter(x => x.toLowerCase().includes(q)).slice(0, limit) : [];
+}
+
+// Comma-separated layouts, split into the known and the unknown.
+function badLayouts(text, known) {
+	return String(text).split(",").map(x => x.trim()).filter(x => x && known.indexOf(x) < 0);
 }

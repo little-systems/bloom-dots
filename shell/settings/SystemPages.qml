@@ -19,6 +19,9 @@ Column {
 	spacing: 0
 
 	readonly property var _h: root.sys.hypr
+	property string _layoutError: ""
+	property string _zoneQuery: ""
+	property string _appQuery: ""
 	function hOpt(path, fallback) {
 		const value = Sys.option(root._h, path, undefined);
 		return value !== undefined ? value : root.sys.hyprLive[path] ?? fallback;
@@ -115,6 +118,19 @@ Column {
 				}
 			}
 		}
+		SGroupLabel { theme: root.theme; text: "Night Light" }
+		SGroup {
+			theme: root.theme
+			SRow {
+				theme: root.theme; icon: "moon"; label: "Night Light"; desc: "Warm the screen for evenings"; divider: root.store.values["bloom-night-light"]
+				SToggle { objectName: "nightLight"; accessibleName: "Night Light"; theme: root.theme; checked: root.store.values["bloom-night-light"]; onToggled: value => root.store.set("bloom-night-light", value) }
+			}
+			SRow {
+				visible: root.store.values["bloom-night-light"]; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+				theme: root.theme; icon: "sun"; label: "Warmth"; desc: root.store.values["bloom-night-temperature"] + " K"; divider: false
+				SSlider { accessibleName: "Warmth"; theme: root.theme; from: 2500; to: 6000; step: 100; value: root.store.values["bloom-night-temperature"]; onMoved: value => root.store.set("bloom-night-temperature", value) }
+			}
+		}
 		SGroupLabel { theme: root.theme; text: "Brightness"; visible: root.sys.brightnessAvailable }
 		SGroup {
 			visible: root.sys.brightnessAvailable
@@ -155,6 +171,32 @@ Column {
 					theme: root.theme; popup: root.popup; value: root.sys.source
 					options: root.sys.sources.map(n => ({ value: n.name, label: n.description || n.name }))
 					onActivated: value => root.sys.setSource(value)
+				}
+			}
+		}
+		SGroupLabel { theme: root.theme; text: "Apps" }
+		Text {
+			objectName: "noStreams"
+			visible: root.sys.mixer.length === 0
+			leftPadding: 6
+			text: "No apps are playing sound"
+			color: root.theme.textMuted
+			font.family: Fonts.ui
+			font.pixelSize: 12
+		}
+		SGroup {
+			visible: root.sys.mixer.length > 0
+			theme: root.theme
+			Repeater {
+				model: root.sys.mixer
+				delegate: SRow {
+					required property var modelData
+					required property int index
+					objectName: "stream:" + modelData.name
+					theme: root.theme; icon: "music"; label: modelData.name
+					desc: Math.round(modelData.volume * 100) + "%"
+					divider: index < root.sys.mixer.length - 1
+					SSlider { accessibleName: modelData.name + " volume"; theme: root.theme; from: 0; to: 1; step: 0.01; value: modelData.volume; onMoved: value => root.sys.setStreamVolume(modelData.id, value) }
 				}
 			}
 		}
@@ -233,6 +275,29 @@ Column {
 				SSlider { enabled: root._hyprKnown; accessibleName: "Repeat Rate"; objectName: "repeatRate"; theme: root.theme; from: 10; to: 60; step: 5; value: root.hOpt("input.repeat_rate", 35); onMoved: value => root.sys.setHypr("input.repeat_rate", value) }
 			}
 		}
+		SGroupLabel { theme: root.theme; text: "Layouts" }
+		SGroup {
+			theme: root.theme
+			SRow {
+				objectName: "layoutRow"
+				theme: root.theme; icon: "languages"; label: "Keyboard Layouts"; divider: false
+				desc: root._layoutError || "Codes such as us or de, separated by commas"
+				SField {
+					objectName: "layouts"
+					width: 140
+					theme: root.theme
+					accessibleName: "Keyboard layouts"
+					placeholder: "us,de"
+					text: root.hOpt("input.kb_layout", "")
+					onAccepted: {
+						const bad = Sys.badLayouts(text, root.sys.layouts);
+						root._layoutError = bad.length ? bad.join(", ") + " isn't a layout" : "";
+						if (!bad.length) root.sys.setHypr("input.kb_layout", text.replace(/\s/g, ""));
+					}
+				}
+			}
+		}
+
 		SGroupLabel { theme: root.theme; text: "Touchpad" }
 		SGroup {
 			theme: root.theme
@@ -309,11 +374,78 @@ Column {
 			Repeater {
 				model: Sys.DEFAULTS
 				delegate: SRow {
+					id: defaultRow
 					required property var modelData
 					required property int index
-					theme: root.theme; icon: modelData.icon; label: modelData.label
-					desc: Sys.appName(root.sys.defaults[modelData.id])
-					divider: index < Sys.DEFAULTS.length - 1
+					readonly property var choices: root.sys.defaultChoices[defaultRow.modelData.id] ?? []
+					theme: root.theme; icon: defaultRow.modelData.icon; label: defaultRow.modelData.label
+					desc: Sys.appName(root.sys.defaults[defaultRow.modelData.id])
+					divider: defaultRow.index < Sys.DEFAULTS.length - 1
+					SSelect {
+						objectName: "default:" + defaultRow.modelData.id
+						accessibleName: defaultRow.modelData.label
+						visible: defaultRow.choices.length > 0
+						theme: root.theme; popup: root.popup
+						options: defaultRow.choices
+						value: root.sys.defaults[defaultRow.modelData.id] ?? ""
+						onActivated: value => root.sys.setDefault(defaultRow.modelData.id, defaultRow.modelData.mime, value)
+					}
+				}
+			}
+		}
+		SGroupLabel { theme: root.theme; text: "Startup Apps" }
+		Text {
+			visible: root.sys.startup.length === 0
+			leftPadding: 6
+			text: "Nothing starts with your session"
+			color: root.theme.textMuted
+			font.family: Fonts.ui
+			font.pixelSize: 12
+		}
+		SGroup {
+			visible: root.sys.startup.length > 0
+			theme: root.theme
+			Repeater {
+				model: root.sys.startup
+				delegate: SRow {
+					id: startupRow
+					required property var modelData
+					required property int index
+					theme: root.theme; icon: "app-window"; label: startupRow.modelData.name
+					divider: startupRow.index < root.sys.startup.length - 1
+					SToggle { objectName: "startup:" + startupRow.modelData.id; accessibleName: startupRow.modelData.name; theme: root.theme; checked: startupRow.modelData.state === "on"; onToggled: value => root.sys.setStartup(startupRow.modelData.id, value) }
+				}
+			}
+		}
+		SGroupLabel { theme: root.theme; text: "Installed Apps" }
+		SField {
+			objectName: "appSearch"
+			width: parent.width
+			theme: root.theme
+			placeholder: "Search " + root.sys.installed.length + " apps"
+			accessibleName: "Search installed apps"
+			onTextChanged: root._appQuery = text.toLowerCase()
+		}
+		Item { width: 1; height: 8 }
+		SGroup {
+			id: appList
+			readonly property var shown: root.sys.installed.filter(a => a.name.toLowerCase().includes(root._appQuery)).slice(0, 30)
+			visible: appList.shown.length > 0
+			theme: root.theme
+			Repeater {
+				model: appList.shown
+				delegate: SRow {
+					id: appRow
+					required property var modelData
+					required property int index
+					objectName: "app:" + appRow.modelData.id
+					theme: root.theme; icon: "app-window"; label: appRow.modelData.name
+					divider: appRow.index < appList.shown.length - 1
+					Row {
+						spacing: 6
+						SChip { theme: root.theme; text: "Open"; onClicked: root.sys.launch(appRow.modelData.id) }
+						SChip { objectName: "uninstall:" + appRow.modelData.id; theme: root.theme; text: "Uninstall"; onClicked: root.sys.uninstall(appRow.modelData.id) }
+					}
 				}
 			}
 		}
@@ -387,7 +519,27 @@ Column {
 		SGroupLabel { theme: root.theme; text: "Date & Time"; above: 0 }
 		SGroup {
 			theme: root.theme
-			SRow { theme: root.theme; icon: "languages"; label: "Time Zone"; desc: root.sys.timezone }
+			SRow {
+				theme: root.theme; icon: "languages"; label: "Time Zone"; desc: root.sys.timezone
+				SField {
+					objectName: "zoneSearch"
+					width: 170
+					theme: root.theme
+					placeholder: "Search cities"
+					accessibleName: "Search time zones"
+					onTextChanged: root._zoneQuery = text
+				}
+			}
+			Repeater {
+				model: Sys.matches(root.sys.timezones, root._zoneQuery, 6)
+				delegate: SRow {
+					id: zoneRow
+					required property string modelData
+					objectName: "zone:" + zoneRow.modelData
+					theme: root.theme; icon: "clock"; label: zoneRow.modelData; action: true
+					onClicked: root.sys.setTimezone(zoneRow.modelData)
+				}
+			}
 			SRow {
 				theme: root.theme; icon: "clock"; label: "Set Time Automatically"; desc: "Asks for your password"; divider: false
 				SToggle { accessibleName: "Set Time Automatically"; objectName: "ntp"; theme: root.theme; checked: root.sys.ntp; onToggled: value => root.sys.setNtp(value) }
