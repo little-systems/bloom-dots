@@ -1,0 +1,35 @@
+--- a/services/PolkitService.qml	2026-10-31 17:51:04.672710558 +0530
++++ b/services/PolkitService.qml	2026-10-31 17:51:04.705915630 +0530
+@@ -7,9 +7,11 @@
+ 
+ Singleton {
+     id: root
+-    property alias agent: polkitAgent
+-    property alias active: polkitAgent.isActive
+-    property alias flow: polkitAgent.flow
++    // Phase 6 handover: Bloom is the polkit agent; only one can register.
++    readonly property bool bloomOwnsPolkit: true
++    readonly property var agent: root.bloomOwnsPolkit ? null : polkitAgentLoader.item
++    readonly property bool active: root.agent?.isActive ?? false
++    readonly property var flow: root.agent?.flow ?? null
+     property bool interactionAvailable: false
+     property string cleanMessage: {
+         if (!root.flow) return "";
+@@ -40,10 +42,13 @@
+         }
+     }
+ 
+-    PolkitAgent {
+-        id: polkitAgent
+-        onAuthenticationRequestStarted: {
+-            root.interactionAvailable = true;
++    LazyLoader {
++        id: polkitAgentLoader
++        active: !root.bloomOwnsPolkit
++        component: PolkitAgent {
++            onAuthenticationRequestStarted: {
++                root.interactionAvailable = true;
++            }
+         }
+     }
+ }
