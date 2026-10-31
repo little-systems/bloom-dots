@@ -1,6 +1,6 @@
 # Phase 6 polkit switch
 
-**Status:** waiting for the owner's OK. Nothing here has been run on the live system.
+**Status:** done on 2026-10-31 with the owner's OK. `pkexec true` worked through Bloom's dialog (owner's live check). Backups: `~/Projects/bloom-polkit-handover-20261031-183021` and `~/Projects/bloom-settings.backup-20261031-183021.json`.
 
 Only one polkit agent can register per session, so ii's has to go before Bloom's starts.
 
