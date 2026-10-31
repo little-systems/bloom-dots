@@ -287,7 +287,7 @@ ShellRoot {
 
 		function state(): string {
 			const brief = d => ({ path: d.path, name: d.name, kind: d.kind, connected: d.connected, battery: d.battery });
-			return JSON.stringify({ powered: Bluetooth.powered, discovering: Bluetooth.discovering, busy: Bluetooth.busy,
+			return JSON.stringify({ powered: Bluetooth.powered, discovering: Bluetooth.discovering, lookFailed: Bluetooth.lookFailed, busy: Bluetooth.busy,
 				pairing: Bluetooth.pairing, prompt: Bluetooth.prompt, error: Bluetooth.lastError,
 				paired: Bluetooth.paired.map(brief), nearby: Bluetooth.nearby.map(brief) });
 		}

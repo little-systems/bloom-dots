@@ -30,6 +30,8 @@ Item {
 	property var looks: ({})
 	property bool settingsAvailable: false
 	property bool adding: false
+	// The session that looks for devices couldn't run.
+	property bool lookFailed: false
 	// A pairing keeps the notch open (Bloom's onPinChange).
 	readonly property bool pinned: root.pairing !== "" || root._typing
 
@@ -133,9 +135,9 @@ Item {
 				anchors.fill: parent
 				visible: !root.enabled || (root.adding ? root.nearby.length === 0 : root.devices.length === 0)
 				theme: root.theme
-				icon: root.enabled && root.adding ? "loader-circle" : ""
+				icon: root.enabled && root.adding && !root.lookFailed ? "loader-circle" : ""
 				text: !root.enabled ? "Bluetooth is off"
-					: root.adding ? "Looking for devices. Make sure yours is in pairing mode."
+					: root.adding ? (root.lookFailed ? "Couldn't look for devices" : "Looking for devices. Make sure yours is in pairing mode.")
 					: "No paired devices"
 
 				Loader {

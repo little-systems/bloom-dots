@@ -22,6 +22,7 @@ BluetoothView {
 	nearby: Bluetooth.nearby
 	busy: Bluetooth.busy
 	pairing: Bluetooth.pairing
+	lookFailed: Bluetooth.lookFailed
 	prompt: Bluetooth.prompt
 	error: Bluetooth.lastError
 	looks: root._looks

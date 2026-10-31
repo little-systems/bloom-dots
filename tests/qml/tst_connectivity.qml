@@ -88,27 +88,30 @@ TestCase {
 		compare(Bluetooth.paired(got.devices).map(d => d.name), ["Mine"]);
 	}
 
-	// bluetoothctl as the pairing agent: its prompts become Bloom's
-	// confirm / display / provide requests, its results Bloom's codes.
-	function test_pairingAgentLines() {
-		compare(Bluetooth.agentLine("\u001b[1;39m[agent]\u001b[0m Confirm passkey 123456 (yes/no): "), { prompt: "confirm", pin: "123456" });
-		compare(Bluetooth.agentLine("[agent] Passkey: 004521"), { prompt: "display", pin: "004521" });
-		compare(Bluetooth.agentLine("[agent] PIN code: 0000"), { prompt: "display", pin: "0000" });
-		compare(Bluetooth.agentLine("[agent] Enter PIN code: "), { prompt: "provide", pin: null });
-		compare(Bluetooth.agentLine("[agent] Enter passkey (number in 0-999999): "), { prompt: "provide", pin: null });
-		// The person already chose to pair: plain consent is given.
-		compare(Bluetooth.agentLine("[agent] Accept pairing (yes/no): "), { answer: "yes" });
-		compare(Bluetooth.agentLine("[agent] Authorize service 0000110d-0000-1000-8000-00805f9b34fb (yes/no): "), { answer: "yes" });
-		compare(Bluetooth.agentLine("[CHG] Device AA:BB Paired: yes"), null);
-		compare(Bluetooth.agentLine("Pairing successful"), { result: "ok" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.AuthenticationTimeout"), { result: "timeout" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.AuthenticationCanceled"), { result: "cancelled" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.AuthenticationRejected"), { result: "cancelled" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.AuthenticationFailed"), { result: "cancelled" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.ConnectionAttemptFailed"), { result: "failed" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.AlreadyExists"), { result: "ok" });
-		compare(Bluetooth.agentLine("Device AA:BB:CC:DD:EE:FF not available"), { result: "not-found" });
-		compare(Bluetooth.agentLine("Failed to pair: org.bluez.Error.NotReady"), { result: "not-ready" });
+	// scripts/bluetooth-agent.py, the pairing agent: one JSON event a line.
+	function test_agentEvents() {
+		compare(Bluetooth.agentEvent('{"event":"prompt","kind":"confirm","pin":"123456"}'), { prompt: "confirm", pin: "123456" });
+		compare(Bluetooth.agentEvent('{"event":"prompt","kind":"display","pin":"004521"}'), { prompt: "display", pin: "004521" });
+		compare(Bluetooth.agentEvent('{"event":"prompt","kind":"provide"}'), { prompt: "provide", pin: null });
+		compare(Bluetooth.agentEvent('{"event":"paired"}'), { result: "ok" });
+		compare(Bluetooth.agentEvent('{"event":"failed","error":"org.bluez.Error.AuthenticationTimeout"}'), { result: "timeout" });
+		compare(Bluetooth.agentEvent('{"event":"ready"}'), { ready: true });
+		compare(Bluetooth.agentEvent("not json"), null);
+		compare(Bluetooth.agentEvent('{"event":"prompt","kind":"bogus"}'), null);
+	}
+
+	// BlueZ's errors as Bloom's codes (bluetooth.rs pairing_error).
+	function test_pairErrors() {
+		compare(Bluetooth.pairError("org.bluez.Error.AuthenticationTimeout"), "timeout");
+		compare(Bluetooth.pairError("org.bluez.Error.AuthenticationCanceled"), "cancelled");
+		compare(Bluetooth.pairError("org.bluez.Error.AuthenticationRejected"), "cancelled");
+		compare(Bluetooth.pairError("org.bluez.Error.AuthenticationFailed"), "cancelled");
+		compare(Bluetooth.pairError("org.bluez.Error.InProgress"), "cancelled");
+		compare(Bluetooth.pairError("org.bluez.Error.AlreadyExists"), "ok");
+		compare(Bluetooth.pairError("org.bluez.Error.NotReady"), "not-ready");
+		compare(Bluetooth.pairError("org.freedesktop.DBus.Error.UnknownObject"), "not-found");
+		compare(Bluetooth.pairError("org.freedesktop.DBus.Error.NoReply"), "timeout");
+		compare(Bluetooth.pairError("org.bluez.Error.ConnectionAttemptFailed"), "failed");
 	}
 
 	// Bloom's error text (BluetoothPanel.tsx ERROR_TEXT).

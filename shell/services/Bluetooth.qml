@@ -6,7 +6,7 @@ import "bluetooth.js" as Logic
 
 // BlueZ ObjectManager snapshot plus signals while a visible panel holds it.
 // busctl calls are bounded and argv-only; UI never runs a shell command.
-// Discovery and pairing run in one bluetoothctl session, which is also the
+// Discovery and pairing run in one scripts/bluetooth-agent.py session, also the
 // pairing agent: BlueZ stops a discovery when the client that started it
 // leaves, and the agent must stay up while a device pairs. The session runs
 // only while the panel's "Add a device" view looks or a device pairs.
@@ -33,7 +33,9 @@ Singleton {
 	property var lastError: null
 	signal pairedDevice(string path)
 	property bool _looking: false
-	// After a pairing, the session stays a while to trust and connect it.
+	// The session stopped (or never started) while it was wanted.
+	property bool lookFailed: false
+	// After a pairing, the session stays a while as it trusts and connects it.
 	property bool _settling: false
 	readonly property bool _sessionWanted: root.active && root.powered && (root._looking || root.pairing !== "" || root._settling)
 	function hold(key, wanted) {
@@ -79,6 +81,7 @@ Singleton {
 	// Look for devices to pair while the "Add a device" view shows.
 	function discover(wanted) {
 		root._looking = wanted;
+		root.lookFailed = false;
 		if (session.running) session.send(wanted ? "scan on" : "scan off");
 		return "ok";
 	}
@@ -89,7 +92,7 @@ Singleton {
 		root.lastError = null;
 		root.prompt = null;
 		root.pairing = path;
-		session.queue("pair " + d.address);
+		session.queue("pair " + path);
 		pairTimeout.restart();
 		return "ok";
 	}
@@ -98,25 +101,20 @@ Singleton {
 		if (!root.prompt) return "nothing to answer";
 		const kind = root.prompt.kind;
 		root.prompt = null;
-		if (kind === "confirm") session.send(accept ? "yes" : "no");
-		else if (kind === "provide") session.send(accept && /^[0-9A-Za-z]{1,16}$/.test(pin || "") ? pin : "");
+		if (kind === "confirm") session.send(accept ? "answer yes" : "answer no");
+		else if (kind === "provide") session.send(accept && /^[0-9A-Za-z]{1,16}$/.test(pin || "") ? "pin " + pin : "cancel");
 		return "ok";
 	}
 	function clearError() { root.lastError = null; }
 	function _finishPairing(code) {
 		const path = root.pairing;
-		const d = root.devices.find(x => x.path === path);
 		pairTimeout.stop();
 		root.prompt = null;
 		root.pairing = "";
 		if (code === "ok") {
-			// Paired as Bloom leaves it on Windows: trusted and connected.
-			if (d) {
-				root._settling = true;
-				settle.restart();
-				session.send("trust " + d.address);
-				session.send("connect " + d.address);
-			}
+			// The session trusts and connects it, as Bloom leaves it on Windows.
+			root._settling = true;
+			settle.restart();
 			root.pairedDevice(path);
 		} else {
 			root.lastError = { id: path, code: code };
@@ -157,22 +155,21 @@ Singleton {
 		}
 	}
 
-	// bluetoothctl: discovery and the pairing agent. Commands sent before it
+	// The session: discovery and the pairing agent. Commands sent before it
 	// has started wait in a queue.
 	Process {
 		id: session
 		property var _queue: []
 		running: root._sessionWanted
-		command: [Quickshell.env("BLOOM_BLUETOOTHCTL") || "bluetoothctl"]
+		command: Quickshell.env("BLOOM_BT_AGENT") ? [Quickshell.env("BLOOM_BT_AGENT")] : ["python3", "-I", Quickshell.shellPath("scripts/bluetooth-agent.py")]
 		stdinEnabled: true
+		onRunningChanged: if (!running && root._sessionWanted && root._looking) root.lookFailed = true
 		function send(line) { if (running) write(line + "\n"); }
 		function queue(line) {
 			if (running) send(line);
 			else _queue = _queue.concat([line]);
 		}
 		onStarted: {
-			send("agent KeyboardDisplay");
-			send("default-agent");
 			if (root._looking) send("scan on");
 			for (const line of _queue) send(line);
 			_queue = [];
@@ -184,15 +181,14 @@ Singleton {
 		stdout: SplitParser {
 			onRead: line => {
 				if (root.pairing === "") return;
-				const got = Logic.agentLine(line);
+				const got = Logic.agentEvent(line);
 				if (!got) return;
-				if (got.answer) session.send(got.answer);
-				else if (got.prompt) root.prompt = { id: root.pairing, kind: got.prompt, pin: got.pin };
+				if (got.prompt) root.prompt = { id: root.pairing, kind: got.prompt, pin: got.pin };
 				else if (got.result) root._finishPairing(got.result);
 			}
 		}
 	}
 	Timer { id: settle; interval: 15000; onTriggered: root._settling = false }
 	// BlueZ gives up on its own; this only covers a session that stops talking.
-	Timer { id: pairTimeout; interval: 60000; onTriggered: if (root.pairing !== "") { session.send("cancel-pairing"); root._finishPairing("timeout"); } }
+	Timer { id: pairTimeout; interval: 60000; onTriggered: if (root.pairing !== "") { session.send("cancel"); root._finishPairing("timeout"); } }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The Wi-Fi and Bluetooth panels' services against fake nmcli, busctl,
-# dbus-monitor and bluetoothctl: nothing reaches the real NetworkManager or
+# dbus-monitor and the agent session: nothing reaches the real NetworkManager or
 # BlueZ. Covers Bloom's network list, connect errors and Forget, and
 # Bluetooth discovery, pairing with a passkey prompt, and Remove.
 set -euo pipefail
@@ -47,22 +47,22 @@ cat > "$TEST_TMP/bin/dbus-monitor" <<'FAKE_MONITOR'
 while :; do echo "signal time=1 sender=:1.5 -> destination=(null destination) path=/org/bluez/hci0; interface=org.freedesktop.DBus.Properties; member=PropertiesChanged"; sleep 0.5; done
 FAKE_MONITOR
 
-# bluetoothctl reading commands from the shell; pairing asks to confirm a
-# passkey, then succeeds when answered yes.
-cat > "$TEST_TMP/bin/bluetoothctl" <<'FAKE_BTCTL'
+# The session the shell runs: scanning, then a passkey to confirm.
+cat > "$TEST_TMP/bin/fake-agent" <<'FAKE_AGENT'
 #!/bin/sh
+echo '{"event": "ready"}'
 while IFS= read -r line; do
-	echo "$line" >> "$FAKE/bluetoothctl.log"
+	echo "$line" >> "$FAKE/agent.log"
 	case "$line" in
-		"scan on") touch "$FAKE/scanning"; echo "Discovery started" ;;
+		"scan on") touch "$FAKE/scanning" ;;
 		"scan off") rm -f "$FAKE/scanning" ;;
-		"pair 22:22:22:22:22:22") echo "Attempting to pair with 22:22:22:22:22:22"; printf '[agent] Confirm passkey 123456 (yes/no): \n' ;;
-		yes) touch "$FAKE/paired"; echo "[CHG] Device 22:22:22:22:22:22 Paired: yes"; echo "Pairing successful" ;;
+		"pair /org/bluez/hci0/dev_22") echo '{"event": "prompt", "kind": "confirm", "pin": "123456"}' ;;
+		"answer yes") touch "$FAKE/paired"; echo '{"event": "paired"}' ;;
 	esac
 done
-FAKE_BTCTL
+FAKE_AGENT
 chmod +x "$TEST_TMP/bin/"*
-export PATH="$TEST_TMP/bin:$PATH"
+export PATH="$TEST_TMP/bin:$PATH" BLOOM_BT_AGENT="$TEST_TMP/bin/fake-agent"
 start_shell
 
 # ---- Wi-Fi ----
@@ -86,8 +86,8 @@ assert_eq "$(ipc bluetooth hold true)" "ok" "hold the Bluetooth service"
 assert_eq "$(ipc bluetooth discover true)" "ok" "look for devices"
 nearby() { ipc bluetooth state | jq -e '.discovering and ([.nearby[].name] == ["Buds"]) and ([.paired[].name] == ["Old Mouse"])' >/dev/null; }
 wait_for "Buds nearby while discovering" nearby
-grep -qx "agent KeyboardDisplay" "$FAKE/bluetoothctl.log" || fail "bluetoothctl registers as the agent"
-pass "discovery runs in a bluetoothctl session that is the pairing agent"
+grep -qx "scan on" "$FAKE/agent.log" || fail "the session scans"
+pass "discovery runs in the agent session"
 assert_eq "$(ipc bluetooth pair /org/bluez/hci0/dev_22)" "ok" "pair Buds"
 asks() { ipc bluetooth state | jq -e '.prompt == {"id":"/org/bluez/hci0/dev_22","kind":"confirm","pin":"123456"}' >/dev/null; }
 wait_for "the passkey confirmation" asks
@@ -95,14 +95,19 @@ pass "the agent's passkey prompt reaches the panel"
 assert_eq "$(ipc bluetooth respond true '')" "ok" "confirm the passkey"
 paired() { ipc bluetooth state | jq -e '.pairing == "" and .prompt == null and .error == null and ([.paired[].name] | index("Buds")) != null' >/dev/null; }
 wait_for "Buds paired" paired
-connected_after() { grep -qx "trust 22:22:22:22:22:22" "$FAKE/bluetoothctl.log" && grep -qx "connect 22:22:22:22:22:22" "$FAKE/bluetoothctl.log"; }
-wait_for "trust and connect after pairing" connected_after
-pass "confirming pairs the device, then trusts and connects it"
+grep -qx "answer yes" "$FAKE/agent.log" || fail "the answer reaches the agent"
+pass "confirming the passkey pairs the device"
 assert_eq "$(ipc bluetooth discover false)" "ok" "stop looking"
 assert_eq "$(ipc bluetooth unpair /org/bluez/hci0/dev_11)" "ok" "remove the old mouse"
 removed() { ipc bluetooth state | jq -e '[.paired[].name] == ["Buds"]' >/dev/null; }
 wait_for "the mouse removed" removed
 grep -q "org.bluez.Adapter1 RemoveDevice o /org/bluez/hci0/dev_11" "$FAKE/busctl.log" || fail "Remove calls RemoveDevice"
 pass "Remove forgets the pairing"
+assert_eq "$(ipc bluetooth discover true)" "ok" "look again"
+wait_for "the session looking" pgrep -f "$TEST_TMP/bin/fake-agent"
+pkill -f "$TEST_TMP/bin/fake-agent"
+session_lost() { ipc bluetooth state | jq -e '.lookFailed' >/dev/null; }
+wait_for "the lost session reported" session_lost
+pass "a session that dies is reported, not waited on for ever"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -v textinput; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

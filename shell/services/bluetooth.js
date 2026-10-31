@@ -62,27 +62,30 @@ function nearby(devices) {
 		.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 }
 
-// One line of bluetoothctl, which pairs as the agent: a prompt to show
-// (Bloom's confirm / display / provide), consent to give (the person already
-// chose to pair), or the pairing's result as Bloom's error codes.
-function agentLine(raw) {
-	const line = (raw || "").replace(/\u001b\[[0-9;]*[A-Za-z]/g, "").replace(/^\s*\[[^\]]*\][#>]?\s*/, m => /agent/.test(m) ? m : "").trim();
-	let m;
-	if ((m = /Confirm passkey (\d+)/.exec(line))) return { prompt: "confirm", pin: m[1] };
-	if ((m = /\[agent\] (?:Passkey|PIN code): (\S+)/.exec(line))) return { prompt: "display", pin: m[1] };
-	if (/Enter (?:PIN code|passkey)/.test(line)) return { prompt: "provide", pin: null };
-	if (/Accept pairing|Authorize service/.test(line)) return { answer: "yes" };
-	if (/Pairing successful/.test(line)) return { result: "ok" };
-	if (/Device [0-9A-F:]+ not available/i.test(line)) return { result: "not-found" };
-	if ((m = /Failed to pair: org\.bluez\.Error\.(\w+)/.exec(line))) {
-		const code = m[1];
-		if (code === "AlreadyExists") return { result: "ok" };
-		if (code === "AuthenticationTimeout") return { result: "timeout" };
-		if (/^Authentication(Canceled|Rejected|Failed)$|InProgress/.test(code)) return { result: "cancelled" };
-		if (code === "NotReady") return { result: "not-ready" };
-		return { result: "failed" };
-	}
+// One line from scripts/bluetooth-agent.py, the pairing agent: a prompt
+// to show (Bloom's confirm / display / provide), the pairing's result as
+// Bloom's codes, or that it is ready.
+function agentEvent(line) {
+	let e;
+	try { e = JSON.parse(line); } catch (err) { return null; }
+	if (!e || typeof e !== "object") return null;
+	if (e.event === "ready") return { ready: true };
+	if (e.event === "paired") return { result: "ok" };
+	if (e.event === "failed") return { result: pairError(e.error) };
+	if (e.event === "prompt" && ["confirm", "display", "provide"].includes(e.kind))
+		return { prompt: e.kind, pin: typeof e.pin === "string" ? e.pin : null };
 	return null;
+}
+
+// BlueZ's errors as Bloom's codes (bluetooth.rs pairing_error).
+function pairError(name) {
+	const n = String(name || "");
+	if (/AlreadyExists$/.test(n)) return "ok";
+	if (/AuthenticationTimeout$|NoReply$|Timeout$/.test(n)) return "timeout";
+	if (/Authentication(Canceled|Rejected|Failed)$|InProgress$/.test(n)) return "cancelled";
+	if (/NotReady$/.test(n)) return "not-ready";
+	if (/UnknownObject$|DoesNotExist$/.test(n)) return "not-found";
+	return "failed";
 }
 
 // Bloom's BluetoothPanel ERROR_TEXT.

@@ -147,6 +147,15 @@ Item {
 			compare(findChild(empty, "glyph").name, "loader-circle");
 		}
 
+		// The session couldn't run: say so rather than spin for ever.
+		function test_lookingFailed() {
+			const v = make({ nearby: [], lookFailed: true });
+			click(v, "add");
+			const empty = part(v, "empty");
+			compare(findChild(empty, "label").text, "Couldn't look for devices");
+			compare(findChild(empty, "glyph").visible, false);
+		}
+
 		function test_pairing() {
 			const v = make();
 			const pair = spy(v, "pairRequested");
