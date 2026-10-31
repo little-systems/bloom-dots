@@ -14,6 +14,7 @@ Item {
 	// The property of an item that identifies it.
 	property string keyName: "path"
 	property alias delegate: view.delegate
+	readonly property alias scrollY: view.contentY
 	readonly property bool overflowing: view.contentHeight > view.height + 0.5
 	// The width a row takes.
 	readonly property real rowWidth: root.width - Tokens.qp.list.rightPad - (root.overflowing ? Tokens.qp.list.scrollbar : 0)
@@ -51,8 +52,11 @@ Item {
 		clip: true
 		spacing: Tokens.qp.list.gap
 		boundsBehavior: Flickable.StopAtBounds
+		interactive: false // QpScroll scrolls it
 		model: rows
 	}
+
+	QpScroll { flickable: view }
 
 	Rectangle {
 		objectName: "scrollbar"

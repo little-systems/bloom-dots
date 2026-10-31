@@ -22,6 +22,7 @@ Item {
 	// The open panel is being typed into (it says so with `pinned`).
 	readonly property bool pinned: content.item?.pinned ?? false
 	readonly property real devicesHeight: content.item?.panelHeight ?? 150
+	readonly property real listScroll: content.item?.scrollY ?? 0
 	readonly property bool subpanel: panel === "wifi" || panel === "bluetooth"
 	readonly property bool toolPanel: Panels.ORDER.indexOf(panel) >= 0
 	property date now: new Date()

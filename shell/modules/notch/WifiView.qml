@@ -22,6 +22,7 @@ Item {
 	property bool settingsAvailable: false
 	// Typing a password keeps the notch open (Bloom's onPinChange).
 	readonly property bool pinned: root._typing
+	readonly property real scrollY: list.scrollY
 
 	signal back()
 	signal toggle()

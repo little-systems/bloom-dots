@@ -90,14 +90,17 @@ Item {
 		text: "No devices connected"
 	}
 
+	QpScroll { flickable: scroller }
+
 	Flickable {
+		id: scroller
 		y: titleIcon.y + titleIcon.height + Tokens.qp.gap
 		width: root.width
 		height: root.height - y - Tokens.qp.padding.bottom
 		contentHeight: list.height
 		clip: true
 		boundsBehavior: Flickable.StopAtBounds
-		interactive: contentHeight > height
+		interactive: false // QpScroll scrolls it
 
 		Column {
 			id: list

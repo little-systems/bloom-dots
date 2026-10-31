@@ -74,6 +74,8 @@ Item {
 	}
 	// The Devices panel's measured height (DevicesView.panelHeight).
 	property real devicesHeight: 150
+	// How far the open panel's list is scrolled.
+	property real panelScroll: 0
 	property int shelfCount: 0
 	property var privacy: ({ microphone: false, screen: false })
 	property var deviceAlert: null
@@ -339,7 +341,7 @@ Item {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			overlapped: root.overlapped, visible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open, panel: root.panel, deviceAlert: root.deviceAlert,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
@@ -833,6 +835,7 @@ Item {
 					root.calendarRows = item.calendarRowCount;
 					root.panelPinned = Qt.binding(() => item?.pinned ?? false);
 					root.devicesHeight = Qt.binding(() => item?.devicesHeight ?? 150);
+					root.panelScroll = Qt.binding(() => item?.listScroll ?? 0);
 				}
 			}
 			DeviceAlert {

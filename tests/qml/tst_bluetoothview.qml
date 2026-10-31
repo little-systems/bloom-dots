@@ -183,6 +183,22 @@ Item {
 			compare(part(v, "row:/d6").name, "Device 6");
 		}
 
+		// Bloom's handleWheel leaves .qp-list alone: a short list still
+		// keeps the wheel from switching panels.
+		function test_listOwnsTheWheel() {
+			let reached = 0;
+			const catcher = createTemporaryQmlObject("import QtQuick; WheelHandler { target: null }", host);
+			catcher.wheel.connect(() => reached++);
+			const v = make({ height: 264 });
+			const list = part(v, "list");
+			part(v, "row:/m");
+			const p = list.mapToItem(host, 100, 20);
+			mouseWheel(host, p.x, p.y, 0, -120);
+			wait(50);
+			compare(reached, 0);
+			compare(v.scrollY, 0, "nothing to scroll");
+		}
+
 		// .qp-list::-webkit-scrollbar: 4 px, once the list overflows.
 		function test_scrollbar() {
 			const short = make({ height: 264 });

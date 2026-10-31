@@ -360,6 +360,7 @@ Item {
 	// never switches panels on it.
 	WheelHandler {
 		target: null
+		acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
 		onWheel: event => {
 			const delta = event.pixelDelta.x || event.pixelDelta.y || (event.angleDelta.x || event.angleDelta.y) / 1.2;
 			strip.contentX = Math.max(0, Math.min(strip.contentWidth - strip.width, strip.contentX - delta));

@@ -34,6 +34,7 @@ Item {
 	property bool lookFailed: false
 	// A pairing keeps the notch open (Bloom's onPinChange).
 	readonly property bool pinned: root.pairing !== "" || root._typing
+	readonly property real scrollY: root.adding ? nearbyList.scrollY : pairedList.scrollY
 
 	signal back()
 	signal toggle()
