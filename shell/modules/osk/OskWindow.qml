@@ -21,12 +21,14 @@ PanelWindow {
 	implicitHeight: Tokens.osk.height * win.uiScale
 	color: "transparent"
 	exclusiveZone: 0
-	visible: Osk.opened && targetScreen
+	visible: targetScreen && (Osk.opened || view.shown)
 	WlrLayershell.namespace: "bloom:osk"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
 	OskView {
+		id: view
+		open: Osk.opened
 		width: Tokens.osk.width
 		height: Tokens.osk.height
 		scale: win.uiScale

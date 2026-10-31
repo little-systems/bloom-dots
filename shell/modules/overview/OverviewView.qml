@@ -73,9 +73,9 @@ Item {
 
 	Spring {
 		id: enter
-		stiffness: Tokens.launcher.enter.stiffness
-		damping: Tokens.launcher.enter.damping
-		mass: Tokens.launcher.enter.mass
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -98,19 +98,19 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
+	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
 	Rectangle {
 		id: card
 		objectName: "card"
 		anchors.centerIn: parent
-		width: grid.width + 2 * Tokens.overview.padding
-		height: fieldBox.height + grid.height + 2 * Tokens.overview.padding + Tokens.overview.gap
+		width: (grid.width + 2 * Tokens.overview.padding) * root._morph
+		height: (fieldBox.height + grid.height + 2 * Tokens.overview.padding + Tokens.overview.gap) * root._morph
 		radius: Tokens.launcher.radius
 		color: root.theme.bgExpanded
 		border.width: 1
 		border.color: root.theme.border
 		visible: opacity > 0
 		opacity: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
-		scale: Tokens.launcher.enter.scale + (1 - Tokens.launcher.enter.scale) * enter.value
 		Behavior on opacity {
 			enabled: !root._open
 			NumberAnimation { duration: Tokens.launcher.exitMs }

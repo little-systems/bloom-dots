@@ -30,6 +30,19 @@ Item {
 	signal recordRequested(string action)
 	signal dismissed()
 
+	property bool open: true
+	readonly property bool shown: root.open || enter.value > 0.01
+	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	opacity: Math.max(0, Math.min(1, enter.value))
+	Spring {
+		id: enter
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
+		initial: 0
+		target: root.open ? 1 : 0
+	}
+
 	focus: true
 	Keys.onEscapePressed: root.dismissed()
 
@@ -93,8 +106,9 @@ Item {
 		title: "Notes"
 		x: 40
 		y: 80
-		width: 300
-		height: 240
+		fullWidth: 300
+		fullHeight: 240
+		factor: root._morph
 		TextEdit {
 			objectName: "notes"
 			anchors.fill: parent
@@ -112,8 +126,9 @@ Item {
 		title: "System"
 		x: 40
 		y: 340
-		width: 300
-		height: 170
+		fullWidth: 300
+		fullHeight: 170
+		factor: root._morph
 		Column {
 			width: parent.width
 			Stat { objectName: "statCpu"; label: "CPU"; value: root.cpu + "%" }
@@ -127,8 +142,9 @@ Item {
 		title: "Volume"
 		x: 360
 		y: 80
-		width: 300
-		height: 240
+		fullWidth: 300
+		fullHeight: 240
+		factor: root._morph
 		Text {
 			visible: root.mixer.length === 0
 			text: "Nothing is playing"
@@ -184,8 +200,9 @@ Item {
 		title: "Capture"
 		x: 360
 		y: 340
-		width: 300
-		height: 100
+		fullWidth: 300
+		fullHeight: 100
+		factor: root._morph
 		Row {
 			spacing: 8
 			Action { objectName: "shot"; text: "Screenshot"; onClicked: root.recordRequested("screenshot") }
@@ -198,8 +215,9 @@ Item {
 		title: "Crosshair"
 		x: 360
 		y: 460
-		width: 300
-		height: 100
+		fullWidth: 300
+		fullHeight: 100
+		factor: root._morph
 		Action {
 			objectName: "crosshairToggle"
 			text: root.crosshair ? "Turn Off" : "Pin to Screen"

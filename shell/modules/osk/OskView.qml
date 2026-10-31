@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "osk.js" as Logic
@@ -14,14 +15,29 @@ Item {
 	}
 	property color accent: "#007aff"
 	property var held: []
+	property bool open: true
 	signal pressed(var key)
+
+	readonly property bool shown: root.open || enter.value > 0.01
+	Spring {
+		id: enter
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
+		initial: 0
+		target: root.open ? 1 : 0
+	}
 
 	readonly property bool _shift: root.held.indexOf("shift") >= 0
 	readonly property var _rows: Logic.rows()
 
 	Rectangle {
 		objectName: "keyboard"
-		anchors.fill: parent
+		anchors.bottom: parent.bottom
+		anchors.horizontalCenter: parent.horizontalCenter
+		width: parent.width * (Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, enter.value))
+		height: parent.height * Math.max(0, Math.min(1.02, enter.value))
+		clip: true
 		radius: Tokens.osk.radius
 		color: root.theme.bgExpanded
 		border.width: 1

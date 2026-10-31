@@ -9,6 +9,13 @@ Rectangle {
 	property QtObject theme
 	required property string title
 	default property alias content: body.data
+	// The view's morph: cards open from their top-left in both directions.
+	property real factor: 1
+	required property real fullWidth
+	required property real fullHeight
+	width: root.fullWidth * root.factor
+	height: root.fullHeight * root.factor
+	clip: true
 
 	objectName: "card:" + root.title
 	radius: Tokens.overlay.radius
@@ -45,7 +52,7 @@ Rectangle {
 		id: body
 		x: Tokens.overlay.padding
 		y: heading.y + heading.height + 8
-		width: parent.width - 2 * Tokens.overlay.padding
-		height: parent.height - y - Tokens.overlay.padding
+		width: root.fullWidth - 2 * Tokens.overlay.padding
+		height: root.fullHeight - y - Tokens.overlay.padding
 	}
 }

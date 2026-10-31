@@ -43,6 +43,7 @@ Item {
 			const s = createTemporaryQmlObject("import QtTest; SignalSpy {}", host);
 			s.target = v;
 			s.signalName = "pressed";
+			tryCompare(findChild(v, "keyboard"), "height", 280, 2000);
 			waitForRendering(host);
 			const key = findChild(v, "key:q");
 			const p = key.mapToItem(host, key.width / 2, key.height / 2);
@@ -57,6 +58,7 @@ Item {
 		}
 		function test_keysFitTheBoard() {
 			const v = createTemporaryObject(viewComponent, host);
+			tryCompare(findChild(v, "keyboard"), "width", 760, 2000);
 			waitForRendering(host);
 			for (const id of ["Backspace", "Tab", "Return", "alt", "Right"]) {
 				const key = findChild(v, "key:" + id);

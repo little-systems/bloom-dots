@@ -19,6 +19,7 @@ Item {
 		function make() {
 			const v = createTemporaryObject(viewComponent, host);
 			verify(v);
+			tryCompare(v, "_morph", 1, 2000);
 			waitForRendering(host);
 			return v;
 		}
@@ -86,6 +87,16 @@ Item {
 			const p = h.mapToItem(host, h.width / 2, h.height / 2);
 			mouseDrag(host, p.x, p.y, 100, 40);
 			verify(c.x > x, "moved");
+		}
+		function test_opensInBothDirections() {
+			const v = createTemporaryObject(viewComponent, host, { open: false });
+			const c = findChild(v, "card:Notes");
+			verify(c.width < c.fullWidth);
+			verify(c.height < c.fullHeight);
+			verify(!v.shown);
+			v.open = true;
+			tryCompare(c, "width", c.fullWidth, 2000);
+			tryCompare(c, "height", c.fullHeight, 2000);
 		}
 	}
 }

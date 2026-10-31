@@ -30,7 +30,7 @@ Item {
 			const v = createTemporaryObject(viewComponent, host, props || {});
 			verify(v);
 			v.open();
-			tryCompare(findChild(v, "card"), "scale", 1, 1500);
+			tryCompare(v, "_morph", 1, 2000);
 			waitForRendering(host);
 			return v;
 		}

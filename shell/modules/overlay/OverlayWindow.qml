@@ -50,13 +50,14 @@ Scope {
 		anchors.right: true
 		color: "transparent"
 		exclusiveZone: 0
-		visible: OverlayState.opened && root.targetScreen
+		visible: root.targetScreen && (OverlayState.opened || view.shown)
 		WlrLayershell.namespace: "bloom:overlay"
 		WlrLayershell.layer: WlrLayer.Overlay
 		WlrLayershell.keyboardFocus: OverlayState.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
 		OverlayView {
 			id: view
+			open: OverlayState.opened
 			width: win.width / root.uiScale
 			height: win.height / root.uiScale
 			scale: root.uiScale
