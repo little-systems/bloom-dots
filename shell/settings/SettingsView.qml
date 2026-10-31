@@ -238,7 +238,7 @@ Rectangle {
 				onTextChanged: root.query = text
 				onAccepted: if (root._hits.length) root._open(root._hits[0])
 			}
-			Item { width: 1; height: 6 }
+			Item { width: 1; height: 10 }
 			Text {
 				objectName: "noHits"
 				visible: root.query !== "" && root._hits.length === 0
@@ -299,7 +299,8 @@ Rectangle {
 
 					Text {
 						leftPadding: Tokens.settings.tab.paddingH
-						topPadding: tabGroup.index === 0 ? 0 : 10
+						topPadding: tabGroup.index === 0 ? 0 : 16
+						bottomPadding: 4
 						text: tabGroup.modelData.label
 						color: root.theme.textMuted
 						font.family: Fonts.uiFor(Font.DemiBold)

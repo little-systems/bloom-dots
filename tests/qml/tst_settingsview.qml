@@ -5,7 +5,7 @@ import "../../shell/common/render"
 
 Item {
 	id: host
-	width: 740
+	width: 776
 	height: 560
 
 	QtObject {
@@ -153,7 +153,7 @@ Item {
 	}
 	Component {
 		id: viewComponent
-		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
+		SettingsView { width: 776; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
 	TestCase {
@@ -207,7 +207,7 @@ Item {
 		// or system groups, so the sidebar's tabs sit lower than in Bloom.
 		function test_matchesBloomsLayout() {
 			const v = make();
-			v.width = 740;
+			v.width = 776;
 			v.height = 560;
 			waitForRendering(host);
 			function at(item, x, y, w, h, what) {
@@ -217,10 +217,10 @@ Item {
 				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
 				if (h !== undefined) fuzzyCompare(item.height, h, 1, what + " height");
 			}
-			at(part(v, "tab:general"), 8.8, undefined, 153.2, 36, "tab");
-			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
-			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
-			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
+			at(part(v, "tab:general"), 12.8, undefined, 181.2, 36, "tab");
+			at(part(v, "close"), 735.2, 16.8, 22, 22, "close");
+			at(part(v, "heading"), 230.8, 62.8, undefined, 28.6, "heading");
+			at(part(v, "copy"), 230.8, 94.4, undefined, 16.8, "copy");
 			compare(Math.round(part(v, "row:24-Hour Time").height), 51);
 			compare(part(v, "time24").width, 42);
 			compare(part(v, "time24").height, 24);

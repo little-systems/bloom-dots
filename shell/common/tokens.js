@@ -241,12 +241,12 @@ var picker = { columns: 3, rows: 3, cellWidth: 240, cellHeight: 150, gap: 8, pad
 
 // The settings app (Bloom Settings.css).
 var settings = {
-	window: { width: 740, height: 560, minWidth: 600, minHeight: 440, radius: 12 },
+	window: { width: 776, height: 560, minWidth: 640, minHeight: 440, radius: 12 },
 	control: 28,
 	controlRadius: 6,
 	controlText: 12,
 	title: { paddingTop: 16, paddingBottom: 10, paddingH: 18, size: 13, close: 22, closeIcon: 12 },
-	sidebar: { width: 170, paddingV: 12, paddingH: 8, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
+	sidebar: { width: 206, paddingV: 14, paddingH: 12, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
 	tab: { height: 36, paddingH: 12, gap: 10, radius: 8, icon: 20, glyph: 14, text: 13, idleOpacity: 0.8, ms: 150 },
 	content: { top: 12, h: 22, bottom: 28, scrollbar: 5 },
 	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12 },
