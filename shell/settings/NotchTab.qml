@@ -106,6 +106,14 @@ Column {
 				}
 			}
 			SRow {
+				theme: root.theme; icon: "sliders-vertical"; label: "Visualizer"; desc: "Show the audio bars"
+				SToggle { accessibleName: "Visualizer"; theme: root.theme; checked: root._v["bloom-media-visualizer-enabled"]; onToggled: value => root.set("bloom-media-visualizer-enabled", value) }
+			}
+			SRow {
+				theme: root.theme; icon: "music"; label: "Album Art"; desc: "Show artwork in the notch"
+				SToggle { accessibleName: "Album Art"; theme: root.theme; checked: root._v["bloom-media-album-art-enabled"]; onToggled: value => root.set("bloom-media-album-art-enabled", value) }
+			}
+			SRow {
 				theme: root.theme; icon: "sparkles"; label: "Ambient Glow"; desc: "Colored glow behind expanded album art"
 				SToggle { accessibleName: "Ambient Glow"; theme: root.theme; checked: root._v["bloom-media-ambience-enabled"]; onToggled: value => root.set("bloom-media-ambience-enabled", value) }
 			}
@@ -113,6 +121,23 @@ Column {
 				theme: root.theme; icon: "circle"; label: "Compact Glow"; desc: "Glow around collapsed thumbnail"; divider: false
 				SToggle { accessibleName: "Compact Glow"; theme: root.theme; checked: root._v["bloom-media-compact-glow-enabled"]; onToggled: value => root.set("bloom-media-compact-glow-enabled", value) }
 			}
+		}
+	}
+
+	SGroupLabel { theme: root.theme; text: "Notifications" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "bell-off"; label: "Do Not Disturb"; desc: "Keep notifications quiet"
+			SToggle { objectName: "dnd"; accessibleName: "Do Not Disturb"; theme: root.theme; checked: root._v["bloom-notifications-dnd"]; onToggled: value => root.set("bloom-notifications-dnd", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "timer"; label: "Timeout"; desc: "Dismiss after " + Math.round(root._v["bloom-notifications-timeout"] / 1000) + " s"
+			SSlider { accessibleName: "Timeout"; theme: root.theme; from: 1000; to: 30000; step: 1000; value: root._v["bloom-notifications-timeout"]; onMoved: value => root.set("bloom-notifications-timeout", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "archive"; label: "History"; desc: "Keep the last " + root._v["bloom-notifications-history-limit"]; divider: false
+			SSlider { accessibleName: "History"; theme: root.theme; from: 0; to: 500; step: 10; value: root._v["bloom-notifications-history-limit"]; onMoved: value => root.set("bloom-notifications-history-limit", value) }
 		}
 	}
 

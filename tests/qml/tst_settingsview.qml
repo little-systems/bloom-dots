@@ -19,7 +19,10 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-time-format-24h": false, "bloom-low-power": "off",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false,
+		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
+		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
+		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
 		"bloom-low-battery-threshold": 20, "bloom-theme-mode": "dark", "bloom-theme-color": "#007aff",
 		"bloom-theme-opacity": 0.8, "bloom-theme-saturation": 0.5, "bloom-theme-brightness": 0.15, "bloom-scale": 1.1,
 		"bloom-volume-hud-enabled": true, "bloom-volume-edge-enabled": true,
@@ -239,7 +242,8 @@ Item {
 			const queried = spy(v, "cityQueried");
 			const field = part(v, "city");
 			field.forceActiveFocus();
-			part(v, "page").contentY = 360;
+			waitForRendering(host);
+			part(v, "page").contentY = field.mapToItem(part(v, "page").contentItem, 0, 0).y - 120;
 			keyClick("P");
 			compare(queried.count, 1);
 			v.cityResults = [{ name: "Pune", country: "India", latitude: 18.5, longitude: 73.8 }];
@@ -487,6 +491,13 @@ Item {
 			const v = make("hyprland");
 			compare(part(v, "gapsIn").value, 9);
 			compare(findChild(part(v, "row:Inner Gaps"), "desc").text, "9 px between windows");
+		}
+
+		function test_volumeProtectionRows() {
+			const v = make("overlays");
+			verify(!part(v, "maxJump").visible);
+			fakeStore.set("bloom-volume-protection-enabled", true);
+			verify(part(v, "maxJump").visible);
 		}
 
 		function test_closeSignals() {
