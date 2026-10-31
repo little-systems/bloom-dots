@@ -238,6 +238,25 @@ var session = {
 // The wallpaper picker (Phase 7): the launcher's card over a grid.
 var picker = { columns: 3, rows: 3, cellWidth: 240, cellHeight: 150, gap: 8, padding: 12, radius: 10, text: 12 };
 
+// The settings app (Bloom Settings.css).
+var settings = {
+	window: { width: 740, height: 560, radius: 12 },
+	title: { paddingTop: 16, paddingBottom: 10, paddingH: 18, size: 13, close: 22, closeIcon: 12 },
+	sidebar: { width: 170, paddingV: 12, paddingH: 8, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
+	tab: { height: 36, paddingH: 12, gap: 10, radius: 8, icon: 20, glyph: 14, text: 13, idleOpacity: 0.8, ms: 150 },
+	content: { top: 12, h: 22, bottom: 28, scrollbar: 5 },
+	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12 },
+	group: { radius: 12, label: { size: 11, spacing: 0.5, top: 18, firstTop: 4, spacedTop: 24, h: 6, bottom: 8 } },
+	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 14, desc: 11, gap: 1, divider: 52, ms: 200 },
+	toggle: { width: 42, height: 24, knob: 18, inset: 2, travel: 18, on: "#34c759", ms: 300 },
+	slider: { width: 100, track: 4, thumb: 14 },
+	select: { size: 11, radius: 6, paddingV: 4, paddingH: 8, minWidth: 80, itemHeight: 24 },
+	scale: { size: 11, radius: 6, button: 20, value: 32, gap: 8, paddingV: 2, paddingH: 4 },
+	color: { size: 28, gap: 8, text: 11 },
+	about: { padding: [10, 4], top: 14, bottom: 20, logo: 68, logoGap: 14, title: 40, version: 10, credit: 11.5 },
+	danger: "#ff453a"
+};
+
 // Low-power mode: how often a live preview refreshes.
 var lowPower = { captureMs: 1000 };
 

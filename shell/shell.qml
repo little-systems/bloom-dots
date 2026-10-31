@@ -202,6 +202,12 @@ ShellRoot {
 	IpcHandler {
 		target: "settings"
 
+		// The settings app, its own process so a crash there leaves the shell up.
+		function open(): string {
+			Quickshell.execDetached(["qs", "--no-duplicate", "-p", Quickshell.shellPath("settings-app.qml")]);
+			return "ok";
+		}
+
 		// The value as JSON (null for an unknown key).
 		function get(key: string): string {
 			return JSON.stringify(Settings.get(key) ?? null);

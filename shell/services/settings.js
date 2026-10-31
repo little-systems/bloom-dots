@@ -288,6 +288,22 @@ var SCHEMA = {
 		default: true,
 		doc: "Album artwork in the collapsed notch."
 	},
+	"bloom-volume-hud-enabled": {
+		type: "bool", default: true,
+		doc: "Show the volume overlay."
+	},
+	"bloom-volume-edge-enabled": {
+		type: "bool", default: true,
+		doc: "Slide the volume overlay in from the left edge on hover."
+	},
+	"bloom-brightness-hud-enabled": {
+		type: "bool", default: true,
+		doc: "Show the brightness overlay."
+	},
+	"bloom-brightness-edge-enabled": {
+		type: "bool", default: true,
+		doc: "Slide the brightness overlay in from the right edge on hover."
+	},
 	"bloom-low-power": {
 		type: "enum",
 		values: ["off", "auto", "on"],

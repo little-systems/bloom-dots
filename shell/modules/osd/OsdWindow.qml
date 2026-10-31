@@ -20,17 +20,19 @@ PanelWindow {
 	property bool mixerOpen: false
 	readonly property bool pointerOverCard: edgeArea.containsMouse || cardHover.hovered
 	readonly property real uiScale: Settings.values["bloom-scale"]
+	readonly property bool hudEnabled: Settings.values[win.edge === "left" ? "bloom-volume-hud-enabled" : "bloom-brightness-hud-enabled"]
+	readonly property bool edgeEnabled: win.hudEnabled && Settings.values[win.edge === "left" ? "bloom-volume-edge-enabled" : "bloom-brightness-edge-enabled"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 
 	function show() {
-		if (!win.targetScreen || (win.edge === "right" && !Brightness.available)) return false;
+		if (!win.hudEnabled || !win.targetScreen || (win.edge === "right" && !Brightness.available)) return false;
 		win.shown = true;
 		hoverHideTimer.stop();
 		if (!win.pointerOverCard && !win.mixerOpen) hideTimer.restart();
 		return true;
 	}
 	function keepOpen() {
-		if (!win.targetScreen || (win.edge === "right" && !Brightness.available)) return;
+		if (!win.hudEnabled || !win.targetScreen || (win.edge === "right" && !Brightness.available)) return;
 		win.shown = true;
 		hideTimer.stop();
 		hoverHideTimer.stop();
@@ -97,6 +99,7 @@ PanelWindow {
 		// cursor: default — the screen-edge reveal band
 		MouseArea {
 			id: edgeArea
+			enabled: win.edgeEnabled
 			anchors.fill: parent
 			hoverEnabled: true
 			onEntered: win.keepOpen()

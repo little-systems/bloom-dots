@@ -7,7 +7,7 @@ const ICONS = [
 	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search", "sliders-horizontal",
 	"chevron-left", "chevron-right", "x", "wifi", "wifi-off", "bluetooth", "volume-2",
 	"calendar-days", "timer", "folder", "usb", "mic", "screen-share", "bell-off", "bell", "rotate-ccw", "lock-keyhole", "monitor-smartphone", "laptop",
-	"loader-circle", "refresh-cw", "plus", "bell-ring", "user", "arrow-right", "battery-full",
+	"loader-circle", "refresh-cw", "plus", "bell-ring", "user", "arrow-right", "battery-full", "settings", "palette", "panel-top", "monitor", "layers", "info", "download", "clock", "battery-warning", "droplet", "contrast", "droplets", "maximize-2", "volume-2", "arrow-left-to-line", "arrow-right-to-line", "file-down", "upload", "gauge", "calendar", "music", "minimize-2", "layout-list", "sparkles", "circle", "archive", "cloud-sun", "eye", "eye-off", "columns-2", "layout-panel-left", "trash-2", "folder-open", "folder-plus", "chevron-up", "chevron-down", "arrow-left-right",
 	"wifi-high", "wifi-low", "wifi-zero", "lock", "headphones", "smartphone", "keyboard", "mouse", "gamepad-2", "watch",
 	"type", "log-out", "power", "file", "file-image", "file-video-camera", "file-music", "file-spreadsheet", "presentation", "file-text", "file-archive", "file-code", "app-window", "disc", "file-type"
 ];

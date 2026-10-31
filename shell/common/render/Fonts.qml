@@ -17,6 +17,9 @@ QtObject {
 		return weight === Font.Medium ? medium : family;
 	}
 
+	// Bloom's About title (Settings.css .about-title).
+	readonly property FontLoader _syne: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Syne-800.woff2") }
+	readonly property string syne: _syne.name
 	readonly property FontLoader _regular: FontLoader { id: regular; source: Qt.resolvedUrl("../../assets/fonts/BloomInter-400.ttf") }
 	readonly property FontLoader _medium: FontLoader { id: mediumLoader; source: Qt.resolvedUrl("../../assets/fonts/BloomInter-500.ttf") }
 	readonly property FontLoader _semibold: FontLoader { id: semibold; source: Qt.resolvedUrl("../../assets/fonts/BloomInter-600.ttf") }
