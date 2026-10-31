@@ -63,6 +63,7 @@ Rectangle {
 			{ id: "input", label: "Input", icon: "keyboard", copy: "Keyboard, touchpad and mouse." },
 			{ id: "hyprland", label: "Windows", icon: "layout-grid", copy: "Gaps, borders, corners and effects." },
 			{ id: "apps", label: "Apps", icon: "app-window", copy: "Which app opens what." },
+			{ id: "ai", label: "AI", icon: "sparkles", copy: "Gemini chat in Spotlight." },
 			{ id: "time", label: "Time", icon: "clock", copy: "Time zone and clock sync." },
 			{ id: "updates", label: "Updates", icon: "package", copy: "Keep the system current." }
 		] },
@@ -406,7 +407,7 @@ Rectangle {
 					height: active && item ? item.implicitHeight : 0
 					active: root._system && root.sys !== undefined && root.tab !== "network" && root.tab !== "bluetooth"
 					sourceComponent: SystemPages {
-						theme: root.theme; popup: selectPopup; sys: root.sys; page: root.tab
+						theme: root.theme; popup: selectPopup; sys: root.sys; store: root.store; page: root.tab
 						onCheatsheetRequested: root.cheatsheetRequested()
 					}
 				}

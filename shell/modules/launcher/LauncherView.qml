@@ -22,6 +22,12 @@ Item {
 	property color accent: "#007aff"
 	// { id, name, sub, icon (a URL), glyph (a character shown as the icon) }
 	property var results: []
+	// Chat replaces the list while `chatting`: [{ role, text }].
+	property bool chatting: false
+	property var messages: []
+	property bool busy: false
+	property string chatError: ""
+	signal chatSubmitted(string text)
 	property int selectedIndex: 0
 
 	signal queryEdited(string text)
@@ -30,8 +36,9 @@ Item {
 
 	readonly property bool shown: root._open || card.opacity > 0
 	readonly property real barHeight: Tokens.launcher.field.height + 2 * Tokens.launcher.padding
-	readonly property real targetHeight: root.barHeight + (root.results.length
-		? Tokens.launcher.gap + Math.min(root.results.length, Tokens.launcher.maxRows) * Tokens.dock.popup.row.height : 0)
+	readonly property real targetHeight: root.barHeight + (root.chatting
+		? Tokens.launcher.gap + Tokens.launcher.maxRows * Tokens.dock.popup.row.height
+		: root.results.length ? Tokens.launcher.gap + Math.min(root.results.length, Tokens.launcher.maxRows) * Tokens.dock.popup.row.height : 0)
 
 	property bool _open: false
 	// What the selected row shows beside the list (the clipboard's previews).
@@ -64,7 +71,13 @@ Item {
 		else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) root._move(1);
 		else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) root._move(-1);
 		else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-			if (root.results[root.selectedIndex]) root.chosen(root.results[root.selectedIndex]);
+			if (root.chatting) {
+				const text = field.text.replace(/^@\s*/, "").trim();
+				if (text && !root.busy) {
+					root.chatSubmitted(text);
+					field.text = "@ ";
+				}
+			} else if (root.results[root.selectedIndex]) root.chosen(root.results[root.selectedIndex]);
 		} else return;
 		event.accepted = true;
 	}
@@ -164,7 +177,7 @@ Item {
 				Text {
 					objectName: "placeholder"
 					visible: field.text === ""
-					text: "Search apps, or ; : = > ? ! for more"
+					text: "Search anything, or ; : = > ? ! @ for more"
 					color: root.theme.textMuted
 					font: field.font
 				}
@@ -176,6 +189,7 @@ Item {
 			y: fieldBox.y + fieldBox.height + Tokens.launcher.gap
 			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
 			height: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
+			visible: !root.chatting
 
 			QpScroll { flickable: list }
 
@@ -281,6 +295,90 @@ Item {
 							font.pixelSize: Tokens.launcher.sub
 						}
 					}
+				}
+			}
+		}
+
+		Flickable {
+			id: chat
+			objectName: "chat"
+			visible: root.chatting
+			x: Tokens.launcher.padding
+			y: fieldBox.y + fieldBox.height + Tokens.launcher.gap
+			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
+			height: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
+			contentHeight: transcript.implicitHeight
+			clip: true
+			boundsBehavior: Flickable.StopAtBounds
+			onContentHeightChanged: contentY = Math.max(0, contentHeight - height)
+
+			Column {
+				id: transcript
+				width: chat.width
+				spacing: 10
+
+				Text {
+					objectName: "chatHint"
+					visible: root.messages.length === 0 && root.chatError === ""
+					width: parent.width
+					topPadding: 8
+					horizontalAlignment: Text.AlignHCenter
+					text: "Ask Gemini anything. Only what you type here is sent."
+					color: root.theme.textMuted
+					font.family: Fonts.family
+					font.pixelSize: 12
+				}
+				Repeater {
+					model: root.messages
+					delegate: Item {
+						id: bubble
+						required property var modelData
+						readonly property bool mine: bubble.modelData.role === "user"
+						width: transcript.width
+						height: message.implicitHeight + (bubble.mine ? 14 : 0)
+
+						Rectangle {
+							visible: bubble.mine
+							x: parent.width - width
+							width: Math.min(message.implicitWidth + 20, parent.width * 0.8)
+							height: parent.height
+							radius: 12
+							color: root.theme.groupBg
+						}
+						Text {
+							id: message
+							objectName: "chatMessage"
+							x: bubble.mine ? parent.width - width - 10 : 2
+							y: bubble.mine ? 7 : 0
+							width: Math.min(implicitWidth, parent.width * 0.8 - 20)
+							text: bubble.modelData.text
+							textFormat: bubble.mine ? Text.PlainText : Text.MarkdownText
+							wrapMode: Text.Wrap
+							color: root.theme.text
+							linkColor: root.accent
+							font.family: Fonts.family
+							font.pixelSize: 13
+						}
+					}
+				}
+				Text {
+					objectName: "chatBusy"
+					visible: root.busy && (root.messages[root.messages.length - 1]?.role ?? "") === "user"
+					leftPadding: 2
+					text: "Thinking…"
+					color: root.theme.textMuted
+					font.family: Fonts.family
+					font.pixelSize: 12
+				}
+				Text {
+					objectName: "chatError"
+					visible: root.chatError !== ""
+					width: parent.width
+					text: root.chatError
+					wrapMode: Text.Wrap
+					color: "#ff8a80"
+					font.family: Fonts.family
+					font.pixelSize: 12
 				}
 			}
 		}

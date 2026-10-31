@@ -308,6 +308,12 @@ var SCHEMA = {
 		type: "bool", default: false,
 		doc: "Land every spring at once instead of animating it."
 	},
+	"bloom-ai-model": {
+		type: "enum",
+		values: ["gemini-2.5-flash", "gemini-2.5-pro"],
+		default: "gemini-2.5-flash",
+		doc: "Gemini model for chat in the launcher."
+	},
 	"bloom-low-power": {
 		type: "enum",
 		values: ["off", "auto", "on"],

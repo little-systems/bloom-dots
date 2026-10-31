@@ -63,4 +63,20 @@ TestCase {
 		compare(got[0].fileName, "100%.png");
 		compare(got[2].fileName, "ok x.png");
 	}
+
+	function test_spotlightKeepsEveryKind() {
+		const apps = [{ id: "a", name: "Display Tool", icon: "" }];
+		const windows = [{ title: "display notes", address: "0x1", class: "kitty" }];
+		const rows = Logic.spotlight("display", apps, windows, ["/home/d/display.png"], "/home/d");
+		compare(rows.map(r => r.sub), ["Application", "Window · kitty", "Settings", "~/display.png", "Ask Gemini", "Search Google"]);
+	}
+
+	function test_spotlightNeverEmpty() {
+		const rows = Logic.spotlight("zzqq", [], [], [], "/home/d");
+		compare(rows.map(r => r.action.kind), ["ask", "url"]);
+	}
+
+	function test_atIsChat() {
+		compare(Logic.parse("@ hello"), { mode: "ai", term: "hello" });
+	}
 }

@@ -34,6 +34,11 @@ PanelWindow {
 		theme: Theme
 		accent: Theme.accent
 		results: Launcher.results
+		chatting: Launcher.chatting
+		messages: Assistant.messages
+		busy: Assistant.busy
+		chatError: Assistant.error
+		onChatSubmitted: text => Assistant.ask(text)
 		onQueryEdited: text => Launcher.setQuery(text)
 		onChosen: item => Launcher.accept(item)
 		onDismissed: Launcher.hide()

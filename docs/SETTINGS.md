@@ -65,6 +65,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-brightness-hud-enabled` | bool | `true` | `true`, `false` | Show the brightness overlay. |
 | `bloom-brightness-edge-enabled` | bool | `true` | `true`, `false` | Slide the brightness overlay in from the right edge on hover. |
 | `bloom-reduce-motion` | bool | `false` | `true`, `false` | Land every spring at once instead of animating it. |
+| `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |
 | `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |
 | `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
 | `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

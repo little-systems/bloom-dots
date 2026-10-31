@@ -16,6 +16,9 @@ Singleton {
 	readonly property var _parsed: Logic.parse(root.query)
 	property var _clips: []
 	property var _thumbs: ({})
+	property var _files: []
+	readonly property string _home: Quickshell.env("HOME")
+	readonly property bool chatting: root._parsed.mode === "ai"
 	property var _actions: []
 
 	function show() { root.opened = true; root.setQuery(""); }
@@ -39,14 +42,24 @@ Singleton {
 	}
 	function _refresh() {
 		const q = root._parsed;
-		if (q.mode === "apps") root.results = Logic.rank(Apps.all(), q.term).slice(0, 50).map(a => ({
+		if (q.mode === "apps" && q.term === "") root.results = Logic.rank(Apps.all(), "").slice(0, 50).map(a => ({
 			id: a.id, name: a.name, sub: "", icon: a.icon, glyph: "", action: { kind: "app", value: a.id } }));
+		else if (q.mode === "apps") {
+			root._files = [];
+			root._showSpotlight();
+			fileDelay.restart();
+		}
+		else if (q.mode === "ai") root.results = [];
 		else if (q.mode === "emoji") root.results = Logic.emoji(q.term);
 		else if (q.mode === "command") root.results = Logic.commandRow(q.term);
 		else if (q.mode === "web") root.results = Logic.webRow(q.term);
 		else if (q.mode === "clipboard") { root._showClips(); if (!clips.running) clips.running = true; }
 		else if (q.mode === "actions") { root._showActions(); if (!actions.running) actions.running = true; }
 		else if (q.mode === "calc") calcDelay.restart();
+	}
+	function _showSpotlight() {
+		const q = root._parsed;
+		root.results = Logic.spotlight(q.term, Apps.all(), HyprState.clients, root._files, root._home);
 	}
 	function _showClips() {
 		root.results = Logic.filterClips(root._clips, root._parsed.term).slice(0, 50).map(e => Logic.clipRow(e, root._thumbs));
@@ -60,7 +73,16 @@ Singleton {
 	function accept(item) {
 		const a = item && item.action;
 		if (!a) return "nothing to do";
+		if (a.kind === "ask") {
+			Assistant.ask(a.value);
+			root.setQuery("@");
+			root.openedWith("@");
+			return "ok";
+		}
 		root.hide();
+		if (a.kind === "window") Quickshell.execDetached(["hyprctl", "dispatch", "hl.dsp.focus({window=\"address:" + a.value + "\"})"]);
+		else if (a.kind === "file") Quickshell.execDetached(["xdg-open", a.value]);
+		else if (a.kind === "settings") Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/open-settings.sh"), Quickshell.shellPath("settings-app.qml"), a.value]);
 		if (a.kind === "app") Apps.launch(a.value);
 		else if (a.kind === "copy") Quickshell.execDetached(["wl-copy", "--", a.value]);
 		else if (a.kind === "clip") Quickshell.execDetached(["sh", "-c", "printf '%s' \"$1\" | cliphist decode | wl-copy", "sh", a.value]);
@@ -70,6 +92,28 @@ Singleton {
 		return "ok";
 	}
 
+	Timer {
+		id: fileDelay
+		interval: 200
+		onTriggered: {
+			const term = root._parsed.term;
+			if (root._parsed.mode !== "apps" || term.length < 2) return;
+			files.term = term;
+			files.running = false;
+			files.command = ["timeout", "-k", "1s", "2s", "fd", "--fixed-strings", "--max-results", "6", "--base-directory", root._home, "--absolute-path", "--", term];
+			files.running = true;
+		}
+	}
+	Process {
+		id: files
+		property string term: ""
+		stdout: StdioCollector { id: filesOut }
+		onExited: {
+			if (root._parsed.mode !== "apps" || root._parsed.term !== files.term) return;
+			root._files = filesOut.text.split("\n").filter(p => p);
+			root._showSpotlight();
+		}
+	}
 	Timer {
 		id: calcDelay
 		interval: 150

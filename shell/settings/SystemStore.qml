@@ -30,6 +30,11 @@ Scope {
 	property bool autostart: false
 	property bool autostartLoaded: false
 	property string lastError: ""
+	property string aiKey: ""
+	property string aiCheck: ""
+	property string _wantSink: ""
+	property string _wantSource: ""
+	property string _wantPower: ""
 	property var _checks: []
 	property var _queue: []
 	property int pendingSeconds: 0
@@ -57,10 +62,32 @@ Scope {
 	}
 	function setVolume(v) { Audio.setVolume(v); }
 	function setBrightness(v) { Brightness.setPercent(v * 100); }
-	function setSink(name) { Pipewire.preferredDefaultAudioSink = root.sinks.find(n => n.name === name) ?? null; }
-	function setSource(name) { Pipewire.preferredDefaultAudioSource = root.sources.find(n => n.name === name) ?? null; }
+	function setSink(name) {
+		root._wantSink = name;
+		Pipewire.preferredDefaultAudioSink = root.sinks.find(n => n.name === name) ?? null;
+		settleTimer.restart();
+	}
+	function setSource(name) {
+		root._wantSource = name;
+		Pipewire.preferredDefaultAudioSource = root.sources.find(n => n.name === name) ?? null;
+		settleTimer.restart();
+	}
+	// The key goes to the tool on stdin, never in a command line.
+	function setAiKey(key) {
+		keyStore.pendingKey = key;
+		keyStore.running = true;
+	}
+	function removeAiKey() {
+		root._run(["secret-tool", "clear", "service", "bloom", "key", "gemini"], "Couldn't remove the key", () => { keyProbe.running = true; });
+	}
+	function checkAi() {
+		root.aiCheck = "Checking…";
+		keyCheck.running = true;
+	}
 	function setPowerMode(mode) {
+		root._wantPower = mode;
 		PowerProfiles.profile = mode === "power-saver" ? PowerProfile.PowerSaver : mode === "performance" ? PowerProfile.Performance : PowerProfile.Balanced;
+		settleTimer.restart();
 	}
 	// The switch only moves when the read-back says so.
 	function setNtp(on) {
@@ -158,6 +185,53 @@ Scope {
 				root.autostart = text.trim() === "enabled";
 				root.autostartLoaded = true;
 			}
+		}
+	}
+	// Sound and power change asynchronously: judge them once they've had time.
+	Timer {
+		id: settleTimer
+		interval: 1000
+		onTriggered: {
+			if (root._wantSink && root.sink !== root._wantSink) root.lastError = "The sound output didn't change";
+			if (root._wantSource && root.source !== root._wantSource) root.lastError = "The microphone didn't change";
+			if (root._wantPower && root.powerMode !== root._wantPower) root.lastError = "The power mode didn't change";
+			root._wantSink = "";
+			root._wantSource = "";
+			root._wantPower = "";
+		}
+	}
+	Process {
+		id: keyProbe
+		running: true
+		command: ["sh", "-c", "secret-tool lookup service bloom key gemini >/dev/null 2>&1; echo $?"]
+		stdout: StdioCollector {
+			onStreamFinished: {
+				const code = text.trim();
+				root.aiKey = code === "0" ? "saved" : code === "1" ? "missing" : "unavailable";
+			}
+		}
+	}
+	Process {
+		id: keyStore
+		property string pendingKey: ""
+		stdinEnabled: true
+		command: ["secret-tool", "store", "--label=Bloom Gemini key", "service", "bloom", "key", "gemini"]
+		onStarted: {
+			keyStore.write(keyStore.pendingKey);
+			keyStore.pendingKey = "";
+			keyStore.stdinEnabled = false;
+		}
+		onExited: code => {
+			keyStore.stdinEnabled = true;
+			if (code !== 0) root.lastError = "Couldn't save the key to your keyring";
+			keyProbe.running = true;
+		}
+	}
+	Process {
+		id: keyCheck
+		command: ["python3", Quickshell.shellPath("scripts/assistant.py"), "--check"]
+		stdout: StdioCollector {
+			onStreamFinished: root.aiCheck = Assistant.checkText(text)
 		}
 	}
 	Timer {

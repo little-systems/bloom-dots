@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false,
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -45,6 +45,11 @@ Item {
 		property var monitors: [{ name: "eDP-1", description: "Panel", width: 1920, height: 1080, refreshRate: 60.05, scale: 1, x: 0, y: 0, availableModes: ["1920x1080@60.05Hz", "1280x720@60.00Hz"] }]
 		property var disks: [{ path: "/", size: 2e11, used: 1e11 }]
 		property var hypr: ({})
+		property string aiKey: "missing"
+		property string aiCheck: ""
+		function setAiKey(k) { calls.push(["key", k]); }
+		function removeAiKey() {}
+		function checkAi() {}
 		property bool hyprLoaded: true
 		property string lastError: ""
 		function clearError() { lastError = ""; }
@@ -643,6 +648,22 @@ Item {
 			click(v, "ntp");
 			compare(fakeSys.calls, [["ntp", true]]);
 			verify(!part(v, "ntp").checked, "stays until the read-back says otherwise");
+		}
+
+		function test_aiKeySavesAndClears() {
+			fakeSys.calls = [];
+			const v = make("ai");
+			compare(findChild(part(v, "aiKeyRow"), "desc").text, "Not set");
+			const field = part(v, "aiKey");
+			field.text = "  k3y  ";
+			click(v, "aiSave");
+			compare(fakeSys.calls, [["key", "k3y"]]);
+			compare(field.text, "", "the key doesn't stay on screen");
+		}
+
+		function test_aiKeyIsHidden() {
+			const v = make("ai");
+			verify(part(v, "aiKey").secret);
 		}
 
 		function test_closeSignals() {

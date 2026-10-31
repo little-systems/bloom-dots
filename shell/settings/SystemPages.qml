@@ -12,6 +12,7 @@ Column {
 	property Item popup
 	required property string page
 	property var sys
+	property var store
 	signal cheatsheetRequested()
 
 	width: parent.width
@@ -314,6 +315,69 @@ Column {
 					desc: Sys.appName(root.sys.defaults[modelData.id])
 					divider: index < Sys.DEFAULTS.length - 1
 				}
+			}
+		}
+	}
+
+	Page {
+		pageId: "ai"
+		SGroupLabel { theme: root.theme; text: "Gemini"; above: 0 }
+		SGroup {
+			theme: root.theme
+			SRow {
+				objectName: "aiKeyRow"
+				theme: root.theme; icon: "lock"; label: "API Key"; divider: false
+				desc: root.sys.aiKey === "saved" ? "Saved in your keyring" : root.sys.aiKey === "missing" ? "Not set" : root.sys.aiKey === "unavailable" ? "Your keyring isn't available" : "Checking…"
+			}
+			Row {
+				x: 54
+				spacing: 8
+				bottomPadding: 12
+				SField {
+					id: keyField
+					objectName: "aiKey"
+					theme: root.theme
+					secret: true
+					placeholder: "Paste your key"
+					accessibleName: "Gemini API key"
+					onAccepted: saveKey.clicked()
+				}
+				SChip {
+					id: saveKey
+					objectName: "aiSave"
+					theme: root.theme; active: true; text: "Save"
+					onClicked: {
+						if (keyField.text.trim() === "") return;
+						root.sys.setAiKey(keyField.text.trim());
+						keyField.text = "";
+					}
+				}
+				SChip {
+					objectName: "aiRemove"
+					visible: root.sys.aiKey === "saved"
+					theme: root.theme; text: "Remove"
+					onClicked: root.sys.removeAiKey()
+				}
+			}
+		}
+		SGroupLabel { theme: root.theme; text: "Chat" }
+		SGroup {
+			theme: root.theme
+			SRow {
+				theme: root.theme; icon: "sparkles"; label: "Model"; desc: "Used by chat in Spotlight"
+				SSelect {
+					objectName: "aiModel"; accessibleName: "Model"; theme: root.theme; popup: root.popup
+					value: root.store.values["bloom-ai-model"]
+					options: [{ value: "gemini-2.5-flash", label: "Gemini Flash" }, { value: "gemini-2.5-pro", label: "Gemini Pro" }]
+					onActivated: value => root.store.set("bloom-ai-model", value)
+				}
+			}
+			SRow {
+				objectName: "aiTest"
+				theme: root.theme; icon: "refresh-cw"; action: true; divider: false
+				label: "Test Connection"
+				desc: root.sys.aiCheck === "" ? "Check that the key works" : root.sys.aiCheck
+				onClicked: root.sys.checkAi()
 			}
 		}
 	}

@@ -2,7 +2,7 @@
 
 // The launcher's rules: its prefixes (the owner's, 2026-10-31), app ranking
 // and result shapes. Pure; services run the tools.
-var PREFIXES = { ";": "clipboard", ":": "emoji", "=": "calc", ">": "command", "?": "web", "!": "actions" };
+var PREFIXES = { ";": "clipboard", ":": "emoji", "=": "calc", ">": "command", "?": "web", "!": "actions", "@": "ai" };
 
 function parse(text) {
 	const t = String(text || "").trim();
@@ -138,4 +138,31 @@ function parseThumbs(text) {
 		if (tab > 0) out[line.slice(0, tab)] = line.slice(tab + 1);
 	});
 	return out;
+}
+
+// Settings pages Spotlight can open.
+var SETTINGS_PAGES = [
+	["display", "Display"], ["sound", "Sound"], ["power", "Power"], ["storage", "Storage"], ["device", "Device"],
+	["network", "Network"], ["bluetooth", "Bluetooth"], ["input", "Input"], ["hyprland", "Windows"], ["apps", "Default Apps"],
+	["ai", "AI"], ["time", "Time"], ["updates", "Updates"], ["general", "General"], ["appearance", "Appearance"],
+	["notch", "Notch"], ["dock", "Dock"], ["overlays", "Overlays"], ["about", "About"]
+].map(([id, name]) => ({ id: id, name: name }));
+
+function fileRow(path, home) {
+	const name = path.replace(/\/$/, "").split("/").pop();
+	return { id: "file:" + path, name: name, sub: path.replace(home, "~"), icon: "", glyph: "", symbol: path.endsWith("/") ? "folder" : fileIcon(name), action: { kind: "file", value: path } };
+}
+
+// Everything at once, best kinds first, with Gemini and the web always last so
+// a query never comes up empty.
+function spotlight(term, apps, windows, files, home) {
+	const rows = [];
+	rank(apps, term).slice(0, 5).forEach(a => rows.push({ id: a.id, name: a.name, sub: "Application", icon: a.icon, glyph: "", action: { kind: "app", value: a.id } }));
+	rank(windows.map(w => ({ name: w.title, address: w.address, app: w.class })), term).slice(0, 4).forEach(w =>
+		rows.push({ id: "window:" + w.address, name: w.name, sub: "Window · " + w.app, icon: "", glyph: "", symbol: "app-window", action: { kind: "window", value: w.address } }));
+	rank(SETTINGS_PAGES, term).slice(0, 3).forEach(p =>
+		rows.push({ id: "settings:" + p.id, name: p.name, sub: "Settings", icon: "", glyph: "", symbol: "settings", action: { kind: "settings", value: p.id } }));
+	files.slice(0, 6).forEach(path => rows.push(fileRow(path, home)));
+	rows.push({ id: "ask", name: term, sub: "Ask Gemini", icon: "", glyph: "", symbol: "sparkles", action: { kind: "ask", value: term } });
+	return rows.concat(webRow(term));
 }

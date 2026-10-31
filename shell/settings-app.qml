@@ -132,7 +132,7 @@ ShellRoot {
 			cityResults: app.cityResults
 			drives: app.drives
 			sys: store
-			tab: "display"
+			tab: Quickshell.env("BLOOM_SETTINGS_TAB") || "display"
 			net: Network
 			bt: Bluetooth
 			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])

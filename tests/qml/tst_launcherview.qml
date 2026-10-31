@@ -137,7 +137,7 @@ Item {
 		function test_emptyField() {
 			const v = make();
 			v.open();
-			compare(part(v, "placeholder").text, "Search apps, or ; : = > ? ! for more");
+			compare(part(v, "placeholder").text, "Search anything, or ; : = > ? ! @ for more");
 		}
 
 		function test_opensStraightIntoAMode() {
@@ -166,6 +166,31 @@ Item {
 			v.open();
 			v.results = [{ id: "a", name: "App", sub: "", icon: "", glyph: "" }];
 			compare(findChild(v, "card").width, 560);
+		}
+
+		function test_chatSends() {
+			const v = make({ chatting: true });
+			v.open();
+			const sent = spy(v, "chatSubmitted");
+			v.openWith("@ hello there");
+			keyClick(Qt.Key_Return);
+			compare(Array.from(sent.signalArguments[0]), ["hello there"]);
+			compare(findChild(v, "field").text, "@ ");
+		}
+
+		function test_noSendingWhileBusy() {
+			const v = make({ chatting: true, busy: true });
+			v.open();
+			const sent = spy(v, "chatSubmitted");
+			v.openWith("@ hi");
+			keyClick(Qt.Key_Return);
+			compare(sent.count, 0);
+		}
+
+		function test_chatShowsItsError() {
+			const v = make({ chatting: true, chatError: "That key didn't work" });
+			v.open();
+			tryVerify(() => findChild(v, "chatError").visible, 1000, "error");
 		}
 	}
 }
