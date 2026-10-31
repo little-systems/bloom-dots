@@ -404,6 +404,17 @@ ShellRoot {
 	}
 
 	IpcHandler {
+		target: "region"
+
+		function run(action: string): string {
+			if (_modules.indexOf("regiontools") < 0) return "off";
+			if (["screenshot", "annotate", "ocr", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
+			Quickshell.execDetached(["bash", Quickshell.shellPath("scripts/region.sh"), action]);
+			return "ok";
+		}
+	}
+
+	IpcHandler {
 		target: "cheatsheet"
 
 		function toggle(): string { Cheatsheet.toggle(); return "ok"; }
