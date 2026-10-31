@@ -39,7 +39,8 @@ fi
 
 step "QML unit tests"
 if compgen -G "$ROOT/tests/qml/tst_*.qml" >/dev/null; then
-	"$QT_BIN/qmltestrunner" -input "$ROOT/tests/qml"
+	# Offscreen: otherwise each test is a real window under the real pointer.
+	QT_QPA_PLATFORM=offscreen "$QT_BIN/qmltestrunner" -input "$ROOT/tests/qml"
 fi
 
 step "spring parity with framer-motion"
