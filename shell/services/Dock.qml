@@ -171,6 +171,9 @@ Singleton {
 		return "ok";
 	}
 
+	// The overview's window moves, through the same queue.
+	function dispatchMove(arg, address) { root._dispatch(arg, address); }
+
 	function switchWorkspace(wsId) {
 		if (wsId > 0)
 			root._dispatch("hl.dsp.focus({ workspace = " + Math.floor(wsId) + " })", "0x0");

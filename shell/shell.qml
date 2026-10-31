@@ -11,6 +11,7 @@ import "modules/dock"
 import "modules/osd"
 import "modules/launcher"
 import "modules/session"
+import "modules/overview"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -64,6 +65,18 @@ ShellRoot {
 			delegate: Loader {
 				required property var modelData
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/session/SessionWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	LazyLoader {
+		id: overviewLoader
+		active: _modules.indexOf("overview") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/overview/OverviewWindow.qml"), { modelData: modelData })
 			}
 		}
 	}
@@ -344,6 +357,17 @@ ShellRoot {
 		function close(): string { Session.hide(); return "ok"; }
 		function run(action: string): string { return Session.run(action); }
 		function state(): string { return JSON.stringify({ opened: Session.opened, busy: Session.busy }); }
+	}
+
+	IpcHandler {
+		target: "overview"
+
+		function toggle(): string { Overview.toggle(); return "ok"; }
+		function close(): string { Overview.hide(); return "ok"; }
+		function move(address: string, workspace: int): string { return Overview.moveWindow(address, workspace); }
+		function state(): string {
+			return JSON.stringify({ opened: Overview.opened, activeWorkspace: Overview.activeWorkspace, windows: Overview.clients.length });
+		}
 	}
 
 	IpcHandler {

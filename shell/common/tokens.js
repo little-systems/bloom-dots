@@ -235,6 +235,19 @@ var session = {
 	note: 12
 };
 
+// The workspace overview (Phase 6): the launcher's card over a grid of
+// workspaces, with Bloom's tile radii.
+var overview = {
+	cell: 216,
+	gap: 10,
+	padding: 14,
+	radius: 12,
+	windowRadius: 6,
+	label: { size: 11, x: 8, y: 6 },
+	dimmed: 0.3, // windows a search doesn't match
+	dragThreshold: 6
+};
+
 // Notch panels, copied from Bloom @ b5fb962 (App.css, components/QuickPanel.css).
 // Each group names the CSS rule it comes from.
 
