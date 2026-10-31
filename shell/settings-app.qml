@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import "settings"
+import "modules/notch"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
 import "modules/dock/extras.js" as Extras
@@ -79,6 +80,8 @@ ShellRoot {
 		app.importLabel = "Settings Imported";
 	}
 
+	SystemStore { id: store }
+
 	FloatingWindow {
 		id: win
 		readonly property real uiScale: Settings.values["bloom-scale"]
@@ -117,6 +120,11 @@ ShellRoot {
 			onColorRequested: colorDialog.open()
 			cityResults: app.cityResults
 			drives: app.drives
+			sys: store
+			tab: "display"
+			networkPanel: Component { WifiPanel {} }
+			bluetoothPanel: Component { BluetoothPanel {} }
+			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])
 			apps: Dock.pinned.map(id => Apps.info(id)).filter(a => a.name)
 			onCityQueried: text => app.searchCity(text)
 			onAddFolderRequested: folderDialog.open()

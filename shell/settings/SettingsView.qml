@@ -28,6 +28,10 @@ Rectangle {
 	property var cityResults: []
 	property var drives: []
 	property var apps: []
+	property var sys
+	property Component networkPanel
+	property Component bluetoothPanel
+	signal cheatsheetRequested()
 
 	signal cityQueried(string text)
 	signal addFolderRequested()
@@ -41,15 +45,37 @@ Rectangle {
 	signal importRequested()
 	signal colorRequested()
 
-	readonly property var _tabs: [
-		{ id: "general", label: "General", icon: "settings", copy: "The essentials for how Bloom starts and runs." },
-		{ id: "appearance", label: "Appearance", icon: "palette", copy: "Make every surface feel at home on your desktop." },
-		{ id: "notch", label: "Notch", icon: "panel-top", copy: "Choose what appears at the top of your screen." },
-		{ id: "dock", label: "Dock", icon: "monitor", copy: "Shape the taskbar replacement around your workflow." },
-		{ id: "overlays", label: "Overlays", icon: "layers", copy: "Keep quick controls visible only when you need them." },
-		{ id: "about", label: "About", icon: "info", copy: "Version, updates and your settings data." }
+	readonly property var _groups: [
+		{ label: "System", tabs: [
+			{ id: "display", label: "Display", icon: "monitor", copy: "Screens, resolution, scale and brightness." },
+			{ id: "sound", label: "Sound", icon: "volume-2", copy: "Where sound plays and which microphone listens." },
+			{ id: "power", label: "Power", icon: "gauge", copy: "Power mode and battery." },
+			{ id: "storage", label: "Storage", icon: "hard-drive", copy: "How full your disks are." },
+			{ id: "device", label: "Device", icon: "cpu", copy: "This machine." }
+		] },
+		{ label: "Connections", tabs: [
+			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi networks." },
+			{ id: "bluetooth", label: "Bluetooth", icon: "bluetooth", copy: "Pair and manage devices." }
+		] },
+		{ label: "Desktop", tabs: [
+			{ id: "input", label: "Input", icon: "keyboard", copy: "Keyboard, touchpad and mouse." },
+			{ id: "hyprland", label: "Windows", icon: "layout-grid", copy: "Gaps, borders, corners and effects." },
+			{ id: "apps", label: "Apps", icon: "app-window", copy: "Which app opens what." },
+			{ id: "time", label: "Time", icon: "clock", copy: "Time zone and clock sync." },
+			{ id: "updates", label: "Updates", icon: "package", copy: "Keep the system current." }
+		] },
+		{ label: "Bloom", tabs: [
+			{ id: "general", label: "General", icon: "settings", copy: "The essentials for how Bloom starts and runs." },
+			{ id: "appearance", label: "Appearance", icon: "palette", copy: "Make every surface feel at home on your desktop." },
+			{ id: "notch", label: "Notch", icon: "panel-top", copy: "Choose what appears at the top of your screen." },
+			{ id: "dock", label: "Dock", icon: "monitor", copy: "Shape the taskbar replacement around your workflow." },
+			{ id: "overlays", label: "Overlays", icon: "layers", copy: "Keep quick controls visible only when you need them." },
+			{ id: "about", label: "About", icon: "info", copy: "Version, updates and your settings data." }
+		] }
 	]
+	readonly property var _tabs: root._groups.reduce((all, g) => all.concat(g.tabs), [])
 	readonly property var _active: root._tabs.find(t => t.id === root.tab)
+	readonly property bool _system: ["general", "appearance", "notch", "dock", "overlays", "about"].indexOf(root.tab) < 0
 
 	onTabChanged: page.contentY = 0
 
@@ -121,10 +147,20 @@ Rectangle {
 			height: parent.height
 			color: root.theme.border
 		}
+		Flickable {
+			id: sideFlick
+			anchors.fill: parent
+			anchors.rightMargin: 1
+			contentHeight: sideColumn.implicitHeight + 2 * Tokens.settings.sidebar.paddingV
+			interactive: false // QpScroll scrolls it
+			boundsBehavior: Flickable.StopAtBounds
+			clip: true
+
 		Column {
+			id: sideColumn
 			x: Tokens.settings.sidebar.paddingH
 			y: Tokens.settings.sidebar.paddingV
-			width: parent.width - 2 * Tokens.settings.sidebar.paddingH - 1
+			width: parent.width - 2 * Tokens.settings.sidebar.paddingH
 			spacing: Tokens.settings.sidebar.gap
 
 			Column {
@@ -155,50 +191,75 @@ Rectangle {
 				}
 			}
 			Repeater {
-				model: root._tabs
-				delegate: Rectangle {
-					id: tabItem
+				model: root._groups
+				delegate: Column {
+					id: tabGroup
 					required property var modelData
-					readonly property bool active: tabItem.modelData.id === root.tab
-					objectName: "tab:" + tabItem.modelData.id
+					required property int index
 					width: parent.width
-					height: Tokens.settings.tab.height
-					radius: Tokens.settings.tab.radius
-					color: tabItem.active ? Qt.rgba(1, 1, 1, 0.08) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
-					Behavior on color { ColorAnimation { duration: Tokens.settings.tab.ms } }
+					spacing: Tokens.settings.sidebar.gap
 
-					Row {
-						x: Tokens.settings.tab.paddingH
-						height: parent.height
-						spacing: Tokens.settings.tab.gap
-						opacity: tabItem.active || tabHover.hovered ? 1 : Tokens.settings.tab.idleOpacity
-
-						Item {
-							width: Tokens.settings.tab.icon
-							height: width
-							anchors.verticalCenter: parent.verticalCenter
-							SvgIcon {
-								anchors.centerIn: parent
-								name: tabItem.modelData.icon
-								size: Tokens.settings.tab.glyph
-								strokeWidth: 1.5
-								color: tabItem.active || tabHover.hovered ? root.theme.text : root.theme.textMuted
-							}
-						}
-						Text {
-							anchors.verticalCenter: parent.verticalCenter
-							text: tabItem.modelData.label
-							color: root.theme.text
-							font.family: Fonts.uiFor(tabItem.active ? Font.DemiBold : Font.Medium)
-							font.pixelSize: Tokens.settings.tab.text
-							font.weight: tabItem.active ? Font.DemiBold : Font.Medium
-						}
+					Text {
+						leftPadding: Tokens.settings.tab.paddingH
+						topPadding: tabGroup.index === 0 ? 0 : 10
+						text: tabGroup.modelData.label
+						color: root.theme.textMuted
+						font.family: Fonts.uiFor(Font.DemiBold)
+						font.pixelSize: 10
+						font.weight: Font.DemiBold
+						font.capitalization: Font.AllUppercase
+						font.letterSpacing: 0.5
 					}
-					HoverHandler { id: tabHover; cursorShape: Qt.PointingHandCursor }
-					TapHandler { onTapped: root.tab = tabItem.modelData.id }
+					Repeater {
+						model: tabGroup.modelData.tabs
+						delegate: Rectangle {
+							id: tabItem
+							required property var modelData
+							readonly property bool active: tabItem.modelData.id === root.tab
+							objectName: "tab:" + tabItem.modelData.id
+							width: parent.width
+							height: Tokens.settings.tab.height
+							radius: Tokens.settings.tab.radius
+							color: tabItem.active ? Qt.rgba(1, 1, 1, 0.08) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
+							Behavior on color { ColorAnimation { duration: Tokens.settings.tab.ms } }
+
+							Row {
+								x: Tokens.settings.tab.paddingH
+								height: parent.height
+								spacing: Tokens.settings.tab.gap
+								opacity: tabItem.active || tabHover.hovered ? 1 : Tokens.settings.tab.idleOpacity
+
+								Item {
+									width: Tokens.settings.tab.icon
+									height: width
+									anchors.verticalCenter: parent.verticalCenter
+									SvgIcon {
+										anchors.centerIn: parent
+										name: tabItem.modelData.icon
+										size: Tokens.settings.tab.glyph
+										strokeWidth: 1.5
+										color: tabItem.active || tabHover.hovered ? root.theme.text : root.theme.textMuted
+									}
+								}
+								Text {
+									anchors.verticalCenter: parent.verticalCenter
+									text: tabItem.modelData.label
+									color: root.theme.text
+									font.family: Fonts.uiFor(tabItem.active ? Font.DemiBold : Font.Medium)
+									font.pixelSize: Tokens.settings.tab.text
+									font.weight: tabItem.active ? Font.DemiBold : Font.Medium
+								}
+							}
+							HoverHandler { id: tabHover; cursorShape: Qt.PointingHandCursor }
+							TapHandler { onTapped: root.tab = tabItem.modelData.id }
+						}
+
+					}
 				}
 			}
 		}
+		}
+		QpScroll { flickable: sideFlick }
 	}
 
 	Item {
@@ -257,13 +318,29 @@ Rectangle {
 					}
 				}
 				FeaturePreview {
+					visible: !root._system && root.tab !== "about"
 					theme: root.theme
 					store: root.store
 					tab: root.tab
 					autostart: root.autostart
 					apps: root.apps
 				}
-				Item { width: 1; height: previewGap.visible ? 19 : 0; id: previewGap; visible: root.tab !== "about" }
+				Item { width: 1; height: previewGap.visible ? 19 : 0; id: previewGap; visible: root.tab !== "about" && !root._system }
+				Loader {
+					width: parent.width
+					active: root._system && root.sys !== undefined && root.tab !== "network" && root.tab !== "bluetooth"
+					sourceComponent: SystemPages {
+						theme: root.theme; popup: selectPopup; sys: root.sys; page: root.tab
+						onCheatsheetRequested: root.cheatsheetRequested()
+					}
+				}
+				Loader {
+					objectName: "connection"
+					width: parent.width
+					height: active ? 420 : 0
+					active: root.tab === "network" || root.tab === "bluetooth"
+					sourceComponent: root.tab === "network" ? root.networkPanel : root.bluetoothPanel
+				}
 				Loader {
 					width: parent.width
 					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, about: aboutTab })[root.tab] ?? null

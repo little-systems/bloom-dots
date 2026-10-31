@@ -37,9 +37,43 @@ Item {
 		"bloom-dock-extras-recycle-bin": true, "bloom-dock-extras-folders": "downloads", "bloom-dock-extras-custom-folders": "[{\"name\":\"Code\",\"path\":\"/code\"}]"
 	})
 
+	QtObject {
+		id: fakeSys
+		property var monitors: [{ name: "eDP-1", description: "Panel", width: 1920, height: 1080, refreshRate: 60.05, scale: 1, x: 0, y: 0, availableModes: ["1920x1080@60.05Hz", "1280x720@60.00Hz"] }]
+		property var disks: [{ path: "/", size: 2e11, used: 1e11 }]
+		property var hypr: ({})
+		property var calls: []
+		property var sinks: [{ name: "a", description: "Speakers" }]
+		property var sources: []
+		property string sink: "a"
+		property string source: ""
+		property real volume: 0.5
+		property bool brightnessAvailable: true
+		property real brightness: 0.5
+		property string powerMode: "balanced"
+		property bool batteryAvailable: false
+		property int batteryLevel: 0
+		property string hostname: "box"
+		property string cpu: "CPU"
+		property string memory: "8 GB"
+		property string kernel: "7.0"
+		property string timezone: "Asia/Kolkata"
+		property bool ntp: true
+		property int updates: 3
+		property var defaults: ({ browser: "org.mozilla.firefox.desktop" })
+		function setHypr(path, value) { calls.push(["hypr", path, value]); }
+		function setMonitor(m, mode, scale) { calls.push(["monitor", m.name, mode, scale]); }
+		function setPowerMode(mode) { calls.push(["power", mode]); }
+		function setNtp(on) { calls.push(["ntp", on]); }
+		function runUpdates() { calls.push(["updates"]); }
+		function setVolume(v) {}
+		function setBrightness(v) {}
+		function setSink(n) {}
+		function setSource(n) {}
+	}
 	Component {
 		id: viewComponent
-		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0" }
+		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys }
 	}
 
 	TestCase {
@@ -73,8 +107,7 @@ Item {
 		function test_headingFollowsTheTab() {
 			const v = make();
 			compare(part(v, "heading").text, "General");
-			click(v, "tab:appearance");
-			compare(v.tab, "appearance");
+			v.tab = "appearance";
 			compare(part(v, "heading").text, "Appearance");
 			compare(part(v, "copy").text, "Make every surface feel at home on your desktop.");
 		}
@@ -91,8 +124,8 @@ Item {
 				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
 				if (h !== undefined) fuzzyCompare(item.height, h, 0.6, what + " height");
 			}
-			at(part(v, "tab:general"), 8.8, 124.8, 153.2, 36, "first tab");
-			at(part(v, "tab:appearance"), 8.8, 164.8, 153.2, 36, "second tab");
+			at(part(v, "tab:display"), 8.8, 142.8, 153.2, 36, "first tab");
+			at(part(v, "tab:sound"), 8.8, 182.8, 153.2, 36, "second tab");
 			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
 			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
 			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
@@ -328,6 +361,37 @@ Item {
 			fakeStore.set("bloom-volume-hud-enabled", false);
 			tryVerify(() => { const t = findChild(v, "previewHudOff"); return t && t.visible; }, 1000, "off");
 			compare(findChild(v, "previewHudOff").text, "Volume HUD is off");
+		}
+
+		function test_systemPagesShowInTheSidebar() {
+			const v = make();
+			click(v, "tab:display");
+			compare(part(v, "heading").text, "Display");
+			verify(!part(v, "featurePreview").visible);
+			verify(part(v, "page:display").visible);
+		}
+
+		function test_displayChangesGoThroughTheStore() {
+			fakeSys.calls = [];
+			const v = make("display");
+			click(v, "mode:eDP-1");
+			click(v, "option:1280x720@60.00Hz");
+			compare(fakeSys.calls, [["monitor", "eDP-1", "1280x720@60.00Hz", 1]]);
+		}
+
+		function test_windowsPageWritesHyprland() {
+			fakeSys.calls = [];
+			const v = make("hyprland");
+			click(v, "animations");
+			compare(fakeSys.calls, [["hypr", "animations.enabled", false]]);
+		}
+
+		function test_updatesCountsAndRuns() {
+			fakeSys.calls = [];
+			const v = make("updates");
+			compare(findChild(part(v, "runUpdates"), "label").text, "3 Updates Available");
+			click(v, "runUpdates");
+			compare(fakeSys.calls, [["updates"]]);
 		}
 
 		function test_closeSignals() {
