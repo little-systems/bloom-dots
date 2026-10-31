@@ -359,7 +359,7 @@ Rectangle {
 				Loader {
 					width: parent.width
 					// A Loader keeps its last height when it goes inactive.
-					height: active ? implicitHeight : 0
+					height: active && item ? item.implicitHeight : 0
 					active: root._system && root.sys !== undefined && root.tab !== "network" && root.tab !== "bluetooth"
 					sourceComponent: SystemPages {
 						theme: root.theme; popup: selectPopup; sys: root.sys; page: root.tab
@@ -375,7 +375,7 @@ Rectangle {
 				}
 				Loader {
 					width: parent.width
-					height: item ? implicitHeight : 0
+					height: item ? item.implicitHeight : 0
 					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, about: aboutTab })[root.tab] ?? null
 				}
 			}
