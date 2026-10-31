@@ -1,0 +1,50 @@
+# Phase 6: System surfaces
+
+**Goal:** the launcher, session menu, workspace overview, polkit agent and lock screen, in Bloom's design language, with polkit and the tray handed over from ii.
+
+**Spec:** `docs/specs/2026-10-25-bloom-shell-design.md` (§3.3, §3.4, §4.2, §6, §8).
+
+Windows Bloom has none of these surfaces, so there is no reference to measure. "1:1" here means Bloom's language: its tokens, Bloom Inter, its springs, `qp` parts and panel surfaces. Each sub-phase gets its own task plan before it starts, as phases 2 and 3 did.
+
+## Global constraints
+
+- No code from end-4 ii, read or copied.
+- Nothing under `~/.config` or `~/dots-hyprland` changes without the owner's OK for that step, with a backup first.
+- Tests never touch the real session: sealed buses, fakes, headless sway. Real pointer input goes through `tests/integration/vpointer.py`.
+- Every external tool a feature needs is checked on the real machine, not only faked (the `bluetoothctl` lesson): missing tools hide the feature and say what's needed.
+- New modules are opt-in through `bloom-enabled-modules` until the owner switches them on.
+- Never enter a password. Lock and polkit flows are tested with fake PAM/agent sources; real auth is the owner's live check.
+
+## Order
+
+Lowest risk first, so a mistake can't lock the owner out.
+
+### 6A: Launcher
+
+Centred floating panel (D13). App search over `Apps`, then the prefixes: clipboard (cliphist), emoji, calculator (qalc), shell command, web search, user actions (`~/.config/bloom/actions`). Pure prefix parsing and ranking in JS, unit-tested. `bloom ipc launcher toggle`.
+
+### 6B: Session menu
+
+Lock, log out, suspend, hibernate, reboot, shut down, firmware setup. Warns when pacman or a download is running. Tests never run real power commands.
+
+### 6C: Workspace overview
+
+Grid of workspaces with live previews (the dock's previews already use Screencopy), drag windows between workspaces, search. Tests use headless sway or fixtures, never the owner's windows.
+
+### 6D: Polkit agent, then tray handover
+
+`Quickshell.Services.Polkit` with a Bloom dialog. Exclusive with ii: one switch, never both, with a rollback step. The dock's tray host follows the same handover. Owner live check required.
+
+### 6E: Lock screen
+
+`WlSessionLock` with `Quickshell.Services.Pam`, config `hyprlock`'s PAM stack or our own. hyprlock stays the fallback; `misc:allow_session_lock_restore` keeps the session locked if the surface crashes. hypridle's `lock_cmd` currently calls ii, so changing it is an owner-approved step. Last, because a bug here is the one that can lock the owner out; TTY recovery steps are written before the first live test.
+
+## Review
+
+The final review of this phase covers Phase 5's merged parity work too: that branch merged without its whole-branch review, at the owner's call.
+
+## Open questions for the owner
+
+1. Launcher look: a Spotlight-style search bar that grows with results, or a fixed panel?
+2. Web search engine for the launcher's prefix.
+3. Prefix characters: the spec names the features, not the keys.
