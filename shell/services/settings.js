@@ -129,9 +129,17 @@ var SCHEMA = {
 		default: false,
 		doc: "24-hour clock in the notch; otherwise 12-hour with AM/PM."
 	},
+	"bloom-wallpaper": {
+		type: "string", maxLength: 4096, default: "",
+		doc: "Wallpaper image or video. Empty uses the one set in ii."
+	},
+	"bloom-wallpaper-dir": {
+		type: "string", maxLength: 4096, default: "",
+		doc: "Folder the wallpaper picker lists. Empty means ~/Pictures/Wallpapers."
+	},
 	"bloom-lock-wallpaper": {
 		type: "string", maxLength: 4096, default: "",
-		doc: "Image behind the lock screen. Empty uses the wallpaper set in ii, or black if there is none."
+		doc: "Image behind the lock screen. Empty uses the desktop wallpaper, or black if there is none."
 	},
 	"bloom-low-battery-threshold": {
 		type: "number",

@@ -27,7 +27,9 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-weather-lon` | number | `null` | -180 to 180, or `null` | Longitude for the weather. null uses IP geolocation. |
 | `bloom-temp-unit` | enum | `"celsius"` | `celsius`, `fahrenheit` | Temperature unit for the weather widget. |
 | `bloom-time-format-24h` | bool | `false` | `true`, `false` | 24-hour clock in the notch; otherwise 12-hour with AM/PM. |
-| `bloom-lock-wallpaper` | string | `""` | text, up to 4096 characters | Image behind the lock screen. Empty uses the wallpaper set in ii, or black if there is none. |
+| `bloom-wallpaper` | string | `""` | text, up to 4096 characters | Wallpaper image or video. Empty uses the one set in ii. |
+| `bloom-wallpaper-dir` | string | `""` | text, up to 4096 characters | Folder the wallpaper picker lists. Empty means ~/Pictures/Wallpapers. |
+| `bloom-lock-wallpaper` | string | `""` | text, up to 4096 characters | Image behind the lock screen. Empty uses the desktop wallpaper, or black if there is none. |
 | `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red and the notch shows a low-battery pulse. |
 | `bloom-show-update-indicator` | bool | `true` | `true`, `false` | Check for pacman updates hourly (needs pacman-contrib) and show a green dot under the clock while some are pending, with a pulse when new ones arrive. |
 | `bloom-dock-mode` | enum | `"smart"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Dock visibility. fixed = always shown, with its strip reserved; smart = hides while a window covers it; peek = hidden until the pointer rests on the bottom edge. |

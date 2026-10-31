@@ -1,0 +1,12 @@
+--- a/modules/ii/background/Background.qml	2026-10-31 21:21:08.472704407 +0530
++++ b/modules/ii/background/Background.qml	2026-10-31 21:21:08.520301122 +0530
+@@ -30,7 +30,8 @@
+         // Hide when fullscreen
+         property list<HyprlandWorkspace> workspacesForMonitor: Hyprland.workspaces.values.filter(workspace => workspace.monitor && workspace.monitor.name == monitor.name)
+         property var activeWorkspaceWithFullscreen: workspacesForMonitor.filter(workspace => ((workspace.toplevels.values.filter(window => window.wayland?.fullscreen)[0] != undefined) && workspace.active))[0]
+-        visible: GlobalStates.screenLocked || (!(activeWorkspaceWithFullscreen != undefined)) || !Config?.options.background.hideWhenFullscreen
++        // Phase 7 handover: Bloom draws the wallpaper.
++        visible: false
+ 
+         // Workspaces
+         property HyprlandMonitor monitor: Hyprland.monitorFor(modelData)

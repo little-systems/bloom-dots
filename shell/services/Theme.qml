@@ -10,8 +10,7 @@ Singleton {
 	id: root
 
 	readonly property string requestedMode: Settings.values["bloom-theme-mode"]
-	// Wallpaper accent for the adaptive theme; set by wallpaper theming (phase 7).
-	property string adaptiveAccent: ""
+	readonly property string adaptiveAccent: Wallpaper.accent
 
 	readonly property var _t: Logic.compute(
 		root.requestedMode,

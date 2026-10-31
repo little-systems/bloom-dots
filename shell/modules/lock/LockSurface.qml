@@ -30,7 +30,7 @@ Scope {
 	property bool _capsLock: false
 	property string _layout: ""
 	property string _text: ""
-	readonly property string _wallpaper: Settings.values["bloom-lock-wallpaper"] || Lock.wallpaperFrom(iiConfig.text())
+	readonly property string _wallpaper: Settings.values["bloom-lock-wallpaper"] || Wallpaper.path
 	property string _message: ""
 	property bool _messageIsError: false
 	property string _pamNotice: ""
@@ -141,12 +141,6 @@ Scope {
 		onError: root._finish(Lock.failureText("error"))
 	}
 
-	FileView {
-		id: iiConfig
-		path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/illogical-impulse/config.json"
-		printErrors: false
-	}
-
 	// An idle password doesn't stay on the screen.
 	Timer {
 		id: clearTimer
@@ -206,7 +200,7 @@ Scope {
 				id: backdrop
 				anchors.fill: parent
 				source: root._wallpaper
-				zoom: Lock.wallpaperZoomFrom(iiConfig.text())
+				zoom: Wallpaper.zoom
 				leaving: root._leaving
 				onCovered: root._covered = true
 			}

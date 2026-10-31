@@ -15,6 +15,7 @@ import "modules/overview"
 import "modules/polkit"
 import "modules/lock"
 import "modules/cheatsheet"
+import "modules/wallpaper"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -92,6 +93,19 @@ ShellRoot {
 			delegate: Loader {
 				required property var modelData
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/cheatsheet/CheatsheetWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	LazyLoader {
+		active: _modules.indexOf("wallpaper") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Scope {
+				id: wallpaperScreen
+				required property var modelData
+				Loader { Component.onCompleted: setSource(Qt.resolvedUrl("modules/wallpaper/WallpaperWindow.qml"), { modelData: wallpaperScreen.modelData }) }
+				Loader { Component.onCompleted: setSource(Qt.resolvedUrl("modules/wallpaper/PickerWindow.qml"), { modelData: wallpaperScreen.modelData }) }
 			}
 		}
 	}
@@ -411,6 +425,17 @@ ShellRoot {
 			if (["screenshot", "annotate", "ocr", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
 			Quickshell.execDetached(["bash", Quickshell.shellPath("scripts/region.sh"), action]);
 			return "ok";
+		}
+	}
+
+	IpcHandler {
+		target: "wallpaper"
+
+		function set(path: string): string { Wallpaper.set(path); return "ok"; }
+		function toggle(): string { Wallpaper.toggle(); return "ok"; }
+		function close(): string { Wallpaper.hide(); return "ok"; }
+		function state(): string {
+			return JSON.stringify({ path: Wallpaper.path, opened: Wallpaper.opened, items: Wallpaper.items.length, accent: Wallpaper.accent });
 		}
 	}
 

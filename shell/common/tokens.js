@@ -235,6 +235,9 @@ var session = {
 	note: 12
 };
 
+// The wallpaper picker (Phase 7): the launcher's card over a grid.
+var picker = { columns: 3, rows: 3, cellWidth: 240, cellHeight: 150, gap: 8, padding: 12, radius: 10, text: 12 };
+
 // Low-power mode: how often a live preview refreshes.
 var lowPower = { captureMs: 1000 };
 
