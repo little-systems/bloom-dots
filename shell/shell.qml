@@ -16,6 +16,8 @@ import "modules/polkit"
 import "modules/lock"
 import "modules/cheatsheet"
 import "modules/wallpaper"
+import "modules/osk"
+import "modules/overlay"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -119,6 +121,27 @@ ShellRoot {
 				required property var modelData
 				Loader { Component.onCompleted: setSource(Qt.resolvedUrl("modules/wallpaper/WallpaperWindow.qml"), { modelData: wallpaperScreen.modelData }) }
 				Loader { Component.onCompleted: setSource(Qt.resolvedUrl("modules/wallpaper/PickerWindow.qml"), { modelData: wallpaperScreen.modelData }) }
+			}
+		}
+	}
+
+	LazyLoader {
+		active: _modules.indexOf("osk") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/osk/OskWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+	LazyLoader {
+		active: _modules.indexOf("overlay") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/overlay/OverlayWindow.qml"), { modelData: modelData })
 			}
 		}
 	}
@@ -447,8 +470,8 @@ ShellRoot {
 
 		function run(action: string): string {
 			if (_modules.indexOf("regiontools") < 0) return "off";
-			if (["screenshot", "annotate", "ocr", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
-			Quickshell.execDetached(["bash", Quickshell.shellPath("scripts/region.sh"), action]);
+			if (["screenshot", "annotate", "ocr", "translate", "lens", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
+			Quickshell.execDetached(["env", "BLOOM_TRANSLATE_TO=" + Settings.values["bloom-translate-to"], "bash", Quickshell.shellPath("scripts/region.sh"), action]);
 			return "ok";
 		}
 	}
@@ -463,6 +486,20 @@ ShellRoot {
 		function state(): string {
 			return JSON.stringify({ path: Wallpaper.path, opened: Wallpaper.opened, items: Wallpaper.items.length, accent: Wallpaper.accent });
 		}
+	}
+
+	IpcHandler {
+		target: "osk"
+
+		function toggle(): string { return _modules.indexOf("osk") < 0 ? "off" : (Osk.toggle(), "ok"); }
+		function state(): string { return JSON.stringify({ opened: Osk.opened }); }
+	}
+
+	IpcHandler {
+		target: "overlay"
+
+		function toggle(): string { return _modules.indexOf("overlay") < 0 ? "off" : (OverlayState.toggle(), "ok"); }
+		function state(): string { return JSON.stringify({ opened: OverlayState.opened, crosshair: OverlayState.crosshair }); }
 	}
 
 	IpcHandler {

@@ -11,7 +11,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-theme-opacity` | number | `0.8` | 0.1 to 1 | Surface opacity. Hovered and open surfaces add 0.12. |
 | `bloom-theme-saturation` | number | `0.5` | 0 to 1 | Background saturation for the custom and adaptive themes. |
 | `bloom-theme-brightness` | number | `0.15` | 0 to 1 | Background lightness for the custom and adaptive themes. Above 0.55 the text turns dark. |
-| `bloom-enabled-modules` | list | `[]` | `notch`, `dock`, `osd`, `notifications`, `launcher`, `overview`, `session`, `lock`, `polkit`, `tray`, `regiontools`, `wallpaper`, `cheatsheet` | Bloom surfaces to run. Anything not listed is left to another shell (e.g. illogical-impulse). |
+| `bloom-enabled-modules` | list | `[]` | `notch`, `dock`, `osd`, `notifications`, `launcher`, `overview`, `session`, `lock`, `polkit`, `tray`, `regiontools`, `wallpaper`, `cheatsheet`, `osk`, `overlay` | Bloom surfaces to run. Anything not listed is left to another shell (e.g. illogical-impulse). |
 | `bloom-notch-mode` | enum | `"fixed"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Notch visibility. fixed = always shown; smart = hides while the focused window sits under it; peek = hidden until hovered or an event shows it briefly. |
 | `bloom-notch-edge-delay` | number | `200` | 0 to 2000 | In smart and peek mode, how long (ms) the pointer must rest on the top edge before a hidden notch appears. 0 reveals it at once. |
 | `bloom-calendar-enabled` | bool | `true` | `true`, `false` | Show the Calendar and timer panel in the notch. |
@@ -70,6 +70,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-battery-sound-enabled` | bool | `true` | `true`, `false` | Play a sound when the battery reaches the alert level. |
 | `bloom-launcher-opacity` | number | `1` | 0.3 to 1 | How solid Spotlight's card is. |
 | `bloom-font-family` | string | `""` | text, up to 200 characters | Font for Bloom's surfaces. Empty uses Bloom's own. |
+| `bloom-translate-to` | string | `"en"` | text, up to 20 characters | Language translations go to, as a code such as en or hi. Text is sent to Google. |
 | `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |
 | `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
 | `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

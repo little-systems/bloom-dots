@@ -258,6 +258,10 @@ var settings = {
 	danger: "#ff453a"
 };
 
+// The on-screen keyboard and the overlay (Phase 7).
+var osk = { width: 760, height: 280, margin: 12, radius: 18, gap: 6, key: 44, keyRadius: 9, text: 15 };
+var overlay = { dim: 0.45, radius: 14, padding: 14, crosshair: 18 };
+
 // Low-power mode: how often a live preview refreshes.
 var lowPower = { captureMs: 1000 };
 

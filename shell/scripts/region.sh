@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Region tools (spec §3.4): pick a region or a window, then screenshot, annotate,
-# read its text or record it. Usage: region.sh screenshot|annotate|ocr|record|record-audio|status
+# read its text, translate it, look it up or record it.
+# Usage: region.sh screenshot|annotate|ocr|translate|lens|record|record-audio|status
 set -euo pipefail
 
 action="${1:-}"
@@ -63,6 +64,28 @@ case "$action" in
 		text="$(grim -g "$region" - | tesseract stdin stdout 2>/dev/null)"
 		printf '%s' "$text" | wl-copy
 		tell "Text copied" "$text"
+		;;
+	translate)
+		need grim tesseract wl-copy trans
+		region="$(select_region)" || exit 0
+		text="$(grim -g "$region" - | tesseract stdin stdout 2>/dev/null)"
+		[ -n "$text" ] || { tell "Translate" "No text found there."; exit 0; }
+		if ! out="$(printf '%s' "$text" | trans -brief -no-autocorrect ":${BLOOM_TRANSLATE_TO:-en}" 2>/dev/null)" || [ -z "$out" ]; then
+			tell "Translate" "Couldn't reach the translation service."
+			exit 0
+		fi
+		printf '%s' "$out" | wl-copy
+		tell "Translation copied" "$out"
+		;;
+	lens)
+		need grim curl jq xdg-open
+		region="$(select_region)" || exit 0
+		file="$(mktemp --suffix=.png)"
+		trap 'rm -f "$file"' EXIT
+		grim -g "$region" "$file"
+		link="$(curl -sf -F "files[]=@$file" "${BLOOM_LENS_HOST:-https://uguu.se/upload}" | jq -r '.files[0].url // empty' || true)"
+		[ -n "$link" ] || { tell "Google Lens" "Couldn't upload the image."; exit 0; }
+		xdg-open "https://lens.google.com/uploadbyurl?url=$link"
 		;;
 	record | record-audio)
 		if recording; then

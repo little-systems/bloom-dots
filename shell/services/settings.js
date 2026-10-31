@@ -3,7 +3,7 @@
 // Each phase adds the keys its surfaces use; docs/SETTINGS.md is generated
 // from SCHEMA.
 
-var MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", "session", "lock", "polkit", "tray", "regiontools", "wallpaper", "cheatsheet"];
+var MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", "session", "lock", "polkit", "tray", "regiontools", "wallpaper", "cheatsheet", "osk", "overlay"];
 
 // Status widgets the collapsed notch can show (Bloom StatusWidgetConfig).
 var WIDGETS = ["weather", "battery", "cpu", "ram", "disk", "net"];
@@ -329,6 +329,10 @@ var SCHEMA = {
 	"bloom-font-family": {
 		type: "string", maxLength: 200, default: "",
 		doc: "Font for Bloom's surfaces. Empty uses Bloom's own."
+	},
+	"bloom-translate-to": {
+		type: "string", maxLength: 20, default: "en",
+		doc: "Language translations go to, as a code such as en or hi. Text is sent to Google."
 	},
 	"bloom-low-power": {
 		type: "enum",
