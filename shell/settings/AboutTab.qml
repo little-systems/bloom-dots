@@ -29,16 +29,6 @@ Column {
 			height: width
 			sourceSize: Qt.size(width * 2, height * 2)
 			source: Qt.resolvedUrl("../assets/bloom.png")
-			RotationAnimation on rotation {
-				id: spin
-				running: false
-				from: 0
-				to: 360
-				duration: 700
-				easing.type: Easing.BezierSpline
-				easing.bezierCurve: [0.22, 1, 0.36, 1, 1, 1]
-			}
-			HoverHandler { onHoveredChanged: if (hovered) spin.restart() }
 		}
 		Item { width: 1; height: Tokens.settings.about.logoGap }
 		Text {

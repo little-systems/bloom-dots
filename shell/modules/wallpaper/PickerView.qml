@@ -116,6 +116,7 @@ Item {
 			font.pixelSize: Tokens.picker.text
 		}
 
+		ScrollThumb { objectName: "gridThumb"; flickable: grid; thumbColor: Qt.rgba(1, 1, 1, 0.2) }
 		GridView {
 			id: grid
 			anchors.fill: parent

@@ -100,6 +100,14 @@ Rectangle {
 		else return;
 		event.accepted = true;
 	}
+	function _scroll(by) {
+		page.contentY = Math.max(0, Math.min(page.contentHeight - page.height, page.contentY + by));
+	}
+	Keys.onReleased: event => {
+		if (event.modifiers & Qt.ControlModifier) return;
+		if (event.key === Qt.Key_PageDown) root._scroll(page.height * 0.9);
+		else if (event.key === Qt.Key_PageUp) root._scroll(-page.height * 0.9);
+	}
 	Keys.onEscapePressed: {
 		if (confirm.visible) confirm.visible = false;
 		else root.closeRequested();
@@ -150,10 +158,8 @@ Rectangle {
 			width: Tokens.settings.title.close
 			height: width
 			radius: width / 2
-			scale: closeHover.hovered ? 1.05 : 1
 			color: closeHover.hovered ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.08)
-			Behavior on color { ColorAnimation { duration: 200 } }
-			Behavior on scale { NumberAnimation { duration: 200 } }
+			Behavior on color { ColorAnimation { duration: 120 } }
 			SvgIcon {
 				anchors.centerIn: parent
 				name: "x"
@@ -359,6 +365,7 @@ Rectangle {
 		}
 		}
 		QpScroll { flickable: sideFlick }
+		ScrollThumb { objectName: "sideThumb"; flickable: sideFlick; thumbColor: root.theme.scrollbarThumb }
 	}
 
 	Item {
@@ -369,6 +376,7 @@ Rectangle {
 		height: sidebar.height
 
 		QpScroll { flickable: page }
+		ScrollThumb { objectName: "pageThumb"; flickable: page; thumbColor: root.theme.scrollbarThumb }
 
 		Flickable {
 			id: page

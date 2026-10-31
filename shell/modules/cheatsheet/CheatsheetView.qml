@@ -88,6 +88,7 @@ Item {
 		MouseArea { anchors.fill: parent }
 
 		QpScroll { flickable: flick }
+		ScrollThumb { objectName: "sheetThumb"; flickable: flick; thumbColor: Qt.rgba(1, 1, 1, 0.2) }
 
 		Flickable {
 			id: flick

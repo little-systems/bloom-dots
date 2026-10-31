@@ -470,6 +470,10 @@ ShellRoot {
 		target: "region"
 
 		function run(action: string): string {
+			if (action === "recognize") {
+				Quickshell.execDetached(["bash", Quickshell.shellPath("scripts/recognize-music.sh")]);
+				return "ok";
+			}
 			if (_modules.indexOf("regiontools") < 0) return "off";
 			if (["screenshot", "annotate", "ocr", "translate", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
 			Quickshell.execDetached(["env", "BLOOM_TRANSLATE_TO=" + Settings.values["bloom-translate-to"], "bash", Quickshell.shellPath("scripts/region.sh"), action]);

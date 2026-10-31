@@ -780,6 +780,32 @@ Item {
 			compare(fakeStore.values["bloom-night-light"], true);
 		}
 
+		function test_scrollbarAppearsOnlyWhenNeeded() {
+			const v = make("device");
+			waitForRendering(host);
+			verify(!part(v, "pageThumb").visible);
+			v.tab = "notch";
+			waitForRendering(host);
+			tryVerify(() => part(v, "pageThumb").visible, 1000, "long page");
+			verify(part(v, "sideThumb").visible, "the sidebar overflows");
+		}
+
+		function test_pageKeysScroll() {
+			const v = make("notch");
+			waitForRendering(host);
+			v.forceActiveFocus();
+			keyClick(Qt.Key_PageDown);
+			verify(part(v, "page").contentY > 100);
+		}
+
+		function test_longSelectScrolls() {
+			const v = make("general");
+			const popup = part(v, "selectPopup");
+			popup.show(part(v, "lowPower"), new Array(30).fill(0).map((_, i) => ({ value: "o" + i, label: "Option " + i })), () => {}, "o0");
+			tryVerify(() => part(v, "popupList").contentHeight > part(v, "popupList").height, 1000, "scrolls");
+			keyClick(Qt.Key_Escape);
+		}
+
 		function test_closeSignals() {
 			const v = make();
 			const closed = spy(v, "closeRequested");

@@ -190,6 +190,7 @@ Item {
 			spacing: 8
 			Action { objectName: "shot"; text: "Screenshot"; onClicked: root.recordRequested("screenshot") }
 			Action { objectName: "record"; text: "Record"; onClicked: root.recordRequested("record") }
+			Action { objectName: "recognize"; text: "Identify Song"; onClicked: root.recordRequested("recognize") }
 		}
 	}
 	OverlayCard {

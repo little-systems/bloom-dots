@@ -1,4 +1,5 @@
 import QtQuick
+import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 
@@ -16,6 +17,7 @@ Item {
 	visible: false
 
 	property int _index: 0
+	readonly property real _maxList: Tokens.settings.select.itemHeight * 9
 	property Item _anchor: null
 	function _close() {
 		root.visible = false;
@@ -39,7 +41,7 @@ Item {
 		const p = anchor.mapToItem(root, 0, anchor.height + 2);
 		root._width = Math.max(anchor.width, list.implicitWidth);
 		root._at = Qt.point(Math.min(p.x, root.width - root._width - 8),
-			Math.min(p.y, root.height - options.length * Tokens.settings.select.itemHeight - 16));
+			Math.min(p.y, root.height - Math.min(options.length * Tokens.settings.select.itemHeight, root._maxList) - 16));
 		root.visible = true;
 		root.forceActiveFocus();
 	}
@@ -53,16 +55,26 @@ Item {
 		x: root._at.x
 		y: root._at.y
 		width: root._width + 8
-		height: list.implicitHeight + 8
+		height: Math.min(list.implicitHeight, root._maxList) + 8
 		radius: Tokens.settings.select.radius
 		color: root.theme.bgExpanded
 		border.width: 1
 		border.color: root.theme.border
 
-		Column {
-			id: list
+		ScrollThumb { flickable: listFlick; thumbColor: root.theme.scrollbarThumb }
+		Flickable {
+			id: listFlick
+			objectName: "popupList"
 			x: 4
 			y: 4
+			width: parent.width - 8
+			height: Math.min(list.implicitHeight, root._maxList)
+			contentHeight: list.implicitHeight
+			boundsBehavior: Flickable.StopAtBounds
+			clip: true
+
+		Column {
+			id: list
 			Repeater {
 				model: root.options
 				delegate: Rectangle {
@@ -94,6 +106,7 @@ Item {
 					}
 				}
 			}
+		}
 		}
 	}
 }

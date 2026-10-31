@@ -221,8 +221,8 @@ var launcher = {
 	gap: 6,
 	field: { paddingH: 14, height: 44, radius: 12, gap: 10, icon: 16, size: 15 },
 	sub: 11,
-	height: { stiffness: 400, damping: 31 }, // the notch's width spring
-	enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.96 }, // popupScale
+	height: { stiffness: 420, damping: 42 },
+	enter: { stiffness: 320, damping: 36, mass: 0.9, scale: 0.985 },
 	exitMs: 120
 };
 
@@ -248,8 +248,8 @@ var settings = {
 	content: { top: 12, h: 22, bottom: 28, scrollbar: 5 },
 	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12 },
 	group: { radius: 12, label: { size: 11, spacing: 0.5, top: 18, firstTop: 4, spacedTop: 24, h: 6, bottom: 8 } },
-	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 14, desc: 11, gap: 1, divider: 52, ms: 200 },
-	toggle: { width: 42, height: 24, knob: 18, inset: 2, travel: 18, on: "#34c759", ms: 300 },
+	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 14, desc: 11, gap: 1, divider: 52, ms: 120 },
+	toggle: { width: 42, height: 24, knob: 18, inset: 2, travel: 18, on: "#34c759", ms: 160 },
 	slider: { width: 100, track: 4, thumb: 14 },
 	select: { size: 11, radius: 6, paddingV: 4, paddingH: 8, minWidth: 80, itemHeight: 24 },
 	scale: { size: 11, radius: 6, button: 20, value: 32, gap: 8, paddingV: 2, paddingH: 4 },
@@ -310,9 +310,9 @@ var lock = {
 	island: {
 		height: 48, radius: 24, gap: 10, bottom: 20, paddingH: 14, itemGap: 8, icon: 16, text: 13,
 		button: 36, field: 280, fieldSize: 13,
-		enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.9 }
+		enter: { stiffness: 320, damping: 36, mass: 0.9, scale: 0.97 }
 	},
-	shake: { ms: 60, steps: [-10, 8, -5, 0] },
+	shake: { ms: 50, steps: [-4, 3, -2, 0] },
 	enter: { coverMs: 250, maxMs: 500 },
 	leave: { viewMs: 200, ms: 400, returnMs: 150 },
 	capsPollMs: 500,

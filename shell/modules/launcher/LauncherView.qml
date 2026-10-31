@@ -196,6 +196,7 @@ Item {
 			visible: !root.chatting
 
 			QpScroll { flickable: list }
+			ScrollThumb { objectName: "listThumb"; flickable: list; thumbColor: Qt.rgba(1, 1, 1, 0.2) }
 
 			ListView {
 				id: list
@@ -319,6 +320,8 @@ Item {
 			}
 		}
 
+		QpScroll { flickable: chat }
+		ScrollThumb { objectName: "chatThumb"; flickable: chat; visible: root.chatting && _max > 1 }
 		Flickable {
 			id: chat
 			objectName: "chat"
@@ -328,6 +331,7 @@ Item {
 			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
 			height: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
 			contentHeight: transcript.implicitHeight
+			interactive: false // QpScroll scrolls it
 			clip: true
 			boundsBehavior: Flickable.StopAtBounds
 			onContentHeightChanged: contentY = Math.max(0, contentHeight - height)
