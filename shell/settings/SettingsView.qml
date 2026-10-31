@@ -328,6 +328,8 @@ Rectangle {
 				Item { width: 1; height: previewGap.visible ? 19 : 0; id: previewGap; visible: root.tab !== "about" && !root._system }
 				Loader {
 					width: parent.width
+					// A Loader keeps its last height when it goes inactive.
+					height: active ? implicitHeight : 0
 					active: root._system && root.sys !== undefined && root.tab !== "network" && root.tab !== "bluetooth"
 					sourceComponent: SystemPages {
 						theme: root.theme; popup: selectPopup; sys: root.sys; page: root.tab
@@ -343,6 +345,7 @@ Rectangle {
 				}
 				Loader {
 					width: parent.width
+					height: item ? implicitHeight : 0
 					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, about: aboutTab })[root.tab] ?? null
 				}
 			}

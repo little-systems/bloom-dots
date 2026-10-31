@@ -394,6 +394,18 @@ Item {
 			compare(fakeSys.calls, [["updates"]]);
 		}
 
+		// Leaving a tall system page left its height behind, pushing Bloom's
+		// tabs and the connection panels down the page.
+		function test_noGapAfterLeavingASystemPage() {
+			const v = make("hyprland");
+			waitForRendering(host);
+			v.tab = "general";
+			waitForRendering(host);
+			const preview = part(v, "featurePreview"), row = part(v, "row:Launch at Login");
+			const gap = row.mapToItem(v, 0, 0).y - (preview.mapToItem(v, 0, 0).y + preview.height);
+			fuzzyCompare(gap, 40, 3, "only the group label sits between them");
+		}
+
 		function test_closeSignals() {
 			const v = make();
 			const closed = spy(v, "closeRequested");
