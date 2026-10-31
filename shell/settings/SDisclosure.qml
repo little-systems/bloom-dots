@@ -33,7 +33,7 @@ Column {
 			anchors.verticalCenter: parent.verticalCenter
 			text: root.summary
 			color: root.theme.text
-			font.family: Fonts.familyFor(Font.DemiBold)
+			font.family: Fonts.uiFor(Font.DemiBold)
 			font.pixelSize: 12
 			font.weight: Font.DemiBold
 		}
@@ -43,7 +43,7 @@ Column {
 			anchors.verticalCenter: parent.verticalCenter
 			text: root.hint
 			color: root.theme.textMuted
-			font.family: Fonts.family
+			font.family: Fonts.ui
 			font.pixelSize: 11
 		}
 		Rectangle {

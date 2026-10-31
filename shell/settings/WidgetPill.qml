@@ -54,7 +54,7 @@ Rectangle {
 			Text {
 				text: root._def.label
 				color: root.theme.text
-				font.family: Fonts.familyFor(Font.Medium)
+				font.family: Fonts.uiFor(Font.Medium)
 				font.pixelSize: 11
 				font.weight: Font.Medium
 				anchors.verticalCenter: parent.verticalCenter

@@ -77,7 +77,7 @@ Rectangle {
 			anchors.verticalCenter: closeButton.verticalCenter
 			text: "Settings"
 			color: root.theme.textMuted
-			font.family: Fonts.familyFor(Font.Bold)
+			font.family: Fonts.uiFor(Font.Bold)
 			font.pixelSize: Tokens.settings.title.size
 			font.weight: Font.Bold
 			font.letterSpacing: -0.1
@@ -136,7 +136,7 @@ Rectangle {
 				Text {
 					text: "Bloom"
 					color: root.theme.text
-					font.family: Fonts.familyFor(Font.Bold)
+					font.family: Fonts.uiFor(Font.Bold)
 					font.pixelSize: Tokens.settings.sidebar.intro.title
 					font.weight: Font.Bold
 					font.letterSpacing: -0.6
@@ -147,7 +147,7 @@ Rectangle {
 				Text {
 					text: "Make it yours"
 					color: root.theme.textMuted
-					font.family: Fonts.family
+					font.family: Fonts.ui
 					font.pixelSize: Tokens.settings.sidebar.intro.sub
 					height: 12
 					lineHeight: 12
@@ -189,7 +189,7 @@ Rectangle {
 							anchors.verticalCenter: parent.verticalCenter
 							text: tabItem.modelData.label
 							color: root.theme.text
-							font.family: Fonts.familyFor(tabItem.active ? Font.DemiBold : Font.Medium)
+							font.family: Fonts.uiFor(tabItem.active ? Font.DemiBold : Font.Medium)
 							font.pixelSize: Tokens.settings.tab.text
 							font.weight: tabItem.active ? Font.DemiBold : Font.Medium
 						}
@@ -237,7 +237,7 @@ Rectangle {
 						objectName: "heading"
 						text: root._active.label
 						color: root.theme.text
-						font.family: Fonts.familyFor(Font.Bold)
+						font.family: Fonts.uiFor(Font.Bold)
 						font.pixelSize: Tokens.settings.heading.title
 						font.weight: 680
 						font.letterSpacing: -0.8
@@ -249,7 +249,7 @@ Rectangle {
 						objectName: "copy"
 						text: root._active.copy
 						color: root.theme.textMuted
-						font.family: Fonts.family
+						font.family: Fonts.ui
 						font.pixelSize: Tokens.settings.heading.sub
 						height: 16.8
 						lineHeight: 16.8
@@ -337,7 +337,7 @@ Rectangle {
 				Text {
 					text: "Reset Bloom to Defaults"
 					color: root.theme.text
-					font.family: Fonts.familyFor(Font.DemiBold)
+					font.family: Fonts.uiFor(Font.DemiBold)
 					font.pixelSize: 14
 					font.weight: Font.DemiBold
 				}
@@ -346,7 +346,7 @@ Rectangle {
 					text: "All settings return to their defaults and Bloom restarts. Your enabled surfaces stay as they are."
 					wrapMode: Text.Wrap
 					color: root.theme.textMuted
-					font.family: Fonts.family
+					font.family: Fonts.ui
 					font.pixelSize: 12
 				}
 				Row {
@@ -369,7 +369,7 @@ Rectangle {
 								anchors.centerIn: parent
 								text: confirmButton.modelData.label
 								color: confirmButton.ok ? "white" : root.theme.text
-								font.family: Fonts.familyFor(Font.Medium)
+								font.family: Fonts.uiFor(Font.Medium)
 								font.pixelSize: 12
 								font.weight: Font.Medium
 							}

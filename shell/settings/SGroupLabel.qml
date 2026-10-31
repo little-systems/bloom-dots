@@ -11,7 +11,7 @@ Text {
 	topPadding: above
 	bottomPadding: Tokens.settings.group.label.bottom
 	color: theme.textMuted
-	font.family: Fonts.familyFor(Font.DemiBold)
+	font.family: Fonts.uiFor(Font.DemiBold)
 	font.pixelSize: Tokens.settings.group.label.size
 	font.weight: Font.DemiBold
 	font.letterSpacing: Tokens.settings.group.label.spacing

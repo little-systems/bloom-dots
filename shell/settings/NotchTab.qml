@@ -157,7 +157,7 @@ Column {
 				text: root._city
 				color: root.theme.text
 				clip: true
-				font.family: Fonts.family
+				font.family: Fonts.ui
 				font.pixelSize: 12
 				onTextEdited: {
 					root.set("bloom-weather-city", text);
@@ -224,7 +224,7 @@ Column {
 								text: cityItem.modelData.name
 								textFormat: Text.PlainText
 								color: root.theme.text
-								font.family: Fonts.familyFor(Font.Medium)
+								font.family: Fonts.uiFor(Font.Medium)
 								font.pixelSize: 12
 								font.weight: Font.Medium
 							}
@@ -234,7 +234,7 @@ Column {
 								text: cityItem.modelData.country
 								textFormat: Text.PlainText
 								color: root.theme.textMuted
-								font.family: Fonts.family
+								font.family: Fonts.ui
 								font.pixelSize: 10
 							}
 							HoverHandler { id: cityHover; cursorShape: Qt.PointingHandCursor }

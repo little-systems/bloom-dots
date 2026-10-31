@@ -35,7 +35,7 @@ Rectangle {
 			text: root.text
 			textFormat: Text.PlainText
 			color: root.theme.text
-			font.family: Fonts.family
+			font.family: Fonts.ui
 			font.pixelSize: 12
 		}
 	}

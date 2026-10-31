@@ -62,7 +62,7 @@ Item {
 						anchors.verticalCenter: parent.verticalCenter
 						text: item.modelData.label
 						color: root.theme.text
-						font.family: Fonts.family
+						font.family: Fonts.ui
 						font.pixelSize: Tokens.settings.select.size
 					}
 					HoverHandler {

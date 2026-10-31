@@ -51,7 +51,7 @@ Column {
 					anchors.verticalCenter: parent.verticalCenter
 					text: String(root.store.values["bloom-theme-color"]).toUpperCase()
 					color: root.theme.textMuted
-					font.family: Fonts.familyFor(Font.DemiBold)
+					font.family: Fonts.uiFor(Font.DemiBold)
 					font.pixelSize: Tokens.settings.color.text
 					font.weight: Font.DemiBold
 				}
@@ -119,7 +119,7 @@ Column {
 								text: cell.isValue ? Math.round(root._scale * 100) + "%" : cell.modelData.glyph
 								opacity: cell.isValue || cell.usable ? 1 : 0.25
 								color: root.theme.text
-								font.family: Fonts.familyFor(cell.isValue ? Font.DemiBold : Font.Bold)
+								font.family: Fonts.uiFor(cell.isValue ? Font.DemiBold : Font.Bold)
 								font.pixelSize: Tokens.settings.scale.size
 								font.weight: cell.isValue ? Font.DemiBold : Font.Bold
 							}

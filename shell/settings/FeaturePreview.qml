@@ -68,7 +68,7 @@ Rectangle {
 				x: 2
 				text: "Preview"
 				color: root.theme.text
-				font.family: Fonts.familyFor(Font.DemiBold)
+				font.family: Fonts.uiFor(Font.DemiBold)
 				font.pixelSize: 15
 				font.weight: Font.DemiBold
 				font.letterSpacing: -0.3
@@ -125,7 +125,7 @@ Rectangle {
 						anchors.centerIn: parent
 						text: choice.modelData.label
 						color: choice.active || choiceHover.hovered ? root.theme.text : root.theme.textMuted
-						font.family: Fonts.family
+						font.family: Fonts.ui
 						font.pixelSize: 11
 					}
 					HoverHandler { id: choiceHover; cursorShape: Qt.PointingHandCursor }
@@ -188,7 +188,7 @@ Rectangle {
 			text: root._selected ? Preview.description(root._scene, root.store.values, root.autostart, root.store.values["bloom-enabled-modules"].indexOf("dock") >= 0, root._selected.description) : ""
 			wrapMode: Text.Wrap
 			color: root.theme.textMuted
-			font.family: Fonts.family
+			font.family: Fonts.ui
 			font.pixelSize: 11
 		}
 	}

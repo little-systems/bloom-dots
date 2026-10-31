@@ -23,7 +23,7 @@ Item {
 		anchors.centerIn: parent
 		text: (root._volume ? "Volume" : "Brightness") + " HUD is off"
 		color: root.theme.textMuted
-		font.family: Fonts.family
+		font.family: Fonts.ui
 		font.pixelSize: 12
 	}
 	Item {

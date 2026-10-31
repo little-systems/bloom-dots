@@ -53,7 +53,7 @@ Column {
 			anchors.verticalCenter: parent.verticalCenter
 			text: zone.side
 			color: root.theme.textMuted
-			font.family: Fonts.familyFor(Font.DemiBold)
+			font.family: Fonts.uiFor(Font.DemiBold)
 			font.pixelSize: 10
 			font.weight: Font.DemiBold
 			font.letterSpacing: 0.5
@@ -69,7 +69,7 @@ Column {
 				visible: zone.items.length === 0
 				text: "Drop here"
 				color: root.theme.textMuted
-				font.family: Fonts.family
+				font.family: Fonts.ui
 				font.pixelSize: 11
 				font.italic: true
 			}
@@ -139,7 +139,7 @@ Column {
 				anchors.centerIn: parent
 				text: parent.def ? parent.def.label : ""
 				color: root.theme.text
-				font.family: Fonts.familyFor(Font.Medium)
+				font.family: Fonts.uiFor(Font.Medium)
 				font.pixelSize: 11
 				font.weight: Font.Medium
 			}

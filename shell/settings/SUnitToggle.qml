@@ -38,7 +38,7 @@ Rectangle {
 					anchors.centerIn: parent
 					text: cell.modelData.label
 					color: cell.active ? root.theme.text : root.theme.textMuted
-					font.family: Fonts.familyFor(Font.Bold)
+					font.family: Fonts.uiFor(Font.Bold)
 					font.pixelSize: root.wide ? 11 : 10
 					font.weight: Font.Bold
 				}

@@ -28,7 +28,7 @@ Rectangle {
 		anchors.centerIn: parent
 		text: root._label
 		color: root.theme.text
-		font.family: Fonts.family
+		font.family: Fonts.ui
 		font.pixelSize: Tokens.settings.select.size
 	}
 	HoverHandler {

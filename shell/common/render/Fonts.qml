@@ -17,6 +17,16 @@ QtObject {
 		return weight === Font.Medium ? medium : family;
 	}
 
+	// The settings app's text: Bloom's window uses Segoe UI on Windows, which
+	// can't ship; Selawik is Microsoft's free metric match. "Selawik" is the
+	// family for regular, and each other weight loads as its own family.
+	readonly property FontLoader _ui: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-regular.ttf") }
+	readonly property FontLoader _uiSemi: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-semibold.ttf") }
+	readonly property FontLoader _uiBold: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-bold.ttf") }
+	readonly property string ui: _ui.name
+	function uiFor(weight) {
+		return weight >= Font.Bold ? _uiBold.name : weight >= Font.Medium ? _uiSemi.name : _ui.name;
+	}
 	// Bloom's About title (Settings.css .about-title).
 	readonly property FontLoader _syne: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Syne-800.woff2") }
 	readonly property string syne: _syne.name

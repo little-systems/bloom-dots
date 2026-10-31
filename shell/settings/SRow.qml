@@ -59,7 +59,7 @@ Item {
 				text: root.label
 				elide: Text.ElideRight
 				color: root.danger ? Tokens.settings.danger : root.theme.text
-				font.family: Fonts.familyFor(Font.Medium)
+				font.family: Fonts.uiFor(Font.Medium)
 				font.pixelSize: Tokens.settings.row.label
 				font.weight: Font.Medium
 				height: 16.8
@@ -74,7 +74,7 @@ Item {
 				elide: Text.ElideRight
 				color: root.theme.textMuted
 				opacity: 0.8
-				font.family: Fonts.family
+				font.family: Fonts.ui
 				font.pixelSize: Tokens.settings.row.desc
 				height: 12
 				lineHeight: 12

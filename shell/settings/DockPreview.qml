@@ -37,7 +37,7 @@ Item {
 		anchors.centerIn: parent
 		text: "Dock is off"
 		color: root.theme.textMuted
-		font.family: Fonts.family
+		font.family: Fonts.ui
 		font.pixelSize: 12
 	}
 
@@ -86,7 +86,7 @@ Item {
 				visible: tile.icon === "" && tile.glyph === ""
 				text: tile.name.slice(0, 1)
 				color: root.theme.text
-				font.family: Fonts.familyFor(Font.DemiBold)
+				font.family: Fonts.uiFor(Font.DemiBold)
 				font.pixelSize: 15
 				font.weight: Font.DemiBold
 			}
@@ -117,7 +117,7 @@ Item {
 			anchors.centerIn: parent
 			text: root.selected
 			color: root.theme.text
-			font.family: Fonts.family
+			font.family: Fonts.ui
 			font.pixelSize: 11
 		}
 	}

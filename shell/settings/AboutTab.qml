@@ -65,7 +65,7 @@ Column {
 				anchors.centerIn: parent
 				text: "Version " + root.version
 				color: root.theme.textMuted
-				font.family: Fonts.familyFor(Font.DemiBold)
+				font.family: Fonts.uiFor(Font.DemiBold)
 				font.pixelSize: Tokens.settings.about.version
 				font.weight: Font.DemiBold
 				font.letterSpacing: 0.08 * Tokens.settings.about.version

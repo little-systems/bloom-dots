@@ -172,7 +172,7 @@ Column {
 								text: custom.modelData.name
 								textFormat: Text.PlainText
 								color: root.theme.text
-								font.family: Fonts.familyFor(Font.Medium)
+								font.family: Fonts.uiFor(Font.Medium)
 								font.pixelSize: 12
 								font.weight: Font.Medium
 							}
@@ -185,7 +185,7 @@ Column {
 								elide: Text.ElideRight
 								color: root.theme.textMuted
 								opacity: 0.9
-								font.family: Fonts.family
+								font.family: Fonts.ui
 								font.pixelSize: 11
 							}
 							Rectangle {
