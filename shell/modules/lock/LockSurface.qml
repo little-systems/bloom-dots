@@ -222,7 +222,7 @@ Scope {
 				layout: root._layout
 				leaving: root._leaving || !backdrop.shown
 				time: root._now
-				clockTurning: root.clockTurning
+				clockTurning: root.clockTurning && !Performance.lowPower
 				text: root._text
 				busy: root._busy
 				responseVisible: pam.responseVisible

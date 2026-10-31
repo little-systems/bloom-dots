@@ -131,8 +131,8 @@ PanelWindow {
 		compactNotch: Settings.values["bloom-music-compact-notch"]
 		visualizerEnabled: Settings.values["bloom-media-visualizer-enabled"] && (music.item?.visualizerAvailable ?? false)
 		albumArtEnabled: Settings.values["bloom-media-album-art-enabled"]
-		ambienceEnabled: Settings.values["bloom-media-ambience-enabled"]
-		glowEnabled: Settings.values["bloom-media-compact-glow-enabled"]
+		ambienceEnabled: Settings.values["bloom-media-ambience-enabled"] && !Performance.lowPower
+		glowEnabled: Settings.values["bloom-media-compact-glow-enabled"] && !Performance.lowPower
 		layout: Settings.values["bloom-media-layout"]
 		media: music.item?.media ?? ({ hasMedia: false, isPlaying: false, title: "", artist: "", artUrl: "", lengthMs: 0, canSeek: false })
 		positionMs: music.item?.positionMs ?? 0

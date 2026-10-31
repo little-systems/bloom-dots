@@ -235,6 +235,9 @@ var session = {
 	note: 12
 };
 
+// Low-power mode: how often a live preview refreshes.
+var lowPower = { captureMs: 1000 };
+
 // The keybind cheatsheet (Phase 7): the launcher's card, in three columns.
 var cheatsheet = {
 	width: 1080,

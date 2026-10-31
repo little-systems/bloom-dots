@@ -58,5 +58,6 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-media-layout` | enum | `"classic"` | `classic`, `compact` | Music player layout: classic = large album art; compact = small art with a progress bar. |
 | `bloom-media-visualizer-enabled` | bool | `true` | `true`, `false` | Audio visualizer bars in music mode (needs cava). Also read from `bloom-visualizer-enabled`. |
 | `bloom-media-album-art-enabled` | bool | `true` | `true`, `false` | Album artwork in the collapsed notch. |
+| `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |
 | `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
 | `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

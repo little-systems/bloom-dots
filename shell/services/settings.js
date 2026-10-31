@@ -280,6 +280,12 @@ var SCHEMA = {
 		default: true,
 		doc: "Album artwork in the collapsed notch."
 	},
+	"bloom-low-power": {
+		type: "enum",
+		values: ["off", "auto", "on"],
+		default: "off",
+		doc: "Turns off album-art glow and slows live previews. Auto does this while on battery."
+	},
 	"bloom-media-ambience-enabled": {
 		type: "bool",
 		default: true,

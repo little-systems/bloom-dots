@@ -398,6 +398,12 @@ ShellRoot {
 
 	// The agent's state, never what's typed: passwords don't come through IPC.
 	IpcHandler {
+		target: "performance"
+
+		function state(): string { return JSON.stringify({ mode: Performance.mode, lowPower: Performance.lowPower }); }
+	}
+
+	IpcHandler {
 		target: "cheatsheet"
 
 		function toggle(): string { Cheatsheet.toggle(); return "ok"; }
