@@ -13,7 +13,7 @@ TestCase {
 		verify(!t.isLight);
 		compare(rgb(t.bg), [0, 0, 0]);
 		fuzzyCompare(t.bg.a, 0.8, 1e-9);
-		fuzzyCompare(t.bgExpanded.a, 0.92, 1e-9);
+		fuzzyCompare(t.bgExpanded.a, t.bg.a, 1e-9);
 		compare(t.text, { r: 255, g: 255, b: 255, a: 1 });
 		compare(t.textMuted, { r: 255, g: 255, b: 255, a: 0.6 });
 		compare(t.border, { r: 255, g: 255, b: 255, a: 0.1 });
@@ -21,7 +21,7 @@ TestCase {
 	}
 
 	function test_expandedOpacityCapsAtOne() {
-		fuzzyCompare(Theme.compute("dark", "#007aff", 0.95, 0.5, 0.15, null).bgExpanded.a, 1, 1e-9);
+		fuzzyCompare(Theme.compute("dark", "#007aff", 0.95, 0.5, 0.15, null).bgExpanded.a, 0.95, 1e-9);
 	}
 
 	function test_light() {

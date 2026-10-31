@@ -71,7 +71,9 @@ function hslToHex(h, s, l) {
 // falls back to dark, as Bloom does when the system accent is unavailable.
 function compute(mode, customColor, opacity, saturation, brightness, adaptiveAccent) {
 	const op = opacity;
-	const opExpanded = Math.min(1, opacity + 0.12);
+	// One opacity everywhere (owner, 2026-11-01): Bloom adds 0.12 when expanded,
+	// which made panels and Spotlight solid from 0.88 up.
+	const opExpanded = opacity;
 
 	if (mode === "light") {
 		return {
