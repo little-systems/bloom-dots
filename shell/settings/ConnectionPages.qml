@@ -108,7 +108,7 @@ Column {
 		visible: root._toggleError !== ""
 		width: parent.width
 		bottomPadding: 10
-		leftPadding: 6
+		leftPadding: Tokens.settings.group.label.h
 		text: root._toggleError
 		color: "#ff8a80"
 		font.family: Fonts.ui
@@ -119,7 +119,7 @@ Column {
 		width: parent.width
 		leftPadding: Tokens.settings.row.inset
 		rightPadding: 14
-		bottomPadding: 10
+		bottomPadding: 12
 		wrapMode: Text.Wrap
 		font.family: Fonts.ui
 		font.pixelSize: 12
@@ -144,12 +144,12 @@ Column {
 		Item {
 			visible: root.net.loaded && root.net.wifiEnabled
 			width: parent.width
-			height: 40
-			SGroupLabel { y: 2; theme: root.theme; text: "Networks · " + root.net.networks.length }
+			height: 46
+			SGroupLabel { y: 0; theme: root.theme; text: "Networks · " + root.net.networks.length }
 			SChip {
 				objectName: "scan"
-				x: parent.width - width
-				y: 8
+				x: parent.width - width - Tokens.settings.row.paddingH
+				y: 10
 				theme: root.theme; accent: root.accent; icon: "refresh-cw"
 				text: root.net.scanning ? "Scanning…" : "Scan"
 				onClicked: root.net.refresh(true)
@@ -197,8 +197,8 @@ Column {
 							id: netDetail
 							width: parent.width
 							topPadding: 2
-							bottomPadding: 10
-							spacing: 6
+							bottomPadding: 14
+							spacing: 8
 
 							Message {
 								visible: network.enterprise
@@ -207,7 +207,7 @@ Column {
 							}
 							Row {
 								x: Tokens.settings.row.inset
-								spacing: 6
+								spacing: 8
 								SField {
 									objectName: "password:" + network.modelData.ssid
 									visible: network.needsPassword || (network.error !== null && network.error.code === "wrong-password")
@@ -258,7 +258,7 @@ Column {
 		Text {
 			objectName: "noVpn"
 			visible: !root.sys || root.sys.vpns.length === 0
-			leftPadding: 2
+			leftPadding: Tokens.settings.group.label.h
 			text: "No VPNs are set up. Add one with NetworkManager."
 			color: root.theme.textMuted
 			font.family: Fonts.ui
@@ -320,7 +320,7 @@ Column {
 					Row {
 						visible: device.open
 						x: Tokens.settings.row.inset
-						bottomPadding: 12
+						bottomPadding: 14
 						spacing: 8
 						SChip {
 							objectName: "deviceConnect:" + device.modelData.name
@@ -423,8 +423,8 @@ Column {
 			objectName: "btError"
 			visible: !!root.bt.lastError
 			width: parent.width
-			topPadding: 8
-			leftPadding: 6
+			topPadding: 10
+			leftPadding: Tokens.settings.group.label.h
 			text: "Bluetooth couldn't finish that. Try again."
 			color: "#ff8a80"
 			font.family: Fonts.ui

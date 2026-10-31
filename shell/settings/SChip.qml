@@ -20,7 +20,7 @@ Rectangle {
 	property bool active: false
 	signal clicked()
 
-	width: row.implicitWidth + 22
+	width: row.implicitWidth + 28
 	height: Tokens.settings.control
 	radius: Tokens.settings.controlRadius
 	border.width: 1

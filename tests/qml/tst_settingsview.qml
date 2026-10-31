@@ -203,14 +203,26 @@ Item {
 		}
 
 		// The app layout: it fills the window and reflows.
-		// Compact, and the same size on every page.
+		// Roomy around the content, modest controls, the same on every page.
 		function test_compactSizes() {
 			const v = make();
 			waitForRendering(host);
-			verify(part(v, "row:24-Hour Time").height <= 42, "row height");
-			compare(part(v, "tab:display").height, 30);
-			compare(part(v, "time24").height, 20);
-			compare(part(v, "lowPower").height, 26);
+			compare(Math.round(part(v, "row:24-Hour Time").height), 54);
+			compare(part(v, "tab:display").height, 34);
+			compare(part(v, "time24").height, 22);
+			compare(part(v, "lowPower").height, 28);
+		}
+
+		// One grid: page title, section label and row content line up.
+		function test_everythingSharesAGrid() {
+			const v = make();
+			waitForRendering(host);
+			const x = n => part(v, n).mapToItem(v, 0, 0).x;
+			const row = part(v, "row:24-Hour Time");
+			const heading = x("heading");
+			compare(row.mapToItem(v, 0, 0).x, heading + 1);
+			const right = part(v, "time24"), select = part(v, "lowPower");
+			fuzzyCompare(right.mapToItem(v, 0, 0).x + right.width, select.mapToItem(v, 0, 0).x + select.width, 0.6, "controls end on one line");
 		}
 
 		function test_layoutFollowsTheWindow() {
@@ -219,7 +231,7 @@ Item {
 			const tab = part(v, "tab:display");
 			verify(tab.width > 40);
 			compare(part(v, "close").mapToItem(v, 0, 0).x + 28 + 16, v.width);
-			verify(part(v, "row:Launch at Login").width <= 640);
+			verify(part(v, "row:Launch at Login").width <= 680);
 		}
 
 		function test_narrowWindowsUseARail() {

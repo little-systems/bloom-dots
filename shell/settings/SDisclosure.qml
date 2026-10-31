@@ -31,7 +31,7 @@ Column {
 		Keys.onReturnPressed: root.open = !root.open
 		SFocusRing { inset: 1; radius: 6 }
 		width: parent.width
-		height: Math.max(summaryText.implicitHeight, 14) + 22
+		height: Math.max(summaryText.implicitHeight, 14) + 26
 		color: hover.hovered ? root.theme.border : "transparent"
 
 		Text {

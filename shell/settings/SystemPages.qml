@@ -40,7 +40,7 @@ Column {
 		visible: !root.sys.hyprLoaded
 		width: parent.width
 		bottomPadding: 12
-		leftPadding: 6
+		leftPadding: Tokens.settings.group.label.h
 		text: "Couldn't read Hyprland's settings, so these are locked."
 		color: "#ff8a80"
 		font.family: Fonts.ui
@@ -178,7 +178,7 @@ Column {
 		Text {
 			objectName: "noStreams"
 			visible: root.sys.mixer.length === 0
-			leftPadding: 6
+			leftPadding: Tokens.settings.group.label.h
 			text: "No apps are playing sound"
 			color: root.theme.textMuted
 			font.family: Fonts.ui
@@ -396,7 +396,7 @@ Column {
 		SGroupLabel { theme: root.theme; text: "Startup Apps" }
 		Text {
 			visible: root.sys.startup.length === 0
-			leftPadding: 6
+			leftPadding: Tokens.settings.group.label.h
 			text: "Nothing starts with your session"
 			color: root.theme.textMuted
 			font.family: Fonts.ui
@@ -464,7 +464,7 @@ Column {
 			Row {
 				x: Tokens.settings.row.inset
 				spacing: 8
-				bottomPadding: 12
+				bottomPadding: 14
 				SField {
 					id: keyField
 					objectName: "aiKey"

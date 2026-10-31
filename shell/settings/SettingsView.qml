@@ -211,7 +211,7 @@ Rectangle {
 				onTextChanged: root.query = text
 				onAccepted: if (root._hits.length) root._open(root._hits[0])
 			}
-			Item { width: 1; height: 6 }
+			Item { width: 1; height: 8 }
 			Text {
 				objectName: "noHits"
 				visible: root.query !== "" && root._hits.length === 0
