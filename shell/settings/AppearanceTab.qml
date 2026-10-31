@@ -22,7 +22,7 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "palette"; label: "Theme Mode"; desc: "Configure visual styling"
-			SSelect {
+			SSelect { accessibleName: "Theme Mode";
 				objectName: "themeMode"
 				theme: root.theme
 				popup: root.popup
@@ -60,7 +60,7 @@ Column {
 		SRow {
 			theme: root.theme; icon: "contrast"; label: "Background Opacity"; divider: root._advanced
 			desc: "Adjust theme transparency (" + Math.round(root.store.values["bloom-theme-opacity"] * 100) + "%)"
-			SSlider { objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
+			SSlider { accessibleName: "Background Opacity"; objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
 		}
 		SRow {
 			visible: root._advanced
@@ -76,7 +76,7 @@ Column {
 			implicitHeight: 49.8
 			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
 			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
-			SSlider { theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
+			SSlider { accessibleName: "Background Brightness"; theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
 		}
 	}
 

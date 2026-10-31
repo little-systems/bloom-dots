@@ -20,19 +20,23 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "power"; label: "Launch at Login"; desc: "Open Bloom automatically"
-			SToggle { objectName: "autostart"; theme: root.theme; checked: root.autostart; onToggled: value => root.autostartToggled(value) }
+			SToggle { accessibleName: "Launch at Login"; objectName: "autostart"; theme: root.theme; checked: root.autostart; onToggled: value => root.autostartToggled(value) }
 		}
 		SRow {
 			theme: root.theme; icon: "download"; label: "Update Indicator"; desc: "Show green dot when update available"
-			SToggle { theme: root.theme; checked: root.store.values["bloom-show-update-indicator"]; onToggled: value => root.store.set("bloom-show-update-indicator", value) }
+			SToggle { accessibleName: "Update Indicator"; theme: root.theme; checked: root.store.values["bloom-show-update-indicator"]; onToggled: value => root.store.set("bloom-show-update-indicator", value) }
 		}
 		SRow {
 			theme: root.theme; icon: "clock"; label: "24-Hour Time"; desc: "Use 24-hour clock format"
-			SToggle { objectName: "time24"; theme: root.theme; checked: root.store.values["bloom-time-format-24h"]; onToggled: value => root.store.set("bloom-time-format-24h", value) }
+			SToggle { accessibleName: "24-Hour Time"; objectName: "time24"; theme: root.theme; checked: root.store.values["bloom-time-format-24h"]; onToggled: value => root.store.set("bloom-time-format-24h", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "rotate-ccw"; label: "Reduce Motion"; desc: "Skip animations across Bloom"
+			SToggle { objectName: "reduceMotion"; accessibleName: "Reduce Motion"; theme: root.theme; checked: root.store.values["bloom-reduce-motion"]; onToggled: value => root.store.set("bloom-reduce-motion", value) }
 		}
 		SRow {
 			theme: root.theme; icon: "gauge"; label: "Low Power Mode"; desc: "Turn off glow and slow live previews"
-			SSelect {
+			SSelect { accessibleName: "Low Power Mode";
 				objectName: "lowPower"
 				theme: root.theme
 				popup: root.popup
@@ -44,7 +48,7 @@ Column {
 		SRow {
 			theme: root.theme; icon: "battery-warning"; label: "Low Battery Alert"; divider: false
 			desc: "Trigger at " + root.store.values["bloom-low-battery-threshold"] + "%"
-			SSlider { objectName: "battery"; theme: root.theme; from: 5; to: 50; step: 5; value: root.store.values["bloom-low-battery-threshold"]; onMoved: value => root.store.set("bloom-low-battery-threshold", value) }
+			SSlider { accessibleName: "Low Battery Alert"; objectName: "battery"; theme: root.theme; from: 5; to: 50; step: 5; value: root.store.values["bloom-low-battery-threshold"]; onMoved: value => root.store.set("bloom-low-battery-threshold", value) }
 		}
 	}
 

@@ -24,6 +24,11 @@ ShellRoot {
 	// Layers render at the scale the stages are drawn (common/render).
 	Binding {
 		target: Render
+		property: "reduceMotion"
+		value: Settings.values["bloom-reduce-motion"]
+	}
+	Binding {
+		target: Render
 		property: "scale"
 		value: (Settings.values["bloom-scale"] || 1) * Math.max(1, ...Quickshell.screens.map(s => s.devicePixelRatio || 1))
 	}

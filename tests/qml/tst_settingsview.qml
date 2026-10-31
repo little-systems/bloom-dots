@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-time-format-24h": false, "bloom-low-power": "off",
 		"bloom-low-battery-threshold": 20, "bloom-theme-mode": "dark", "bloom-theme-color": "#007aff",
 		"bloom-theme-opacity": 0.8, "bloom-theme-saturation": 0.5, "bloom-theme-brightness": 0.15, "bloom-scale": 1.1,
 		"bloom-volume-hud-enabled": true, "bloom-volume-edge-enabled": true,
@@ -203,6 +203,7 @@ Item {
 		function test_resetAsksFirst() {
 			const v = make();
 			const confirmed = spy(v, "resetConfirmed");
+			part(v, "page").contentY = 300;
 			click(v, "reset");
 			verify(part(v, "confirm").visible);
 			click(v, "confirmCancel");
@@ -404,6 +405,65 @@ Item {
 			const preview = part(v, "featurePreview"), row = part(v, "row:Launch at Login");
 			const gap = row.mapToItem(v, 0, 0).y - (preview.mapToItem(v, 0, 0).y + preview.height);
 			fuzzyCompare(gap, 40, 3, "only the group label sits between them");
+		}
+
+		function test_tabReachesControls() {
+			const v = make();
+			waitForRendering(host);
+			part(v, "time24").forceActiveFocus();
+			keyClick(Qt.Key_Space);
+			compare(fakeStore.values["bloom-time-format-24h"], true);
+			keyClick(Qt.Key_Tab);
+			verify(!part(v, "time24").activeFocus, "tab moves on");
+		}
+
+		function test_sliderKeys() {
+			const v = make();
+			part(v, "battery").forceActiveFocus();
+			keyClick(Qt.Key_Right);
+			compare(fakeStore.values["bloom-low-battery-threshold"], 25);
+			keyClick(Qt.Key_Home);
+			compare(fakeStore.values["bloom-low-battery-threshold"], 5);
+			keyClick(Qt.Key_End);
+			compare(fakeStore.values["bloom-low-battery-threshold"], 50);
+		}
+
+		function test_selectKeys() {
+			const v = make("appearance");
+			part(v, "themeMode").forceActiveFocus();
+			keyClick(Qt.Key_Return);
+			verify(part(v, "selectPopup").visible);
+			keyClick(Qt.Key_Down);
+			keyClick(Qt.Key_Return);
+			compare(fakeStore.values["bloom-theme-mode"], "light");
+			verify(part(v, "themeMode").activeFocus, "focus comes back");
+			keyClick(Qt.Key_Return);
+			keyClick(Qt.Key_Escape);
+			verify(!part(v, "selectPopup").visible);
+		}
+
+		function test_pageShortcuts() {
+			const v = make("display");
+			waitForRendering(host);
+			v.forceActiveFocus();
+			keyClick(Qt.Key_PageDown, Qt.ControlModifier);
+			compare(v.tab, "sound");
+			keyClick(Qt.Key_PageUp, Qt.ControlModifier);
+			compare(v.tab, "display");
+		}
+
+		function test_actionRowFromTheKeyboard() {
+			const v = make();
+			const restart = spy(v, "restartRequested");
+			part(v, "restart").forceActiveFocus();
+			keyClick(Qt.Key_Return);
+			compare(restart.count, 1);
+		}
+
+		function test_controlsHaveNames() {
+			const v = make();
+			compare(part(v, "time24").accessibleName, "24-Hour Time");
+			compare(part(v, "battery").accessibleName, "Low Battery Alert");
 		}
 
 		function test_closeSignals() {

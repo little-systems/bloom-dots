@@ -5,6 +5,13 @@ import "../common/render"
 // Bloom's .folder-chip.
 Rectangle {
 	id: root
+	activeFocusOnTab: true
+	Accessible.role: Accessible.CheckBox
+	Accessible.name: root.text
+	Accessible.checked: root.active
+	Keys.onSpacePressed: root.clicked()
+	Keys.onReturnPressed: root.clicked()
+	SFocusRing {}
 	property QtObject theme
 	property color accent: "#007aff"
 	property string text: ""

@@ -79,6 +79,23 @@ Rectangle {
 
 	onTabChanged: page.contentY = 0
 
+	function _step(delta) {
+		const at = root._tabs.findIndex(t => t.id === root.tab);
+		root.tab = root._tabs[(at + delta + root._tabs.length) % root._tabs.length].id;
+	}
+	Keys.onPressed: event => {
+		if (!(event.modifiers & Qt.ControlModifier)) return;
+		if (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown) root._step(1);
+		else if (event.key === Qt.Key_Backtab || event.key === Qt.Key_PageUp) root._step(-1);
+		else return;
+		event.accepted = true;
+	}
+	Keys.onEscapePressed: {
+		if (confirm.visible) confirm.visible = false;
+		else root.closeRequested();
+	}
+	focus: true
+
 	radius: Tokens.settings.window.radius
 	color: root.theme.bg
 	border.width: 1
@@ -112,6 +129,12 @@ Rectangle {
 		Rectangle {
 			id: closeButton
 			objectName: "close"
+			activeFocusOnTab: true
+			Accessible.role: Accessible.Button
+			Accessible.name: "Close Settings"
+			Keys.onSpacePressed: root.closeRequested()
+			Keys.onReturnPressed: root.closeRequested()
+			SFocusRing {}
 			x: parent.width - width - Tokens.settings.title.paddingH
 			y: Tokens.settings.title.paddingTop
 			width: Tokens.settings.title.close
@@ -217,6 +240,13 @@ Rectangle {
 							required property var modelData
 							readonly property bool active: tabItem.modelData.id === root.tab
 							objectName: "tab:" + tabItem.modelData.id
+					activeFocusOnTab: true
+					Accessible.role: Accessible.PageTab
+					Accessible.name: tabItem.modelData.label
+					Accessible.selected: tabItem.active
+					Keys.onSpacePressed: root.tab = tabItem.modelData.id
+					Keys.onReturnPressed: root.tab = tabItem.modelData.id
+					SFocusRing { inset: 0 }
 							width: parent.width
 							height: Tokens.settings.tab.height
 							radius: Tokens.settings.tab.radius
@@ -440,6 +470,12 @@ Rectangle {
 							required property var modelData
 							readonly property bool ok: confirmButton.modelData.id === "confirmOk"
 							objectName: confirmButton.modelData.id
+							activeFocusOnTab: true
+							Accessible.role: Accessible.Button
+							Accessible.name: confirmButton.modelData.label
+							Keys.onSpacePressed: tap.tapped(null, Qt.LeftButton)
+							Keys.onReturnPressed: tap.tapped(null, Qt.LeftButton)
+							SFocusRing {}
 							width: confirmText.implicitWidth + 24
 							height: 28
 							radius: 7
@@ -455,6 +491,7 @@ Rectangle {
 							}
 							HoverHandler { cursorShape: Qt.PointingHandCursor }
 							TapHandler {
+								id: tap
 								onTapped: {
 									confirm.visible = false;
 									if (confirmButton.ok) root.resetConfirmed();

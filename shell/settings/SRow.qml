@@ -17,6 +17,13 @@ Item {
 	signal clicked()
 
 	objectName: "row:" + root.label
+	activeFocusOnTab: root.action
+	Accessible.role: root.action ? Accessible.Button : Accessible.Grouping
+	Accessible.name: root.label
+	Accessible.description: root.desc
+	Keys.onReturnPressed: if (root.action) root.clicked()
+	Keys.onSpacePressed: if (root.action) root.clicked()
+	SFocusRing { inset: 2; radius: 8; visible: root.action && root.activeFocus }
 	width: parent.width
 	height: body.height + (root.divider ? 1 : 0)
 

@@ -4,6 +4,15 @@ import "../common/tokens.js" as Tokens
 // Bloom's iOS-style .toggle-switch.
 Rectangle {
 	id: root
+	activeFocusOnTab: true
+	Accessible.role: Accessible.CheckBox
+	Accessible.name: root.accessibleName
+	Accessible.checkable: true
+	Accessible.checked: root.checked
+	property string accessibleName: ""
+	Keys.onSpacePressed: if (root.enabled) root.toggled(!root.checked)
+	Keys.onReturnPressed: if (root.enabled) root.toggled(!root.checked)
+	SFocusRing {}
 	property QtObject theme
 	property bool checked: false
 	signal toggled(bool checked)

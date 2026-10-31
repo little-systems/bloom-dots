@@ -33,7 +33,7 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "panel-top"; label: "Notch Behavior"; desc: "Choose how the notch appears"; divider: root._peek
-			SSelect {
+			SSelect { accessibleName: "Notch Behavior";
 				objectName: "notchMode"; theme: root.theme; popup: root.popup; value: root._v["bloom-notch-mode"]
 				options: [{ value: "fixed", label: "Fixed" }, { value: "smart", label: "Smart" }, { value: "peek", label: "Peek" }]
 				onActivated: value => root.set("bloom-notch-mode", value)
@@ -44,7 +44,7 @@ Column {
 			visible: root._peek; height: visible ? implicitHeight : 0; implicitHeight: 49.8
 			theme: root.theme; icon: "timer"; label: "Peek Delay"; divider: false
 			desc: root._delay === 0 ? "Reveal instantly on top-edge contact" : "Rest on the top edge for " + root._delay + "ms to reveal"
-			SSlider { theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-notch-edge-delay", value) }
+			SSlider { accessibleName: "Peek Delay"; theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-notch-edge-delay", value) }
 		}
 	}
 
@@ -53,25 +53,25 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "calendar"; label: "Calendar & Timer"; desc: "Enable productivity split-view"
-			SToggle { objectName: "calendar"; theme: root.theme; enabled: !(root._calendar && root._lastPanel); checked: root._calendar; onToggled: value => root.set("bloom-calendar-enabled", value) }
+			SToggle { accessibleName: "Calendar & Timer"; objectName: "calendar"; theme: root.theme; enabled: !(root._calendar && root._lastPanel); checked: root._calendar; onToggled: value => root.set("bloom-calendar-enabled", value) }
 		}
 		SRow {
 			theme: root.theme; icon: "sliders-horizontal"; label: "Command Center"; desc: "Quick toggles, Wi-Fi and Bluetooth"
-			SToggle { theme: root.theme; enabled: !(root._command && root._lastPanel); checked: root._command; onToggled: value => root.set("bloom-notch-command-center-enabled", value) }
+			SToggle { accessibleName: "Command Center"; theme: root.theme; enabled: !(root._command && root._lastPanel); checked: root._command; onToggled: value => root.set("bloom-notch-command-center-enabled", value) }
 		}
 		SRow {
 			theme: root.theme; icon: "headphones"; label: "Connected Devices"; desc: "Batteries and audio of your connected devices"
-			SToggle { theme: root.theme; enabled: !(root._devices && root._lastPanel); checked: root._devices; onToggled: value => root.set("bloom-notch-devices-enabled", value) }
+			SToggle { accessibleName: "Connected Devices"; theme: root.theme; enabled: !(root._devices && root._lastPanel); checked: root._devices; onToggled: value => root.set("bloom-notch-devices-enabled", value) }
 		}
 		SRow {
 			theme: root.theme; icon: "panel-top"; label: "Remember Last Panel"; desc: "Reopen the panel you last used; turn off to choose a fixed default"; divider: !root._memory
-			SToggle { objectName: "memory"; theme: root.theme; checked: root._memory; onToggled: value => root.set("bloom-notch-panel-memory", value) }
+			SToggle { accessibleName: "Remember Last Panel"; objectName: "memory"; theme: root.theme; checked: root._memory; onToggled: value => root.set("bloom-notch-panel-memory", value) }
 		}
 		SRow {
 			objectName: "defaultPanel"
 			visible: !root._memory; height: visible ? implicitHeight : 0; implicitHeight: 49.8
 			theme: root.theme; icon: "panel-top"; label: "Default Panel"; desc: "Open this panel when you click the notch"; divider: false
-			SSelect {
+			SSelect { accessibleName: "Default Panel";
 				theme: root.theme; popup: root.popup; value: root._v["bloom-notch-default-panel"]
 				options: [
 					{ value: "calendar", label: "Calendar & Timer", on: root._calendar },
@@ -88,14 +88,14 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "music"; label: "Music Mode"; desc: "Interactive live music widget"; divider: false
-			SToggle { objectName: "music"; theme: root.theme; checked: root._music; onToggled: value => root.set("bloom-music-mode-enabled", value) }
+			SToggle { accessibleName: "Music Mode"; objectName: "music"; theme: root.theme; checked: root._music; onToggled: value => root.set("bloom-music-mode-enabled", value) }
 		}
 		SDisclosure {
 			visible: root._music
 			theme: root.theme; summary: "Music options"; hint: "Layout and visual effects"
 			SRow {
 				theme: root.theme; icon: "minimize-2"; label: "Compact Mode"; desc: "Show visualizer & artwork when collapsed"
-				SToggle { theme: root.theme; checked: root._v["bloom-music-compact-notch"]; onToggled: value => root.set("bloom-music-compact-notch", value) }
+				SToggle { accessibleName: "Compact Mode"; theme: root.theme; checked: root._v["bloom-music-compact-notch"]; onToggled: value => root.set("bloom-music-compact-notch", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "layout-list"; label: "Media Layout"; desc: "Choose expanded player style"
@@ -107,11 +107,11 @@ Column {
 			}
 			SRow {
 				theme: root.theme; icon: "sparkles"; label: "Ambient Glow"; desc: "Colored glow behind expanded album art"
-				SToggle { theme: root.theme; checked: root._v["bloom-media-ambience-enabled"]; onToggled: value => root.set("bloom-media-ambience-enabled", value) }
+				SToggle { accessibleName: "Ambient Glow"; theme: root.theme; checked: root._v["bloom-media-ambience-enabled"]; onToggled: value => root.set("bloom-media-ambience-enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "circle"; label: "Compact Glow"; desc: "Glow around collapsed thumbnail"; divider: false
-				SToggle { theme: root.theme; checked: root._v["bloom-media-compact-glow-enabled"]; onToggled: value => root.set("bloom-media-compact-glow-enabled", value) }
+				SToggle { accessibleName: "Compact Glow"; theme: root.theme; checked: root._v["bloom-media-compact-glow-enabled"]; onToggled: value => root.set("bloom-media-compact-glow-enabled", value) }
 			}
 		}
 	}
@@ -121,7 +121,7 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "archive"; label: "Keep Items"; desc: "Keep shelf items after Bloom closes"; divider: false
-			SToggle { theme: root.theme; checked: root._v["bloom-shelf-persist"]; onToggled: value => root.set("bloom-shelf-persist", value) }
+			SToggle { accessibleName: "Keep Items"; theme: root.theme; checked: root._v["bloom-shelf-persist"]; onToggled: value => root.set("bloom-shelf-persist", value) }
 		}
 	}
 

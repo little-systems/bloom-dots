@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 import "settings"
+import "common/render"
 import "modules/notch"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
@@ -81,6 +82,11 @@ ShellRoot {
 	}
 
 	SystemStore { id: store }
+	Binding {
+		target: Render
+		property: "reduceMotion"
+		value: Settings.values["bloom-reduce-motion"]
+	}
 
 	FloatingWindow {
 		id: win

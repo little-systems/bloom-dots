@@ -4,6 +4,25 @@ import "../common/tokens.js" as Tokens
 // Bloom's .settings-slider: a thin track with a round thumb, snapping to steps.
 Item {
 	id: root
+	activeFocusOnTab: true
+	Accessible.role: Accessible.Slider
+	Accessible.name: root.accessibleName
+	property string accessibleName: ""
+	function _nudge(steps) {
+		const next = root.value + steps * root.step;
+		root.moved(Math.round(Math.max(root.from, Math.min(root.to, next)) * 1000) / 1000);
+	}
+	Keys.onLeftPressed: root._nudge(-1)
+	Keys.onDownPressed: root._nudge(-1)
+	Keys.onRightPressed: root._nudge(1)
+	Keys.onUpPressed: root._nudge(1)
+	Keys.onPressed: event => {
+		if (event.key === Qt.Key_Home) root.moved(root.from);
+		else if (event.key === Qt.Key_End) root.moved(root.to);
+		else return;
+		event.accepted = true;
+	}
+	SFocusRing { radius: 8 }
 	property QtObject theme
 	property real from: 0
 	property real to: 1

@@ -304,6 +304,10 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Slide the brightness overlay in from the right edge on hover."
 	},
+	"bloom-reduce-motion": {
+		type: "bool", default: false,
+		doc: "Land every spring at once instead of animating it."
+	},
 	"bloom-low-power": {
 		type: "enum",
 		values: ["off", "auto", "on"],

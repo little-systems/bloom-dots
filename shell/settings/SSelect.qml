@@ -6,6 +6,15 @@ import "../common/tokens.js" as Tokens
 // above the page, as a native select's list sits above it.
 Rectangle {
 	id: root
+	activeFocusOnTab: true
+	Accessible.role: Accessible.ComboBox
+	Accessible.name: root.accessibleName
+	Accessible.description: root._label
+	property string accessibleName: ""
+	function _open() { root.popup.show(root, root.options, value => root.activated(value), root.value); }
+	Keys.onSpacePressed: root._open()
+	Keys.onReturnPressed: root._open()
+	SFocusRing {}
 	property QtObject theme
 	property Item popup
 	// [{ value, label }]
@@ -36,6 +45,6 @@ Rectangle {
 		cursorShape: Qt.PointingHandCursor
 	}
 	TapHandler {
-		onTapped: root.popup.show(root, root.options, value => root.activated(value))
+		onTapped: root._open()
 	}
 }

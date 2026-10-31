@@ -1,4 +1,5 @@
 import QtQuick
+import "render"
 import "spring.js" as SpringMath
 
 // A value that follows `target` with framer-motion's spring physics
@@ -39,6 +40,7 @@ Item {
 		}
 		root._granular = SpringMath.isGranular(root.value, root.target);
 		root.settled = false;
+		if (Render.reduceMotion) root.jump(root.target);
 	}
 
 	function jump(v) {

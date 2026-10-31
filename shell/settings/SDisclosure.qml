@@ -22,6 +22,13 @@ Column {
 		color: root.theme.border
 	}
 	Rectangle {
+		id: summaryRow
+		activeFocusOnTab: true
+		Accessible.role: Accessible.Button
+		Accessible.name: root.summary
+		Keys.onSpacePressed: root.open = !root.open
+		Keys.onReturnPressed: root.open = !root.open
+		SFocusRing { inset: 1; radius: 6 }
 		width: parent.width
 		height: Math.max(summaryText.implicitHeight, 14) + 22
 		color: hover.hovered ? root.theme.border : "transparent"

@@ -36,7 +36,7 @@ Column {
 		theme: root.theme
 		SRow {
 			theme: root.theme; icon: "monitor"; label: "Bloom Dock"; desc: "Show the dock at the bottom of the screen"; divider: root._dock
-			SToggle { objectName: "dock"; theme: root.theme; checked: root._dock; onToggled: value => root.set("bloom-enabled-modules", Logic.toggled(root._modules, "dock")) }
+			SToggle { accessibleName: "Bloom Dock"; objectName: "dock"; theme: root.theme; checked: root._dock; onToggled: value => root.set("bloom-enabled-modules", Logic.toggled(root._modules, "dock")) }
 		}
 		Column {
 			objectName: "dockRows"
@@ -45,7 +45,7 @@ Column {
 
 			SRow {
 				theme: root.theme; icon: root._fixed ? "eye-off" : "eye"; label: "Behavior"; desc: "Choose how the dock appears"
-				SSelect {
+				SSelect { accessibleName: "Behavior";
 					objectName: "dockMode"; theme: root.theme; popup: root.popup; value: root._mode
 					options: [{ value: "fixed", label: "Fixed" }, { value: "smart", label: "Smart" }, { value: "peek", label: "Peek" }]
 					onActivated: value => root.set("bloom-dock-mode", value)
@@ -60,33 +60,33 @@ Column {
 			}
 			SRow {
 				theme: root.theme; icon: "eye"; label: "Show App Previews"; desc: "Show window thumbnails on hover"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-preview-enabled"]; onToggled: value => root.set("bloom-dock-preview-enabled", value) }
+				SToggle { accessibleName: "Show App Previews"; theme: root.theme; checked: root._v["bloom-dock-preview-enabled"]; onToggled: value => root.set("bloom-dock-preview-enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "circle"; label: "Icon Only"; desc: "Remove icon background and padding"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-icon-only"]; onToggled: value => root.set("bloom-dock-icon-only", value) }
+				SToggle { accessibleName: "Icon Only"; theme: root.theme; checked: root._v["bloom-dock-icon-only"]; onToggled: value => root.set("bloom-dock-icon-only", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "columns-2"; label: "App Separator"; desc: "Show a divider before unpinned apps"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-separator-enabled"]; onToggled: value => root.set("bloom-dock-separator-enabled", value) }
+				SToggle { accessibleName: "App Separator"; theme: root.theme; checked: root._v["bloom-dock-separator-enabled"]; onToggled: value => root.set("bloom-dock-separator-enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "layers"; label: "Workspaces"; desc: "Show this screen's workspaces in the dock"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-workspaces-enabled"]; onToggled: value => root.set("bloom-dock-workspaces-enabled", value) }
+				SToggle { accessibleName: "Workspaces"; theme: root.theme; checked: root._v["bloom-dock-workspaces-enabled"]; onToggled: value => root.set("bloom-dock-workspaces-enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Super+Alt+Number Shortcuts"; desc: "Open pinned apps with Super+Alt+1 through 9"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-win-number-enabled"]; onToggled: value => root.set("bloom-dock-win-number-enabled", value) }
+				SToggle { accessibleName: "Super+Alt+Number Shortcuts"; theme: root.theme; checked: root._v["bloom-dock-win-number-enabled"]; onToggled: value => root.set("bloom-dock-win-number-enabled", value) }
 			}
 			SRow {
 				objectName: "dockAdaptive"
 				visible: root._fixed; height: visible ? implicitHeight : 0; implicitHeight: 50.8
 				theme: root.theme; icon: "maximize-2"; label: "Adaptive Mode"; desc: "Stretch to full width when a window is maximized"
-				SToggle { theme: root.theme; checked: root._v["bloom-dock-adaptive"]; onToggled: value => root.set("bloom-dock-adaptive", value) }
+				SToggle { accessibleName: "Adaptive Mode"; theme: root.theme; checked: root._v["bloom-dock-adaptive"]; onToggled: value => root.set("bloom-dock-adaptive", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "layout-panel-left"; label: "Dock Extras"; desc: "Show drives, folders and the Trash beside the apps"; divider: false
-				SSelect {
+				SSelect { accessibleName: "Dock Extras";
 					objectName: "extras"; theme: root.theme; popup: root.popup; value: root._extras
 					options: [{ value: "off", label: "Off" }, { value: "left", label: "Left" }, { value: "right", label: "Right" }]
 					onActivated: value => root.set("bloom-dock-extras-position", value)
@@ -97,7 +97,7 @@ Column {
 				theme: root.theme; summary: "Manage dock extras"; hint: "Drives, folders and Trash"
 				SRow {
 					theme: root.theme; icon: "hard-drive"; label: "Drives"; desc: "Fixed, removable and connected network drives"; divider: !root._drives
-					SToggle { theme: root.theme; checked: root._drives; onToggled: value => root.set("bloom-dock-extras-drives", value) }
+					SToggle { accessibleName: "Drives"; theme: root.theme; checked: root._drives; onToggled: value => root.set("bloom-dock-extras-drives", value) }
 				}
 				Item {
 					visible: root._drives && root.drives.length > 0
@@ -124,7 +124,7 @@ Column {
 				}
 				SRow {
 					theme: root.theme; icon: "trash-2"; label: "Trash"; desc: "Show the Trash in the extras"
-					SToggle { theme: root.theme; checked: root._v["bloom-dock-extras-recycle-bin"]; onToggled: value => root.set("bloom-dock-extras-recycle-bin", value) }
+					SToggle { accessibleName: "Trash"; theme: root.theme; checked: root._v["bloom-dock-extras-recycle-bin"]; onToggled: value => root.set("bloom-dock-extras-recycle-bin", value) }
 				}
 				SRow {
 					theme: root.theme; icon: "folder-open"; label: "Special Folders"; desc: "Pick the folders that appear in the extras"; divider: false

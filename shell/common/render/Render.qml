@@ -7,6 +7,8 @@ import QtQuick
 // at the scale it is drawn. shell.qml sets the scale.
 QtObject {
 	property real scale: 1
+	// bloom-reduce-motion: springs land at once. shell.qml sets it.
+	property bool reduceMotion: false
 
 	function texture(width, height) {
 		return Qt.size(Math.max(1, Math.ceil(width * scale)), Math.max(1, Math.ceil(height * scale)));

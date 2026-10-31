@@ -39,7 +39,7 @@ Column {
 					theme: root.theme
 					SRow {
 						theme: root.theme; icon: "monitor"; label: "Resolution"; desc: monitorColumn.modelData.description
-						SSelect {
+						SSelect { accessibleName: "Resolution";
 							objectName: "mode:" + monitorColumn.modelData.name
 							theme: root.theme; popup: root.popup
 							options: Sys.modes(monitorColumn.modelData)
@@ -49,7 +49,7 @@ Column {
 					}
 					SRow {
 						theme: root.theme; icon: "maximize-2"; label: "Scale"; desc: "Size of everything on this screen"; divider: false
-						SSelect {
+						SSelect { accessibleName: "Scale";
 							objectName: "scale:" + monitorColumn.modelData.name
 							theme: root.theme; popup: root.popup
 							options: [{ value: "1", label: "100%" }, { value: "1.25", label: "125%" }, { value: "1.5", label: "150%" }, { value: "2", label: "200%" }]
@@ -67,7 +67,7 @@ Column {
 			SRow {
 				theme: root.theme; icon: "sun"; label: "Brightness"; divider: false
 				desc: Math.round(root.sys.brightness * 100) + "%"
-				SSlider { theme: root.theme; from: 0.05; to: 1; step: 0.05; value: root.sys.brightness; onMoved: value => root.sys.setBrightness(value) }
+				SSlider { accessibleName: "Brightness"; theme: root.theme; from: 0.05; to: 1; step: 0.05; value: root.sys.brightness; onMoved: value => root.sys.setBrightness(value) }
 			}
 		}
 	}
@@ -79,7 +79,7 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "volume-2"; label: "Output Device"; desc: "Where sound plays"
-				SSelect {
+				SSelect { accessibleName: "Output Device";
 					objectName: "sink"; theme: root.theme; popup: root.popup; value: root.sys.sink
 					options: root.sys.sinks.map(n => ({ value: n.name, label: n.description || n.name }))
 					onActivated: value => root.sys.setSink(value)
@@ -88,7 +88,7 @@ Column {
 			SRow {
 				theme: root.theme; icon: "volume-2"; label: "Volume"; divider: false
 				desc: Math.round(root.sys.volume * 100) + "%"
-				SSlider { objectName: "volume"; theme: root.theme; from: 0; to: 1; step: 0.01; value: root.sys.volume; onMoved: value => root.sys.setVolume(value) }
+				SSlider { accessibleName: "Volume"; objectName: "volume"; theme: root.theme; from: 0; to: 1; step: 0.01; value: root.sys.volume; onMoved: value => root.sys.setVolume(value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Input" }
@@ -96,7 +96,7 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "mic"; label: "Input Device"; desc: "Your microphone"; divider: false
-				SSelect {
+				SSelect { accessibleName: "Input Device";
 					theme: root.theme; popup: root.popup; value: root.sys.source
 					options: root.sys.sources.map(n => ({ value: n.name, label: n.description || n.name }))
 					onActivated: value => root.sys.setSource(value)
@@ -112,7 +112,7 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "gauge"; label: "Power Mode"; desc: "Balance speed against battery life"; divider: root.sys.batteryAvailable
-				SSelect {
+				SSelect { accessibleName: "Power Mode";
 					objectName: "powerMode"; theme: root.theme; popup: root.popup; value: root.sys.powerMode
 					options: [{ value: "power-saver", label: "Power Saver" }, { value: "balanced", label: "Balanced" }, { value: "performance", label: "Performance" }]
 					onActivated: value => root.sys.setPowerMode(value)
@@ -170,11 +170,11 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Repeat Delay"; desc: root.hOpt("input.repeat_delay", 250) + " ms before a held key repeats"
-				SSlider { theme: root.theme; from: 100; to: 800; step: 25; value: root.hOpt("input.repeat_delay", 250); onMoved: value => root.sys.setHypr("input.repeat_delay", value) }
+				SSlider { accessibleName: "Repeat Delay"; theme: root.theme; from: 100; to: 800; step: 25; value: root.hOpt("input.repeat_delay", 250); onMoved: value => root.sys.setHypr("input.repeat_delay", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Repeat Rate"; desc: root.hOpt("input.repeat_rate", 35) + " characters a second"; divider: false
-				SSlider { objectName: "repeatRate"; theme: root.theme; from: 10; to: 60; step: 5; value: root.hOpt("input.repeat_rate", 35); onMoved: value => root.sys.setHypr("input.repeat_rate", value) }
+				SSlider { accessibleName: "Repeat Rate"; objectName: "repeatRate"; theme: root.theme; from: 10; to: 60; step: 5; value: root.hOpt("input.repeat_rate", 35); onMoved: value => root.sys.setHypr("input.repeat_rate", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Touchpad" }
@@ -182,15 +182,15 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "mouse-pointer-2"; label: "Natural Scrolling"; desc: "Content follows your fingers"
-				SToggle { objectName: "natural"; theme: root.theme; checked: root.hOpt("input.touchpad.natural_scroll", true); onToggled: value => root.sys.setHypr("input.touchpad.natural_scroll", value) }
+				SToggle { accessibleName: "Natural Scrolling"; objectName: "natural"; theme: root.theme; checked: root.hOpt("input.touchpad.natural_scroll", true); onToggled: value => root.sys.setHypr("input.touchpad.natural_scroll", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "keyboard"; label: "Disable While Typing"; desc: "Ignore the touchpad as you type"
-				SToggle { theme: root.theme; checked: root.hOpt("input.touchpad.disable_while_typing", true); onToggled: value => root.sys.setHypr("input.touchpad.disable_while_typing", value) }
+				SToggle { accessibleName: "Disable While Typing"; theme: root.theme; checked: root.hOpt("input.touchpad.disable_while_typing", true); onToggled: value => root.sys.setHypr("input.touchpad.disable_while_typing", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "sliders-vertical"; label: "Scroll Speed"; desc: Math.round(root.hOpt("input.touchpad.scroll_factor", 0.7) * 100) + "%"; divider: false
-				SSlider { theme: root.theme; from: 0.1; to: 2; step: 0.1; value: root.hOpt("input.touchpad.scroll_factor", 0.7); onMoved: value => root.sys.setHypr("input.touchpad.scroll_factor", value) }
+				SSlider { accessibleName: "Scroll Speed"; theme: root.theme; from: 0.1; to: 2; step: 0.1; value: root.hOpt("input.touchpad.scroll_factor", 0.7); onMoved: value => root.sys.setHypr("input.touchpad.scroll_factor", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Mouse" }
@@ -198,7 +198,7 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "mouse-pointer-2"; label: "Pointer Speed"; desc: root.hOpt("input.sensitivity", 0).toFixed(1); divider: false
-				SSlider { theme: root.theme; from: -1; to: 1; step: 0.1; value: root.hOpt("input.sensitivity", 0); onMoved: value => root.sys.setHypr("input.sensitivity", value) }
+				SSlider { accessibleName: "Pointer Speed"; theme: root.theme; from: -1; to: 1; step: 0.1; value: root.hOpt("input.sensitivity", 0); onMoved: value => root.sys.setHypr("input.sensitivity", value) }
 			}
 		}
 	}
@@ -210,19 +210,19 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "layout-grid"; label: "Inner Gaps"; desc: root.hOpt("general.gaps_in", 4) + " px between windows"
-				SSlider { objectName: "gapsIn"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("general.gaps_in", 4); onMoved: value => root.sys.setHypr("general.gaps_in", value) }
+				SSlider { accessibleName: "Inner Gaps"; objectName: "gapsIn"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("general.gaps_in", 4); onMoved: value => root.sys.setHypr("general.gaps_in", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "layout-grid"; label: "Outer Gaps"; desc: root.hOpt("general.gaps_out", 5) + " px around the screen"
-				SSlider { theme: root.theme; from: 0; to: 40; step: 1; value: root.hOpt("general.gaps_out", 5); onMoved: value => root.sys.setHypr("general.gaps_out", value) }
+				SSlider { accessibleName: "Outer Gaps"; theme: root.theme; from: 0; to: 40; step: 1; value: root.hOpt("general.gaps_out", 5); onMoved: value => root.sys.setHypr("general.gaps_out", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "square"; label: "Border Size"; desc: root.hOpt("general.border_size", 1) + " px"
-				SSlider { theme: root.theme; from: 0; to: 6; step: 1; value: root.hOpt("general.border_size", 1); onMoved: value => root.sys.setHypr("general.border_size", value) }
+				SSlider { accessibleName: "Border Size"; theme: root.theme; from: 0; to: 6; step: 1; value: root.hOpt("general.border_size", 1); onMoved: value => root.sys.setHypr("general.border_size", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "square"; label: "Corner Rounding"; desc: root.hOpt("decoration.rounding", 18) + " px"; divider: false
-				SSlider { theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("decoration.rounding", 18); onMoved: value => root.sys.setHypr("decoration.rounding", value) }
+				SSlider { accessibleName: "Corner Rounding"; theme: root.theme; from: 0; to: 30; step: 1; value: root.hOpt("decoration.rounding", 18); onMoved: value => root.sys.setHypr("decoration.rounding", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Effects" }
@@ -230,11 +230,11 @@ Column {
 			theme: root.theme
 			SRow {
 				theme: root.theme; icon: "sparkles"; label: "Animations"; desc: "Window and workspace motion"
-				SToggle { objectName: "animations"; theme: root.theme; checked: root.hOpt("animations.enabled", true); onToggled: value => root.sys.setHypr("animations.enabled", value) }
+				SToggle { accessibleName: "Animations"; objectName: "animations"; theme: root.theme; checked: root.hOpt("animations.enabled", true); onToggled: value => root.sys.setHypr("animations.enabled", value) }
 			}
 			SRow {
 				theme: root.theme; icon: "droplets"; label: "Blur"; desc: "Behind translucent surfaces"; divider: false
-				SToggle { theme: root.theme; checked: root.hOpt("decoration.blur.enabled", true); onToggled: value => root.sys.setHypr("decoration.blur.enabled", value) }
+				SToggle { accessibleName: "Blur"; theme: root.theme; checked: root.hOpt("decoration.blur.enabled", true); onToggled: value => root.sys.setHypr("decoration.blur.enabled", value) }
 			}
 		}
 		SGroupLabel { theme: root.theme; text: "Keyboard Shortcuts" }
@@ -270,7 +270,7 @@ Column {
 			SRow { theme: root.theme; icon: "languages"; label: "Time Zone"; desc: root.sys.timezone }
 			SRow {
 				theme: root.theme; icon: "clock"; label: "Set Time Automatically"; desc: "Asks for your password"; divider: false
-				SToggle { objectName: "ntp"; theme: root.theme; checked: root.sys.ntp; onToggled: value => root.sys.setNtp(value) }
+				SToggle { accessibleName: "Set Time Automatically"; objectName: "ntp"; theme: root.theme; checked: root.sys.ntp; onToggled: value => root.sys.setNtp(value) }
 			}
 		}
 	}
