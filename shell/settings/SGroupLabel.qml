@@ -16,7 +16,7 @@ Text {
 	font.weight: Font.DemiBold
 	font.letterSpacing: Tokens.settings.group.label.spacing
 	font.capitalization: Font.AllUppercase
-	height: 13 + above + bottomPadding
-	lineHeight: 13
+	height: 12 + above + bottomPadding
+	lineHeight: 12
 	lineHeightMode: Text.FixedHeight
 }

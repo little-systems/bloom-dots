@@ -101,8 +101,8 @@ ShellRoot {
 		readonly property real uiScale: Settings.values["bloom-scale"]
 		title: "Bloom Settings"
 		color: "transparent"
-		implicitWidth: Tokens.settings.window.width
-		implicitHeight: Tokens.settings.window.height
+		implicitWidth: Tokens.settings.window.width * win.uiScale
+		implicitHeight: Tokens.settings.window.height * win.uiScale
 		minimumSize: Qt.size(Tokens.settings.window.minWidth * win.uiScale, Tokens.settings.window.minHeight * win.uiScale)
 		onClosed: Qt.quit()
 

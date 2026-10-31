@@ -11,7 +11,7 @@ const SELECTORS = [".title-bar", ".title-text", ".close-btn", ".settings-sidebar
 
 (async () => {
 	const browser = await chromium.launch({ executablePath: process.env.CHROME || `${process.env.HOME}/.cache/ms-playwright/${EXE}/chrome-linux/headless_shell` });
-	const page = await browser.newPage({ viewport: { width: 740, height: 560 } });
+	const page = await browser.newPage({ viewport: { width: 925, height: 700 } });
 	await page.goto("http://localhost:1420/settings.html");
 	await page.waitForTimeout(1500);
 	for (const tab of ["General", "Appearance", "Notch", "Dock", "Overlays", "About"]) {

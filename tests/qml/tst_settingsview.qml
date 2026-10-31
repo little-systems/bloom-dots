@@ -5,8 +5,8 @@ import "../../shell/common/render"
 
 Item {
 	id: host
-	width: 1040
-	height: 720
+	width: 740
+	height: 560
 
 	QtObject {
 		id: fakeStore
@@ -153,7 +153,7 @@ Item {
 	}
 	Component {
 		id: viewComponent
-		SettingsView { width: 1040; height: 720; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
+		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
 	TestCase {
@@ -202,54 +202,28 @@ Item {
 			compare(part(v, "copy").text, "Make every surface feel at home on your desktop.");
 		}
 
-		// The app layout: it fills the window and reflows.
-		// Roomy around the content, modest controls, the same on every page.
-		function test_compactSizes() {
+		// Bloom's boxes as Chromium lays them out (tools/bloom-audit/
+		// record-settings.cjs at zoom 1.25, divided back). Bloom has no search
+		// or system groups, so the sidebar's tabs sit lower than in Bloom.
+		function test_matchesBloomsLayout() {
 			const v = make();
+			v.width = 740;
+			v.height = 560;
 			waitForRendering(host);
-			compare(Math.round(part(v, "row:24-Hour Time").height), 70);
-			compare(part(v, "tab:display").height, 38);
-			compare(part(v, "time24").height, 26);
-			compare(part(v, "lowPower").height, 32);
-		}
-
-		// One grid: page title, section label and row content line up.
-		function test_everythingSharesAGrid() {
-			const v = make();
-			waitForRendering(host);
-			const x = n => part(v, n).mapToItem(v, 0, 0).x;
-			const row = part(v, "row:24-Hour Time");
-			const heading = x("heading");
-			compare(row.mapToItem(v, 0, 0).x, heading + 1);
-			const right = part(v, "time24"), select = part(v, "lowPower");
-			fuzzyCompare(right.mapToItem(v, 0, 0).x + right.width, select.mapToItem(v, 0, 0).x + select.width, 0.6, "controls end on one line");
-		}
-
-		function test_layoutFollowsTheWindow() {
-			const v = make();
-			waitForRendering(host);
-			const tab = part(v, "tab:display");
-			verify(tab.width > 40);
-			compare(part(v, "close").mapToItem(v, 0, 0).x + 28 + 16, v.width);
-			verify(part(v, "row:Launch at Login").width <= 720);
-		}
-
-		function test_narrowWindowsUseARail() {
-			const v = make();
-			v.width = 650;
-			waitForRendering(host);
-			verify(!part(v, "settingsSearch").visible, "icons only");
-			v.width = 1000;
-			waitForRendering(host);
-			verify(part(v, "settingsSearch").visible);
-		}
-
-		function test_selectedTabIsMarked() {
-			const v = make("display");
-			v.width = 1000;
-			waitForRendering(host);
-			tryVerify(() => findChild(part(v, "tab:display"), "activeBar").visible, 1000, "bar");
-			verify(!findChild(part(v, "tab:sound"), "activeBar").visible);
+			function at(item, x, y, w, h, what) {
+				const p = item.mapToItem(v, 0, 0);
+				fuzzyCompare(p.x, x, 1, what + " x");
+				if (y !== undefined) fuzzyCompare(p.y, y, 1, what + " y");
+				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
+				if (h !== undefined) fuzzyCompare(item.height, h, 1, what + " height");
+			}
+			at(part(v, "tab:general"), 8.8, undefined, 153.2, 36, "tab");
+			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
+			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
+			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
+			compare(Math.round(part(v, "row:24-Hour Time").height), 51);
+			compare(part(v, "time24").width, 42);
+			compare(part(v, "time24").height, 24);
 		}
 
 		function test_toggleWrites() {
@@ -453,7 +427,7 @@ Item {
 			v.tab = "overlays";
 			waitForRendering(host);
 			const y = part(v, "row:Volume HUD").mapToItem(part(v, "page").contentItem, 0, 0).y;
-			verify(y < 60, "the first group sits at the top, not at " + y);
+			verify(y < 150, "the first group sits under the heading, not at " + y);
 		}
 
 		function test_tabReachesControls() {

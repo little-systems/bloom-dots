@@ -144,12 +144,12 @@ Column {
 		Item {
 			visible: root.net.loaded && root.net.wifiEnabled
 			width: parent.width
-			height: 46
+			height: 38
 			SGroupLabel { y: 0; theme: root.theme; text: "Networks · " + root.net.networks.length }
 			SChip {
 				objectName: "scan"
 				x: parent.width - width - Tokens.settings.row.paddingH
-				y: 10
+				y: 6
 				theme: root.theme; accent: root.accent; icon: "refresh-cw"
 				text: root.net.scanning ? "Scanning…" : "Scan"
 				onClicked: root.net.refresh(true)
