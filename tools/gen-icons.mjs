@@ -7,7 +7,7 @@ const ICONS = [
 	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search", "sliders-horizontal",
 	"chevron-left", "chevron-right", "x", "wifi", "wifi-off", "bluetooth", "volume-2",
 	"calendar-days", "timer", "folder", "usb", "mic", "screen-share", "bell-off", "bell", "rotate-ccw", "lock-keyhole", "monitor-smartphone", "laptop",
-	"loader-circle", "refresh-cw", "plus", "bell-ring",
+	"loader-circle", "refresh-cw", "plus", "bell-ring", "user", "arrow-right", "battery-full",
 	"wifi-high", "wifi-low", "wifi-zero", "lock", "headphones", "smartphone", "keyboard", "mouse", "gamepad-2", "watch",
 	"type", "log-out", "power", "file", "file-image", "file-video-camera", "file-music", "file-spreadsheet", "presentation", "file-text", "file-archive", "file-code", "app-window", "disc", "file-type"
 ];

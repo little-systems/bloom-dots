@@ -16,7 +16,16 @@ H="$TEST_TMP/harness"
 mkdir -p "$H" "$XDG_CONFIG_HOME/bloom" "$TEST_TMP/pam" "$TEST_TMP/bin"
 cp -r "$ROOT/shell/services" "$ROOT/shell/common" "$ROOT/shell/modules" "$ROOT/shell/assets" "$H/"
 cp "$ROOT/tests/integration/lock-harness.qml" "$H/shell.qml"
-printf '{"bloom-weather-enabled":false}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
+python3 - "$TEST_TMP/wall.png" <<'PY'
+import struct, sys, zlib
+w, h = 64, 64
+row = b"\0" + bytes((255, 0, 0)) * w
+def chunk(t, d):
+    return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(row * h)) + chunk(b"IEND", b"")
+open(sys.argv[1], "wb").write(png)
+PY
+printf '{"bloom-weather-enabled":false,"bloom-lock-wallpaper":"%s"}\n' "$TEST_TMP/wall.png" > "$XDG_CONFIG_HOME/bloom/settings.json"
 export BLOOM_TEST_PAM="$TEST_TMP/pam"
 # Shaped like Arch's stack: a wrong password ends in PAM_AUTH_ERR, not the
 # system error pam_exec itself returns.
@@ -34,6 +43,9 @@ chmod +x "$TEST_TMP/pam/check"
 printf '#!/bin/sh\ncat "%s/devices.json"\n' "$TEST_TMP" > "$TEST_TMP/bin/hyprctl"
 chmod +x "$TEST_TMP/bin/hyprctl"
 echo '{"keyboards":[{"capsLock":false,"main":true}]}' > "$TEST_TMP/devices.json"
+# The power buttons must not reach the real machine either.
+printf '#!/bin/sh\necho "systemctl $*" >> "%s/calls"\n' "$TEST_TMP" > "$TEST_TMP/bin/systemctl"
+chmod +x "$TEST_TMP/bin/systemctl"
 export PATH="$TEST_TMP/bin:$PATH"
 
 launch() {
@@ -55,14 +67,23 @@ call lock >/dev/null
 wait_for "the compositor to confirm the lock" is .secure true
 pass "locks through the session-lock protocol"
 
-# The surface must paint: a transparent one would leak windows through xray.
-sleep 0.5
-grim -o HEADLESS-1 "$TEST_TMP/locked.png"
-[[ -s "$TEST_TMP/locked.png" ]] || fail "no frame from the locked output"
-pass "the locked output renders"
+# The surface must paint solidly: a translucent one leaks windows through
+# session_lock_xray. A corner shows the wallpaper, dimmed, at full alpha.
+sleep 1
+grim -t ppm -o HEADLESS-1 "$TEST_TMP/locked.ppm"
+corner="$(python3 - "$TEST_TMP/locked.ppm" <<'PY'
+import sys
+d = open(sys.argv[1], "rb").read()
+parts = d.split(maxsplit=4)
+print(parts[4][0], parts[4][1], parts[4][2])
+PY
+)"
+read -r red green blue <<<"$corner"
+(( red > 120 && green < 20 && blue < 20 )) || fail "the corner isn't the dimmed wallpaper: $corner"
+pass "the backdrop is the wallpaper, blurred and dimmed"
 
 enter wrong
-wait_for "the failure" is .message "That password didn't work"
+wait_for "the failure" is .message "Incorrect password"
 assert_eq "$(state .locked)" "true" "a wrong password stays locked"
 pass "a wrong password keeps it locked and says so"
 

@@ -2,7 +2,7 @@ import QtQuick
 import QtTest
 import "../../shell/modules/lock"
 
-// The lock screen: opaque always, passwords leave the field the moment they
+// The lock screen: passwords leave the field the moment they
 // are submitted, and it can't be typed into while one is being checked.
 Item {
 	id: host
@@ -11,7 +11,7 @@ Item {
 
 	Component {
 		id: viewComponent
-		LockView { anchors.fill: parent; user: "dhanush"; time: new Date(2026, 9, 31, 15, 7); clock24: true }
+		LockView { anchors.fill: parent; user: "dhanush"; layout: "EN"; time: new Date(2026, 9, 31, 15, 7, 30); clockTurning: false }
 	}
 
 	TestCase {
@@ -38,22 +38,73 @@ Item {
 			keyClick(text);
 		}
 
-		// session_lock_xray shows whatever is behind a translucent surface.
-		function test_opaque() {
+		function test_showsTheTimeOnTheHands() {
 			const v = make();
-			const bg = part(v, "background");
-			compare(bg.color.a, 1);
-			compare(bg.opacity, 1);
-			compare(bg.width, v.width);
-			compare(bg.height, v.height);
-			verify(bg.visible);
+			compare(part(v, "hourHand").rotation, 93.75);
+			compare(part(v, "minuteHand").rotation, 45);
+			compare(part(v, "secondHand").rotation, 180);
+			compare(part(v, "date").text, "31");
+			verify(findChild(v, "lockedTag"));
 		}
 
-		function test_showsTimeDateAndUser() {
+		function test_islands() {
 			const v = make();
-			compare(part(v, "clock").text, "15:07");
-			compare(part(v, "date").text, "Saturday, October 31");
 			compare(part(v, "user").text, "dhanush");
+			compare(part(v, "layout").text, "EN");
+			verify(!part(v, "battery").visible, "no battery on a desktop");
+			v.batteryAvailable = true;
+			v.batteryLevel = 88;
+			verify(part(v, "battery").visible);
+			compare(part(v, "battery").text, "88");
+			waitForRendering(host);
+			const left = part(v, "leftIsland"), main = part(v, "fieldBox"), right = part(v, "rightIsland");
+			compare(main.x + main.width / 2, v.width / 2);
+			compare(main.y + main.height + 20, v.height);
+			compare(left.x + left.width + 10, main.x);
+			compare(right.x, main.x + main.width + 10);
+		}
+
+		function test_powerButtons() {
+			const v = make();
+			const sleep = spy(v, "suspendRequested"), off = spy(v, "shutdownRequested"), reboot = spy(v, "rebootRequested");
+			tryCompare(part(v, "fieldBox"), "scale", 1, 1500);
+			waitForRendering(host);
+			for (const name of ["suspend", "shutdown", "reboot"]) {
+				const it = part(v, name);
+				const p = it.mapToItem(host, it.width / 2, it.height / 2);
+				mouseClick(host, p.x, p.y);
+			}
+			compare([sleep.count, off.count, reboot.count], [1, 1, 1]);
+		}
+
+		function test_arrowSubmits() {
+			const v = make();
+			const submitted = spy(v, "submitted");
+			tryCompare(part(v, "fieldBox"), "scale", 1, 1500);
+			type(v, "a");
+			waitForRendering(host);
+			const it = part(v, "confirm");
+			const p = it.mapToItem(host, it.width / 2, it.height / 2);
+			mouseClick(host, p.x, p.y);
+			compare(submitted.count, 1);
+		}
+
+		function test_textIsSharedWithOtherScreens() {
+			const v = make();
+			const edited = spy(v, "textEdited");
+			type(v, "a");
+			compare(Array.from(edited.signalArguments[0]), ["a"]);
+			v.text = "ab";
+			compare(part(v, "field").text, "ab");
+		}
+
+		function test_pointerMovementRefocuses() {
+			const v = make();
+			waitForRendering(host);
+			host.forceActiveFocus();
+			mouseMove(host, 20, 20);
+			mouseMove(host, 40, 40);
+			verify(part(v, "field").activeFocus);
 		}
 
 		function test_passwordIsHidden() {
@@ -100,17 +151,16 @@ Item {
 			compare(part(v, "field").text, "");
 		}
 
-		function test_messages() {
+		function test_messagesShowInTheEmptyField() {
 			const v = make();
 			const m = part(v, "message");
-			verify(!m.visible);
-			v.message = "That password didn't work";
+			compare(m.text, "Enter password");
+			v.message = "Incorrect password";
 			v.messageIsError = true;
-			verify(m.visible);
-			compare(m.text, "That password didn't work");
+			compare(m.text, "Incorrect password");
 			compare(String(m.color), "#ff8a80");
-			v.messageIsError = false;
-			verify(String(m.color) !== "#ff8a80");
+			type(v, "a");
+			verify(!m.visible, "typing replaces it");
 		}
 
 		function test_capsLockWarning() {

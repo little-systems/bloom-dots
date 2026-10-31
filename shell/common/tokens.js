@@ -250,15 +250,25 @@ var overview = {
 
 // The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
 var lock = {
-	top: 0.26,
-	clock: 96,
-	date: 17,
-	user: 13,
 	message: 12,
-	gap: 12,
-	field: { width: 300, height: 40, radius: 20, size: 14, paddingH: 18 },
+	blur: { sigma: 30, zoom: 1.1, zoomMs: 400, dim: 0.3, spill: 100, downscale: 4, settleMs: 100 },
+	clock: {
+		size: 230, top: 0.2, sides: 9, depth: 0.055, turnMs: 60000,
+		hour: { length: 0.5, width: 14 },
+		minute: { length: 0.72, width: 8 },
+		second: { orbit: 0.82, size: 10 },
+		mark: { orbit: 0.86, size: 4 },
+		date: { size: 36, text: 14 },
+		tag: { top: 16, height: 28, paddingH: 12, gap: 6, icon: 13, text: 13 }
+	},
+	island: {
+		height: 48, radius: 24, gap: 10, bottom: 20, paddingH: 14, itemGap: 8, icon: 16, text: 13,
+		button: 36, field: 280, fieldSize: 13,
+		enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.9 }
+	},
 	shake: { ms: 60, steps: [-10, 8, -5, 0] },
-	capsPollMs: 500
+	capsPollMs: 500,
+	clearMs: 10000
 };
 
 var polkit = {

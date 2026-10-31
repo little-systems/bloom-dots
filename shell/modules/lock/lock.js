@@ -1,31 +1,46 @@
 .pragma library
 
-var DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
 function failureText(outcome) {
 	if (outcome === "maxtries") return "Too many tries. Wait a moment, then try again";
 	if (outcome === "error") return "Couldn't check the password";
-	return "That password didn't work";
-}
-
-function clock(time, use24) {
-	const minutes = String(time.getMinutes()).padStart(2, "0");
-	const hours = time.getHours();
-	return (use24 ? String(hours).padStart(2, "0") : String(hours % 12 || 12)) + ":" + minutes;
-}
-
-function date(time) {
-	return DAYS[time.getDay()] + ", " + MONTHS[time.getMonth()] + " " + time.getDate();
+	return "Incorrect password";
 }
 
 // `hyprctl devices -j`: the main keyboard's state, or the only keyboard's.
-function capsLock(devicesJson) {
+function keyboard(devicesJson) {
 	try {
 		const keyboards = JSON.parse(devicesJson).keyboards || [];
-		const keyboard = keyboards.find(k => k.main) || keyboards[0];
-		return !!keyboard && keyboard.capsLock === true;
+		const main = keyboards.find(k => k.main) || keyboards[0];
+		if (!main) return { capsLock: false, layout: "" };
+		return { capsLock: main.capsLock === true, layout: String(main.active_keymap || "").slice(0, 2).toUpperCase() };
 	} catch (e) {
-		return false;
+		return { capsLock: false, layout: "" };
 	}
+}
+
+// ii's own config, only until Phase 7 gives Bloom a wallpaper of its own.
+function wallpaperFrom(iiConfigJson) {
+	try {
+		return JSON.parse(iiConfigJson).background.wallpaperPath || "";
+	} catch (e) {
+		return "";
+	}
+}
+
+function hands(time) {
+	const seconds = time.getSeconds();
+	const minutes = time.getMinutes() + seconds / 60;
+	return { hour: (time.getHours() % 12 + minutes / 60) * 30, minute: minutes * 6, second: seconds * 6 };
+}
+
+// The clock's face: a circle with `sides` soft lobes, as canvas points.
+function cookie(size, sides, depth) {
+	const points = [];
+	const radius = size / 2 / (1 + depth);
+	for (let i = 0; i < 360; i++) {
+		const angle = i * Math.PI / 180;
+		const r = radius * (1 + depth * Math.cos(sides * angle));
+		points.push({ x: size / 2 + r * Math.cos(angle), y: size / 2 + r * Math.sin(angle) });
+	}
+	return points;
 }

@@ -17,6 +17,8 @@ Scope {
 	// The stack hyprlock already installs, so Bloom adds nothing to /etc/pam.d.
 	property string pamConfig: "hyprlock"
 	property string pamDir: "/etc/pam.d"
+	// Off in tests: a software renderer can't keep up with it.
+	property bool clockTurning: true
 
 	readonly property bool locked: session.locked
 	readonly property string _marker: Quickshell.env("XDG_RUNTIME_DIR") + "/bloom-locked-"
@@ -25,6 +27,9 @@ Scope {
 	property date _now: new Date()
 	property bool _busy: false
 	property bool _capsLock: false
+	property string _layout: ""
+	property string _text: ""
+	readonly property string _wallpaper: Settings.values["bloom-lock-wallpaper"] || Lock.wallpaperFrom(iiConfig.text())
 	property string _message: ""
 	property bool _messageIsError: false
 	property string _pamNotice: ""
@@ -34,6 +39,7 @@ Scope {
 	function lock() {
 		if (session.locked) return;
 		root._setMessage("", false);
+		root._text = "";
 		// The marker goes first: a crash in between then errs towards locked.
 		Quickshell.execDetached(["touch", root._marker]);
 		root._now = new Date();
@@ -42,11 +48,12 @@ Scope {
 	function status() {
 		return {
 			enabled: true, locked: session.locked, secure: session.secure, busy: root._busy,
-			capsLock: root._capsLock, message: root._message
+			capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
 		};
 	}
 	function submit(response) {
 		if (root._busy) return;
+		root._text = "";
 		root._setMessage("", false);
 		root._pamNotice = "";
 		root._busy = true;
@@ -102,6 +109,19 @@ Scope {
 		onError: root._finish(Lock.failureText("error"))
 	}
 
+	FileView {
+		id: iiConfig
+		path: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/illogical-impulse/config.json"
+		printErrors: false
+	}
+
+	// An idle password doesn't stay on the screen.
+	Timer {
+		id: clearTimer
+		interval: Tokens.lock.clearMs
+		onTriggered: root._text = ""
+	}
+
 	// Left over from a crash: the compositor is still locked, so take it back.
 	Process {
 		running: true
@@ -126,7 +146,11 @@ Scope {
 		id: capsProbe
 		command: ["hyprctl", "devices", "-j"]
 		stdout: StdioCollector {
-			onStreamFinished: root._capsLock = Lock.capsLock(text)
+			onStreamFinished: {
+				const keyboard = Lock.keyboard(text);
+				root._capsLock = keyboard.capsLock;
+				root._layout = keyboard.layout;
+			}
 		}
 	}
 
@@ -138,6 +162,11 @@ Scope {
 			color: "black"
 			readonly property real uiScale: Settings.values["bloom-scale"]
 
+			LockBackdrop {
+				anchors.fill: parent
+				source: root._wallpaper
+			}
+
 			LockView {
 				id: view
 				width: surface.width / surface.uiScale
@@ -146,14 +175,28 @@ Scope {
 				transformOrigin: Item.TopLeft
 				theme: Theme
 				user: Quickshell.env("USER")
+				layout: root._layout
 				time: root._now
-				clock24: Settings.values["bloom-time-format-24h"] === true
+				clockTurning: root.clockTurning
+				text: root._text
 				busy: root._busy
 				responseVisible: pam.responseVisible
 				capsLock: root._capsLock
 				message: root._message
 				messageIsError: root._messageIsError
+				batteryAvailable: Battery.available
+				batteryLevel: Battery.level
+				batteryCharging: Battery.charging
+				batteryLow: Battery.level <= Battery.threshold
+				onTextEdited: text => {
+					root._text = text;
+					root._setMessage("", false);
+					clearTimer.restart();
+				}
 				onSubmitted: response => root.submit(response)
+				onSuspendRequested: Session.run("suspend")
+				onShutdownRequested: Session.run("shutdown")
+				onRebootRequested: Session.run("reboot")
 				Component.onCompleted: view.focusField()
 
 				Connections {

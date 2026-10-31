@@ -9,6 +9,7 @@ ShellRoot {
 		id: surface
 		pamConfig: "bloom-test"
 		pamDir: Quickshell.env("BLOOM_TEST_PAM")
+		clockTurning: false
 	}
 	IpcHandler {
 		target: "lock"
