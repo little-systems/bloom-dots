@@ -20,6 +20,7 @@ bloom_env() {
 	export BLOOM_LAUNCH_SCOPE=0
 	# Adaptive theming writes here, never to the real home.
 	export BLOOM_THEME_HOME="$TEST_TMP/home"
+	export BLOOM_THEME_NO_RELOAD=1
 	unset WAYLAND_DISPLAY
 	mkdir -p "$XDG_CONFIG_HOME/quickshell" "$XDG_RUNTIME_DIR"
 	chmod 700 "$XDG_RUNTIME_DIR"

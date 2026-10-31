@@ -13,6 +13,9 @@ Item {
 	property real stiffness: 500
 	property real damping: 30
 	property real mass: 1
+	// The default style settles without overshoot across every spring-driven
+	// surface. Bloom mode keeps the original imported physics.
+	readonly property real effectiveDamping: Render.macMotion ? Math.max(damping, 2 * Math.sqrt(stiffness * mass)) : damping
 	// Negative means framer-motion's default (see spring.js restThresholds).
 	property real restDelta: -1
 	property real restSpeed: -1
@@ -28,7 +31,7 @@ Item {
 	property bool _granular: false
 
 	Component.onCompleted: {
-		root.value = isNaN(root.initial) ? root.target : root.initial;
+		root.value = Render.reduceMotion || isNaN(root.initial) ? root.target : root.initial;
 		root._granular = SpringMath.isGranular(root.value, root.target);
 		root.settled = root.value === root.target;
 	}
@@ -53,7 +56,7 @@ Item {
 	function step(dt) {
 		if (root.settled || !isFinite(root.target))
 			return;
-		const r = SpringMath.springStep(root.stiffness, root.damping, root.mass, root.value - root.target, root.velocity, dt);
+		const r = SpringMath.springStep(root.stiffness, root.effectiveDamping, root.mass, root.value - root.target, root.velocity, dt);
 		const rest = SpringMath.restThresholds(root._granular, root.restDelta, root.restSpeed);
 		let x = root.target + r[0];
 		let v = r[1];
@@ -64,6 +67,11 @@ Item {
 		}
 		root.velocity = v;
 		root.value = x;
+	}
+
+	Connections {
+		target: Render
+		function onReduceMotionChanged() { if (Render.reduceMotion && isFinite(root.target)) root.jump(root.target); }
 	}
 
 	FrameAnimation {

@@ -91,7 +91,7 @@ Item {
 			text: item.entry.label
 			color: root.textColor
 			font.family: Fonts.familyFor(Font.Medium)
-			font.pixelSize: Tokens.dock.menu.item.size
+			font.pixelSize: Fonts.px(Tokens.dock.menu.item.size)
 			font.weight: Font.Medium
 		}
 		Text {
@@ -104,7 +104,7 @@ Item {
 			text: "▶"
 			opacity: Tokens.dock.menu.arrow.opacity
 			color: root.textColor
-			font.pixelSize: Tokens.dock.menu.arrow.size
+			font.pixelSize: Fonts.px(Tokens.dock.menu.arrow.size)
 		}
 	}
 

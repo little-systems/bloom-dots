@@ -204,7 +204,7 @@ Item {
 								text: "This network needs a sign-in your network settings handle."
 								color: root.theme.textMuted
 								font.family: Fonts.family
-								font.pixelSize: Tokens.qp.note
+								font.pixelSize: Fonts.px(Tokens.qp.note)
 							}
 							Loader {
 								active: root.settingsAvailable
@@ -288,7 +288,7 @@ Item {
 							text: root.error ? (root._errorText[root.error.code] ?? root.error.code) : ""
 							color: Tokens.qp.error.color
 							font.family: Fonts.family
-							font.pixelSize: Tokens.qp.error.text
+							font.pixelSize: Fonts.px(Tokens.qp.error.text)
 						}
 					}
 				}

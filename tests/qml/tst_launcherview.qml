@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import "../../shell/modules/launcher"
 import "../../shell/common/tokens.js" as Tokens
+import "../../shell/common/render"
 
 // The launcher's bar (owner: Spotlight-style): a field that grows on a spring
 // as results appear, in the Add App card's language.
@@ -37,11 +38,23 @@ Item {
 			return s;
 		}
 
+		function test_configCanRestoreThePreviousEntrance() {
+			Render.animationStyle = "bloom";
+			try {
+				const v = make();
+				const card = part(v, "card");
+				verify(card.width < Tokens.launcher.width);
+				compare(card.scale, 1);
+				v.open();
+				tryCompare(card, "width", Tokens.launcher.width, 2000);
+			} finally { Render.animationStyle = "macos"; }
+		}
+
 		function test_barSitsCentred() {
 			const v = make();
 			v.open();
 			const card = part(v, "card");
-			tryCompare(v, "_morph", 1, 2000);
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
 			compare(card.width, Tokens.launcher.width);
 			fuzzyCompare(card.x, (800 - 560) / 2, 0.51);
 			fuzzyCompare(card.y, 700 * Tokens.launcher.top, 0.51);

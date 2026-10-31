@@ -86,6 +86,6 @@ Item {
 		text: root.title + " is unavailable"
 		color: root.textMuted
 		font.family: Fonts.family
-		font.pixelSize: 11
+		font.pixelSize: Fonts.px(11)
 	}
 }

@@ -36,7 +36,7 @@ Item {
 			text: root.text
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: Tokens.qp.text
+			font.pixelSize: Fonts.px(Tokens.qp.text)
 		}
 	}
 }

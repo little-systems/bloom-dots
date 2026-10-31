@@ -112,7 +112,7 @@ Column {
 		text: root._toggleError
 		color: "#ff8a80"
 		font.family: Fonts.ui
-		font.pixelSize: 12
+		font.pixelSize: Fonts.px(14)
 	}
 
 	component Message: Text {
@@ -122,7 +122,7 @@ Column {
 		bottomPadding: 12
 		wrapMode: Text.Wrap
 		font.family: Fonts.ui
-		font.pixelSize: 12
+		font.pixelSize: Fonts.px(14)
 		color: root.theme.textMuted
 	}
 
@@ -262,7 +262,7 @@ Column {
 			text: "No VPNs are set up. Add one with NetworkManager."
 			color: root.theme.textMuted
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 		}
 		SGroup {
 			visible: !!root.sys && root.sys.vpns.length > 0
@@ -428,7 +428,7 @@ Column {
 			text: "Bluetooth couldn't finish that. Try again."
 			color: "#ff8a80"
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 		}
 	}
 }

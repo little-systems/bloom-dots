@@ -19,11 +19,8 @@ Item {
 	signal pressed(var key)
 
 	readonly property bool shown: root.open || enter.value > 0.01
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root.open ? 1 : 0
 	}
@@ -35,8 +32,12 @@ Item {
 		objectName: "keyboard"
 		anchors.bottom: parent.bottom
 		anchors.horizontalCenter: parent.horizontalCenter
-		width: parent.width * (Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, enter.value))
-		height: parent.height * Math.max(0, Math.min(1.02, enter.value))
+		width: parent.width * enter.extent
+		height: parent.height * (enter.stableLayout ? 1 : Math.max(0, Math.min(1.02, enter.value)))
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.Bottom
+		opacity: enter.stableLayout ? enter.progress : 1
 		clip: true
 		radius: Tokens.osk.radius
 		color: root.theme.bgExpanded
@@ -73,7 +74,7 @@ Item {
 								text: root._shift && key.modelData.shift ? key.modelData.shift : key.modelData.label
 								color: root.theme.text
 								font.family: Fonts.family
-								font.pixelSize: Tokens.osk.text
+								font.pixelSize: Fonts.px(Tokens.osk.text)
 							}
 							HoverHandler { cursorShape: Qt.PointingHandCursor }
 							TapHandler {

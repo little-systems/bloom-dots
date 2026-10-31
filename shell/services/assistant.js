@@ -32,8 +32,16 @@ function checkText(output) {
 }
 
 // Adds a piece of the reply, starting the reply if this is the first.
-function withDelta(messages, delta) {
+function withDelta(messages, delta, id) {
 	const last = messages[messages.length - 1];
-	if (last && last.role === "model") return messages.slice(0, -1).concat([{ role: "model", text: last.text + delta }]);
-	return messages.concat([{ role: "model", text: delta }]);
+	if (last && last.role === "model") return messages.slice(0, -1).concat([Object.assign({}, last, { text: last.text + delta })]);
+	const next = { role: "model", text: delta };
+	if (id) next.id = id;
+	return messages.concat([next]);
+}
+
+function retryTurn(messages) {
+	for (let i = messages.length - 1; i >= 0; i--)
+		if (messages[i].role === "user") return { before: messages.slice(0, i), text: messages[i].text };
+	return null;
 }

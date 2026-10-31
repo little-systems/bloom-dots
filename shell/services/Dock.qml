@@ -44,7 +44,8 @@ Singleton {
 	}
 
 	onGroupsChanged: {
-		const next = Logic.nextOrder(root._order, root.groups.map(g => g.id));
+		const remembered = Logic.orderOf(pins.value);
+		const next = Logic.nextOrder(remembered.concat(root._order.filter(id => !remembered.includes(id))), root.groups.map(g => g.id));
 		if (JSON.stringify(next) !== JSON.stringify(root._order))
 			root._order = next;
 	}
@@ -70,7 +71,7 @@ Singleton {
 	}
 
 	function _save(pinned, icons) {
-		pins.save({ pinned: pinned, icons: icons });
+		pins.save(Object.assign({}, pins.value, { pinned: pinned, icons: icons }));
 	}
 
 	function _toast(message) {
@@ -86,6 +87,22 @@ Singleton {
 		if (!same)
 			return "order must list the pinned apps";
 		root._save(ids, root.icons);
+		return "ok";
+	}
+
+	function reorderRunning(ids) {
+		const current = root.items.unpinned.map(i => i.id);
+		if (!Array.isArray(ids) || ids.length !== current.length || new Set(ids).size !== ids.length || ids.some(id => !current.includes(id)))
+			return "order must list the running apps";
+		const remembered = Logic.orderOf(pins.value).filter(id => !ids.includes(id));
+		pins.save(Object.assign({}, pins.value, { order: ids.concat(remembered) }));
+		return "ok";
+	}
+	function pinAt(id, index) {
+		if (!Apps.exists(id)) { root.notify("This app has no desktop entry to pin"); return "unknown app"; }
+		const next = root.pinned.filter(p => p !== id);
+		next.splice(Math.max(0, Math.min(next.length, index)), 0, id);
+		root._save(next, root.icons);
 		return "ok";
 	}
 
@@ -329,6 +346,7 @@ Singleton {
 	StateFile {
 		id: pins
 		name: "dock"
-		defaultValue: ({ pinned: [] })
+		defaultValue: ({ pinned: [], order: [] })
+		onValueChanged: root._order = Logic.nextOrder(Logic.orderOf(pins.value), root.groups.map(g => g.id))
 	}
 }

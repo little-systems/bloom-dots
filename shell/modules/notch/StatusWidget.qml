@@ -49,7 +49,7 @@ Row {
 		color: root.textColor
 		opacity: Tokens.statusStrip.labelOpacity
 		font.family: Fonts.familyFor(Font.Medium)
-		font.pixelSize: Tokens.statusStrip.labelSize
+		font.pixelSize: Fonts.px(Tokens.statusStrip.labelSize)
 		font.weight: Font.Medium
 	}
 }

@@ -51,20 +51,15 @@ Column {
 					text: String(root.store.values["bloom-theme-color"]).toUpperCase()
 					color: root.theme.textMuted
 					font.family: Fonts.uiFor(Font.DemiBold)
-					font.pixelSize: Tokens.settings.color.text
+					font.pixelSize: Fonts.px(Tokens.settings.color.text)
 					font.weight: Font.DemiBold
 				}
 			}
 		}
 		SRow {
-			theme: root.theme; icon: "contrast"; label: "Background Opacity"
+			theme: root.theme; icon: "contrast"; label: "Background Opacity"; divider: root._advanced
 			desc: "Adjust theme transparency (" + Math.round(root.store.values["bloom-theme-opacity"] * 100) + "%)"
 			SSlider { accessibleName: "Background Opacity"; objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
-		}
-		SRow {
-			theme: root.theme; icon: "layers"; label: "Translucent Apps"; divider: root._advanced
-			desc: "Use this opacity and blur on windows and the terminal"
-			SToggle { objectName: "translucent"; accessibleName: "Translucent Apps"; theme: root.theme; checked: root.store.values["bloom-translucent-apps"]; onToggled: value => root.store.set("bloom-translucent-apps", value) }
 		}
 		SRow {
 			visible: root._advanced
@@ -109,8 +104,8 @@ Column {
 	SGroup {
 		theme: root.theme
 		SRow {
-			theme: root.theme; icon: "maximize-2"; label: "UI & Font Scale"; divider: false
-			desc: "Adjust desktop size (" + Math.round(root._scale * 100) + "%)"
+			theme: root.theme; icon: "maximize-2"; label: "UI Scale"; divider: true
+			desc: "Panel and control size (" + Math.round(root._scale * 100) + "%)"
 			Rectangle {
 				width: scaleRow.width + 2 * Tokens.settings.scale.paddingH + 2
 				height: scaleRow.height + 2 * Tokens.settings.scale.paddingV + 2
@@ -141,12 +136,20 @@ Column {
 							}
 							Text {
 								anchors.centerIn: parent
-								text: cell.isValue ? Math.round(root._scale * 100) + "%" : cell.modelData.glyph
+								visible: !cell.isValue
+								text: cell.modelData.glyph || ""
 								opacity: cell.isValue || cell.usable ? 1 : 0.25
 								color: root.theme.text
 								font.family: Fonts.uiFor(cell.isValue ? Font.DemiBold : Font.Bold)
-								font.pixelSize: Tokens.settings.scale.size
+								font.pixelSize: Fonts.px(Tokens.settings.scale.size)
 								font.weight: cell.isValue ? Font.DemiBold : Font.Bold
+							}
+							SNumber {
+								visible: cell.isValue
+								anchors.centerIn: parent; width: 60; height: 26
+								theme: root.theme; from: 0.8; to: 1.3; value: root._scale; factor: 100; suffix: "%"
+								accessibleName: "UI scale"
+								onEdited: value => root.store.set("bloom-scale", value)
 							}
 							HoverHandler { id: cellHover; cursorShape: cell.isValue ? Qt.ArrowCursor : Qt.PointingHandCursor }
 							TapHandler { enabled: cell.usable; onTapped: root.store.set("bloom-scale", cell.next) }
@@ -155,5 +158,17 @@ Column {
 				}
 			}
 		}
+		SRow {
+			theme: root.theme; icon: "type"; label: "Font Scale"; divider: false
+			desc: "Text size, independent of panel size"
+			SSlider {
+				objectName: "fontScale"; accessibleName: "Font scale"
+				displayFactor: 100; displaySuffix: "%"
+				theme: root.theme; from: 0.8; to: 1.6; step: 0.05
+				value: root.store.values["bloom-font-scale"] || 1.15
+				onMoved: value => root.store.set("bloom-font-scale", value)
+			}
+		}
+
 	}
 }

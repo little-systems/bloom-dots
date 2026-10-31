@@ -172,7 +172,7 @@ Item {
 				text: root.name.slice(0, 1).toUpperCase()
 				color: Qt.rgba(root.textColor.r, root.textColor.g, root.textColor.b, Tokens.dock.fallback.opacity)
 				font.family: Fonts.familyFor(Font.DemiBold)
-				font.pixelSize: Tokens.dock.fallback.size
+				font.pixelSize: Fonts.px(Tokens.dock.fallback.size)
 				font.weight: Font.DemiBold
 			}
 		}
@@ -245,7 +245,7 @@ Item {
 			text: root.name
 			color: root.tooltipText
 			font.family: Fonts.family
-			font.pixelSize: Tokens.dock.tooltip.size
+			font.pixelSize: Fonts.px(Tokens.dock.tooltip.size)
 		}
 	}
 }

@@ -42,7 +42,7 @@ Column {
 			text: root.summary
 			color: root.theme.text
 			font.family: Fonts.uiFor(Font.DemiBold)
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 			font.weight: Font.DemiBold
 		}
 		Text {
@@ -52,7 +52,7 @@ Column {
 			text: root.hint
 			color: root.theme.textMuted
 			font.family: Fonts.ui
-			font.pixelSize: 11
+			font.pixelSize: Fonts.px(13)
 		}
 		Rectangle {
 			id: chevron

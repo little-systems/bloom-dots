@@ -71,11 +71,8 @@ Item {
 		return 0;
 	}
 
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -98,10 +95,12 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	Rectangle {
 		id: card
 		objectName: "card"
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
 		anchors.centerIn: parent
 		width: (grid.width + 2 * Tokens.overview.padding) * root._morph
 		height: (fieldBox.height + grid.height + 2 * Tokens.overview.padding + Tokens.overview.gap) * root._morph
@@ -146,7 +145,7 @@ Item {
 				selectionColor: root.accent
 				clip: true
 				font.family: Fonts.family
-				font.pixelSize: Tokens.launcher.field.size
+				font.pixelSize: Fonts.px(Tokens.launcher.field.size)
 				Keys.onPressed: event => root._key(event)
 
 				Text {
@@ -217,7 +216,7 @@ Item {
 								text: (thumb.modelData.class || "?").charAt(0).toUpperCase()
 								color: root.theme.textMuted
 								font.family: Fonts.familyFor(Font.DemiBold)
-								font.pixelSize: 14
+								font.pixelSize: Fonts.px(14)
 								font.weight: Font.DemiBold
 							}
 							Loader {
@@ -290,7 +289,7 @@ Item {
 							text: cell.workspace
 							color: cell.active ? "white" : Qt.rgba(1, 1, 1, 0.7)
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.overview.label.size
+							font.pixelSize: Fonts.px(Tokens.overview.label.size)
 							font.weight: Font.DemiBold
 						}
 					}
@@ -317,7 +316,7 @@ Item {
 			text: ghost.title
 			color: root.theme.text
 			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: 14
+			font.pixelSize: Fonts.px(14)
 			font.weight: Font.DemiBold
 		}
 	}

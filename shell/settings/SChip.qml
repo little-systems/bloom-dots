@@ -43,7 +43,7 @@ Rectangle {
 			textFormat: Text.PlainText
 			color: root.theme.text
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 		}
 	}
 	HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }

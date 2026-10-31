@@ -99,7 +99,7 @@ Item {
 	component Label: Text {
 		color: root.theme.textMuted
 		font.family: Fonts.family
-		font.pixelSize: Tokens.lock.island.text
+		font.pixelSize: Fonts.px(Tokens.lock.island.text)
 		anchors.verticalCenter: parent.verticalCenter
 	}
 	component Glyph: SvgIcon {
@@ -138,7 +138,7 @@ Item {
 		text: "Caps Lock is on"
 		color: root.theme.text
 		font.family: Fonts.family
-		font.pixelSize: Tokens.lock.message
+		font.pixelSize: Fonts.px(Tokens.lock.message)
 	}
 
 	Island {
@@ -164,7 +164,7 @@ Item {
 			selectionColor: root.accent
 			clip: true
 			font.family: Fonts.family
-			font.pixelSize: Tokens.lock.island.fieldSize
+			font.pixelSize: Fonts.px(Tokens.lock.island.fieldSize)
 			onTextChanged: if (text !== root.text) root.textEdited(text)
 			Keys.onReturnPressed: root._submit()
 			Keys.onEnterPressed: root._submit()

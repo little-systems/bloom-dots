@@ -91,7 +91,7 @@ Item {
 				elide: Text.ElideRight
 				maximumLineCount: 1
 				font.family: Fonts.familyFor(Font.DemiBold)
-				font.pixelSize: Tokens.qp.text
+				font.pixelSize: Fonts.px(Tokens.qp.text)
 				font.weight: Font.DemiBold
 			}
 

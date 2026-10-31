@@ -51,6 +51,7 @@ Item {
 			width: root.width - slot.inset * 2
 			height: root.height
 			opacity: enter.value
+			transform: Translate { y: Render.macMotion ? 4 * (1 - Math.min(1, enter.value)) : 0 }
 			// overflow: hidden, as each of Bloom's panels.
 			clip: true
 
@@ -76,7 +77,7 @@ Item {
 				source: slot.source
 			}
 
-			layer.enabled: slot.leaving
+			layer.enabled: slot.leaving && !Render.macMotion
 			layer.textureSize: Render.texture(width, height)
 			layer.effect: MultiEffect {
 				blurEnabled: true
@@ -90,7 +91,7 @@ Item {
 				readonly property var curve: Tokens.easing.framerEaseOut.concat([1, 1])
 
 				NumberAnimation { target: slot; property: "opacity"; to: 0; duration: 100; easing.type: Easing.BezierSpline; easing.bezierCurve: exit.curve }
-				NumberAnimation { target: slot; property: "blur"; from: 0; to: 4; duration: 100; easing.type: Easing.BezierSpline; easing.bezierCurve: exit.curve }
+				NumberAnimation { target: slot; property: "blur"; from: 0; to: Render.macMotion ? 0 : 4; duration: 100; easing.type: Easing.BezierSpline; easing.bezierCurve: exit.curve }
 
 				onFinished: {
 					root._leavingCount--;

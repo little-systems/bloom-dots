@@ -43,11 +43,8 @@ Item {
 		onClicked: root.dismissed()
 	}
 
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -63,10 +60,12 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	Rectangle {
 		id: card
 		objectName: "card"
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
 		x: (root.width - width) / 2
 		y: (root.height - height) / 2
 		width: Math.min(Tokens.cheatsheet.width, root.width - 2 * Tokens.cheatsheet.margin) * root._morph
@@ -106,7 +105,7 @@ Item {
 				text: "No keybinds have descriptions yet"
 				color: root.theme.textMuted
 				font.family: Fonts.family
-				font.pixelSize: Tokens.cheatsheet.text
+				font.pixelSize: Fonts.px(Tokens.cheatsheet.text)
 			}
 
 			Row {
@@ -135,7 +134,7 @@ Item {
 							text: group.title
 							color: root.theme.text
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.cheatsheet.title
+							font.pixelSize: Fonts.px(Tokens.cheatsheet.title)
 							font.weight: Font.DemiBold
 						}
 						Repeater {
@@ -169,7 +168,7 @@ Item {
 												text: cap.modelData
 												color: root.theme.text
 												font.family: Fonts.familyFor(Font.Medium)
-												font.pixelSize: Tokens.cheatsheet.cap
+												font.pixelSize: Fonts.px(Tokens.cheatsheet.cap)
 												font.weight: Font.Medium
 											}
 										}
@@ -186,7 +185,7 @@ Item {
 									elide: Text.ElideRight
 									color: root.theme.textMuted
 									font.family: Fonts.family
-									font.pixelSize: Tokens.cheatsheet.text
+									font.pixelSize: Fonts.px(Tokens.cheatsheet.text)
 								}
 							}
 						}

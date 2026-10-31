@@ -23,7 +23,7 @@ Item {
 			x: 16; y: 16
 			text: "Empty Trash?"
 			color: root.foreground
-			font.pixelSize: 16
+			font.pixelSize: Fonts.px(16)
 			font.bold: true
 		}
 		Text {
@@ -32,14 +32,14 @@ Item {
 			text: "This permanently removes the items."
 			color: root.foreground
 			opacity: 0.7
-			font.pixelSize: 11
+			font.pixelSize: Fonts.px(11)
 		}
 		Rectangle {
 			id: cancel
 			objectName: "confirm-cancel"
 			x: 16; y: 80; width: 105; height: 34; radius: 7
 			color: Qt.rgba(1, 1, 1, 0.12)
-			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: 12 }
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: Fonts.px(12)}
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.opened = false }
 		}
 		Rectangle {
@@ -47,7 +47,7 @@ Item {
 			objectName: "confirm-empty"
 			x: 139; y: 80; width: 105; height: 34; radius: 7
 			color: "#d94343"
-			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: 12 }
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: Fonts.px(12)}
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.opened = false; root.confirmed(); } }
 		}
 	}

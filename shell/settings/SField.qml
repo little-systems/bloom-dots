@@ -13,7 +13,7 @@ Rectangle {
 	signal accepted()
 
 	width: 240
-	height: Tokens.settings.control
+	height: Math.max(Tokens.settings.control, Fonts.px(Tokens.settings.controlText) * 1.6)
 	radius: Tokens.settings.controlRadius
 	color: root.theme.groupBg
 	border.width: 1
@@ -37,7 +37,7 @@ Rectangle {
 		color: root.theme.text
 		clip: true
 		font.family: Fonts.ui
-		font.pixelSize: Tokens.settings.controlText
+		font.pixelSize: Fonts.px(Tokens.settings.controlText)
 		Keys.onReturnPressed: root.accepted()
 		Text {
 			visible: input.text === ""

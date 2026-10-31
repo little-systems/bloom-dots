@@ -99,7 +99,7 @@ Item {
 					text: root.media.artist
 					color: root.textMuted
 					font.family: Fonts.familyFor(Font.Normal)
-					font.pixelSize: 12
+					font.pixelSize: Fonts.px(12)
 					font.weight: Font.Normal
 				}
 			}
@@ -141,7 +141,7 @@ Item {
 				text: Fmt.formatTime(root._shownMs)
 				color: root.textMuted
 				font.family: Fonts.familyFor(Font.Medium)
-				font.pixelSize: root._c.time
+				font.pixelSize: Fonts.px(root._c.time)
 				font.weight: Font.Medium
 				font.features: { "tnum": 1 }
 			}
@@ -195,7 +195,7 @@ Item {
 				text: Fmt.formatRemaining(root._shownMs, root.media.lengthMs)
 				color: root.textMuted
 				font.family: Fonts.familyFor(Font.Medium)
-				font.pixelSize: root._c.time
+				font.pixelSize: Fonts.px(root._c.time)
 				font.weight: Font.Medium
 				font.features: { "tnum": 1 }
 			}

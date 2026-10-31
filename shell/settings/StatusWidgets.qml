@@ -55,7 +55,7 @@ Column {
 			text: zone.side
 			color: root.theme.textMuted
 			font.family: Fonts.uiFor(Font.DemiBold)
-			font.pixelSize: 10
+			font.pixelSize: Fonts.px(12)
 			font.weight: Font.DemiBold
 			font.letterSpacing: 0.5
 			font.capitalization: Font.AllUppercase
@@ -71,7 +71,7 @@ Column {
 				text: "Drop here"
 				color: root.theme.textMuted
 				font.family: Fonts.ui
-				font.pixelSize: 11
+				font.pixelSize: Fonts.px(13)
 				font.italic: true
 			}
 			Repeater {
@@ -141,7 +141,7 @@ Column {
 				text: parent.def ? parent.def.label : ""
 				color: root.theme.text
 				font.family: Fonts.uiFor(Font.Medium)
-				font.pixelSize: 11
+				font.pixelSize: Fonts.px(13)
 				font.weight: Font.Medium
 			}
 		}

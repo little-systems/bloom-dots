@@ -77,7 +77,7 @@ Item {
 			text: root.text
 			color: root.textColor
 			font.family: Fonts.familyFor(Font.Medium)
-			font.pixelSize: Tokens.statusStrip.tooltip.size
+			font.pixelSize: Fonts.px(Tokens.statusStrip.tooltip.size)
 			font.weight: Font.Medium
 			lineHeight: Tokens.statusStrip.tooltip.lineHeight
 		}

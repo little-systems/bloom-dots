@@ -23,6 +23,16 @@ import "common/render"
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
 ShellRoot {
+	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
+	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
+
+	Binding { target: Theme; property: "syncApps"; value: true }
+	Binding {
+		target: Render
+		property: "animationStyle"
+		value: Settings.values["bloom-animation-style"]
+	}
+
 	// Layers render at the scale the stages are drawn (common/render).
 	// Reached once so its chimes are armed whichever surfaces are on.
 	readonly property var _sounds: Sounds
@@ -451,6 +461,7 @@ ShellRoot {
 	IpcHandler {
 		target: "overview"
 
+		function open(): string { Overview.show(); return "ok"; }
 		function toggle(): string { Overview.toggle(); return "ok"; }
 		function close(): string { Overview.hide(); return "ok"; }
 		function move(address: string, workspace: int): string { return Overview.moveWindow(address, workspace); }

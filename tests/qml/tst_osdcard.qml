@@ -233,12 +233,12 @@ Item {
 			volume.sessions = saved;
 		}
 
-		function test_entersFromTheEdge() {
+		function test_entersWithoutCollapsingTheCard() {
 			volume.shown = false;
 			tryCompare(part(volume, "motion"), "opacity", 0, 2000);
 			volume.shown = true;
 			const card = part(volume, "motion");
-			verify(card.sx < 0.5, `grows out of the edge: ${card.sx}`);
+			verify(card.sx >= 0.96 && card.sx < 1, `starts with a slight scale: ${card.sx}`);
 			tryCompare(card, "sx", 1, 2000);
 			tryCompare(card, "opacity", 1, 2000);
 		}

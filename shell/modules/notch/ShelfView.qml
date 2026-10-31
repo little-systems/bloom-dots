@@ -106,7 +106,7 @@ Item {
 				text: "Drop files or selected text here"
 				color: root.theme.text
 				font.family: Fonts.family
-				font.pixelSize: 12
+				font.pixelSize: Fonts.px(12)
 			}
 		}
 
@@ -118,7 +118,7 @@ Item {
 			contentHeight: height
 			flickableDirection: Flickable.HorizontalFlick
 			boundsBehavior: Flickable.StopAtBounds
-			interactive: root._overflowing
+			interactive: false
 
 			Repeater {
 				model: tiles
@@ -228,7 +228,7 @@ Item {
 								color: root.theme.text
 								opacity: 0.9
 								font.family: Fonts.family
-								font.pixelSize: 10
+								font.pixelSize: Fonts.px(10)
 								lineHeight: 1.45
 								lineHeightMode: Text.ProportionalHeight
 							}
@@ -279,7 +279,7 @@ Item {
 						color: root.theme.text
 						opacity: 0.85
 						font.family: Fonts.family
-						font.pixelSize: 11
+						font.pixelSize: Fonts.px(11)
 					}
 
 					// Opens (or copies) on click; dragging carries it out.
@@ -358,14 +358,7 @@ Item {
 
 	// Bloom turns the wheel into the row's sideways scroll, and the shelf
 	// never switches panels on it.
-	WheelHandler {
-		target: null
-		acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-		onWheel: event => {
-			const delta = event.pixelDelta.x || event.pixelDelta.y || (event.angleDelta.x || event.angleDelta.y) / 1.2;
-			strip.contentX = Math.max(0, Math.min(strip.contentWidth - strip.width, strip.contentX - delta));
-		}
-	}
+	ScrollGlide { parent: root; flickable: strip; horizontal: true }
 
 	// .shelf-notice: rises into place over 0.15 s.
 	Rectangle {
@@ -388,7 +381,7 @@ Item {
 			text: root.notice
 			color: "white"
 			font.family: Fonts.family
-			font.pixelSize: 11
+			font.pixelSize: Fonts.px(11)
 		}
 		ParallelAnimation {
 			id: noticeIn

@@ -169,12 +169,13 @@ Item {
 			const p = list.mapToItem(host, 100, 60);
 			mouseWheel(host, p.x, p.y, 0, -240);
 			tryVerify(() => view.contentY > 50, 1000, "the wheel scrolls");
-			wait(300);
+			tryVerify(() => Math.abs(view.contentY - 200) < 0.2, 2000, "glide settles before refresh");
 			const y = view.contentY;
 			v.nearby = many(0);
 			v.nearby = many(1);
 			waitForRendering(host);
-			compare(view.contentY, y, "still scrolled");
+			// ListView rounds a fractional glide position when it lays out a new row.
+			fuzzyCompare(view.contentY, y, 1, "still scrolled");
 			compare(part(v, "row:/d0"), row, "the same row, not a rebuilt one");
 			verify(findChild(v, "row:/d14"), "the new device joined");
 			v.nearby = many(0).slice(1);

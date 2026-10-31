@@ -55,7 +55,7 @@ FocusScope {
 		color: root.theme.text
 		selectionColor: root.theme.textMuted
 		font.family: Fonts.family
-		font.pixelSize: Tokens.qp.text
+		font.pixelSize: Fonts.px(Tokens.qp.text)
 		onAccepted: root.accepted()
 		Keys.onEscapePressed: root.escaped()
 	}

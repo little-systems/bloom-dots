@@ -32,13 +32,10 @@ Item {
 
 	property bool open: true
 	readonly property bool shown: root.open || enter.value > 0.01
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	opacity: Math.max(0, Math.min(1, enter.value))
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root.open ? 1 : 0
 	}
@@ -67,7 +64,7 @@ Item {
 			text: parent.label
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(12)
 		}
 		Text {
 			anchors.right: parent.right
@@ -75,7 +72,7 @@ Item {
 			text: parent.value
 			color: root.theme.text
 			font.family: Fonts.familyFor(Font.Medium)
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(12)
 			font.weight: Font.Medium
 		}
 	}
@@ -95,7 +92,7 @@ Item {
 			text: action.text
 			color: root.theme.text
 			font.family: Fonts.family
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(12)
 		}
 		HoverHandler { id: actionHover; cursorShape: Qt.PointingHandCursor }
 		TapHandler { onTapped: action.clicked() }
@@ -109,6 +106,9 @@ Item {
 		fullWidth: 300
 		fullHeight: 240
 		factor: root._morph
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.TopLeft
 		TextEdit {
 			objectName: "notes"
 			anchors.fill: parent
@@ -117,7 +117,7 @@ Item {
 			color: root.theme.text
 			selectionColor: root.accent
 			font.family: Fonts.family
-			font.pixelSize: 13
+			font.pixelSize: Fonts.px(13)
 			onTextChanged: if (text !== root.notes) root.notesEdited(text)
 		}
 	}
@@ -129,6 +129,9 @@ Item {
 		fullWidth: 300
 		fullHeight: 170
 		factor: root._morph
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.TopLeft
 		Column {
 			width: parent.width
 			Stat { objectName: "statCpu"; label: "CPU"; value: root.cpu + "%" }
@@ -145,12 +148,15 @@ Item {
 		fullWidth: 300
 		fullHeight: 240
 		factor: root._morph
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.TopLeft
 		Text {
 			visible: root.mixer.length === 0
 			text: "Nothing is playing"
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(12)
 		}
 		Column {
 			width: parent.width
@@ -169,7 +175,7 @@ Item {
 						elide: Text.ElideRight
 						color: root.theme.text
 						font.family: Fonts.family
-						font.pixelSize: 12
+						font.pixelSize: Fonts.px(12)
 					}
 					Rectangle {
 						objectName: "stream:" + stream.modelData.name
@@ -203,6 +209,9 @@ Item {
 		fullWidth: 300
 		fullHeight: 100
 		factor: root._morph
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.TopLeft
 		Row {
 			spacing: 8
 			Action { objectName: "shot"; text: "Screenshot"; onClicked: root.recordRequested("screenshot") }
@@ -218,6 +227,9 @@ Item {
 		fullWidth: 300
 		fullHeight: 100
 		factor: root._morph
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
+		transformOrigin: Item.TopLeft
 		Action {
 			objectName: "crosshairToggle"
 			text: root.crosshair ? "Turn Off" : "Pin to Screen"

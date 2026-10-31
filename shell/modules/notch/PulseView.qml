@@ -56,7 +56,7 @@ Item {
 	component Label: Text {
 		objectName: "pulse-label"
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: Tokens.pulse.labelSize
+		font.pixelSize: Fonts.px(Tokens.pulse.labelSize)
 		font.weight: Font.DemiBold
 		color: root.textColor
 		elide: Text.ElideRight

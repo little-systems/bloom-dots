@@ -32,6 +32,7 @@ PanelWindow {
 		scale: win.uiScale
 		transformOrigin: Item.TopLeft
 		theme: Theme
+		accent: Theme.accent
 		busy: Session.busy
 		onActionChosen: id => Session.run(id)
 		onDismissed: Session.hide()

@@ -53,7 +53,7 @@ Item {
 			text: root.label
 			color: root.theme.textMuted
 			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: Tokens.cc.sliders.text
+			font.pixelSize: Fonts.px(Tokens.cc.sliders.text)
 			font.weight: Font.DemiBold
 		}
 	}
@@ -115,7 +115,7 @@ Item {
 		// No transition on the percentage's hover colour.
 		color: root._hover ? root.theme.text : root.theme.textMuted
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: Tokens.cc.sliders.text
+		font.pixelSize: Fonts.px(Tokens.cc.sliders.text)
 		font.weight: Font.DemiBold
 		font.features: {
 			"tnum": 1

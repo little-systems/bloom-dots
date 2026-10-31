@@ -155,18 +155,6 @@ function updatesLabel(count) {
 	return count === 0 ? "Up to Date" : count + (count === 1 ? " Update Available" : " Updates Available");
 }
 
-// Window opacity fades text too, so it stops short of what the shell can use.
-function windowOpacity(opacity) {
-	return Math.round(Math.max(0.75, opacity) * 100) / 100;
-}
-
-// Bloom's surfaces always blur what's behind them; apps only when asked.
-function lookRules(translucent) {
-	const lines = ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
-	if (translucent) lines.push('hl.window_rule({ match = { class = ".*" }, no_blur = false })');
-	return lines;
-}
-
 // settings-query.sh's tab-separated records.
 function records(text, keys) {
 	return text.split("\n").filter(l => l.includes("\t")).map(line => {
@@ -184,4 +172,8 @@ function matches(list, query, limit) {
 // Comma-separated layouts, split into the known and the unknown.
 function badLayouts(text, known) {
 	return String(text).split(",").map(x => x.trim()).filter(x => x && known.indexOf(x) < 0);
+}
+
+function layerRules() {
+	return ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
 }

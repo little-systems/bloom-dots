@@ -244,20 +244,20 @@ var settings = {
 	window: { width: 776, height: 560, minWidth: 640, minHeight: 440, radius: 12 },
 	control: 28,
 	controlRadius: 6,
-	controlText: 12,
-	title: { paddingTop: 16, paddingBottom: 10, paddingH: 18, size: 13, close: 22, closeIcon: 12 },
-	sidebar: { width: 206, paddingV: 14, paddingH: 12, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
-	tab: { height: 36, paddingH: 12, gap: 10, radius: 8, icon: 20, glyph: 14, text: 13, idleOpacity: 0.8, ms: 150 },
+	controlText: 14,
+	title: { paddingTop: 16, paddingBottom: 10, paddingH: 18, size: 15, close: 22, closeIcon: 12 },
+	sidebar: { width: 206, paddingV: 14, paddingH: 12, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 19, sub: 13 } },
+	tab: { height: 36, paddingH: 12, gap: 10, radius: 8, icon: 20, glyph: 14, text: 15, idleOpacity: 0.8, ms: 150 },
 	content: { top: 12, h: 22, bottom: 28, scrollbar: 5 },
-	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12 },
-	group: { radius: 12, label: { size: 11, spacing: 0.5, top: 18, firstTop: 4, spacedTop: 24, h: 6, bottom: 8 } },
-	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 14, desc: 11, gap: 1, labelLine: 16.8, descLine: 12, inset: 54, divider: 53, ms: 120 },
+	heading: { top: 2, h: 2, bottom: 18, title: 28, titleGap: 3, sub: 14 },
+	group: { radius: 12, label: { size: 13, spacing: 0.5, top: 18, firstTop: 4, spacedTop: 24, h: 6, bottom: 8 } },
+	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 16, desc: 13, gap: 2, labelLine: 20, descLine: 16, inset: 54, divider: 53, ms: 120 },
 	toggle: { width: 42, height: 24, knob: 18, inset: 2, travel: 18, on: "#34c759", ms: 160 },
 	slider: { width: 100, track: 4, thumb: 14 },
-	select: { size: 11, radius: 6, paddingV: 4, paddingH: 8, minWidth: 80, itemHeight: 24 },
-	scale: { size: 11, radius: 6, button: 20, value: 32, gap: 8, paddingV: 2, paddingH: 4 },
-	color: { size: 28, gap: 8, text: 11 },
-	about: { padding: [10, 4], top: 14, bottom: 20, logo: 68, logoGap: 14, title: 40, version: 10, credit: 11.5 },
+	select: { size: 13, radius: 6, paddingV: 4, paddingH: 8, minWidth: 80, itemHeight: 28 },
+	scale: { size: 13, radius: 6, button: 20, value: 60, gap: 8, paddingV: 2, paddingH: 4 },
+	color: { size: 28, gap: 8, text: 13 },
+	about: { padding: [10, 4], top: 14, bottom: 20, logo: 68, logoGap: 14, title: 40, version: 12, credit: 13.5 },
 	danger: "#ff453a"
 };
 
@@ -266,7 +266,7 @@ var osk = { width: 760, height: 280, margin: 12, radius: 18, gap: 6, key: 44, ke
 var overlay = { dim: 0.45, radius: 14, padding: 14, crosshair: 18 };
 
 // Scrolling everywhere: slightly underdamped, so it settles with a small bounce.
-var scroll = { stiffness: 260, damping: 20, resistance: 0.3, settleMs: 90 };
+var scroll = { stiffness: 180, damping: 21, wheelStep: 100, resistance: 0.3, overscroll: 56, settleMs: 70, friction: 5.5, maxVelocity: 2400, stopVelocity: 12 };
 
 // Bloom's morph: surfaces open by growing in both width and height on the
 // notch's spring, not by scaling. `from` is the share of full size they start at.

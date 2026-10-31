@@ -39,7 +39,7 @@ Rectangle {
 					text: cell.modelData.label
 					color: cell.active ? root.theme.text : root.theme.textMuted
 					font.family: Fonts.uiFor(Font.Bold)
-					font.pixelSize: root.wide ? 11 : 10
+					font.pixelSize: Fonts.px(root.wide ? 13 : 12)
 					font.weight: Font.Bold
 				}
 				HoverHandler { cursorShape: Qt.PointingHandCursor }

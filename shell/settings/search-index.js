@@ -101,10 +101,6 @@ var ROWS = [
 		"tab": "appearance"
 	},
 	{
-		"label": "Translucent Apps",
-		"tab": "appearance"
-	},
-	{
 		"label": "Color Saturation",
 		"tab": "appearance"
 	},
@@ -117,7 +113,11 @@ var ROWS = [
 		"tab": "appearance"
 	},
 	{
-		"label": "UI & Font Scale",
+		"label": "UI Scale",
+		"tab": "appearance"
+	},
+	{
+		"label": "Font Scale",
 		"tab": "appearance"
 	},
 	{

@@ -24,6 +24,8 @@ Item {
 	// { pacman, downloads }
 	property var busy: ({ pacman: false, downloads: 0 })
 	property int selectedIndex: 0
+	property color accent: "#007aff"
+	readonly property var _actions: ["lock", "suspend", "hibernate", "logout", "reboot", "shutdown", "firmware"].map(id => Logic.ACTIONS.find(a => a.id === id))
 
 	signal actionChosen(string id)
 	signal dismissed()
@@ -42,19 +44,15 @@ Item {
 		keys.forceActiveFocus();
 	}
 	function close() { root._open = false; }
-	function _choose(action) {
-		if (root._asking === null && Logic.warning(action.id, root.busy)) root._asking = action;
-		else {
-			root._asking = null;
-			root.actionChosen(action.id);
-		}
+	function _choose(action, confirmed) {
+		if (!action) return;
+		if (!confirmed && Logic.warning(action.id, root.busy)) { root._asking = action; return; }
+		root._asking = null;
+		root.actionChosen(action.id);
 	}
 
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -71,13 +69,15 @@ Item {
 		objectName: "keys"
 		focus: true
 		Keys.onPressed: event => {
-			const n = Logic.ACTIONS.length;
+			const n = root._actions.length;
 			if (event.key === Qt.Key_Escape) {
 				if (root._asking) root._asking = null;
 				else root.dismissed();
 			} else if (event.key === Qt.Key_Right || event.key === Qt.Key_Tab) root.selectedIndex = (root.selectedIndex + 1) % n;
+			else if (event.key === Qt.Key_Down) root.selectedIndex = (root.selectedIndex + 1) % n;
+			else if (event.key === Qt.Key_Up) root.selectedIndex = (root.selectedIndex - 1 + n) % n;
 			else if (event.key === Qt.Key_Left || event.key === Qt.Key_Backtab) root.selectedIndex = (root.selectedIndex - 1 + n) % n;
-			else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root._choose(root._asking ?? Logic.ACTIONS[root.selectedIndex]);
+			else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) root._choose(root._asking ?? root._actions[root.selectedIndex], root._asking !== null);
 			else return;
 			event.accepted = true;
 		}
@@ -94,10 +94,12 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	Rectangle {
 		id: card
 		objectName: "card"
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
 		anchors.centerIn: parent
 		width: (content.width + 2 * Tokens.session.padding) * root._morph
 		height: (content.height + 2 * Tokens.session.padding) * root._morph
@@ -118,72 +120,59 @@ Item {
 		Column {
 			id: content
 			anchors.centerIn: parent
-			spacing: Tokens.session.gap
-
-			Row {
-				id: actions
+			width: Math.min(324, root.width - 80)
+			spacing: 12
+			Item {
+				width: parent.width; height: Math.max(34, Fonts.px(18) * 1.4)
+				SvgIcon { x: 8; anchors.verticalCenter: parent.verticalCenter; name: root._asking ? root._asking.icon : "power"; size: 18; color: root.theme.textMuted }
+				Text { x: 38; anchors.verticalCenter: parent.verticalCenter; text: root._asking ? root._asking.label + "?" : "Session"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(16); font.weight: Font.DemiBold }
+				Rectangle {
+					anchors.right: parent.right; width: 28; height: 28; radius: 8; color: closeHover.hovered ? root.theme.groupBg : "transparent"
+					SvgIcon { anchors.centerIn: parent; name: "x"; size: 13; color: root.theme.textMuted }
+					HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
+					TapHandler { onTapped: root.dismissed() }
+				}
+			}
+			Rectangle { width: parent.width; height: 1; color: root.theme.border }
+			Column {
+				visible: !root._asking
+				width: parent.width; spacing: 2
 				Repeater {
-					model: Logic.ACTIONS
-
-					Item {
-						id: cell
+					model: root._actions
+					delegate: Column {
+						id: group
 						required property var modelData
 						required property int index
-						objectName: "action:" + cell.modelData.id
-						width: Tokens.session.cell
-						height: button.height + Tokens.session.labelGap + label.height
-
-						CcRoundButton {
-							id: button
-							anchors.horizontalCenter: parent.horizontalCenter
-							theme: root.theme
-							icon: cell.modelData.icon
-							active: cell.index === root.selectedIndex
-							onClicked: root._choose(cell.modelData)
+						width: content.width
+						Rectangle {
+							id: actionRow
+							objectName: "action:" + group.modelData.id
+							width: parent.width; height: Math.max(40, Fonts.px(14) * 1.4 + 18); radius: 9
+							color: rowHover.hovered || root.selectedIndex === group.index ? root.theme.groupBg : "transparent"
+							Behavior on color { ColorAnimation { duration: 120 } }
+							Accessible.role: Accessible.Button; Accessible.name: group.modelData.label
+							SvgIcon { x: 10; anchors.verticalCenter: parent.verticalCenter; name: group.modelData.icon; color: group.modelData.id === "shutdown" ? "#ff453a" : root.theme.textMuted; size: 17 }
+							Text { objectName: "label"; x: 38; anchors.verticalCenter: parent.verticalCenter; text: group.modelData.label; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(14) }
+							SvgIcon { visible: group.modelData.id === "firmware"; anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; name: "chevron-right"; size: 13; color: root.theme.textMuted }
+							HoverHandler { id: rowHover; cursorShape: Qt.PointingHandCursor; onHoveredChanged: if (hovered) root.selectedIndex = group.index }
+							TapHandler { onTapped: root._choose(group.modelData, false) }
 						}
-						Text {
-							id: label
-							objectName: "label"
-							y: button.height + Tokens.session.labelGap
-							width: parent.width
-							horizontalAlignment: Text.AlignHCenter
-							text: cell.modelData.label
-							color: root.theme.textMuted
-							font.family: Fonts.family
-							font.pixelSize: Tokens.session.label
-						}
+						Item { width: parent.width; height: group.index === 2 || group.index === 5 ? 11 : 0; Rectangle { x: 8; y: 5; width: parent.width - 16; height: 1; visible: parent.height > 0; color: root.theme.border } }
 					}
 				}
 			}
-
 			Text {
 				objectName: "warning"
-				visible: root._warning !== ""
-				anchors.horizontalCenter: parent.horizontalCenter
-				text: root._warning
-				color: root.theme.text
-				font.family: Fonts.family
-				font.pixelSize: Tokens.session.note
+				visible: root._warning !== ""; width: parent.width
+				text: root._warning; wrapMode: Text.Wrap; color: root.theme.text
+				font.family: Fonts.family; font.pixelSize: Fonts.px(13)
 			}
 			Row {
-				visible: root._warning !== ""
-				anchors.horizontalCenter: parent.horizontalCenter
-				spacing: Tokens.qp.actions.gap
-
-				QpButton {
-					objectName: "confirm"
-					theme: root.theme
-					primary: true
-					text: root._asking ? root._asking.label + " anyway" : ""
-					onClicked: root._choose(root._asking)
-				}
-				QpButton {
-					objectName: "cancel"
-					theme: root.theme
-					text: "Cancel"
-					onClicked: root._asking = null
-				}
+				visible: root._warning !== ""; anchors.right: parent.right; spacing: Tokens.qp.actions.gap
+				QpButton { objectName: "cancel"; theme: root.theme; text: "Cancel"; onClicked: root._asking = null }
+				QpButton { objectName: "confirm"; theme: root.theme; primary: true; text: root._asking ? root._asking.label + " anyway" : ""; onClicked: root._choose(root._asking, true) }
 			}
+			Text { anchors.right: parent.right; text: root._asking ? "Enter to continue · Esc to cancel" : "↑ ↓ to choose · Esc to close"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10) }
 		}
 	}
 }

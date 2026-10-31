@@ -62,11 +62,8 @@ Item {
 		onClicked: root.dismissed()
 	}
 
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -82,10 +79,12 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	Rectangle {
 		id: card
 		objectName: "card"
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
 		x: (root.width - width) / 2
 		y: (root.height - height) / 2
 		width: (root._columns * Tokens.picker.cellWidth + 2 * Tokens.picker.padding) * root._morph
@@ -113,12 +112,14 @@ Item {
 			text: "No wallpapers in this folder"
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: Tokens.picker.text
+			font.pixelSize: Fonts.px(Tokens.picker.text)
 		}
 
 		ScrollThumb { objectName: "gridThumb"; flickable: grid; thumbColor: Qt.rgba(1, 1, 1, 0.2) }
 		GridView {
 			id: grid
+			interactive: false
+			ScrollGlide { flickable: grid }
 			anchors.fill: parent
 			anchors.margins: Tokens.picker.padding
 			cellWidth: Tokens.picker.cellWidth
@@ -156,7 +157,7 @@ Item {
 						textFormat: Text.PlainText
 						color: root.theme.textMuted
 						font.family: Fonts.family
-						font.pixelSize: Tokens.picker.text
+						font.pixelSize: Fonts.px(Tokens.picker.text)
 					}
 					Rectangle {
 						anchors.fill: parent

@@ -44,6 +44,20 @@ Item {
 			tryCompare(v, "startupAnimating", false, 3000);
 		}
 
+		function test_iconsRevealInsideTheOpeningDock() {
+			const v = make();
+			const frame = findChild(v, "dock-reveal"), row = findChild(v, "dock-row");
+			verify(frame && row); compare(row.opacity, 0);
+			v.ready = true;
+			tryCompare(v, "expanded", true, 1000);
+			for (let i = 0; i < 12; i++) {
+				if (row.opacity < 0.99) verify(frame.clip, "icons remain clipped while the dock grows");
+				wait(16);
+			}
+			tryCompare(row, "opacity", 1, 2000);
+			tryCompare(frame, "clip", false, 2000, "hover lift and tooltips are free after entry");
+		}
+
 		function test_startup() {
 			const v = make();
 			compare(v.target.y, -800, "parked above before ready");
@@ -353,18 +367,30 @@ Item {
 			compare(activated.count, 0);
 		}
 
-		function test_runningAppsDoNotDrag() {
+		function test_runningAppCanMoveIntoThePinnedGroup() {
 			const v = make();
 			settle(v);
 			settleFrames();
-			const spy = createTemporaryObject(spyComponent, host, { target: v, signalName: "reordered" });
+			const spy = createTemporaryObject(spyComponent, host, { target: v, signalName: "pinReordered" });
 			const c = findChild(v, "dock-slot-c");
 			const start = c.mapToItem(v, 18, 18);
 			mousePress(v, start.x, start.y);
 			for (let dx = 4; dx <= 64; dx += 4)
 				mouseMove(v, start.x - dx, start.y);
 			mouseRelease(v, start.x - 64, start.y);
-			compare(spy.count, 0);
+			compare(spy.count, 1);
+			compare(spy.signalArguments[0][0], "c");
+		}
+
+		function test_runningAppsCanBeReorderedWithoutPinning() {
+			const v = make({ items: { pinned: [], unpinned: [host.app("c", [{}]), host.app("d", [{}])] } });
+			settle(v); settleFrames();
+			const reordered = createTemporaryObject(spyComponent, host, { target: v, signalName: "runningReordered" });
+			const d = findChild(v, "dock-slot-d"), start = d.mapToItem(v, 18, 18);
+			mousePress(v, start.x, start.y);
+			for (let dx = 4; dx <= 64; dx += 4) mouseMove(v, start.x - dx, start.y);
+			mouseRelease(v, start.x - 64, start.y);
+			compare(reordered.count, 1); compare(reordered.signalArguments[0][0], ["d", "c"]);
 		}
 
 		function rightClickA(v) {

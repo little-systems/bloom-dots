@@ -77,7 +77,7 @@ Item {
 		text: "Connected devices"
 		color: root.theme.text
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: Tokens.qp.header.title
+		font.pixelSize: Fonts.px(Tokens.qp.header.title)
 		font.weight: Font.DemiBold
 	}
 
@@ -206,7 +206,7 @@ Item {
 										elide: Text.ElideRight
 										maximumLineCount: 1
 										font.family: Fonts.familyFor(Font.DemiBold)
-										font.pixelSize: Tokens.qp.text
+										font.pixelSize: Fonts.px(Tokens.qp.text)
 										font.weight: Font.DemiBold
 									}
 
@@ -273,7 +273,7 @@ Item {
 														text: meter.modelData.label
 														color: root.theme.textMuted
 														font.family: Fonts.family
-														font.pixelSize: Tokens.bh.meters.label
+														font.pixelSize: Fonts.px(Tokens.bh.meters.label)
 													}
 
 													FracText {
@@ -359,7 +359,7 @@ Item {
 									text: "Looks like"
 									color: root.theme.textMuted
 									font.family: Fonts.family
-									font.pixelSize: Tokens.qp.note
+									font.pixelSize: Fonts.px(Tokens.qp.note)
 								}
 
 								Repeater {

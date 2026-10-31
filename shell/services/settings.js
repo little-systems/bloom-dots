@@ -9,6 +9,10 @@ var MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", 
 var WIDGETS = ["weather", "battery", "cpu", "ram", "disk", "net"];
 
 var SCHEMA = {
+	"bloom-animation-style": {
+		type: "enum", values: ["macos", "bloom"], default: "macos",
+		doc: "Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement."
+	},
 	"bloom-theme-mode": {
 		type: "enum",
 		values: ["dark", "light", "custom", "adaptive"],
@@ -25,7 +29,7 @@ var SCHEMA = {
 		min: 0.1,
 		max: 1,
 		default: 0.8,
-		doc: "Surface opacity. Hovered and open surfaces add 0.12."
+		doc: "Opacity of Bloom surfaces, including open panels. Application opacity is unchanged."
 	},
 	"bloom-theme-saturation": {
 		type: "number",
@@ -253,6 +257,10 @@ var SCHEMA = {
 		type: "number", min: 0, max: 500, default: 200,
 		doc: "Maximum number of non-transient notifications retained in local history."
 	},
+	"bloom-font-scale": {
+		type: "number", min: 0.8, max: 1.6, default: 1.15,
+		doc: "Bloom text size, independent of UI geometry scale."
+	},
 	"bloom-scale": {
 		type: "number",
 		min: 0.8,
@@ -321,10 +329,6 @@ var SCHEMA = {
 	"bloom-battery-sound-enabled": {
 		type: "bool", default: true,
 		doc: "Play a sound when the battery reaches the alert level."
-	},
-	"bloom-translucent-apps": {
-		type: "bool", default: false,
-		doc: "Apply Background Opacity and blur to app windows and the terminal."
 	},
 	"bloom-font-family": {
 		type: "string", maxLength: 200, default: "",

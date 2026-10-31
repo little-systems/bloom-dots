@@ -1,4 +1,5 @@
 import QtQuick
+import "render"
 
 // Text at a fractional pixel size (Bloom's 10.5, 9.5, 7.5 px). Qt rounds font
 // sizes to whole pixels, so this draws at the next whole size and scales the
@@ -31,6 +32,6 @@ Item {
 		height: root.height / root._k
 		scale: root._k
 		transformOrigin: Item.TopLeft
-		font.pixelSize: root._base
+		font.pixelSize: Fonts.px(root._base)
 	}
 }

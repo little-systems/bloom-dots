@@ -49,6 +49,8 @@ Item {
 	signal activated(string id)
 	signal newInstance(string id)
 	signal reordered(var ids)
+	signal runningReordered(var ids)
+	signal pinReordered(string id, int index)
 	signal menuChosen(string id, string key)
 	signal pinRequested(string id)
 	signal switchWorkspace(var cell)
@@ -231,6 +233,7 @@ Item {
 	property real _dragOrigin: 0
 	property real _dragX: 0
 	property var _dragOrder: []
+	property bool _dragPinned: true
 
 	function _pinnedKeys() {
 		return root._rows.map(r => r.key).filter(k => (root.items.pinned || []).some(i => i.id === k));
@@ -241,7 +244,8 @@ Item {
 		root._dragKey = key;
 		root._dragOrigin = x;
 		root._dragX = x;
-		root._dragOrder = root._pinnedKeys();
+		root._dragPinned = (root.items.pinned || []).some(i => i.id === key);
+		root._dragOrder = root._dragPinned ? root._pinnedKeys() : (root.items.unpinned || []).map(i => i.id);
 	}
 
 	function _dragMove(dx) {
@@ -249,7 +253,7 @@ Item {
 		const others = root._dragOrder.filter(k => k !== root._dragKey);
 		const centre = k => {
 			const row = root._rows.findIndex(r => r.key === k);
-			return slotModel.get(row).slotX + Tokens.dock.iconBox / 2;
+			return row >= 0 ? slotModel.get(row).slotX + Tokens.dock.iconBox / 2 : root._dragX;
 		};
 		const index = Dock.reorderIndex(others.map(centre), root._dragX + Tokens.dock.iconBox / 2);
 		const next = Dock.moveKey(root._dragOrder, root._dragKey, index);
@@ -260,18 +264,25 @@ Item {
 	}
 
 	function _dragEnd() {
-		const order = root._dragOrder;
-		const before = (root.items.pinned || []).map(i => i.id);
+		const order = root._dragOrder, key = root._dragKey;
+		const pinned = (root.items.pinned || []).map(i => i.id);
+		const before = (root._dragPinned ? root.items.pinned : root.items.unpinned || []).map(i => i.id);
+		const center = root._dragX + Tokens.dock.iconBox / 2;
+		const centers = pinned.map(k => slotModel.get(root._rows.findIndex(r => r.key === k)).slotX + Tokens.dock.iconBox / 2);
+		const intoPins = !root._dragPinned && centers.length > 0 && center < centers[centers.length - 1] + Tokens.dock.iconBox / 2;
 		root._dragKey = "";
 		root._dragOrder = [];
-		if (JSON.stringify(order) !== JSON.stringify(before))
-			root.reordered(order);
+		if (intoPins) root.pinReordered(key, Dock.reorderIndex(centers, center));
+		else if (JSON.stringify(order) !== JSON.stringify(before)) {
+			if (root._dragPinned) root.reordered(order);
+			else root.runningReordered(order);
+		}
 		root._sync();
 	}
 
 	function _sync() {
 		const ordered = root._dragOrder.length > 0
-			? Object.assign({}, root.items, { pinned: root._dragOrder.map(id => root.items.pinned.find(i => i.id === id)).filter(Boolean) })
+			? Object.assign({}, root.items, { [root._dragPinned ? "pinned" : "unpinned"]: root._dragOrder.map(id => (root._dragPinned ? root.items.pinned : root.items.unpinned).find(i => i.id === id)).filter(Boolean) })
 			: root.items;
 		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition, root.trayOnlyItems);
 		const byKey = {};
@@ -415,6 +426,8 @@ Item {
 		// The pill's box: hover, input mask and the app row.
 		Item {
 			id: pillArea
+			objectName: "dock-reveal"
+			clip: !wS.settled || !hS.settled || !yS.settled
 			x: (stage.width - width) / 2
 			y: stage.height - height + yS.value
 			width: Math.max(0, wS.value)
@@ -425,15 +438,17 @@ Item {
 
 			Item {
 				id: row
+				objectName: "dock-row"
 				// Slots sit relative to the pill's centre (see _sync).
 				x: pillArea.width / 2
 				y: Tokens.dock.padding
 				width: 0
 				height: Tokens.dock.iconBox
-				opacity: root.expanded ? 1 : 0
-				Behavior on opacity {
-					NumberAnimation { duration: Tokens.dock.contentFadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0, 0, 0.58, 1, 1, 1] }
-				}
+				// Reveal content with the same geometry as the dock, and clip it
+				// until the surface finishes opening. No separate early icon fade.
+				opacity: root.expanded ? Math.max(0, Math.min(1,
+					(pillArea.width - Tokens.dock.collapsed) / Math.max(1, root.target.width - Tokens.dock.collapsed),
+					(pillArea.height - Tokens.dock.collapsed) / Math.max(1, root.target.height - Tokens.dock.collapsed))) : 0
 
 				Repeater {
 					id: slotRepeater
@@ -461,7 +476,7 @@ Item {
 
 						DragHandler {
 							id: drag
-							enabled: slot.kind === "app" && slot.pinned && root.expanded
+							enabled: slot.kind === "app" && root.expanded
 							xAxis.enabled: true
 							yAxis.enabled: false
 							target: null

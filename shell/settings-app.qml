@@ -7,6 +7,7 @@ import Quickshell.Io
 import qs.services
 import "settings"
 import "common/render"
+import "common"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
 import "modules/dock/extras.js" as Extras
@@ -16,6 +17,16 @@ import "modules/dock/extras.js" as Extras
 // applies live. SettingsView is the pure part; this does the system work.
 ShellRoot {
 	id: app
+	Binding { target: Fonts; property: "override"; value: Settings.values["bloom-font-family"] }
+	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
+	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
+
+	Binding { target: Render; property: "reduceMotion"; value: Settings.values["bloom-reduce-motion"] }
+	Binding {
+		target: Render
+		property: "animationStyle"
+		value: Settings.values["bloom-animation-style"]
+	}
 
 	// What a reset leaves alone: which surfaces run, and the chosen wallpaper.
 	readonly property var _keep: ["bloom-enabled-modules", "bloom-wallpaper", "bloom-wallpaper-dir", "bloom-device-looks"]
@@ -72,21 +83,6 @@ ShellRoot {
 	}
 
 	SystemStore { id: store }
-	readonly property var _look: [Settings.values["bloom-theme-opacity"], Settings.values["bloom-translucent-apps"]]
-	property bool _lookArmed: false
-	on_LookChanged: if (app._lookArmed) lookTimer.restart()
-	Timer {
-		id: lookTimer
-		interval: 300
-		onTriggered: store.setLook(Settings.values["bloom-theme-opacity"], Settings.values["bloom-translucent-apps"])
-	}
-	// Armed after the first read, so opening Settings changes nothing.
-	Timer {
-		interval: 800
-		running: true
-		onTriggered: app._lookArmed = true
-	}
-
 	// Settings.set reports a refused write; dropping that would show a change
 	// that never happened.
 	property string saveError: ""
@@ -95,6 +91,8 @@ ShellRoot {
 		readonly property var values: Settings.values
 		function set(key, value) { app.saveError = Settings.set(key, value) || ""; }
 	}
+
+	OpeningMotion { id: appEntrance; initial: Render.macMotion ? 0 : 1; target: 1 }
 
 	FloatingWindow {
 		id: win
@@ -113,6 +111,11 @@ ShellRoot {
 			height: win.height / win.uiScale
 			scale: win.uiScale
 			transformOrigin: Item.TopLeft
+			opacity: appEntrance.progress
+			transform: [
+				Scale { origin.x: view.width / 2; origin.y: view.height / 2; xScale: appEntrance.zoom; yScale: appEntrance.zoom },
+				Translate { y: appEntrance.rise }
+			]
 			theme: Theme
 			store: checkedStore
 			saveError: app.saveError

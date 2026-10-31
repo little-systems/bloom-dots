@@ -148,7 +148,7 @@ Item {
 			color: root.theme.text
 			opacity: Tokens.calendar.month.opacity
 			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: Tokens.calendar.month.text
+			font.pixelSize: Fonts.px(Tokens.calendar.month.text)
 			font.weight: Font.DemiBold
 		}
 
@@ -170,7 +170,7 @@ Item {
 					color: root.theme.text
 					opacity: Tokens.calendar.dayName.opacity
 					font.family: Fonts.familyFor(Font.DemiBold)
-					font.pixelSize: Tokens.calendar.dayName.text
+					font.pixelSize: Fonts.px(Tokens.calendar.dayName.text)
 					font.weight: Font.DemiBold
 				}
 			}
@@ -202,7 +202,7 @@ Item {
 						text: parent.label
 						color: parent.today ? root.theme.bgExpanded : root.theme.text
 						font.family: Fonts.familyFor(parent.today ? Font.DemiBold : Font.Normal)
-						font.pixelSize: Tokens.calendar.day.text
+						font.pixelSize: Fonts.px(Tokens.calendar.day.text)
 						font.weight: parent.today ? Font.DemiBold : Font.Normal
 					}
 				}
@@ -254,7 +254,7 @@ Item {
 					color: root._sectionColor
 					opacity: root._state === "finished" ? Tokens.timer.status.finishedOpacity : Tokens.timer.status.opacity
 					font.family: Fonts.familyFor(Font.Medium)
-					font.pixelSize: Tokens.timer.status.text
+					font.pixelSize: Fonts.px(Tokens.timer.status.text)
 					font.weight: Font.Medium
 					font.letterSpacing: Tokens.timer.status.tracking
 					font.features: {
@@ -308,7 +308,7 @@ Item {
 							color: root._sectionColor
 							opacity: Tokens.timer.colon.opacity
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.timer.colon.text
+							font.pixelSize: Fonts.px(Tokens.timer.colon.text)
 							font.weight: Font.DemiBold
 						}
 
@@ -446,7 +446,7 @@ Item {
 							text: Calendar.primaryLabel(root.running, root.remainingSec, root.finished)
 							color: root.theme.bgExpanded
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.timer.play.text
+							font.pixelSize: Fonts.px(Tokens.timer.play.text)
 							font.weight: Font.DemiBold
 						}
 					}
@@ -549,7 +549,7 @@ Item {
 							text: preset.modelData + "m"
 							color: root.theme.text
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.timer.presets.text
+							font.pixelSize: Fonts.px(Tokens.timer.presets.text)
 							font.weight: Font.DemiBold
 						}
 

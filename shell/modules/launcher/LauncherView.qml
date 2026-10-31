@@ -28,6 +28,12 @@ Item {
 	property bool busy: false
 	property string chatError: ""
 	signal chatSubmitted(string text)
+	signal chatSettingsRequested()
+	signal chatStopRequested()
+	signal chatClearRequested()
+	signal chatRetryRequested()
+	signal chatCopyRequested(string text)
+	signal chatLinkRequested(string url)
 	property int selectedIndex: 0
 
 	signal queryEdited(string text)
@@ -36,9 +42,9 @@ Item {
 
 	readonly property bool shown: root._open || card.opacity > 0
 	readonly property real barHeight: Tokens.launcher.field.height + 2 * Tokens.launcher.padding
-	readonly property real targetHeight: root.barHeight + (root.chatting
-		? Tokens.launcher.gap + Tokens.launcher.maxRows * Tokens.dock.popup.row.height
-		: root.results.length ? Tokens.launcher.gap + root._listHeight : 0)
+	readonly property real targetHeight: root.chatting ? Math.min(chatSurface.preferredHeight, root.height * 0.76)
+		: root.barHeight + (root.results.length ? Tokens.launcher.gap + root._listHeight : 0)
+	readonly property real targetWidth: root.chatting ? Math.min(660, root.width - 48) : Tokens.launcher.width
 	// Images run taller than the other rows, so the card grows by what's shown.
 	readonly property real _maxList: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
 	readonly property real _listHeight: Math.min(root._maxList, root.results.reduce((sum, r) => sum + root._rowHeight(r), 0))
@@ -53,13 +59,14 @@ Item {
 		root.selectedIndex = 0;
 		root._open = true;
 		enter.jump(0);
-		field.forceActiveFocus();
+		if (root.chatting) chatSurface.focusInput(); else field.forceActiveFocus();
 	}
 	// Opens, or if open moves, with this text already typed.
 	function openWith(text) {
 		if (!root._open) root.open();
 		field.text = text;
 		field.cursorPosition = text.length;
+		if (root.chatting) { chatSurface.draft = text.replace(/^@\s*/, ""); chatSurface.focusInput(); }
 	}
 	function close() {
 		root._open = false;
@@ -86,6 +93,7 @@ Item {
 		event.accepted = true;
 	}
 	onResultsChanged: root.selectedIndex = 0
+	onChattingChanged: if (root.chatting) { chatSurface.draft = field.text.replace(/^@\s*/, ""); chatSurface.focusInput(); }
 
 	// cursor: default — a click on the screen around the bar dismisses it
 	MouseArea {
@@ -94,6 +102,7 @@ Item {
 		onClicked: root.dismissed()
 	}
 
+	Spring { id: widthSpring; stiffness: Tokens.launcher.height.stiffness; damping: Tokens.launcher.height.damping; initial: Tokens.launcher.width; target: root.targetWidth }
 	Spring {
 		id: heightSpring
 		stiffness: Tokens.launcher.height.stiffness
@@ -101,11 +110,8 @@ Item {
 		initial: root.barHeight
 		target: root.targetHeight
 	}
-	Spring {
+	OpeningMotion {
 		id: enter
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -121,13 +127,15 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
-	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
+	readonly property real _morph: enter.extent
 	Rectangle {
 		id: card
 		objectName: "card"
+		scale: enter.zoom
+		transform: Translate { y: enter.rise }
 		x: (root.width - width) / 2
 		y: root.height * Tokens.launcher.top
-		width: Tokens.launcher.width * root._morph
+		width: widthSpring.value * root._morph
 		height: heightSpring.value * root._morph
 		radius: Tokens.launcher.radius
 		color: root.theme.bgExpanded
@@ -148,6 +156,7 @@ Item {
 
 		Rectangle {
 			id: fieldBox
+			visible: !root.chatting
 			x: Tokens.launcher.padding
 			y: Tokens.launcher.padding
 			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
@@ -174,8 +183,8 @@ Item {
 				selectByMouse: true
 				clip: true
 				font.family: Fonts.family
-				font.pixelSize: Tokens.launcher.field.size
-				onTextChanged: root.queryEdited(text)
+				font.pixelSize: Fonts.px(Tokens.launcher.field.size)
+				onTextChanged: { root.queryEdited(text); if (root.chatting) chatSurface.draft = text.replace(/^@\s*/, ""); }
 				Keys.onPressed: event => root._key(event)
 
 				Text {
@@ -283,7 +292,7 @@ Item {
 							// An emoji (its own id) draws in full colour.
 							color: row.modelData.id === row.modelData.glyph ? "white" : root.theme.textMuted
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: row.modelData.glyph ? 18 : Tokens.dock.popup.row.initial
+							font.pixelSize: Fonts.px(row.modelData.glyph ? 18 : Tokens.dock.popup.row.initial)
 							font.weight: Font.DemiBold
 						}
 					}
@@ -301,7 +310,7 @@ Item {
 							elide: Text.ElideRight
 							color: root.theme.text
 							font.family: Fonts.familyFor(Font.Medium)
-							font.pixelSize: Tokens.dock.popup.row.name
+							font.pixelSize: Fonts.px(Tokens.dock.popup.row.name)
 							font.weight: Font.Medium
 						}
 						Text {
@@ -313,98 +322,28 @@ Item {
 							elide: Text.ElideRight
 							color: root.theme.textMuted
 							font.family: Fonts.family
-							font.pixelSize: Tokens.launcher.sub
+							font.pixelSize: Fonts.px(Tokens.launcher.sub)
 						}
 					}
 				}
 			}
 		}
 
-		QpScroll { flickable: chat }
-		ScrollThumb { objectName: "chatThumb"; flickable: chat; visible: root.chatting && _max > 1 }
-		Flickable {
-			id: chat
-			objectName: "chat"
+		ChatView {
+			id: chatSurface
+			anchors.fill: parent
 			visible: root.chatting
-			x: Tokens.launcher.padding
-			y: fieldBox.y + fieldBox.height + Tokens.launcher.gap
-			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
-			height: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
-			contentHeight: transcript.implicitHeight
-			interactive: false // QpScroll scrolls it
-			clip: true
-			boundsBehavior: Flickable.StopAtBounds
-			onContentHeightChanged: contentY = Math.max(0, contentHeight - height)
-
-			Column {
-				id: transcript
-				width: chat.width
-				spacing: 10
-
-				Text {
-					objectName: "chatHint"
-					visible: root.messages.length === 0 && root.chatError === ""
-					width: parent.width
-					topPadding: 8
-					horizontalAlignment: Text.AlignHCenter
-					text: "Ask Gemini anything. Only what you type here is sent."
-					color: root.theme.textMuted
-					font.family: Fonts.family
-					font.pixelSize: 12
-				}
-				Repeater {
-					model: root.messages
-					delegate: Item {
-						id: bubble
-						required property var modelData
-						readonly property bool mine: bubble.modelData.role === "user"
-						width: transcript.width
-						height: message.implicitHeight + (bubble.mine ? 14 : 0)
-
-						Rectangle {
-							visible: bubble.mine
-							x: parent.width - width
-							width: Math.min(message.implicitWidth + 20, parent.width * 0.8)
-							height: parent.height
-							radius: 12
-							color: root.theme.groupBg
-						}
-						Text {
-							id: message
-							objectName: "chatMessage"
-							x: bubble.mine ? parent.width - width - 10 : 2
-							y: bubble.mine ? 7 : 0
-							width: Math.min(implicitWidth, parent.width * 0.8 - 20)
-							text: bubble.modelData.text
-							textFormat: bubble.mine ? Text.PlainText : Text.MarkdownText
-							wrapMode: Text.Wrap
-							color: root.theme.text
-							linkColor: root.accent
-							font.family: Fonts.family
-							font.pixelSize: 13
-						}
-					}
-				}
-				Text {
-					objectName: "chatBusy"
-					visible: root.busy && (root.messages[root.messages.length - 1]?.role ?? "") === "user"
-					leftPadding: 2
-					text: "Thinking…"
-					color: root.theme.textMuted
-					font.family: Fonts.family
-					font.pixelSize: 12
-				}
-				Text {
-					objectName: "chatError"
-					visible: root.chatError !== ""
-					width: parent.width
-					text: root.chatError
-					wrapMode: Text.Wrap
-					color: "#ff8a80"
-					font.family: Fonts.family
-					font.pixelSize: 12
-				}
-			}
+			theme: root.theme; accent: root.accent
+			messages: root.messages; busy: root.busy; error: root.chatError
+			onSubmitted: text => { root.chatSubmitted(text); field.text = "@ "; }
+			onSettingsRequested: root.chatSettingsRequested()
+			onStopRequested: root.chatStopRequested()
+			onClearRequested: root.chatClearRequested()
+			onRetryRequested: root.chatRetryRequested()
+			onCopied: text => root.chatCopyRequested(text)
+			onLinkRequested: url => root.chatLinkRequested(url)
+			onDismissed: root.dismissed()
+			onBackRequested: { field.text = ""; field.forceActiveFocus(); }
 		}
 	}
 }

@@ -12,7 +12,7 @@ Text {
 	bottomPadding: Tokens.settings.group.label.bottom
 	color: theme.textMuted
 	font.family: Fonts.uiFor(Font.DemiBold)
-	font.pixelSize: Tokens.settings.group.label.size
+	font.pixelSize: Fonts.px(Tokens.settings.group.label.size)
 	font.weight: Font.DemiBold
 	font.letterSpacing: Tokens.settings.group.label.spacing
 	font.capitalization: Font.AllUppercase

@@ -210,7 +210,7 @@ Item {
 												text: "Looks like"
 												color: root.theme.textMuted
 												font.family: Fonts.family
-												font.pixelSize: Tokens.qp.note
+												font.pixelSize: Fonts.px(Tokens.qp.note)
 											}
 										}
 										Repeater {
@@ -320,7 +320,7 @@ Item {
 			text: "Type " + root._pin(root.prompt?.pin) + " on the device, then press Enter on it."
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: Tokens.qp.note
+			font.pixelSize: Fonts.px(Tokens.qp.note)
 		}
 	}
 
@@ -337,7 +337,7 @@ Item {
 				text: "Does the device show " + root._pin(root.prompt?.pin) + "?"
 				color: root.theme.textMuted
 				font.family: Fonts.family
-				font.pixelSize: Tokens.qp.note
+				font.pixelSize: Fonts.px(Tokens.qp.note)
 			}
 			Row {
 				spacing: Tokens.qp.actions.gap
@@ -389,7 +389,7 @@ Item {
 			text: root.error ? Logic.errorText(root.error.code) : ""
 			color: Tokens.qp.error.color
 			font.family: Fonts.family
-			font.pixelSize: Tokens.qp.error.text
+			font.pixelSize: Fonts.px(Tokens.qp.error.text)
 		}
 	}
 }

@@ -20,7 +20,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-translucent-apps": false, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -194,6 +194,18 @@ Item {
 			return s;
 		}
 
+		function test_largerTypeFitsSettingRows() {
+			const v = make();
+			const row = part(v, "row:24-Hour Time");
+			const label = findChild(row, "label");
+			const desc = findChild(row, "desc");
+			verify(label.font.pixelSize >= 16);
+			verify(desc.font.pixelSize >= 13);
+			verify(label.height >= label.font.pixelSize * 1.2);
+			verify(desc.height >= desc.font.pixelSize * 1.2);
+			verify(row.height >= label.height + desc.height + 20);
+		}
+
 		function test_headingFollowsTheTab() {
 			const v = make();
 			compare(part(v, "heading").text, "General");
@@ -205,6 +217,7 @@ Item {
 		// Bloom's boxes as Chromium lays them out (tools/bloom-audit/
 		// record-settings.cjs at zoom 1.25, divided back). Bloom has no search
 		// or system groups, so the sidebar's tabs sit lower than in Bloom.
+		// Text and line heights are larger at the owner's request.
 		function test_matchesBloomsLayout() {
 			const v = make();
 			v.width = 776;
@@ -219,9 +232,9 @@ Item {
 			}
 			at(part(v, "tab:general"), 12.8, undefined, 181.2, 36, "tab");
 			at(part(v, "close"), 735.2, 16.8, 22, 22, "close");
-			at(part(v, "heading"), 230.8, 62.8, undefined, 28.6, "heading");
-			at(part(v, "copy"), 230.8, 94.4, undefined, 16.8, "copy");
-			compare(Math.round(part(v, "row:24-Hour Time").height), 51);
+			at(part(v, "heading"), 230.8, 62.8, undefined, 34, "heading");
+			at(part(v, "copy"), 230.8, 99.8, undefined, 18, "copy");
+			compare(Math.round(part(v, "row:24-Hour Time").height), 59);
 			compare(part(v, "time24").width, 42);
 			compare(part(v, "time24").height, 24);
 		}
@@ -235,7 +248,7 @@ Item {
 
 		function test_sliderSnapsToSteps() {
 			const v = make();
-			const s = part(v, "battery");
+			const s = findChild(part(v, "battery"), "sliderTrack");
 			waitForRendering(host);
 			const p = s.mapToItem(host, s.width, s.height / 2);
 			mouseClick(host, p.x - 1, p.y);

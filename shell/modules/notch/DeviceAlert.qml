@@ -80,7 +80,7 @@ Item {
 			color: root.textMuted
 			elide: Text.ElideRight
 			font.family: Fonts.family
-			font.pixelSize: Tokens.alert.status
+			font.pixelSize: Fonts.px(Tokens.alert.status)
 		}
 	}
 
@@ -123,7 +123,7 @@ Item {
 					text: parent.modelData === "case" ? "Case" : parent.modelData[0].toUpperCase()
 					color: root.textMuted
 					font.family: Fonts.familyFor(Font.DemiBold)
-					font.pixelSize: Tokens.alert.buds.label
+					font.pixelSize: Fonts.px(Tokens.alert.buds.label)
 					font.weight: Font.DemiBold
 				}
 			}

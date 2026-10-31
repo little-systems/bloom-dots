@@ -44,7 +44,7 @@ Column {
 		text: "Couldn't read Hyprland's settings, so these are locked."
 		color: "#ff8a80"
 		font.family: Fonts.ui
-		font.pixelSize: 12
+		font.pixelSize: Fonts.px(14)
 	}
 
 	Page {
@@ -66,7 +66,7 @@ Column {
 				text: "Keep these display settings?"
 				color: root.theme.text
 				font.family: Fonts.uiFor(Font.DemiBold)
-				font.pixelSize: 14
+				font.pixelSize: Fonts.px(16)
 				font.weight: Font.DemiBold
 			}
 			Text {
@@ -76,7 +76,7 @@ Column {
 				text: "Reverting in " + root.sys.pendingSeconds + " seconds"
 				color: root.theme.textMuted
 				font.family: Fonts.ui
-				font.pixelSize: 12
+				font.pixelSize: Fonts.px(14)
 			}
 			Row {
 				x: parent.width - width - 14
@@ -182,7 +182,7 @@ Column {
 			text: "No apps are playing sound"
 			color: root.theme.textMuted
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 		}
 		SGroup {
 			visible: root.sys.mixer.length > 0
@@ -400,7 +400,7 @@ Column {
 			text: "Nothing starts with your session"
 			color: root.theme.textMuted
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Fonts.px(14)
 		}
 		SGroup {
 			visible: root.sys.startup.length > 0

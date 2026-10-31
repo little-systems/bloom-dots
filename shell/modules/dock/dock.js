@@ -167,6 +167,11 @@ function pinsOf(value) {
 	return list.filter((p, i) => typeof p === "string" && p !== "" && list.indexOf(p) === i);
 }
 
+function orderOf(value) {
+	const list = value && Array.isArray(value.order) ? value.order : [];
+	return list.filter((p, i) => typeof p === "string" && p !== "" && list.indexOf(p) === i);
+}
+
 function dotCount(windows) {
 	return Math.min(windows, 3);
 }

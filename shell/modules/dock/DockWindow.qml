@@ -143,6 +143,8 @@ PanelWindow {
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
 		onReordered: ids => Dock.reorder(ids)
+		onRunningReordered: ids => Dock.reorderRunning(ids)
+		onPinReordered: (id, index) => Dock.pinAt(id, index)
 		onMenuChosen: (id, key) => {
 			if (!id.startsWith("extra:")) { Dock.runMenu(id, key); return; }
 			const extraKey = id.slice(6);

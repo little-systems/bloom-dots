@@ -135,7 +135,9 @@ Item {
 		}
 		transform: Scale {
 			origin.y: card.height
-			yScale: root._open ? scaleSpring.value : scaleSpring.value * root._exitScale
+			origin.x: card.width / 2
+			xScale: Render.macMotion ? 0.97 + 0.03 * (root._open ? scaleSpring.value : scaleSpring.value * root._exitScale) : 1
+			yScale: Render.macMotion ? xScale : root._open ? scaleSpring.value : scaleSpring.value * root._exitScale
 		}
 
 		Keys.onPressed: event => root._handleKey(event)
@@ -166,7 +168,7 @@ Item {
 				width: parent.width - x - Tokens.dock.popup.search.paddingH
 				color: root.textColor
 				font.family: Fonts.family
-				font.pixelSize: Tokens.dock.popup.search.size
+				font.pixelSize: Fonts.px(Tokens.dock.popup.search.size)
 				clip: true
 				onTextChanged: debounce.restart()
 				Keys.onPressed: event => root._handleKey(event)
@@ -182,6 +184,8 @@ Item {
 
 		Flickable {
 			id: list
+			interactive: false
+			ScrollGlide { flickable: list }
 			x: Tokens.dock.popup.list.side
 			y: searchRow.y + searchRow.height + Tokens.dock.popup.search.marginBottom + Tokens.dock.popup.list.top
 			width: parent.width - 2 * Tokens.dock.popup.list.side
@@ -209,7 +213,7 @@ Item {
 							bottomPadding: Tokens.dock.popup.label.bottom
 							color: root.textMuted
 							font.family: Fonts.familyFor(Font.DemiBold)
-							font.pixelSize: Tokens.dock.popup.label.size
+							font.pixelSize: Fonts.px(Tokens.dock.popup.label.size)
 							font.weight: Font.DemiBold
 							font.letterSpacing: Tokens.dock.popup.label.tracking
 						}
@@ -264,7 +268,7 @@ Item {
 										text: row.modelData.name.slice(0, 1)
 										color: root.textMuted
 										font.family: Fonts.familyFor(Font.DemiBold)
-										font.pixelSize: Tokens.dock.popup.row.initial
+										font.pixelSize: Fonts.px(Tokens.dock.popup.row.initial)
 										font.weight: Font.DemiBold
 									}
 								}
@@ -277,7 +281,7 @@ Item {
 									elide: Text.ElideRight
 									color: root.textColor
 									font.family: Fonts.familyFor(Font.Medium)
-									font.pixelSize: Tokens.dock.popup.row.name
+									font.pixelSize: Fonts.px(Tokens.dock.popup.row.name)
 									font.weight: Font.Medium
 								}
 
@@ -293,7 +297,7 @@ Item {
 									color: row.isPinned ? root.accent : root.textMuted
 									opacity: row.isPinned || row.selected || rowHover.hovered ? 1 : 0
 									Behavior on opacity { NumberAnimation { duration: 150 } }
-									font.pixelSize: Tokens.dock.popup.row.pinSize
+									font.pixelSize: Fonts.px(Tokens.dock.popup.row.pinSize)
 									font.weight: Font.Medium
 								}
 							}
@@ -312,7 +316,7 @@ Item {
 				text: root._query.trim() ? "No results" : "Running apps show up here — search to pin anything else"
 				color: root.textMuted
 				font.family: Fonts.familyFor(Font.Medium)
-				font.pixelSize: Tokens.dock.popup.empty.size
+				font.pixelSize: Fonts.px(Tokens.dock.popup.empty.size)
 				font.weight: Font.Medium
 			}
 

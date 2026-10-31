@@ -46,15 +46,12 @@ Item {
 		root.forceActiveFocus();
 	}
 
-	Spring {
+	OpeningMotion {
 		id: grow
-		stiffness: Tokens.morph.stiffness
-		damping: Tokens.morph.damping
-		mass: Tokens.morph.mass
 		initial: 1
 		target: 1
 	}
-	onVisibleChanged: if (visible) grow.jump(Render.reduceMotion ? 1 : 0.6)
+	onVisibleChanged: if (visible) grow.jump(Render.reduceMotion ? 1 : Render.macMotion ? 0 : 0.6)
 
 	// cursor: default — a click anywhere else closes the list
 	MouseArea {
@@ -63,9 +60,12 @@ Item {
 	}
 	Rectangle {
 		x: root._at.x
-		y: root._at.y
-		width: (root._width + 8) * (0.9 + 0.1 * grow.value)
-		height: (Math.min(list.implicitHeight, root._maxList) + 8) * grow.value
+		y: root._at.y + grow.rise
+		scale: grow.zoom
+		opacity: Render.macMotion ? grow.progress : 1
+		transformOrigin: Item.Top
+		width: (root._width + 8) * (Render.macMotion ? 1 : 0.9 + 0.1 * grow.value)
+		height: (Math.min(list.implicitHeight, root._maxList) + 8) * (Render.macMotion ? 1 : grow.value)
 		clip: true
 		radius: Tokens.settings.select.radius
 		color: root.theme.bgExpanded
@@ -75,6 +75,8 @@ Item {
 		ScrollThumb { flickable: listFlick; thumbColor: root.theme.scrollbarThumb }
 		Flickable {
 			id: listFlick
+			interactive: false
+			ScrollGlide { flickable: listFlick }
 			objectName: "popupList"
 			x: 4
 			y: 4
@@ -95,7 +97,7 @@ Item {
 					objectName: "option:" + item.modelData.value
 					width: Math.max(root._width, itemText.implicitWidth + 16)
 					implicitWidth: itemText.implicitWidth + 16
-					height: Tokens.settings.select.itemHeight
+					height: Math.max(Tokens.settings.select.itemHeight, Fonts.px(Tokens.settings.select.size) * 1.5)
 					radius: 4
 					color: itemHover.hovered || item.index === root._index ? root.theme.groupBg : "transparent"
 
@@ -106,7 +108,7 @@ Item {
 						text: item.modelData.label
 						color: root.theme.text
 						font.family: Fonts.ui
-						font.pixelSize: Tokens.settings.select.size
+						font.pixelSize: Fonts.px(Tokens.settings.select.size)
 					}
 					HoverHandler {
 						id: itemHover

@@ -35,7 +35,7 @@ Rectangle {
 		text: root.message
 		color: Tokens.dock.toast.color
 		font.family: Fonts.familyFor(Font.Medium)
-		font.pixelSize: Tokens.dock.toast.size
+		font.pixelSize: Fonts.px(Tokens.dock.toast.size)
 		font.weight: Font.Medium
 	}
 }

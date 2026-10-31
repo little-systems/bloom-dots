@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "previews.js" as Preview
 import "../../common/render"
@@ -39,6 +40,8 @@ Item {
 		clip: true
 		Flickable {
 			id: scroller
+			interactive: false
+			ScrollGlide { flickable: scroller; horizontal: true }
 			anchors.fill: parent
 			clip: true
 			contentWidth: root.candidates.length * Tokens.dock.preview.width
@@ -92,7 +95,7 @@ Item {
 							visible: !capture.item || !capture.item.hasContent
 							text: card.candidate.title || "Window preview unavailable"
 							color: root.foreground
-							font.pixelSize: 12
+							font.pixelSize: Fonts.px(12)
 							elide: Text.ElideRight
 							width: parent.width - 20
 							horizontalAlignment: Text.AlignHCenter
@@ -106,7 +109,7 @@ Item {
 						width: card.width - 44
 						text: card.candidate.title
 						color: root.foreground
-						font.pixelSize: 12
+						font.pixelSize: Fonts.px(12)
 						elide: Text.ElideRight
 					}
 					Rectangle {
@@ -117,7 +120,7 @@ Item {
 						width: 30; height: 30
 						radius: 5
 						color: closeTap.containsMouse ? Qt.rgba(1, 1, 1, 0.18) : "transparent"
-						Text { font.family: Fonts.family; anchors.centerIn: parent; text: "×"; color: root.foreground; font.pixelSize: 18 }
+						Text { font.family: Fonts.family; anchors.centerIn: parent; text: "×"; color: root.foreground; font.pixelSize: Fonts.px(18)}
 						MouseArea {
 							id: closeTap
 							anchors.fill: parent

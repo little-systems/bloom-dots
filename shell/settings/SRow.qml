@@ -67,10 +67,10 @@ Item {
 				elide: Text.ElideRight
 				color: root.danger ? Tokens.settings.danger : root.theme.text
 				font.family: Fonts.uiFor(Font.Medium)
-				font.pixelSize: Tokens.settings.row.label
+				font.pixelSize: Fonts.px(Tokens.settings.row.label)
 				font.weight: Font.Medium
-				height: Tokens.settings.row.labelLine
-				lineHeight: Tokens.settings.row.labelLine
+				height: Fonts.px(Tokens.settings.row.labelLine)
+				lineHeight: Fonts.px(Tokens.settings.row.labelLine)
 				lineHeightMode: Text.FixedHeight
 			}
 			Text {
@@ -82,9 +82,9 @@ Item {
 				color: root.theme.textMuted
 				opacity: 0.8
 				font.family: Fonts.ui
-				font.pixelSize: Tokens.settings.row.desc
-				height: Tokens.settings.row.descLine
-				lineHeight: Tokens.settings.row.descLine
+				font.pixelSize: Fonts.px(Tokens.settings.row.desc)
+				height: Fonts.px(Tokens.settings.row.descLine)
+				lineHeight: Fonts.px(Tokens.settings.row.descLine)
 				lineHeightMode: Text.FixedHeight
 			}
 		}

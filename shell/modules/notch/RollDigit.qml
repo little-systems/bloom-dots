@@ -30,7 +30,7 @@ Item {
 		verticalAlignment: Text.AlignVCenter
 		color: root.color
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: root._size.text
+		font.pixelSize: Fonts.px(root._size.text)
 		font.weight: Font.DemiBold
 		font.letterSpacing: Tokens.timer.digit.tracking
 		font.features: {

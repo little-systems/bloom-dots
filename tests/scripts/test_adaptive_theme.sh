@@ -16,6 +16,12 @@ export BLOOM_THEME_HOME="$T/home" XDG_STATE_HOME="$T/state" PATH="$T/bin:$PATH"
 mkdir -p "$T/bin" "$T/home/.config/fuzzel" "$T/home/.config/hypr/hyprland"
 printf '#!/bin/sh\necho "$*" >> "%s/plasma"\n' "$T" > "$T/bin/plasma-apply-colorscheme"
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/pkill"
+cat > "$T/bin/gsettings" <<'FAKE_GSETTINGS'
+#!/bin/sh
+if [ "$1" = get ]; then echo "'default'"; fi
+exit 0
+FAKE_GSETTINGS
+printf '#!/bin/sh\nexit 0\n' > "$T/bin/hyprctl"
 chmod +x "$T/bin/"*
 echo original-fuzzel > "$T/home/.config/fuzzel/fuzzel_theme.ini"
 echo original-hypr > "$T/home/.config/hypr/hyprland/colors.lua"

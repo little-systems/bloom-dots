@@ -86,7 +86,7 @@ Item {
 				opacity: cell.modelData.active ? 1 : Tokens.dock.workspaces.idleOpacity
 				Behavior on opacity { NumberAnimation { duration: 200 } }
 				font.family: Fonts.familyFor(Font.DemiBold)
-				font.pixelSize: Tokens.dock.workspaces.size
+				font.pixelSize: Fonts.px(Tokens.dock.workspaces.size)
 				font.weight: Font.DemiBold
 			}
 
@@ -113,7 +113,7 @@ Item {
 					text: cell.modelData.tip
 					color: root.tooltipText
 					font.family: Fonts.family
-					font.pixelSize: Tokens.dock.tooltip.size
+					font.pixelSize: Fonts.px(Tokens.dock.tooltip.size)
 				}
 			}
 		}

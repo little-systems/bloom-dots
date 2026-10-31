@@ -79,9 +79,9 @@ Item {
 	// Hidden: 0.2 s out to scaleX 0, scaleY 0.8 (or, with the mixer open,
 	// 64 px back into the edge), as one surface.
 	Spring { id: sxS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: 0; target: 1; autoRun: root.shown }
-	Spring { id: syS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: Tokens.osd.enter.scaleYFrom; target: 1; autoRun: root.shown }
+	Spring { id: syS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: Render.macMotion ? 0 : Tokens.osd.enter.scaleYFrom; target: 1; autoRun: root.shown }
 	Spring { id: opS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: 0; target: 1; autoRun: root.shown }
-	Spring { id: blS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: Tokens.osd.enter.blur; target: 0; autoRun: root.shown }
+	Spring { id: blS; stiffness: Tokens.osd.enter.stiffness; damping: Tokens.osd.enter.damping; mass: Tokens.osd.enter.mass; initial: Render.macMotion ? 0 : Tokens.osd.enter.blur; target: 0; autoRun: root.shown }
 	property real _exitX: 0
 
 	onShownChanged: {
@@ -90,9 +90,9 @@ Item {
 			root._exitX = 0;
 			// Back from the edge, as framer replays the initial state on mount.
 			sxS.jump(0);
-			syS.jump(Tokens.osd.enter.scaleYFrom);
+			syS.jump(Render.macMotion ? 0 : Tokens.osd.enter.scaleYFrom);
 			opS.jump(0);
-			blS.jump(Tokens.osd.enter.blur);
+			blS.jump(Render.macMotion ? 0 : Tokens.osd.enter.blur);
 			sxS.target = 1; syS.target = 1; opS.target = 1; blS.target = 0;
 			sxS.settled = false; syS.settled = false; opS.settled = false; blS.settled = false;
 			contentIn.restart();
@@ -109,23 +109,23 @@ Item {
 		id: leave
 		readonly property var curve: Tokens.osd.exit.ease.concat([1, 1])
 		NumberAnimation { target: sxS; property: "value"; to: 0; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
-		NumberAnimation { target: syS; property: "value"; to: Tokens.osd.exit.scaleY; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
+		NumberAnimation { target: syS; property: "value"; to: Render.macMotion ? 0 : Tokens.osd.exit.scaleY; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
 		NumberAnimation { target: opS; property: "value"; to: 0; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
-		NumberAnimation { target: blS; property: "value"; to: Tokens.osd.exit.blur; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
+		NumberAnimation { target: blS; property: "value"; to: Render.macMotion ? 0 : Tokens.osd.exit.blur; duration: Tokens.osd.exit.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leave.curve }
 	}
 
 	ParallelAnimation {
 		id: leaveMixer
 		readonly property var curve: Tokens.osd.exit.ease.concat([1, 1])
-		NumberAnimation { target: root; property: "_exitX"; to: Tokens.osd.exitMixer.x; duration: Tokens.osd.exitMixer.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leaveMixer.curve }
+		NumberAnimation { target: root; property: "_exitX"; to: Render.macMotion ? -6 : Tokens.osd.exitMixer.x; duration: Tokens.osd.exitMixer.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leaveMixer.curve }
 		NumberAnimation { target: opS; property: "value"; to: 0; duration: Tokens.osd.exitMixer.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leaveMixer.curve }
-		NumberAnimation { target: blS; property: "value"; to: Tokens.osd.exitMixer.blur; duration: Tokens.osd.exitMixer.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leaveMixer.curve }
+		NumberAnimation { target: blS; property: "value"; to: Render.macMotion ? 0 : Tokens.osd.exitMixer.blur; duration: Tokens.osd.exitMixer.ms; easing.type: Easing.BezierSpline; easing.bezierCurve: leaveMixer.curve }
 	}
 
 	Item {
 		id: card
 		objectName: "motion"
-		readonly property real sx: sxS.value
+		readonly property real sx: Render.macMotion ? 0.96 + 0.04 * sxS.value : sxS.value
 		width: surface.width
 		height: surface.height
 		opacity: Math.max(0, Math.min(1, opS.value))
@@ -134,11 +134,11 @@ Item {
 			Scale {
 				origin.x: root._left ? 0 : card.width
 				origin.y: card.height / 2
-				xScale: Math.max(0, sxS.value)
-				yScale: Math.max(0, syS.value)
+				xScale: Math.max(0, card.sx)
+				yScale: Math.max(0, Render.macMotion ? 0.96 + 0.04 * syS.value : syS.value)
 			},
 			Translate {
-				x: root._left ? root._exitX : -root._exitX
+				x: (root._left ? 1 : -1) * (root._exitX - (Render.macMotion ? 6 * (1 - Math.max(0, opS.value)) : 0))
 			}
 		]
 		// filter: blur(), only while it moves.
@@ -294,7 +294,7 @@ Item {
 						color: root.theme.text
 						opacity: root.showingPercent ? 1 : 0
 						font.family: Fonts.familyFor(Font.Bold)
-						font.pixelSize: Tokens.osd.action.text
+						font.pixelSize: Fonts.px(Tokens.osd.action.text)
 						font.weight: Font.Bold
 						font.letterSpacing: Tokens.osd.action.tracking
 						Behavior on opacity { Swap {} }
@@ -367,19 +367,20 @@ Item {
 						text: "No apps with audio"
 						color: root.theme.textMuted
 						font.family: Fonts.familyFor(Font.Medium)
-						font.pixelSize: Tokens.osd.mixer.empty
+						font.pixelSize: Fonts.px(Tokens.osd.mixer.empty)
 						font.weight: Font.Medium
 					}
 
 					Flickable {
 						id: list
+						ScrollGlide { flickable: list }
 						x: Tokens.osd.mixer.pad.side
 						y: Tokens.osd.mixer.pad.top
 						width: parent.width - Tokens.osd.mixer.pad.side * 2
 						height: parent.height - Tokens.osd.mixer.pad.top - Tokens.osd.mixer.pad.bottom
 						contentHeight: grid.height
 						clip: true
-						interactive: contentHeight > height
+						interactive: false
 						boundsBehavior: Flickable.StopAtBounds
 
 						Grid {

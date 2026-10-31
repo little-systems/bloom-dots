@@ -9,6 +9,8 @@ import QtQuick
 // The first use loads the files; loaded here, not through fontconfig, they
 // measure as Chromium draws them.
 QtObject {
+	// Cancel the enclosing geometry scale so text has an independent scale.
+	function px(base) { return base * Render.fontScale / Math.max(0.1, Render.uiScale); }
 	// bloom-font-family, set by shell.qml: replaces Bloom's own font everywhere.
 	property string override: ""
 	readonly property string family: override || "Bloom Inter"

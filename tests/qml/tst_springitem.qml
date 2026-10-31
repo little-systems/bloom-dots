@@ -1,9 +1,12 @@
 import QtQuick
 import QtTest
 import "../../shell/common"
+import "../../shell/common/render"
 
 TestCase {
 	name: "Spring"
+	function init() { Render.animationStyle = "bloom"; Render.reduceMotion = false; }
+	function cleanup() { Render.animationStyle = "macos"; Render.reduceMotion = false; }
 
 	Component {
 		id: springComponent
@@ -14,6 +17,28 @@ TestCase {
 		const s = createTemporaryObject(springComponent, null, props);
 		verify(s !== null);
 		return s;
+	}
+
+	function test_macStyleSettlesWithoutOvershooting() {
+		Render.animationStyle = "macos";
+		const s = make({ stiffness: 500, damping: 20, initial: 0, target: 100 });
+		let previous = 0;
+		for (let i = 0; i < 120; i++) {
+			s.step(0.016);
+			verify(s.value >= previous && s.value <= 100);
+			previous = s.value;
+		}
+		verify(s.settled);
+	}
+
+	function test_reducedMotionSkipsInitialAndActiveMovement() {
+		Render.reduceMotion = true;
+		const s = make({ initial: 0, target: 100 });
+		compare(s.value, 100); verify(s.settled);
+		Render.reduceMotion = false;
+		s.target = 200; s.step(0.016); verify(!s.settled);
+		Render.reduceMotion = true;
+		compare(s.value, 200); verify(s.settled);
 	}
 
 	function test_startsAtTargetByDefault() {

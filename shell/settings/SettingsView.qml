@@ -82,7 +82,11 @@ Rectangle {
 	readonly property var _active: root._tabs.find(t => t.id === root.tab)
 	readonly property bool _system: ["general", "appearance", "notch", "dock", "overlays", "about"].indexOf(root.tab) < 0
 
-	onTabChanged: page.contentY = 0
+	OpeningMotion { id: pageEntrance; initial: 1; target: 1 }
+	onTabChanged: {
+		page.contentY = 0;
+		pageEntrance.jump(Render.macMotion && !Render.reduceMotion ? 0 : 1);
+	}
 
 	function _open(hit) {
 		root.tab = hit.tab;
@@ -138,7 +142,7 @@ Rectangle {
 			text: "Settings"
 			color: root.theme.textMuted
 			font.family: Fonts.uiFor(Font.Bold)
-			font.pixelSize: Tokens.settings.title.size
+			font.pixelSize: Fonts.px(Tokens.settings.title.size)
 			font.weight: Font.Bold
 			font.letterSpacing: -0.1
 			font.capitalization: Font.AllUppercase
@@ -211,20 +215,20 @@ Rectangle {
 					text: "Bloom"
 					color: root.theme.text
 					font.family: Fonts.uiFor(Font.Bold)
-					font.pixelSize: Tokens.settings.sidebar.intro.title
+					font.pixelSize: Fonts.px(Tokens.settings.sidebar.intro.title)
 					font.weight: Font.Bold
 					font.letterSpacing: -0.6
-					height: 20
-					lineHeight: 20
+					height: Fonts.px(24)
+					lineHeight: Fonts.px(24)
 					lineHeightMode: Text.FixedHeight
 				}
 				Text {
 					text: "Make it yours"
 					color: root.theme.textMuted
 					font.family: Fonts.ui
-					font.pixelSize: Tokens.settings.sidebar.intro.sub
-					height: 12
-					lineHeight: 12
+					font.pixelSize: Fonts.px(Tokens.settings.sidebar.intro.sub)
+					height: Fonts.px(16)
+					lineHeight: Fonts.px(16)
 					lineHeightMode: Text.FixedHeight
 				}
 			}
@@ -247,7 +251,7 @@ Rectangle {
 				text: "Nothing found"
 				color: root.theme.textMuted
 				font.family: Fonts.ui
-				font.pixelSize: 12
+				font.pixelSize: Fonts.px(14)
 			}
 			Repeater {
 				model: root._hits
@@ -274,14 +278,14 @@ Rectangle {
 							elide: Text.ElideRight
 							color: root.theme.text
 							font.family: Fonts.uiFor(Font.Medium)
-							font.pixelSize: 12
+							font.pixelSize: Fonts.px(14)
 							font.weight: Font.Medium
 						}
 						Text {
 							text: root._tabs.find(t => t.id === hit.modelData.tab)?.label ?? ""
 							color: root.theme.textMuted
 							font.family: Fonts.ui
-							font.pixelSize: 10
+							font.pixelSize: Fonts.px(12)
 						}
 					}
 					HoverHandler { id: hitHover; cursorShape: Qt.PointingHandCursor }
@@ -304,7 +308,7 @@ Rectangle {
 						text: tabGroup.modelData.label
 						color: root.theme.textMuted
 						font.family: Fonts.uiFor(Font.DemiBold)
-						font.pixelSize: 10
+						font.pixelSize: Fonts.px(12)
 						font.weight: Font.DemiBold
 						font.capitalization: Font.AllUppercase
 						font.letterSpacing: 0.5
@@ -352,7 +356,7 @@ Rectangle {
 									text: tabItem.modelData.label
 									color: root.theme.text
 									font.family: Fonts.uiFor(tabItem.active ? Font.DemiBold : Font.Medium)
-									font.pixelSize: Tokens.settings.tab.text
+									font.pixelSize: Fonts.px(Tokens.settings.tab.text)
 									font.weight: tabItem.active ? Font.DemiBold : Font.Medium
 								}
 							}
@@ -391,6 +395,8 @@ Rectangle {
 
 			Column {
 				id: pageColumn
+				opacity: pageEntrance.progress
+				transform: Translate { y: pageEntrance.rise }
 				x: Tokens.settings.content.h
 				y: Tokens.settings.content.top
 				width: parent.width - 2 * Tokens.settings.content.h
@@ -420,7 +426,7 @@ Rectangle {
 						wrapMode: Text.Wrap
 						color: root.theme.text
 						font.family: Fonts.ui
-						font.pixelSize: 12
+						font.pixelSize: Fonts.px(14)
 					}
 					SvgIcon {
 						x: parent.width - width - 12
@@ -449,11 +455,11 @@ Rectangle {
 						text: root._active.label
 						color: root.theme.text
 						font.family: Fonts.uiFor(Font.Bold)
-						font.pixelSize: Tokens.settings.heading.title
+						font.pixelSize: Fonts.px(Tokens.settings.heading.title)
 						font.weight: 680
 						font.letterSpacing: -0.8
-						height: 28.6
-						lineHeight: 28.6
+						height: Fonts.px(34)
+						lineHeight: Fonts.px(34)
 						lineHeightMode: Text.FixedHeight
 					}
 					Text {
@@ -461,9 +467,9 @@ Rectangle {
 						text: root._active.copy
 						color: root.theme.textMuted
 						font.family: Fonts.ui
-						font.pixelSize: Tokens.settings.heading.sub
-						height: 16.8
-						lineHeight: 16.8
+						font.pixelSize: Fonts.px(Tokens.settings.heading.sub)
+						height: Fonts.px(18)
+						lineHeight: Fonts.px(18)
 						lineHeightMode: Text.FixedHeight
 					}
 				}
@@ -559,7 +565,7 @@ Rectangle {
 					text: "Reset Bloom to Defaults"
 					color: root.theme.text
 					font.family: Fonts.uiFor(Font.DemiBold)
-					font.pixelSize: 14
+					font.pixelSize: Fonts.px(16)
 					font.weight: Font.DemiBold
 				}
 				Text {
@@ -568,7 +574,7 @@ Rectangle {
 					wrapMode: Text.Wrap
 					color: root.theme.textMuted
 					font.family: Fonts.ui
-					font.pixelSize: 12
+					font.pixelSize: Fonts.px(14)
 				}
 				Row {
 					anchors.right: parent.right
@@ -597,7 +603,7 @@ Rectangle {
 								text: confirmButton.modelData.label
 								color: confirmButton.ok ? "white" : root.theme.text
 								font.family: Fonts.uiFor(Font.Medium)
-								font.pixelSize: 12
+								font.pixelSize: Fonts.px(14)
 								font.weight: Font.Medium
 							}
 							HoverHandler { cursorShape: Qt.PointingHandCursor }

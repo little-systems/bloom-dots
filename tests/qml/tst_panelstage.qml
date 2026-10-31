@@ -66,7 +66,7 @@ Item {
 			compare(stage.item.color, Qt.color("blue"));
 			wait(50);
 			verify(old.opacity > 0 && old.opacity < 1, `fading at ${old.opacity}`);
-			verify(old.blur > 0, "blurring out");
+			compare(old.blur, 0, "the default crossfade stays sharp");
 			tryVerify(() => slots().length === 1, 500, "gone after 0.1 s");
 			compare(slots()[0].x, 0);
 		}

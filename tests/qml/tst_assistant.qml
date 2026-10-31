@@ -13,6 +13,14 @@ TestCase {
 		m = Logic.withDelta(m, "lo");
 		compare(m, [{ role: "user", text: "hi" }, { role: "model", text: "Hello" }]);
 	}
+	function test_streamKeepsIdentityAndRetryReplacesTheLastTurn() {
+		let m = [{ id: "u", role: "user", text: "hi" }];
+		m = Logic.withDelta(m, "Hel", "a"); m = Logic.withDelta(m, "lo", "unused");
+		compare(m[1].id, "a"); compare(m[1].text, "Hello");
+		compare(Logic.retryTurn(m), { before: [], text: "hi" });
+		compare(Logic.contents(m)[1], { role: "model", parts: [{ text: "Hello" }] });
+	}
+
 	function test_errors() {
 		verify(Logic.errorText("no-key").indexOf("Settings") >= 0);
 		compare(Logic.errorText("nonsense"), Logic.errorText("server"));

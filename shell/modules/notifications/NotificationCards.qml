@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../common"
 import Quickshell
 import Quickshell.Wayland
 import qs.services
@@ -32,6 +33,8 @@ PanelWindow {
 
 	Flickable {
 		id: stack
+		interactive: false
+		ScrollGlide { flickable: stack }
 		x: 8 * win.uiScale
 		y: 64 * win.uiScale
 		width: win.width - 16 * win.uiScale
@@ -47,6 +50,10 @@ PanelWindow {
 			model: Logic.groups(win.hub.cards)
 			delegate: Rectangle {
 				id: card
+				OpeningMotion { id: arrival; initial: Render.macMotion ? 0 : 1; target: 1 }
+				opacity: arrival.progress
+				scale: arrival.zoom
+				transform: Translate { y: arrival.rise }
 				required property var modelData
 				readonly property var latest: modelData.items[0]
 				width: stack.width
@@ -64,7 +71,7 @@ PanelWindow {
 					textFormat: Text.PlainText
 					elide: Text.ElideRight
 					color: Theme.textMuted
-					font.pixelSize: 11 * win.uiScale
+					font.pixelSize: Fonts.px(11 * win.uiScale)
 						MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: card.modelData.items.length > 1; onClicked: win.hub.openHistory() }
 				}
 				Text {
@@ -77,7 +84,7 @@ PanelWindow {
 					elide: Text.ElideRight
 					color: Theme.text
 					font.bold: true
-					font.pixelSize: 13 * win.uiScale
+					font.pixelSize: Fonts.px(13 * win.uiScale)
 				}
 				Text {
 					font.family: Fonts.family
@@ -90,7 +97,7 @@ PanelWindow {
 					wrapMode: Text.Wrap
 					elide: Text.ElideRight
 					color: Theme.textMuted
-					font.pixelSize: 11 * win.uiScale
+					font.pixelSize: Fonts.px(11 * win.uiScale)
 				}
 				Rectangle {
 					x: parent.width - 66 * win.uiScale
@@ -111,7 +118,7 @@ PanelWindow {
 						visible: !cardImage.visible
 						text: card.modelData.app.slice(0, 1).toUpperCase()
 						textFormat: Text.PlainText
-						color: Theme.text; font.pixelSize: 20 * win.uiScale
+						color: Theme.text; font.pixelSize: Fonts.px(20 * win.uiScale)
 					}
 				}
 				Text {
@@ -122,7 +129,7 @@ PanelWindow {
 					anchors.topMargin: 7 * win.uiScale
 					text: "×"
 					color: Theme.text
-					font.pixelSize: 17 * win.uiScale
+					font.pixelSize: Fonts.px(17 * win.uiScale)
 					MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.hub.dismiss(card.latest.id) }
 				}
 				Row {
@@ -138,7 +145,7 @@ PanelWindow {
 							height: 19 * win.uiScale
 							radius: 5 * win.uiScale
 							color: Theme.groupBg
-							Text { font.family: Fonts.family; id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: 10 * win.uiScale }
+							Text { font.family: Fonts.family; id: label; anchors.centerIn: parent; text: actionButton.modelData.text; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.pixelSize: Fonts.px(10 * win.uiScale)}
 							MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: win.hub.invoke(card.latest.id, actionButton.modelData.identifier) }
 						}
 					}

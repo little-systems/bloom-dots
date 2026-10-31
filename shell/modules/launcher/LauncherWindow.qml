@@ -39,6 +39,12 @@ PanelWindow {
 		busy: Assistant.busy
 		chatError: Assistant.error
 		onChatSubmitted: text => Assistant.ask(text)
+		onChatSettingsRequested: Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/open-settings.sh"), Quickshell.shellPath("settings-app.qml"), "ai"])
+		onChatStopRequested: Assistant.stop()
+		onChatClearRequested: Assistant.clear()
+		onChatRetryRequested: Assistant.retry()
+		onChatCopyRequested: text => Quickshell.execDetached(["wl-copy", "--", text])
+		onChatLinkRequested: url => Qt.openUrlExternally(url)
 		onQueryEdited: text => Launcher.setQuery(text)
 		onChosen: item => Launcher.accept(item)
 		onDismissed: Launcher.hide()

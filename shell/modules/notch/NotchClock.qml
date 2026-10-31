@@ -71,7 +71,7 @@ Item {
 		opacity: 1 - flip.value
 		visible: opacity > 0
 		font.family: Fonts.familyFor(Font.Medium)
-		font.pixelSize: Tokens.type.clock.size
+		font.pixelSize: Fonts.px(Tokens.type.clock.size)
 		font.weight: Font.Medium
 		font.letterSpacing: Tokens.type.clock.tracking
 		transform: Scale {
@@ -117,7 +117,7 @@ Item {
 			// .timer-finished { color: #ff453a !important }
 			color: root.timerFinished ? Tokens.clock.red : root._timeColor
 			font.family: Fonts.familyFor(Font.Medium)
-			font.pixelSize: Tokens.type.clock.size
+			font.pixelSize: Fonts.px(Tokens.type.clock.size)
 			font.weight: Font.Medium
 			font.letterSpacing: Tokens.type.clock.tracking
 		}

@@ -34,7 +34,7 @@ Rectangle {
 		text: root.title
 		color: root.theme.text
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: 13
+		font.pixelSize: Fonts.px(13)
 		font.weight: Font.DemiBold
 	}
 	MouseArea {

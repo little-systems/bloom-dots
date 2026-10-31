@@ -22,7 +22,7 @@ Item {
 		text: root.text
 		color: pointer.hovered ? root.theme.text : root.theme.textMuted
 		font.family: Fonts.family
-		font.pixelSize: Tokens.qp.footer.text
+		font.pixelSize: Fonts.px(Tokens.qp.footer.text)
 	}
 
 	PointerArea {

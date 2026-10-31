@@ -88,15 +88,17 @@ Item {
 			mouseDrag(host, p.x, p.y, 100, 40);
 			verify(c.x > x, "moved");
 		}
-		function test_opensInBothDirections() {
+		function test_opensWithoutResizingContent() {
 			const v = createTemporaryObject(viewComponent, host, { open: false });
 			const c = findChild(v, "card:Notes");
-			verify(c.width < c.fullWidth);
-			verify(c.height < c.fullHeight);
+			compare(c.width, c.fullWidth);
+			compare(c.height, c.fullHeight);
+			verify(c.scale < 1);
 			verify(!v.shown);
 			v.open = true;
 			tryCompare(c, "width", c.fullWidth, 2000);
 			tryCompare(c, "height", c.fullHeight, 2000);
+			tryCompare(c, "scale", 1, 2000);
 		}
 	}
 }

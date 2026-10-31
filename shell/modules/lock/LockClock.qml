@@ -81,7 +81,7 @@ Item {
 			text: parent.text
 			color: root.theme.text
 			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: Tokens.lock.clock.date.text
+			font.pixelSize: Fonts.px(Tokens.lock.clock.date.text)
 			font.weight: Font.DemiBold
 		}
 	}
@@ -161,7 +161,7 @@ Item {
 				text: "Locked"
 				color: root.theme.text
 				font.family: Fonts.familyFor(Font.Medium)
-				font.pixelSize: Tokens.lock.clock.tag.text
+				font.pixelSize: Fonts.px(Tokens.lock.clock.tag.text)
 				font.weight: Font.Medium
 				anchors.verticalCenter: parent.verticalCenter
 			}

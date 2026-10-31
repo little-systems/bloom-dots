@@ -39,7 +39,7 @@ Item {
 		text: root.text
 		color: root.color
 		font.family: Fonts.familyFor(root.weight)
-		font.pixelSize: Math.ceil(root.pixelSize)
+		font.pixelSize: Fonts.px(Math.ceil(root.pixelSize))
 		font.weight: root.weight
 		font.letterSpacing: root.letterSpacing / root._k
 		lineHeight: root.lineHeight

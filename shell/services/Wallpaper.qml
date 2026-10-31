@@ -21,7 +21,6 @@ Singleton {
 	property bool opened: false
 	property var items: []
 	property bool _pickRandom: false
-	readonly property string _themeScript: Quickshell.shellPath("scripts/adaptive-theme.sh")
 
 	function set(path) {
 		Settings.set("bloom-wallpaper", path);
@@ -42,15 +41,12 @@ Singleton {
 		colors.running = false;
 		colors.command = ["matugen", "image", root.path, "--dry-run", "--json", "hex", "--mode", "dark", "--source-color-index", "0"];
 		colors.running = true;
-		Quickshell.execDetached(["bash", root._themeScript, "apply", root.path]);
 	}
 	function _adaptiveChanged() {
 		if (root.adaptive) root._refreshAccent();
-		else Quickshell.execDetached(["bash", root._themeScript, "restore"]);
 	}
 	onPathChanged: root._refreshAccent()
 	onAdaptiveChanged: root._adaptiveChanged()
-	// A stale backup means Adaptive ended while the shell was off.
 	Component.onCompleted: root._adaptiveChanged()
 
 	FileView {

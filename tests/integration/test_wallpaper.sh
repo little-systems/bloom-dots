@@ -40,7 +40,7 @@ wait_for "the accent from matugen" has_accent
 assert_eq "$(ipc wallpaper state | jq -r .path)" "$W/a.png" "the path sticks"
 grep -q 'bloom-wallpaper"' "$XDG_CONFIG_HOME/bloom/settings.json" || wait_for "the setting to save" grep -q "a.png" "$XDG_CONFIG_HOME/bloom/settings.json"
 pass "setting a wallpaper saves it and themes the shell"
-themed() { grep -q -- "--config" "$TEST_TMP/matugen-calls"; }
+themed() { grep -q 'accent_color #336699;' "$BLOOM_THEME_HOME/.config/gtk-4.0/gtk.css"; }
 wait_for "the apps to be themed" themed
 pass "Adaptive themes other apps from the wallpaper"
 assert_eq "$(ipc wallpaper random)" "ok" "random"
@@ -60,8 +60,14 @@ wait_for "mpvpaper to start" test -f "$TEST_TMP/mpvpaper-started"
 pass "a video runs through mpvpaper"
 
 printf '{"bloom-enabled-modules":["wallpaper"],"bloom-weather-enabled":false,"bloom-theme-mode":"dark"}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
-wait_for "the app themes to be restored" test -f "$XDG_STATE_HOME/bloom/app-themes/manifest.restored"
-pass "leaving Adaptive restores the app themes"
+dark_apps() { grep -q 'window_bg_color #000000;' "$BLOOM_THEME_HOME/.config/gtk-4.0/gtk.css"; }
+wait_for "the selected Dark palette" dark_apps
+[[ ! -e "$XDG_STATE_HOME/bloom/app-themes/manifest.restored" ]] || fail 'leaving Adaptive restored stale app themes'
+pass "leaving Adaptive applies the selected Dark palette to apps"
+assert_eq "$(ipc settings set bloom-theme-mode light)" "ok" "select Light"
+light_apps() { grep -q 'window_bg_color #f5f5f7;' "$BLOOM_THEME_HOME/.config/gtk-4.0/gtk.css"; }
+wait_for "the selected Light palette" light_apps
+pass "apps follow Light without changing the wallpaper"
 
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|clip.mp4"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

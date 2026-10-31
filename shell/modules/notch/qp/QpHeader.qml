@@ -32,7 +32,7 @@ Item {
 		color: root.theme.text
 		elide: Text.ElideRight
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: Tokens.qp.header.title
+		font.pixelSize: Fonts.px(Tokens.qp.header.title)
 		font.weight: Font.DemiBold
 	}
 

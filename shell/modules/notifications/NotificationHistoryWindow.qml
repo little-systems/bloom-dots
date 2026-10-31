@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import "../../common"
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Wayland
@@ -23,15 +24,22 @@ PanelWindow {
 	anchors.right: true
 	implicitHeight: Math.min(Math.ceil(620 * uiScale), modelData.height)
 	color: "transparent"
-	visible: hub.historyOpen && targetScreen
+	visible: targetScreen && (hub.historyOpen || (Render.macMotion && entrance.progress > 0.001))
 	exclusiveZone: 0
 	WlrLayershell.namespace: "bloom:notification-history"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 	mask: Region { item: win.visible ? sheet : null }
 
+	OpeningMotion { id: entrance; initial: 0; target: hub.historyOpen ? 1 : 0 }
+
 	Rectangle {
 		id: sheet
+		opacity: Render.macMotion ? entrance.progress : 1
+		scale: entrance.zoom
+		transformOrigin: Item.Top
+		transform: Translate { y: entrance.rise }
+		enabled: win.hub.historyOpen
 		focus: win.visible
 		Keys.onEscapePressed: win.hub.closeHistory()
 		width: Math.min(420 * win.uiScale, win.width - 16 * win.uiScale)
@@ -45,7 +53,7 @@ PanelWindow {
 		Text {
 			font.family: Fonts.familyFor(Font.Bold)
 			x: 16 * win.uiScale; y: 12 * win.uiScale
-			text: "Notifications"; color: Theme.text; font.bold: true; font.pixelSize: 16 * win.uiScale
+			text: "Notifications"; color: Theme.text; font.bold: true; font.pixelSize: Fonts.px(16 * win.uiScale)
 		}
 		Button {
 			id: closeButton
@@ -54,7 +62,7 @@ PanelWindow {
 			text: "Close"
 			focus: win.visible
 			background: Rectangle { color: closeButton.activeFocus ? Theme.groupBg : "transparent"; radius: 5 }
-			contentItem: Text { text: closeButton.text; color: Theme.textMuted; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 12 * win.uiScale }
+			contentItem: Text { text: closeButton.text; color: Theme.textMuted; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: Fonts.px(12 * win.uiScale)}
 			onClicked: win.hub.closeHistory()
 		}
 		Button {
@@ -63,7 +71,7 @@ PanelWindow {
 			width: 88 * win.uiScale; height: 26 * win.uiScale
 			text: "Mark read"
 			background: Rectangle { color: readButton.activeFocus ? Theme.groupBg : "transparent"; radius: 5 }
-			contentItem: Text { text: readButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 11 * win.uiScale }
+			contentItem: Text { text: readButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: Fonts.px(11 * win.uiScale)}
 			onClicked: win.hub.markRead()
 		}
 		Button {
@@ -72,7 +80,7 @@ PanelWindow {
 			width: 94 * win.uiScale; height: 26 * win.uiScale
 			text: "Clear history"
 			background: Rectangle { color: clearButton.activeFocus ? Theme.groupBg : "transparent"; radius: 5 }
-			contentItem: Text { text: clearButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 11 * win.uiScale }
+			contentItem: Text { text: clearButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: Fonts.px(11 * win.uiScale)}
 			onClicked: win.hub.clear()
 		}
 		Button {
@@ -81,11 +89,13 @@ PanelWindow {
 			width: 94 * win.uiScale; height: 26 * win.uiScale
 			text: Settings.values["bloom-notifications-dnd"] ? "DND on" : "DND off"
 			background: Rectangle { color: dndButton.activeFocus ? Theme.groupBg : "transparent"; radius: 5 }
-			contentItem: Text { text: dndButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: 11 * win.uiScale }
+			contentItem: Text { text: dndButton.text; color: Theme.accent; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter; font.pixelSize: Fonts.px(11 * win.uiScale)}
 			onClicked: Settings.set("bloom-notifications-dnd", !Settings.values["bloom-notifications-dnd"])
 		}
 		ListView {
 			id: list
+			interactive: false
+			ScrollGlide { flickable: list }
 			x: 10 * win.uiScale; y: 68 * win.uiScale
 			width: parent.width - 20 * win.uiScale
 			height: parent.height - 78 * win.uiScale
@@ -100,8 +110,8 @@ PanelWindow {
 				radius: 9 * win.uiScale
 				color: Theme.groupBg
 				Rectangle { width: 5 * win.uiScale; height: parent.height; radius: 2; color: item.modelData.read ? "transparent" : Theme.accent }
-				Text { font.family: Fonts.familyFor(Font.Bold); x: 14 * win.uiScale; y: 7 * win.uiScale; width: parent.width - 28 * win.uiScale; text: item.modelData.app + " · " + item.modelData.summary; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.bold: true; font.pixelSize: 12 * win.uiScale }
-				Text { font.family: Fonts.family; x: 14 * win.uiScale; y: 28 * win.uiScale; width: parent.width - 28 * win.uiScale; height: 32 * win.uiScale; text: item.modelData.body; textFormat: Text.PlainText; wrapMode: Text.Wrap; elide: Text.ElideRight; color: Theme.textMuted; font.pixelSize: 11 * win.uiScale }
+				Text { font.family: Fonts.familyFor(Font.Bold); x: 14 * win.uiScale; y: 7 * win.uiScale; width: parent.width - 28 * win.uiScale; text: item.modelData.app + " · " + item.modelData.summary; textFormat: Text.PlainText; elide: Text.ElideRight; color: Theme.text; font.bold: true; font.pixelSize: Fonts.px(12 * win.uiScale)}
+				Text { font.family: Fonts.family; x: 14 * win.uiScale; y: 28 * win.uiScale; width: parent.width - 28 * win.uiScale; height: 32 * win.uiScale; text: item.modelData.body; textFormat: Text.PlainText; wrapMode: Text.Wrap; elide: Text.ElideRight; color: Theme.textMuted; font.pixelSize: Fonts.px(11 * win.uiScale)}
 				Row {
 					x: 14 * win.uiScale; y: 61 * win.uiScale; spacing: 8 * win.uiScale
 					Repeater {
@@ -113,7 +123,7 @@ PanelWindow {
 							width: Math.min(100 * win.uiScale, implicitWidth)
 							height: 18 * win.uiScale
 							background: Rectangle { color: actionLabel.activeFocus ? Theme.bgExpanded : "transparent"; radius: 4 }
-							contentItem: Text { text: actionLabel.text; textFormat: Text.PlainText; color: Theme.accent; font.pixelSize: 10 * win.uiScale }
+							contentItem: Text { text: actionLabel.text; textFormat: Text.PlainText; color: Theme.accent; font.pixelSize: Fonts.px(10 * win.uiScale)}
 							onClicked: win.hub.invokeHistory(item.modelData.key, item.modelData.id, actionLabel.modelData.identifier)
 						}
 					}

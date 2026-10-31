@@ -38,7 +38,7 @@ Column {
 			text: "Bloom"
 			color: root.theme.text
 			font.family: Fonts.syne
-			font.pixelSize: Tokens.settings.about.title
+			font.pixelSize: Fonts.px(Tokens.settings.about.title)
 			font.weight: Font.ExtraBold
 			font.letterSpacing: -0.035 * Tokens.settings.about.title
 		}
@@ -56,7 +56,7 @@ Column {
 				text: "Version " + root.version
 				color: root.theme.textMuted
 				font.family: Fonts.uiFor(Font.DemiBold)
-				font.pixelSize: Tokens.settings.about.version
+				font.pixelSize: Fonts.px(Tokens.settings.about.version)
 				font.weight: Font.DemiBold
 				font.letterSpacing: 0.08 * Tokens.settings.about.version
 				font.capitalization: Font.AllUppercase

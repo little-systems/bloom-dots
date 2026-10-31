@@ -41,7 +41,7 @@ Item {
 		text: root.text
 		color: root.on ? root.theme.bgExpanded : pointer.hovered ? root.theme.text : root.theme.textMuted
 		font.family: Fonts.familyFor(Font.DemiBold)
-		font.pixelSize: Tokens.qp.chip.text
+		font.pixelSize: Fonts.px(Tokens.qp.chip.text)
 		font.weight: Font.DemiBold
 
 		Behavior on color {

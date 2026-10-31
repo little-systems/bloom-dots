@@ -189,7 +189,7 @@ Column {
 				color: root.theme.text
 				clip: true
 				font.family: Fonts.ui
-				font.pixelSize: 12
+				font.pixelSize: Fonts.px(14)
 				onTextEdited: {
 					root.set("bloom-weather-city", text);
 					root.cityQueried(text);
@@ -256,7 +256,7 @@ Column {
 								textFormat: Text.PlainText
 								color: root.theme.text
 								font.family: Fonts.uiFor(Font.Medium)
-								font.pixelSize: 12
+								font.pixelSize: Fonts.px(14)
 								font.weight: Font.Medium
 							}
 							Text {
@@ -266,7 +266,7 @@ Column {
 								textFormat: Text.PlainText
 								color: root.theme.textMuted
 								font.family: Fonts.ui
-								font.pixelSize: 10
+								font.pixelSize: Fonts.px(12)
 							}
 							HoverHandler { id: cityHover; cursorShape: Qt.PointingHandCursor }
 							TapHandler { onTapped: root._pick(cityItem.modelData) }

@@ -8,6 +8,7 @@ import "../../common/render"
 // percentage while the volume changes.
 Item {
 	id: root
+	readonly property bool ownsScrollWheel: true
 
 	property var session: ({ id: 0, name: "", icon: "", volume: 0, muted: false })
 	property QtObject theme
@@ -115,7 +116,7 @@ Item {
 					text: (root.session.name || "?").charAt(0).toUpperCase()
 					color: root.theme.text
 					font.family: Fonts.familyFor(Font.Bold)
-					font.pixelSize: Tokens.osd.mixer.fallbackText
+					font.pixelSize: Fonts.px(Tokens.osd.mixer.fallbackText)
 					font.weight: Font.Bold
 				}
 			}
@@ -127,7 +128,7 @@ Item {
 			color: root.theme.text
 			opacity: root._flash ? 1 : 0
 			font.family: Fonts.familyFor(Font.Bold)
-			font.pixelSize: Tokens.osd.mixer.percentText
+			font.pixelSize: Fonts.px(Tokens.osd.mixer.percentText)
 			font.weight: Font.Bold
 			font.letterSpacing: Tokens.osd.action.tracking
 			font.features: { "tnum": 1 }

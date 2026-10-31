@@ -122,7 +122,7 @@ Item {
 						text: root.media.artist
 						color: root.textMuted
 						font.family: Fonts.familyFor(Font.Normal)
-						font.pixelSize: 12
+						font.pixelSize: Fonts.px(12)
 						font.weight: Font.Normal
 					}
 				}

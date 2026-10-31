@@ -6,9 +6,10 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 
 | Key | Type | Default | Allowed | Description |
 |---|---|---|---|---|
+| `bloom-animation-style` | enum | `"macos"` | `macos`, `bloom` | Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement. |
 | `bloom-theme-mode` | enum | `"dark"` | `dark`, `light`, `custom`, `adaptive` | Theme mode. Adaptive follows the wallpaper; until wallpaper theming exists it falls back to dark. |
 | `bloom-theme-color` | color | `"#007aff"` | `#rgb` or `#rrggbb` | Accent colour for the custom theme (#rgb or #rrggbb). |
-| `bloom-theme-opacity` | number | `0.8` | 0.1 to 1 | Surface opacity. Hovered and open surfaces add 0.12. |
+| `bloom-theme-opacity` | number | `0.8` | 0.1 to 1 | Opacity of Bloom surfaces, including open panels. Application opacity is unchanged. |
 | `bloom-theme-saturation` | number | `0.5` | 0 to 1 | Background saturation for the custom and adaptive themes. |
 | `bloom-theme-brightness` | number | `0.15` | 0 to 1 | Background lightness for the custom and adaptive themes. Above 0.55 the text turns dark. |
 | `bloom-enabled-modules` | list | `[]` | `notch`, `dock`, `osd`, `notifications`, `launcher`, `overview`, `session`, `lock`, `polkit`, `tray`, `regiontools`, `wallpaper`, `cheatsheet`, `osk`, `overlay` | Bloom surfaces to run. Anything not listed is left to another shell (e.g. illogical-impulse). |
@@ -54,6 +55,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-notifications-dnd` | bool | `false` | `true`, `false` | Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear. |
 | `bloom-notifications-timeout` | number | `7000` | 1000 to 60000 | Default notification card timeout in milliseconds when the sender does not specify one. |
 | `bloom-notifications-history-limit` | number | `200` | 0 to 500 | Maximum number of non-transient notifications retained in local history. |
+| `bloom-font-scale` | number | `1.15` | 0.8 to 1.6 | Bloom text size, independent of UI geometry scale. |
 | `bloom-scale` | number | `1.15` | 0.8 to 1.3 | Size of Bloom's surfaces. |
 | `bloom-music-mode-enabled` | bool | `true` | `true`, `false` | Show playing media in the notch: album art, visualizer and the music player. |
 | `bloom-music-compact-notch` | bool | `true` | `true`, `false` | Show playing media in the collapsed notch. When off, music appears only when you hover the notch. |
@@ -68,7 +70,6 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |
 | `bloom-timer-sound-enabled` | bool | `true` | `true`, `false` | Play a chime when the timer finishes. |
 | `bloom-battery-sound-enabled` | bool | `true` | `true`, `false` | Play a sound when the battery reaches the alert level. |
-| `bloom-translucent-apps` | bool | `false` | `true`, `false` | Apply Background Opacity and blur to app windows and the terminal. |
 | `bloom-font-family` | string | `""` | text, up to 200 characters | Font for Bloom's surfaces. Empty uses Bloom's own. |
 | `bloom-translate-to` | string | `"en"` | text, up to 20 characters | Language translations go to, as a code such as en or hi. Text is sent to Google. |
 | `bloom-night-light` | bool | `false` | `true`, `false` | Warm the screen's colours. |

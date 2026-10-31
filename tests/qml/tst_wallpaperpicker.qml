@@ -55,7 +55,7 @@ Item {
 		function test_clickChooses() {
 			const v = make();
 			const chosen = spy(v, "chosen");
-			tryCompare(v, "_morph", 1, 2000);
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
 			waitForRendering(host);
 			tryVerify(() => findChild(v, "tile:/w/d.jpg") !== null, 1000, "tile");
 			const it = findChild(v, "tile:/w/d.jpg");

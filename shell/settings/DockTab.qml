@@ -173,7 +173,7 @@ Column {
 								textFormat: Text.PlainText
 								color: root.theme.text
 								font.family: Fonts.uiFor(Font.Medium)
-								font.pixelSize: 12
+								font.pixelSize: Fonts.px(14)
 								font.weight: Font.Medium
 							}
 							Text {
@@ -186,7 +186,7 @@ Column {
 								color: root.theme.textMuted
 								opacity: 0.9
 								font.family: Fonts.ui
-								font.pixelSize: 11
+								font.pixelSize: Fonts.px(13)
 							}
 							Rectangle {
 								objectName: "removeFolder:" + custom.modelData.path

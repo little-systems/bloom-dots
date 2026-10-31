@@ -63,7 +63,7 @@ Item {
 		function test_clickOutsideDismisses() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
-			tryCompare(v, "_morph", 1, 2000);
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
 			mouseClick(host, 5, 5);
 			compare(dismissed.count, 1);
 		}
@@ -71,7 +71,7 @@ Item {
 		function test_clickOnTheCardStays() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
-			tryCompare(v, "_morph", 1, 2000);
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
 			const card = part(v, "card");
 			mouseClick(host, card.x + card.width / 2, card.y + 10);
 			compare(dismissed.count, 0);
@@ -79,7 +79,7 @@ Item {
 
 		function test_closes() {
 			const v = make();
-			tryCompare(v, "_morph", 1, 2000);
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
 			v.close();
 			tryVerify(() => !v.shown, 1000, "hidden");
 		}

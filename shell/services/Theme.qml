@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "theme.js" as Logic
 
 // Theme colours derived from settings with Bloom's theme maths. Surfaces bind
@@ -30,6 +31,34 @@ Singleton {
 	readonly property color groupBg: _color(_t.groupBg)
 	readonly property color accent: _color(_t.accent)
 	readonly property color scrollbarThumb: _color(_t.scrollbarThumb)
+
+	// The shell owns app theming; Settings and pure views only read this
+	// singleton, so opening a preview cannot write desktop configuration.
+	property bool syncApps: false
+	readonly property string _appPalette: JSON.stringify({ surface: root._t.bgExpanded, text: root._t.text, accent: root._t.accent, light: root.isLight })
+	property string _appliedPalette: ""
+	on_AppPaletteChanged: if (root.syncApps) applyDelay.restart()
+	onSyncAppsChanged: if (root.syncApps) applyDelay.restart()
+	Timer {
+		id: applyDelay; interval: 300
+		onTriggered: {
+			if (!root.syncApps || appTheme.running || root._appPalette === root._appliedPalette) return;
+			appTheme.palette = root._appPalette;
+			appTheme.stdinEnabled = true; appTheme.running = true;
+		}
+	}
+	Process {
+		id: appTheme
+		property string palette: ""
+		command: ["bash", Quickshell.shellPath("scripts/adaptive-theme.sh"), "palette"]
+		stdinEnabled: true
+		onStarted: { appTheme.write(palette); appTheme.stdinEnabled = false; }
+		onExited: code => {
+			if (code === 0) root._appliedPalette = palette;
+			else console.warn("bloom: couldn't apply the selected app theme (exit " + code + ")");
+			if (root._appPalette !== palette) applyDelay.restart();
+		}
+	}
 
 	function _color(c) {
 		return Qt.rgba(c.r / 255, c.g / 255, c.b / 255, c.a);

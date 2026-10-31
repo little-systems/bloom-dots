@@ -31,7 +31,7 @@ chmod +x "$TEST_TMP/bin/fake-term"
 export TERMINAL="$TEST_TMP/bin/fake-term"
 export XDG_DATA_HOME="$TEST_TMP/data" XDG_DATA_DIRS="$TEST_TMP/data"
 printf '{ "bloom-enabled-modules": ["dock"], "bloom-weather-enabled": false, "bloom-dock-mode": "fixed" }\n' >"$XDG_CONFIG_HOME/bloom/settings.json"
-printf '{ "pinned": ["bloom-test-app"] }\n' >"$XDG_STATE_HOME/bloom/dock.json"
+printf '{ "pinned": ["bloom-test-app"], "order": ["remembered"] }\n' >"$XDG_STATE_HOME/bloom/dock.json"
 cp "$ROOT/tests/integration/fake-picker.sh" "$TEST_TMP/bin/fake-picker"
 chmod +x "$TEST_TMP/bin/fake-picker"
 export BLOOM_PICKER="$TEST_TMP/bin/fake-picker" BLOOM_FAKE_PICK="$TEST_TMP/pick"
@@ -144,6 +144,7 @@ assert_eq "$(ipc dock reorder '["bloom-test-term","bloom-test-app"]')" "ok" "reo
 wait_for "the new order" state_is "keys" '{"keys":["bloom-test-term","bloom-test-app"]}'
 assert_eq "$(ipc dock reorder '["nope"]')" "order must list the pinned apps" "reorder refuses a different set"
 ipc dock unpin bloom-test-term >/dev/null
+jq -e '.order == ["remembered"]' "$XDG_STATE_HOME/bloom/dock.json" >/dev/null || fail "pin edits lost remembered running order"
 pass "reorder persists and refuses a different set"
 
 ipc settings set bloom-dock-workspaces-enabled false >/dev/null
