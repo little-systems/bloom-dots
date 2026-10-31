@@ -241,12 +241,12 @@ var picker = { columns: 3, rows: 3, cellWidth: 240, cellHeight: 150, gap: 8, pad
 
 // The settings app (Bloom Settings.css).
 var settings = {
-	window: { width: 740, height: 560, radius: 12 },
+	window: { width: 1040, height: 720, minWidth: 620, minHeight: 460, radius: 12, railBelow: 820 },
 	title: { paddingTop: 16, paddingBottom: 10, paddingH: 18, size: 13, close: 22, closeIcon: 12 },
-	sidebar: { width: 170, paddingV: 12, paddingH: 8, gap: 4, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
+	sidebar: { width: 248, rail: 64, header: 56, paddingV: 12, paddingH: 10, gap: 3, intro: { top: 8, h: 12, bottom: 18, gap: 2, title: 17, sub: 11 } },
 	tab: { height: 36, paddingH: 12, gap: 10, radius: 8, icon: 20, glyph: 14, text: 13, idleOpacity: 0.8, ms: 150 },
-	content: { top: 12, h: 22, bottom: 28, scrollbar: 5 },
-	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12 },
+	content: { top: 12, h: 28, bottom: 32, scrollbar: 5, maxWidth: 760, slide: 10 },
+	heading: { top: 2, h: 2, bottom: 18, title: 26, titleGap: 3, sub: 12, height: 88 },
 	group: { radius: 12, label: { size: 11, spacing: 0.5, top: 18, firstTop: 4, spacedTop: 24, h: 6, bottom: 8 } },
 	row: { paddingV: 10, paddingH: 14, icon: 28, glyph: 14, iconGap: 12, label: 14, desc: 11, gap: 1, divider: 52, ms: 120 },
 	toggle: { width: 42, height: 24, knob: 18, inset: 2, travel: 18, on: "#34c759", ms: 160 },
@@ -261,6 +261,10 @@ var settings = {
 // The on-screen keyboard and the overlay (Phase 7).
 var osk = { width: 760, height: 280, margin: 12, radius: 18, gap: 6, key: 44, keyRadius: 9, text: 15 };
 var overlay = { dim: 0.45, radius: 14, padding: 14, crosshair: 18 };
+
+// Bloom's morph: surfaces open by growing in both width and height on the
+// notch's spring, not by scaling. `from` is the share of full size they start at.
+var morph = { stiffness: 450, damping: 34, mass: 0.8, from: 0.9 };
 
 // Low-power mode: how often a live preview refreshes.
 var lowPower = { captureMs: 1000 };

@@ -64,9 +64,9 @@ Item {
 
 	Spring {
 		id: enter
-		stiffness: Tokens.launcher.enter.stiffness
-		damping: Tokens.launcher.enter.damping
-		mass: Tokens.launcher.enter.mass
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
 		initial: 0
 		target: root._open ? 1 : 0
 	}
@@ -82,13 +82,14 @@ Item {
 		color: Qt.rgba(0, 0, 0, Tokens.dock.popup.shadow.alpha)
 	}
 
+	readonly property real _morph: Tokens.morph.from + (1 - Tokens.morph.from) * Math.max(0, Math.min(1.02, enter.value))
 	Rectangle {
 		id: card
 		objectName: "card"
 		x: (root.width - width) / 2
 		y: (root.height - height) / 2
-		width: root._columns * Tokens.picker.cellWidth + 2 * Tokens.picker.padding
-		height: Tokens.picker.rows * Tokens.picker.cellHeight + 2 * Tokens.picker.padding
+		width: (root._columns * Tokens.picker.cellWidth + 2 * Tokens.picker.padding) * root._morph
+		height: (Tokens.picker.rows * Tokens.picker.cellHeight + 2 * Tokens.picker.padding) * root._morph
 		radius: Tokens.launcher.radius
 		color: root.theme.bgExpanded
 		border.width: 1
@@ -96,7 +97,6 @@ Item {
 		clip: true
 		visible: opacity > 0
 		opacity: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
-		scale: Tokens.launcher.enter.scale + (1 - Tokens.launcher.enter.scale) * enter.value
 		Behavior on opacity {
 			enabled: !root._open
 			NumberAnimation { duration: Tokens.launcher.exitMs }

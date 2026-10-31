@@ -41,6 +41,7 @@ Item {
 			const v = make();
 			v.open();
 			const card = part(v, "card");
+			tryCompare(v, "_morph", 1, 2000);
 			compare(card.width, Tokens.launcher.width);
 			fuzzyCompare(card.x, (800 - 560) / 2, 0.51);
 			fuzzyCompare(card.y, 700 * Tokens.launcher.top, 0.51);
@@ -154,7 +155,7 @@ Item {
 			v.results = [{ id: "1", name: "Image", sub: "PNG", icon: "", glyph: "", symbol: "file-image", thumbnail: "" }];
 			tryVerify(() => findChild(v, "row:1") !== null, 1000, "row");
 			compare(findChild(v, "row:1").height, 166);
-			compare(findChild(v, "card").width, 560);
+			tryCompare(findChild(v, "card"), "width", 560, 2000);
 			tryCompare(findChild(v, "card"), "height", v.barHeight + 6 + 166, 2000);
 			const thumb = findChild(v, "thumbnail");
 			compare(thumb.width, 240);

@@ -1,4 +1,5 @@
 import QtQuick
+import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 
@@ -75,9 +76,24 @@ Column {
 		height: 1
 		color: root.theme.border
 	}
-	Column {
-		id: body
-		visible: root.open
+	// The rows grow and shrink in on Bloom's morph spring.
+	Spring {
+		id: unfold
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
+		initial: 0
+		target: root.open ? body.implicitHeight : 0
+	}
+	Item {
+		objectName: "disclosureBody"
+		visible: height > 0.5
 		width: parent.width
+		height: unfold.value
+		clip: true
+		Column {
+			id: body
+			width: parent.width
+		}
 	}
 }

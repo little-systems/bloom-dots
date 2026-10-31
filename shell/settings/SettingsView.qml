@@ -83,7 +83,26 @@ Rectangle {
 	readonly property var _active: root._tabs.find(t => t.id === root.tab)
 	readonly property bool _system: ["general", "appearance", "notch", "dock", "overlays", "about"].indexOf(root.tab) < 0
 
-	onTabChanged: page.contentY = 0
+	readonly property bool _rail: root.width < Tokens.settings.window.railBelow
+	readonly property color _accent: root.theme.accent ?? "#007aff"
+	readonly property real _pageWidth: Math.min(Tokens.settings.content.maxWidth, root.width - sidebar.width - 2 * Tokens.settings.content.h)
+	readonly property real _pageX: Math.max(Tokens.settings.content.h, (root.width - sidebar.width - root._pageWidth) / 2)
+	component SpringWidth: NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+
+	// A new page settles in on Bloom's spring.
+	Spring {
+		id: pageIn
+		stiffness: 450
+		damping: 34
+		initial: 0
+		target: 0
+	}
+	onTabChanged: {
+		page.contentY = 0;
+		pageIn.jump(1);
+		pageIn.target = 1;
+		pageIn.target = 0;
+	}
 
 	function _open(hit) {
 		root.tab = hit.tab;
@@ -120,65 +139,12 @@ Rectangle {
 	border.color: root.theme.border
 	clip: true
 
-	Item {
-		id: titleBar
-		x: 1
-		y: 1
-		width: parent.width - 2
-		height: Tokens.settings.title.paddingTop + Tokens.settings.title.close + Tokens.settings.title.paddingBottom
-
-		// cursor: default — the title bar moves the window
-		MouseArea {
-			anchors.fill: parent
-			onPressed: root.dragRequested()
-		}
-		Text {
-			objectName: "title"
-			x: Tokens.settings.title.paddingH
-			anchors.verticalCenter: closeButton.verticalCenter
-			text: "Settings"
-			color: root.theme.textMuted
-			font.family: Fonts.uiFor(Font.Bold)
-			font.pixelSize: Tokens.settings.title.size
-			font.weight: Font.Bold
-			font.letterSpacing: -0.1
-			font.capitalization: Font.AllUppercase
-		}
-		Rectangle {
-			id: closeButton
-			objectName: "close"
-			activeFocusOnTab: true
-			Accessible.role: Accessible.Button
-			Accessible.name: "Close Settings"
-			Keys.onSpacePressed: root.closeRequested()
-			Keys.onReturnPressed: root.closeRequested()
-			SFocusRing {}
-			x: parent.width - width - Tokens.settings.title.paddingH
-			y: Tokens.settings.title.paddingTop
-			width: Tokens.settings.title.close
-			height: width
-			radius: width / 2
-			color: closeHover.hovered ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.08)
-			Behavior on color { ColorAnimation { duration: 120 } }
-			SvgIcon {
-				anchors.centerIn: parent
-				name: "x"
-				size: Tokens.settings.title.closeIcon
-				strokeWidth: 1.5
-				color: root.theme.text
-			}
-			HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
-			TapHandler { onTapped: root.closeRequested() }
-		}
-	}
-
 	Rectangle {
 		id: sidebar
-		x: 1
-		y: titleBar.y + titleBar.height
-		width: Tokens.settings.sidebar.width
-		height: parent.height - y - 1
-		color: Qt.rgba(1, 1, 1, 0.015)
+		width: root._rail ? Tokens.settings.sidebar.rail : Tokens.settings.sidebar.width
+		height: parent.height
+		color: Qt.rgba(1, 1, 1, 0.03)
+		Behavior on width { SpringWidth {} }
 
 		Rectangle {
 			x: parent.width - 1
@@ -202,36 +168,43 @@ Rectangle {
 			width: parent.width - 2 * Tokens.settings.sidebar.paddingH
 			spacing: Tokens.settings.sidebar.gap
 
-			Column {
-				leftPadding: Tokens.settings.sidebar.intro.h
-				topPadding: Tokens.settings.sidebar.intro.top
-				bottomPadding: Tokens.settings.sidebar.intro.bottom
-				spacing: Tokens.settings.sidebar.intro.gap
+			Item {
+				objectName: "appHeader"
+				width: parent.width
+				height: Tokens.settings.sidebar.header
 
-				Text {
-					text: "Bloom"
-					color: root.theme.text
-					font.family: Fonts.uiFor(Font.Bold)
-					font.pixelSize: Tokens.settings.sidebar.intro.title
-					font.weight: Font.Bold
-					font.letterSpacing: -0.6
-					height: 20
-					lineHeight: 20
-					lineHeightMode: Text.FixedHeight
+				// cursor: default — the app's header moves the window
+				MouseArea {
+					anchors.fill: parent
+					onPressed: root.dragRequested()
 				}
-				Text {
-					text: "Make it yours"
-					color: root.theme.textMuted
-					font.family: Fonts.ui
-					font.pixelSize: Tokens.settings.sidebar.intro.sub
-					height: 12
-					lineHeight: 12
-					lineHeightMode: Text.FixedHeight
+				Row {
+					anchors.verticalCenter: parent.verticalCenter
+					leftPadding: root._rail ? 8 : 6
+					spacing: 10
+					Image {
+						objectName: "appLogo"
+						width: 28
+						height: 28
+						sourceSize: Qt.size(56, 56)
+						source: Qt.resolvedUrl("../assets/bloom.png")
+						anchors.verticalCenter: parent.verticalCenter
+					}
+					Text {
+						visible: !root._rail
+						text: "Settings"
+						color: root.theme.text
+						font.family: Fonts.uiFor(Font.Bold)
+						font.pixelSize: 17
+						font.weight: Font.Bold
+						anchors.verticalCenter: parent.verticalCenter
+					}
 				}
 			}
 			SField {
 				id: searchField
 				objectName: "settingsSearch"
+				visible: !root._rail
 				width: parent.width
 				theme: root.theme
 				placeholder: "Find a setting"
@@ -298,6 +271,7 @@ Rectangle {
 					spacing: Tokens.settings.sidebar.gap
 
 					Text {
+						visible: !root._rail
 						leftPadding: Tokens.settings.tab.paddingH
 						topPadding: tabGroup.index === 0 ? 0 : 10
 						text: tabGroup.modelData.label
@@ -325,11 +299,21 @@ Rectangle {
 							width: parent.width
 							height: Tokens.settings.tab.height
 							radius: Tokens.settings.tab.radius
-							color: tabItem.active ? Qt.rgba(1, 1, 1, 0.08) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
+							color: tabItem.active ? Qt.rgba(root._accent.r, root._accent.g, root._accent.b, 0.22) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
 							Behavior on color { ColorAnimation { duration: Tokens.settings.tab.ms } }
 
+							Rectangle {
+								objectName: "activeBar"
+								visible: tabItem.active
+								x: 2
+								y: 9
+								width: 3
+								height: parent.height - 18
+								radius: 1.5
+								color: root._accent
+							}
 							Row {
-								x: Tokens.settings.tab.paddingH
+								x: root._rail ? (parent.width - Tokens.settings.tab.icon) / 2 : Tokens.settings.tab.paddingH
 								height: parent.height
 								spacing: Tokens.settings.tab.gap
 								opacity: tabItem.active || tabHover.hovered ? 1 : Tokens.settings.tab.idleOpacity
@@ -347,6 +331,7 @@ Rectangle {
 									}
 								}
 								Text {
+									visible: !root._rail
 									anchors.verticalCenter: parent.verticalCenter
 									text: tabItem.modelData.label
 									color: root.theme.text
@@ -370,10 +355,77 @@ Rectangle {
 
 	Item {
 		id: content
-		x: sidebar.x + sidebar.width
-		y: sidebar.y
-		width: parent.width - x - 1
-		height: sidebar.height
+		x: sidebar.width
+		width: parent.width - x
+		height: parent.height
+
+		Item {
+			id: pageHeader
+			width: parent.width
+			height: Tokens.settings.heading.height
+
+			// cursor: default — the page header moves the window
+			MouseArea {
+				anchors.fill: parent
+				onPressed: root.dragRequested()
+			}
+			Column {
+				x: root._pageX
+				anchors.verticalCenter: parent.verticalCenter
+				spacing: Tokens.settings.heading.titleGap
+
+				Text {
+					objectName: "heading"
+					text: root._active.label
+					color: root.theme.text
+					font.family: Fonts.uiFor(Font.Bold)
+					font.pixelSize: Tokens.settings.heading.title
+					font.weight: 680
+					font.letterSpacing: -0.8
+				}
+				Text {
+					objectName: "copy"
+					text: root._active.copy
+					color: root.theme.textMuted
+					font.family: Fonts.ui
+					font.pixelSize: Tokens.settings.heading.sub
+				}
+			}
+			Rectangle {
+				id: closeButton
+				objectName: "close"
+				activeFocusOnTab: true
+				Accessible.role: Accessible.Button
+				Accessible.name: "Close Settings"
+				Keys.onSpacePressed: root.closeRequested()
+				Keys.onReturnPressed: root.closeRequested()
+				SFocusRing {}
+				x: parent.width - width - 16
+				y: 16
+				width: 28
+				height: 28
+				radius: width / 2
+				color: closeHover.hovered ? Qt.rgba(1, 1, 1, 0.15) : Qt.rgba(1, 1, 1, 0.08)
+				Behavior on color { ColorAnimation { duration: 120 } }
+				SvgIcon {
+					anchors.centerIn: parent
+					name: "x"
+					size: Tokens.settings.title.closeIcon
+					strokeWidth: 1.5
+					color: root.theme.text
+				}
+				HoverHandler { id: closeHover; cursorShape: Qt.PointingHandCursor }
+				TapHandler { onTapped: root.closeRequested() }
+			}
+			Rectangle {
+				y: parent.height - 1
+				width: parent.width
+				height: 1
+				color: root.theme.border
+				opacity: page.contentY > 2 ? 1 : 0
+				Behavior on opacity { NumberAnimation { duration: 120 } }
+			}
+		}
 
 		QpScroll { flickable: page }
 		ScrollThumb { objectName: "pageThumb"; flickable: page; thumbColor: root.theme.scrollbarThumb }
@@ -381,18 +433,21 @@ Rectangle {
 		Flickable {
 			id: page
 			objectName: "page"
-			anchors.fill: parent
+			y: pageHeader.height
+			width: parent.width
+			height: parent.height - y
 			contentWidth: width
-			contentHeight: pageColumn.implicitHeight + Tokens.settings.content.top + Tokens.settings.content.bottom
+			contentHeight: pageColumn.implicitHeight + Tokens.settings.content.bottom
 			interactive: false // QpScroll scrolls it
 			boundsBehavior: Flickable.StopAtBounds
 			clip: true
 
 			Column {
 				id: pageColumn
-				x: Tokens.settings.content.h
-				y: Tokens.settings.content.top
-				width: parent.width - 2 * Tokens.settings.content.h
+				x: root._pageX
+				y: pageIn.value * Tokens.settings.content.slide
+				width: root._pageWidth
+				opacity: 1 - pageIn.value
 
 				// Bloom's .settings-save-error, for anything that didn't take effect.
 				Rectangle {
@@ -434,36 +489,6 @@ Rectangle {
 							}
 						}
 						HoverHandler { cursorShape: Qt.PointingHandCursor }
-					}
-				}
-				Column {
-					width: parent.width
-					leftPadding: Tokens.settings.heading.h
-					topPadding: Tokens.settings.heading.top
-					bottomPadding: Tokens.settings.heading.bottom
-					spacing: Tokens.settings.heading.titleGap
-
-					Text {
-						objectName: "heading"
-						text: root._active.label
-						color: root.theme.text
-						font.family: Fonts.uiFor(Font.Bold)
-						font.pixelSize: Tokens.settings.heading.title
-						font.weight: 680
-						font.letterSpacing: -0.8
-						height: 28.6
-						lineHeight: 28.6
-						lineHeightMode: Text.FixedHeight
-					}
-					Text {
-						objectName: "copy"
-						text: root._active.copy
-						color: root.theme.textMuted
-						font.family: Fonts.ui
-						font.pixelSize: Tokens.settings.heading.sub
-						height: 16.8
-						lineHeight: 16.8
-						lineHeightMode: Text.FixedHeight
 					}
 				}
 				FeaturePreview {

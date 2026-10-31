@@ -46,6 +46,16 @@ Item {
 		root.forceActiveFocus();
 	}
 
+	Spring {
+		id: grow
+		stiffness: Tokens.morph.stiffness
+		damping: Tokens.morph.damping
+		mass: Tokens.morph.mass
+		initial: 1
+		target: 1
+	}
+	onVisibleChanged: if (visible) grow.jump(Render.reduceMotion ? 1 : 0.6)
+
 	// cursor: default — a click anywhere else closes the list
 	MouseArea {
 		anchors.fill: parent
@@ -54,8 +64,9 @@ Item {
 	Rectangle {
 		x: root._at.x
 		y: root._at.y
-		width: root._width + 8
-		height: Math.min(list.implicitHeight, root._maxList) + 8
+		width: (root._width + 8) * (0.9 + 0.1 * grow.value)
+		height: (Math.min(list.implicitHeight, root._maxList) + 8) * grow.value
+		clip: true
 		radius: Tokens.settings.select.radius
 		color: root.theme.bgExpanded
 		border.width: 1

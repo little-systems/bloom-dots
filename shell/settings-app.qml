@@ -109,17 +109,16 @@ ShellRoot {
 		readonly property real uiScale: Settings.values["bloom-scale"]
 		title: "Bloom Settings"
 		color: "transparent"
-		implicitWidth: Tokens.settings.window.width * win.uiScale
-		implicitHeight: Tokens.settings.window.height * win.uiScale
-		minimumSize: Qt.size(win.implicitWidth, win.implicitHeight)
-		maximumSize: Qt.size(win.implicitWidth, win.implicitHeight)
+		implicitWidth: Tokens.settings.window.width
+		implicitHeight: Tokens.settings.window.height
+		minimumSize: Qt.size(Tokens.settings.window.minWidth * win.uiScale, Tokens.settings.window.minHeight * win.uiScale)
 		onClosed: Qt.quit()
 
 		SettingsView {
 			id: view
 			objectName: "view"
-			width: Tokens.settings.window.width
-			height: Tokens.settings.window.height
+			width: win.width / win.uiScale
+			height: win.height / win.uiScale
 			scale: win.uiScale
 			transformOrigin: Item.TopLeft
 			theme: Theme

@@ -50,7 +50,7 @@ Item {
 			const v = make({ groups: [] });
 			compare(part(v, "empty").text, "No keybinds have descriptions yet");
 			tryVerify(() => part(v, "empty").visible, 1000, "shown");
-			verify(part(v, "card").height >= part(v, "empty").implicitHeight + 40, "the card holds it");
+			tryVerify(() => part(v, "card").height >= part(v, "empty").implicitHeight + 40, 2000, "the card holds it");
 		}
 
 		function test_escapeDismisses() {
@@ -63,7 +63,7 @@ Item {
 		function test_clickOutsideDismisses() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
-			tryCompare(part(v, "card"), "scale", 1, 1500);
+			tryCompare(v, "_morph", 1, 2000);
 			mouseClick(host, 5, 5);
 			compare(dismissed.count, 1);
 		}
@@ -71,7 +71,7 @@ Item {
 		function test_clickOnTheCardStays() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
-			tryCompare(part(v, "card"), "scale", 1, 1500);
+			tryCompare(v, "_morph", 1, 2000);
 			const card = part(v, "card");
 			mouseClick(host, card.x + card.width / 2, card.y + 10);
 			compare(dismissed.count, 0);
@@ -79,7 +79,7 @@ Item {
 
 		function test_closes() {
 			const v = make();
-			tryCompare(part(v, "card"), "scale", 1, 1500);
+			tryCompare(v, "_morph", 1, 2000);
 			v.close();
 			tryVerify(() => !v.shown, 1000, "hidden");
 		}

@@ -1,11 +1,12 @@
 import QtQuick
 import QtTest
 import "../../shell/settings"
+import "../../shell/common/render"
 
 Item {
 	id: host
-	width: 740
-	height: 560
+	width: 1040
+	height: 720
 
 	QtObject {
 		id: fakeStore
@@ -152,12 +153,16 @@ Item {
 	}
 	Component {
 		id: viewComponent
-		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
+		SettingsView { width: 1040; height: 720; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
 	TestCase {
 		name: "SettingsView"
 		when: windowShown
+
+		// Springs land at once, so clicks don't chase moving controls.
+		function initTestCase() { Render.reduceMotion = true; }
+		function cleanupTestCase() { Render.reduceMotion = false; }
 
 		function make(tab) {
 			fakeStore.values = Object.assign({}, host.defaults);
@@ -197,28 +202,32 @@ Item {
 			compare(part(v, "copy").text, "Make every surface feel at home on your desktop.");
 		}
 
-		// Bloom's boxes as Chromium lays them out (tools/bloom-audit/
-		// record-settings.cjs at zoom 1.25, divided back).
-		function test_matchesBloomsLayout() {
+		// The app layout: it fills the window and reflows.
+		function test_layoutFollowsTheWindow() {
 			const v = make();
 			waitForRendering(host);
-			function at(item, x, y, w, h, what) {
-				const p = item.mapToItem(v, 0, 0);
-				fuzzyCompare(p.x, x, 1, what + " x");
-				fuzzyCompare(p.y, y, 1, what + " y");
-				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
-				if (h !== undefined) fuzzyCompare(item.height, h, 0.6, what + " height");
-			}
-			at(part(v, "tab:display"), 8.8, 174.8, 153.2, 36, "first tab");
-			at(part(v, "tab:sound"), 8.8, 214.8, 153.2, 36, "second tab");
-			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
-			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
-			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
-			at(part(v, "featurePreview"), 192.8, 129.2, 524.4, 52.6, "preview");
-			at(part(v, "row:Launch at Login"), 193.8, 221.6, 522.8, undefined, "first row");
-			compare(part(v, "row:Launch at Login").height, 50.8);
-			const t = part(v, "time24").mapToItem(v, 0, 0);
-			fuzzyCompare(t.x, 660.4, 1, "toggle x");
+			const tab = part(v, "tab:display");
+			verify(tab.width > 40);
+			compare(part(v, "close").mapToItem(v, 0, 0).x + 28 + 16, v.width);
+			verify(part(v, "row:Launch at Login").width <= 760);
+		}
+
+		function test_narrowWindowsUseARail() {
+			const v = make();
+			v.width = 700;
+			waitForRendering(host);
+			verify(!part(v, "settingsSearch").visible, "icons only");
+			v.width = 1000;
+			waitForRendering(host);
+			verify(part(v, "settingsSearch").visible);
+		}
+
+		function test_selectedTabIsMarked() {
+			const v = make("display");
+			v.width = 1000;
+			waitForRendering(host);
+			tryVerify(() => findChild(part(v, "tab:display"), "activeBar").visible, 1000, "bar");
+			verify(!findChild(part(v, "tab:sound"), "activeBar").visible);
 		}
 
 		function test_toggleWrites() {
@@ -251,7 +260,7 @@ Item {
 
 		function test_scaleButtonsStopAtTheEnds() {
 			const v = make("appearance");
-			part(v, "page").contentY = 400;
+			reveal(v, "scale:up");
 			click(v, "scale:up");
 			click(v, "scale:up");
 			compare(fakeStore.values["bloom-scale"], 1.3);
