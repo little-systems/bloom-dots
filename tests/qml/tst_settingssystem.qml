@@ -37,4 +37,9 @@ TestCase {
 		const o = Sys.parseOptions("general.gaps_in|css gap data: 4 4 4 4\ninput.repeat_rate|int: 35\ninput.sensitivity|float: -0.200000\nanimations.enabled|bool: true\ndecoration.blur.enabled|bool: false\nnoise");
 		compare(o, { "general.gaps_in": 4, "input.repeat_rate": 35, "input.sensitivity": -0.2, "animations.enabled": true, "decoration.blur.enabled": false });
 	}
+
+	// A missing hostname command once shifted every value up a row.
+	function test_infoSurvivesAMissingTool() {
+		compare(Sys.parseInfo("kernel=7.2\ncpu=Intel = fast\nmemory=11.5 GB\n"), { hostname: "", kernel: "7.2", cpu: "Intel = fast", memory: "11.5 GB" });
+	}
 }

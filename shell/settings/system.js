@@ -108,3 +108,13 @@ function withValues(current, overrides) {
 	});
 	return out;
 }
+
+// infoProc's "key=value" lines: an absent tool leaves a key out, not a gap.
+function parseInfo(text) {
+	const out = { hostname: "", kernel: "", cpu: "", memory: "" };
+	text.split("\n").forEach(line => {
+		const at = line.indexOf("=");
+		if (at > 0 && line.slice(0, at) in out) out[line.slice(0, at)] = line.slice(at + 1).trim();
+	});
+	return out;
+}

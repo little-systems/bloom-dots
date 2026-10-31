@@ -146,14 +146,14 @@ Scope {
 	}
 	Process {
 		id: infoProc
-		command: ["sh", "-c", "hostname; uname -r; grep -m1 'model name' /proc/cpuinfo | cut -d: -f2; awk '/MemTotal/{printf \"%.1f GB\", $2/1048576}' /proc/meminfo"]
+		command: ["sh", "-c", "echo hostname=$(cat /etc/hostname 2>/dev/null); echo kernel=$(uname -r); echo cpu=$(sed -n 's/^model name[^:]*: //p' /proc/cpuinfo | head -1); awk '/MemTotal/{printf \"memory=%.1f GB\\n\", $2/1048576}' /proc/meminfo"]
 		stdout: StdioCollector {
 			onStreamFinished: {
-				const lines = text.split("\n").map(l => l.trim());
-				root.hostname = lines[0] || "";
-				root.kernel = lines[1] || "";
-				root.cpu = lines[2] || "";
-				root.memory = lines[3] || "";
+				const info = Sys.parseInfo(text);
+				root.hostname = info.hostname;
+				root.kernel = info.kernel;
+				root.cpu = info.cpu;
+				root.memory = info.memory;
 			}
 		}
 	}

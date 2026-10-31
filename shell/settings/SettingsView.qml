@@ -29,8 +29,8 @@ Rectangle {
 	property var drives: []
 	property var apps: []
 	property var sys
-	property Component networkPanel
-	property Component bluetoothPanel
+	property var net
+	property var bt
 	signal cheatsheetRequested()
 
 	signal cityQueried(string text)
@@ -54,7 +54,7 @@ Rectangle {
 			{ id: "device", label: "Device", icon: "cpu", copy: "This machine." }
 		] },
 		{ label: "Connections", tabs: [
-			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi networks." },
+			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi and saved networks." },
 			{ id: "bluetooth", label: "Bluetooth", icon: "bluetooth", copy: "Pair and manage devices." }
 		] },
 		{ label: "Desktop", tabs: [
@@ -369,9 +369,9 @@ Rectangle {
 				Loader {
 					objectName: "connection"
 					width: parent.width
-					height: active ? 420 : 0
-					active: root.tab === "network" || root.tab === "bluetooth"
-					sourceComponent: root.tab === "network" ? root.networkPanel : root.bluetoothPanel
+					height: active && item ? item.implicitHeight : 0
+					active: (root.tab === "network" || root.tab === "bluetooth") && root.net !== undefined
+					sourceComponent: ConnectionPages { theme: root.theme; net: root.net; bt: root.bt; accent: root.theme.accent ?? "#007aff"; page: root.tab }
 				}
 				Loader {
 					width: parent.width

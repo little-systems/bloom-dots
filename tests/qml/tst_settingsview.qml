@@ -79,9 +79,51 @@ Item {
 		function setSink(n) {}
 		function setSource(n) {}
 	}
+	QtObject {
+		id: fakeNet
+		property bool wifiEnabled: true
+		property bool connected: true
+		property string ssid: "Home"
+		property bool scanning: false
+		property string busy: ""
+		property var lastError: null
+		property var networks: [
+			{ ssid: "Home", signal: 80, security: "wpa2", connected: true, saved: true },
+			{ ssid: "Cafe", signal: 30, security: "wpa2", connected: false, saved: false }
+		]
+		property var calls: []
+		function clearError() { lastError = null; }
+		function hold(k, w) {}
+		function refresh(r) { calls.push(["refresh"]); }
+		function setWifi(on) { calls.push(["wifi", on]); }
+		function connect(s, p) { calls.push(["connect", s, p]); }
+		function disconnect(s) { calls.push(["disconnect", s]); }
+		function forget(s) { calls.push(["forget", s]); }
+	}
+	QtObject {
+		id: fakeBt
+		property bool available: true
+		property bool powered: true
+		property bool discovering: false
+		property string busy: ""
+		property string pairing: ""
+		property var prompt: null
+		property var lastError: null
+		property var paired: [{ path: "/a", name: "Buds", connected: false, icon: "audio-headset" }]
+		property var nearby: [{ path: "/b", name: "Mouse", icon: "input-mouse" }]
+		property var calls: []
+		function clearError() {}
+		function hold(k, w) {}
+		function discover(w) { calls.push(["discover", w]); }
+		function setPowered(on) {}
+		function setConnected(p, w) { calls.push(["connected", p, w]); }
+		function unpair(p) { calls.push(["unpair", p]); }
+		function pair(p) { calls.push(["pair", p]); }
+		function respond(a, pin) { calls.push(["respond", a, pin]); }
+	}
 	Component {
 		id: viewComponent
-		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys }
+		SettingsView { width: 740; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
 	TestCase {
@@ -498,6 +540,47 @@ Item {
 			verify(!part(v, "maxJump").visible);
 			fakeStore.set("bloom-volume-protection-enabled", true);
 			verify(part(v, "maxJump").visible);
+		}
+
+		function test_networkConnectsWithAPassword() {
+			fakeNet.calls = [];
+			const v = make("network");
+			click(v, "net:Cafe");
+			const field = part(v, "password:Cafe");
+			verify(field.visible);
+			field.text = "secret";
+			click(v, "netConnect:Cafe");
+			compare(fakeNet.calls[fakeNet.calls.length - 1], ["connect", "Cafe", "secret"]);
+		}
+
+		function test_networkDisconnects() {
+			fakeNet.calls = [];
+			const v = make("network");
+			click(v, "net:Home");
+			click(v, "netDisconnect:Home");
+			compare(fakeNet.calls[fakeNet.calls.length - 1], ["disconnect", "Home"]);
+		}
+
+		function test_bluetoothPageActs() {
+			fakeBt.calls = [];
+			const v = make("bluetooth");
+			click(v, "device:Buds");
+			click(v, "deviceConnect:Buds");
+			compare(fakeBt.calls[0], ["connected", "/a", true]);
+			click(v, "nearby:Mouse");
+			compare(fakeBt.calls[1], ["pair", "/b"]);
+		}
+
+		function test_pairingConfirm() {
+			fakeBt.calls = [];
+			const v = make("bluetooth");
+			fakeBt.pairing = "/b";
+			fakeBt.prompt = { kind: "confirm", pin: "123456" };
+			compare(part(v, "pairPrompt").text, "Does the device show 123456?");
+			click(v, "pairYes");
+			compare(fakeBt.calls[0][0], "respond");
+			fakeBt.pairing = "";
+			fakeBt.prompt = null;
 		}
 
 		function test_closeSignals() {

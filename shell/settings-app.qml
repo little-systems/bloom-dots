@@ -7,7 +7,6 @@ import Quickshell.Io
 import qs.services
 import "settings"
 import "common/render"
-import "modules/notch"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
 import "modules/dock/extras.js" as Extras
@@ -128,8 +127,8 @@ ShellRoot {
 			drives: app.drives
 			sys: store
 			tab: "display"
-			networkPanel: Component { WifiPanel {} }
-			bluetoothPanel: Component { BluetoothPanel {} }
+			net: Network
+			bt: Bluetooth
 			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])
 			apps: Dock.pinned.map(id => Apps.info(id)).filter(a => a.name)
 			onCityQueried: text => app.searchCity(text)
