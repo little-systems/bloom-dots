@@ -15,6 +15,7 @@ Singleton {
 	property string query: ""
 	readonly property var _parsed: Logic.parse(root.query)
 	property var _clips: []
+	property var _thumbs: ({})
 	property var _actions: []
 
 	function show() { root.opened = true; root.setQuery(""); }
@@ -48,8 +49,7 @@ Singleton {
 		else if (q.mode === "calc") calcDelay.restart();
 	}
 	function _showClips() {
-		root.results = Logic.filterClips(root._clips, root._parsed.term).slice(0, 50).map(e => ({
-			id: e.id, name: e.text, sub: "", icon: "", glyph: "", action: { kind: "clip", value: e.raw } }));
+		root.results = Logic.filterClips(root._clips, root._parsed.term).slice(0, 50).map(e => Logic.clipRow(e, root._thumbs));
 	}
 	function _showActions() {
 		root.results = Logic.rank(root._actions, root._parsed.term).map(a => ({
@@ -97,6 +97,19 @@ Singleton {
 		stdout: StdioCollector { id: clipsOut }
 		onExited: code => {
 			root._clips = code === 0 ? Logic.clipEntries(clipsOut.text) : [];
+			if (root._parsed.mode === "clipboard") root._showClips();
+			const ids = Logic.imageIds(root._clips).slice(0, 30);
+			if (ids.length && !thumbs.running) {
+				thumbs.command = ["sh", Quickshell.shellPath("scripts/clip-thumbs.sh")].concat(ids);
+				thumbs.running = true;
+			}
+		}
+	}
+	Process {
+		id: thumbs
+		stdout: StdioCollector { id: thumbsOut }
+		onExited: {
+			root._thumbs = Logic.parseThumbs(thumbsOut.text);
 			if (root._parsed.mode === "clipboard") root._showClips();
 		}
 	}

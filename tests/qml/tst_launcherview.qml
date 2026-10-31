@@ -147,5 +147,25 @@ Item {
 			compare(findChild(v, "field").text, ";");
 			compare(Array.from(edited.signalArguments[edited.count - 1]), [";"]);
 		}
+
+		function test_clipboardPreview() {
+			const v = make();
+			v.open();
+			v.results = [
+				{ id: "1", name: "Image", sub: "PNG", icon: "", glyph: "", symbol: "file-image", preview: { kind: "image", image: "" } },
+				{ id: "2", name: "#ff0000", sub: "Color", swatch: "#ff0000", preview: { kind: "color", color: "#ff0000", text: "#FF0000" } }
+			];
+			tryVerify(() => findChild(v, "preview") !== null && findChild(v, "preview").visible, 1000, "preview shows");
+			compare(findChild(v, "card").width, 560 + 310);
+			v.selectedIndex = 1;
+			compare(String(findChild(v, "previewSwatch").color), "#ff0000");
+		}
+
+		function test_noPreviewKeepsTheBar() {
+			const v = make();
+			v.open();
+			v.results = [{ id: "a", name: "App", sub: "", icon: "", glyph: "" }];
+			compare(findChild(v, "card").width, 560);
+		}
 	}
 }

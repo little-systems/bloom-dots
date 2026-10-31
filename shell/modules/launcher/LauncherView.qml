@@ -34,6 +34,8 @@ Item {
 		? Tokens.launcher.gap + Math.min(root.results.length, Tokens.launcher.maxRows) * Tokens.dock.popup.row.height : 0)
 
 	property bool _open: false
+	// What the selected row shows beside the list (the clipboard's previews).
+	readonly property var _preview: root.results[root.selectedIndex]?.preview ?? null
 
 	function open() {
 		field.text = "";
@@ -107,7 +109,7 @@ Item {
 		objectName: "card"
 		x: (root.width - width) / 2
 		y: root.height * Tokens.launcher.top
-		width: Tokens.launcher.width
+		width: Tokens.launcher.width + (root._preview ? Tokens.launcher.preview.width + Tokens.launcher.preview.gap : 0)
 		height: heightSpring.value
 		radius: Tokens.launcher.radius
 		color: root.theme.bgExpanded
@@ -172,7 +174,7 @@ Item {
 		Item {
 			x: Tokens.launcher.padding
 			y: fieldBox.y + fieldBox.height + Tokens.launcher.gap
-			width: parent.width - 2 * Tokens.launcher.padding
+			width: Tokens.launcher.width - 2 * Tokens.launcher.padding
 			height: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
 
 			QpScroll { flickable: list }
@@ -215,6 +217,20 @@ Item {
 						color: root.theme.groupBg
 						clip: true
 
+						Rectangle {
+							objectName: "swatch"
+							anchors.fill: parent
+							visible: !!row.modelData.swatch
+							color: row.modelData.swatch || "transparent"
+						}
+						SvgIcon {
+							objectName: "symbol"
+							anchors.centerIn: parent
+							visible: !!row.modelData.symbol && rowImage.status !== Image.Ready
+							name: row.modelData.symbol || "file"
+							size: 16
+							color: root.theme.textMuted
+						}
 						Image {
 							id: rowImage
 							anchors.fill: parent
@@ -227,7 +243,7 @@ Item {
 						Text {
 							objectName: "glyph"
 							anchors.centerIn: parent
-							visible: rowImage.status !== Image.Ready
+							visible: rowImage.status !== Image.Ready && !row.modelData.symbol && !row.modelData.swatch
 							text: row.modelData.glyph || row.modelData.name.slice(0, 1)
 							// An emoji (its own id) draws in full colour.
 							color: row.modelData.id === row.modelData.glyph ? "white" : root.theme.textMuted
@@ -266,6 +282,62 @@ Item {
 						}
 					}
 				}
+			}
+		}
+
+		Rectangle {
+			objectName: "preview"
+			visible: root._preview !== null
+			x: Tokens.launcher.width
+			y: Tokens.launcher.padding
+			width: Tokens.launcher.preview.width - Tokens.launcher.padding + Tokens.launcher.preview.gap
+			height: parent.height - 2 * Tokens.launcher.padding
+			radius: Tokens.launcher.preview.radius
+			color: root.theme.groupBg
+			clip: true
+
+			Image {
+				objectName: "previewImage"
+				anchors.fill: parent
+				anchors.margins: 8
+				visible: root._preview?.kind === "image"
+				source: root._preview?.image ?? ""
+				asynchronous: true
+				fillMode: Image.PreserveAspectFit
+			}
+			Column {
+				anchors.centerIn: parent
+				visible: root._preview?.kind === "color"
+				spacing: 10
+				Rectangle {
+					objectName: "previewSwatch"
+					width: Tokens.launcher.preview.swatch
+					height: width
+					radius: 14
+					color: root._preview?.color ?? "transparent"
+					border.width: 1
+					border.color: root.theme.border
+				}
+				Text {
+					anchors.horizontalCenter: parent.horizontalCenter
+					text: root._preview?.text ?? ""
+					color: root.theme.text
+					font.family: Fonts.family
+					font.pixelSize: Tokens.launcher.preview.text
+				}
+			}
+			Text {
+				objectName: "previewText"
+				anchors.fill: parent
+				anchors.margins: 12
+				visible: root._preview?.kind === "text"
+				text: root._preview?.text ?? ""
+				textFormat: Text.PlainText
+				wrapMode: Text.WrapAnywhere
+				elide: Text.ElideRight
+				color: root.theme.text
+				font.family: Fonts.family
+				font.pixelSize: Tokens.launcher.preview.text
 			}
 		}
 	}

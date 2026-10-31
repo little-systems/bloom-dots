@@ -39,7 +39,7 @@ TestCase {
 	// `cliphist list`: "<id>\t<preview>"; a binary entry stays listed.
 	function test_clipboardEntries() {
 		const got = Launcher.clipEntries("12\thello there\n11\t[[ binary data 3 KiB png 10x10 ]]\n\nbad line\n");
-		compare(got, [{ id: "12", text: "hello there", raw: "12\thello there" },
+		compare(got.map(e => ({ id: e.id, text: e.text, raw: e.raw })), [{ id: "12", text: "hello there", raw: "12\thello there" },
 			{ id: "11", text: "[[ binary data 3 KiB png 10x10 ]]", raw: "11\t[[ binary data 3 KiB png 10x10 ]]" }]);
 		compare(Launcher.filterClips(got, "HELLO").length, 1);
 		compare(Launcher.filterClips(got, "").length, 2);

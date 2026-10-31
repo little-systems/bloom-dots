@@ -42,7 +42,7 @@ function clipEntries(text) {
 	const out = [];
 	for (const line of String(text || "").split("\n")) {
 		const tab = line.indexOf("\t");
-		if (tab > 0) out.push({ id: line.slice(0, tab), text: line.slice(tab + 1), raw: line });
+		if (tab > 0) out.push(Object.assign({ id: line.slice(0, tab), text: line.slice(tab + 1), raw: line }, classifyClip(line.slice(tab + 1))));
 	}
 	return out;
 }
@@ -72,4 +72,61 @@ function webRow(term) {
 
 function calcRow(term, result) {
 	return result ? [{ id: "calc", name: result, sub: term + " · Enter copies it", icon: "", glyph: "=", action: { kind: "copy", value: result } }] : [];
+}
+
+var FILE_ICONS = [
+	[/\.(png|jpe?g|webp|gif|bmp|svg)$/i, "file-image"],
+	[/\.(mp4|mkv|webm|mov|avi)$/i, "file-video-camera"],
+	[/\.(mp3|flac|wav|ogg|m4a)$/i, "file-music"],
+	[/\.(pdf|txt|md|docx?|odt)$/i, "file-text"],
+	[/\.(xlsx?|csv|ods)$/i, "file-spreadsheet"]
+];
+
+// What a clipboard entry is, from cliphist's one-line summary.
+function classifyClip(text) {
+	const t = String(text).trim();
+	const binary = t.match(/^\[\[ binary data (.+?) (\w+) (?:(\d+)x(\d+) )?\]\]$/);
+	if (binary) {
+		const image = /^(png|jpe?g|webp|bmp|gif)$/i.test(binary[2]);
+		return { kind: image ? "image" : "binary", size: binary[1], format: binary[2].toUpperCase(), dims: binary[3] ? binary[3] + " × " + binary[4] : "" };
+	}
+	if (/^file:\/\//.test(t)) {
+		const path = decodeURIComponent(t.replace(/^file:\/\//, "").split(/\s/)[0]);
+		return { kind: "file", path: path, fileName: path.split("/").pop() };
+	}
+	if (/^https?:\/\/\S+$/i.test(t)) return { kind: "link" };
+	if (/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(t)) return { kind: "color", color: t };
+	return { kind: "text" };
+}
+
+function fileIcon(name) {
+	const match = FILE_ICONS.find(([pattern]) => pattern.test(name));
+	return match ? match[1] : "file";
+}
+
+// A launcher row for an entry. `thumbs` maps image ids to their decoded file.
+function clipRow(e, thumbs) {
+	const row = { id: e.id, name: e.text, sub: "", icon: "", glyph: "", symbol: "", swatch: "", action: { kind: "clip", value: e.raw } };
+	if (e.kind === "image") {
+		const thumb = thumbs[e.id] ? "file://" + thumbs[e.id] : "";
+		return Object.assign(row, { name: "Image", sub: [e.format, e.dims, e.size].filter(x => x).join(" · "), icon: thumb, symbol: "file-image", preview: { kind: "image", image: thumb, caption: e.dims } });
+	}
+	if (e.kind === "binary") return Object.assign(row, { name: e.format + " data", sub: e.size, symbol: "file", preview: { kind: "text", text: e.format + " data, " + e.size } });
+	if (e.kind === "file") return Object.assign(row, { name: e.fileName, sub: e.path, symbol: fileIcon(e.fileName), preview: { kind: "text", text: e.path } });
+	if (e.kind === "link") return Object.assign(row, { sub: "Link", symbol: "globe", preview: { kind: "text", text: e.text } });
+	if (e.kind === "color") return Object.assign(row, { sub: "Color", swatch: e.color, preview: { kind: "color", color: e.color, text: e.text.toUpperCase() } });
+	return Object.assign(row, { sub: e.text.length + " characters", symbol: "type", preview: { kind: "text", text: e.text } });
+}
+
+function imageIds(entries) {
+	return entries.filter(e => e.kind === "image").map(e => e.id);
+}
+
+function parseThumbs(text) {
+	const out = {};
+	text.split("\n").forEach(line => {
+		const tab = line.indexOf("\t");
+		if (tab > 0) out[line.slice(0, tab)] = line.slice(tab + 1);
+	});
+	return out;
 }
