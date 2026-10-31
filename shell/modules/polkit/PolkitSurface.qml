@@ -10,15 +10,15 @@ Scope {
 
 	readonly property bool registered: agent.isRegistered
 	readonly property bool active: agent.isActive
+	Component.onCompleted: console.log("bloom: polkit agent loaded")
 
 	PolkitAgent { id: agent }
 
 	Variants {
 		model: Quickshell.screens
-		delegate: PolkitWindow {
+		delegate: Loader {
 			required property var modelData
-			screenData: modelData
-			agent: agent
+			Component.onCompleted: setSource(Qt.resolvedUrl("PolkitWindow.qml"), { screenData: modelData, agent: agent })
 		}
 	}
 }

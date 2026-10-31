@@ -12,6 +12,7 @@ import "modules/osd"
 import "modules/launcher"
 import "modules/session"
 import "modules/overview"
+import "modules/polkit"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -85,7 +86,7 @@ ShellRoot {
 	LazyLoader {
 		id: polkitLoader
 		active: _modules.indexOf("polkit") >= 0
-		source: Qt.resolvedUrl("modules/polkit/PolkitSurface.qml")
+		component: PolkitSurface {}
 	}
 
 	LazyLoader {
@@ -382,7 +383,10 @@ ShellRoot {
 		target: "polkit"
 
 		function state(): string {
-			return JSON.stringify({ enabled: polkitLoader.active, registered: polkitLoader.item?.registered ?? false, active: polkitLoader.item?.active ?? false });
+			// A LazyLoader's `item` loads it: never read it while it's off, or a
+			// status call would register an agent beside ii's.
+			const surface = polkitLoader.active ? polkitLoader.item : null;
+			return JSON.stringify({ enabled: polkitLoader.active, registered: surface?.registered ?? false, active: surface?.active ?? false });
 		}
 	}
 

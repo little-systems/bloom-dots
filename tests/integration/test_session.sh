@@ -32,5 +32,9 @@ for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:
 done
 assert_eq "$(ipc session state | jq .opened)" "false" "acting closes the menu"
 pass "each action runs its command"
+# Only one polkit agent can register: asking for its state must not load one.
+assert_eq "$(ipc polkit state | jq -c .)" '{"enabled":false,"registered":false,"active":false}' "polkit is off"
+if log_has "bloom: polkit agent loaded"; then fail "a status call loaded the polkit agent"; fi
+pass "asking for polkit's state doesn't load the agent"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"
