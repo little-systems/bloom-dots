@@ -19,6 +19,7 @@ Scope {
 	property string pamDir: "/etc/pam.d"
 	// Off in tests: a software renderer can't keep up with it.
 	property bool clockTurning: true
+	property var monitors: HyprState.monitors
 
 	readonly property bool locked: session.locked
 	readonly property string _marker: Quickshell.env("XDG_RUNTIME_DIR") + "/bloom-locked-"
@@ -34,21 +35,32 @@ Scope {
 	property bool _messageIsError: false
 	property string _pamNotice: ""
 	property string _pending: ""
+	property bool _leaving: false
+	property var _saved: ({})
 	signal failed()
 
 	function lock() {
 		if (session.locked) return;
 		root._setMessage("", false);
 		root._text = "";
-		// The marker goes first: a crash in between then errs towards locked.
-		Quickshell.execDetached(["touch", root._marker]);
+		root._saved = Lock.saveWorkspaces(root.monitors);
+		// The marker goes first: a crash in between then errs towards locked,
+		// and it carries the way back to the workspaces.
+		Quickshell.execDetached(["sh", "-c", 'umask 077; printf %s "$1" > "$2"', "sh", JSON.stringify(root._saved), root._marker]);
+		root._engage();
+		root._dispatch(Lock.leaveScript(root._saved));
+	}
+	function _engage() {
 		root._now = new Date();
 		session.locked = true;
+	}
+	function _dispatch(script) {
+		if (script !== "") Quickshell.execDetached(["sh", "-c", script]);
 	}
 	function status() {
 		return {
 			enabled: true, locked: session.locked, secure: session.secure, busy: root._busy,
-			capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
+			leaving: root._leaving, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
 		};
 	}
 	function submit(response) {
@@ -74,12 +86,30 @@ Scope {
 		root._setMessage(text, true);
 		root.failed();
 	}
+	// Authenticated: the blur fades off the empty workspace, the windows slide
+	// back under it, and only then does the compositor unlock.
 	function _unlock() {
 		root._pending = "";
-		root._busy = false;
 		root._setMessage("", false);
-		session.locked = false;
-		Quickshell.execDetached(["rm", "-f", root._marker]);
+		root._leaving = true;
+		returnTimer.start();
+		unlockTimer.start();
+	}
+	Timer {
+		id: returnTimer
+		interval: Tokens.lock.leave.returnMs
+		onTriggered: root._dispatch(Lock.returnScript(root._saved))
+	}
+	Timer {
+		id: unlockTimer
+		interval: Tokens.lock.leave.ms
+		onTriggered: {
+			session.locked = false;
+			root._leaving = false;
+			root._busy = false;
+			root._saved = {};
+			Quickshell.execDetached(["rm", "-f", root._marker]);
+		}
 	}
 
 	PamContext {
@@ -123,10 +153,16 @@ Scope {
 	}
 
 	// Left over from a crash: the compositor is still locked, so take it back.
+	// The screens are already on their empty workspaces.
 	Process {
 		running: true
-		command: ["test", "-e", root._marker]
-		onExited: code => { if (code === 0) root.lock(); }
+		command: ["cat", root._marker]
+		stdout: StdioCollector { id: markerText }
+		onExited: code => {
+			if (code !== 0) return;
+			root._saved = Lock.parseMarker(markerText.text);
+			root._engage();
+		}
 	}
 
 	Timer {
@@ -159,12 +195,13 @@ Scope {
 
 		WlSessionLockSurface {
 			id: surface
-			color: "black"
+			color: root._leaving ? "transparent" : "black"
 			readonly property real uiScale: Settings.values["bloom-scale"]
 
 			LockBackdrop {
 				anchors.fill: parent
 				source: root._wallpaper
+				leaving: root._leaving
 			}
 
 			LockView {
@@ -176,6 +213,7 @@ Scope {
 				theme: Theme
 				user: Quickshell.env("USER")
 				layout: root._layout
+				leaving: root._leaving
 				time: root._now
 				clockTurning: root.clockTurning
 				text: root._text

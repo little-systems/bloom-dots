@@ -40,7 +40,10 @@ read -r pw
 SH
 chmod +x "$TEST_TMP/pam/check"
 # The Caps Lock poll must not reach the real compositor.
-printf '#!/bin/sh\ncat "%s/devices.json"\n' "$TEST_TMP" > "$TEST_TMP/bin/hyprctl"
+cat > "$TEST_TMP/bin/hyprctl" <<SH
+#!/bin/sh
+if [ "\$1" = dispatch ]; then echo "\$2" >> "$TEST_TMP/calls"; else cat "$TEST_TMP/devices.json"; fi
+SH
 chmod +x "$TEST_TMP/bin/hyprctl"
 echo '{"keyboards":[{"capsLock":false,"main":true}]}' > "$TEST_TMP/devices.json"
 # The power buttons must not reach the real machine either.
@@ -66,6 +69,8 @@ assert_eq "$(state .locked)" "false" "starts unlocked"
 call lock >/dev/null
 wait_for "the compositor to confirm the lock" is .secure true
 pass "locks through the session-lock protocol"
+wait_for "the move to an empty workspace" grep -q 'workspace=2147483644' "$TEST_TMP/calls"
+pass "locking moves the screen to an empty workspace"
 
 # The surface must paint solidly: a translucent one leaks windows through
 # session_lock_xray. A corner shows the wallpaper, dimmed, at full alpha.
@@ -110,6 +115,9 @@ wait_for "the lock to come back after a crash" is .secure true
 pass "a crash doesn't unlock, and a restart relocks"
 
 enter letmein
+wait_for "the blur to leave while still locked" is '.leaving and .locked' true
+wait_for "the return to the workspace" grep -q 'workspace=3})' "$TEST_TMP/calls"
+pass "unlocking returns to the saved workspace, even after a crash"
 wait_for "the unlock" is .locked false
 assert_eq "$(state .message)" "" "no message left behind"
 pass "the right password unlocks"

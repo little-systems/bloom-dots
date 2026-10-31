@@ -180,6 +180,14 @@ Item {
 			tryCompare(box, "x", home, 1000);
 		}
 
+		// A correct password: the view leaves, and the surface shows what's under it.
+		function test_leavingFadesOut() {
+			const v = make();
+			tryCompare(part(v, "fieldBox"), "scale", 1, 1500);
+			v.leaving = true;
+			tryCompare(v, "opacity", 0, 1000);
+		}
+
 		function test_opensWithTheFieldFocused() {
 			const v = make();
 			v.focusField();

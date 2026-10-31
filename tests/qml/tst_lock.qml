@@ -40,4 +40,36 @@ TestCase {
 		verify(Math.abs(far - 100) < 0.01, "lobes touch the box");
 		verify(near < 90, "the lobes are visible");
 	}
+
+	readonly property var monitors: [
+		{ name: "eDP-1", activeWorkspace: { id: 3 } },
+		{ name: "HDMI-A-1", activeWorkspace: { id: 7 } }
+	]
+
+	function test_workspacesAreSaved() {
+		compare(Lock.saveWorkspaces(monitors), { "eDP-1": 3, "HDMI-A-1": 7 });
+		compare(Lock.saveWorkspaces([]), {});
+		compare(Lock.saveWorkspaces(undefined), {});
+	}
+
+	// A special workspace isn't somewhere to come back to, and a name that
+	// would break out of the shell line never reaches it.
+	function test_badMonitorsAreSkipped() {
+		compare(Lock.saveWorkspaces([{ name: "eDP-1", activeWorkspace: { id: -98 } }]), {});
+		compare(Lock.saveWorkspaces([{ name: "a'; rm -rf x", activeWorkspace: { id: 1 } }]), {});
+		compare(Lock.saveWorkspaces([{ name: "eDP-1" }]), {});
+	}
+
+	function test_scripts() {
+		const saved = { "eDP-1": 3 };
+		compare(Lock.leaveScript(saved), "hyprctl dispatch 'hl.dsp.focus({monitor=\"eDP-1\"})'; hyprctl dispatch 'hl.dsp.focus({workspace=2147483644})';");
+		compare(Lock.returnScript(saved), "hyprctl dispatch 'hl.dsp.focus({monitor=\"eDP-1\"})'; hyprctl dispatch 'hl.dsp.focus({workspace=3})';");
+		compare(Lock.returnScript({}), "");
+	}
+
+	function test_markerRoundTrip() {
+		compare(Lock.parseMarker(JSON.stringify({ "eDP-1": 3 })), { "eDP-1": 3 });
+		compare(Lock.parseMarker('{"bad name;": 3}'), {});
+		compare(Lock.parseMarker(""), {});
+	}
 }

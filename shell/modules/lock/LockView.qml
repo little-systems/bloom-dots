@@ -32,6 +32,7 @@ Item {
 	property int batteryLevel: 0
 	property bool batteryCharging: false
 	property bool batteryLow: false
+	property bool leaving: false
 
 	signal textEdited(string text)
 	signal submitted(string response)
@@ -54,6 +55,10 @@ Item {
 		root.submitted(response);
 	}
 	onTextChanged: if (field.text !== root.text) field.text = root.text
+	opacity: root.leaving ? 0 : 1
+	Behavior on opacity {
+		NumberAnimation { duration: Tokens.lock.leave.viewMs }
+	}
 
 	// cursor: default — any click or movement puts the keyboard back on the field
 	MouseArea {

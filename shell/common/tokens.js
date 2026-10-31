@@ -267,6 +267,7 @@ var lock = {
 		enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.9 }
 	},
 	shake: { ms: 60, steps: [-10, 8, -5, 0] },
+	leave: { viewMs: 200, ms: 400, returnMs: 150 },
 	capsPollMs: 500,
 	clearMs: 10000
 };

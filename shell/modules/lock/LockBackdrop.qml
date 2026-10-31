@@ -9,10 +9,16 @@ Rectangle {
 	id: root
 
 	property string source: ""
+	// Only after a correct password does this let anything through.
+	property bool leaving: false
 
 	objectName: "backdrop"
 	color: "black"
 	clip: true
+	opacity: root.leaving ? 0 : 1
+	Behavior on opacity {
+		NumberAnimation { duration: Tokens.lock.leave.ms; easing.type: Easing.OutCubic }
+	}
 
 	FilterBlur {
 		id: blur
@@ -42,6 +48,8 @@ Rectangle {
 		hideSource: true
 		live: false
 		visible: false
+		scale: root.leaving ? 1 : still._zoom
+		property real _zoom: 1
 		textureSize: Qt.size(blur.width / Tokens.lock.blur.downscale, blur.height / Tokens.lock.blur.downscale)
 		Behavior on scale {
 			NumberAnimation { duration: Tokens.lock.blur.zoomMs; easing.type: Easing.OutCubic }
@@ -55,7 +63,7 @@ Rectangle {
 		onTriggered: {
 			still.scheduleUpdate();
 			still.visible = true;
-			still.scale = Tokens.lock.blur.zoom;
+			still._zoom = Tokens.lock.blur.zoom;
 		}
 	}
 

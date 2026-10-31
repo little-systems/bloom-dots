@@ -44,3 +44,36 @@ function cookie(size, sides, depth) {
 	}
 	return points;
 }
+
+// While locked each screen sits on an empty workspace, so that going back slides
+// the windows in. Names come from the compositor, but this builds a shell line.
+var EMPTY_FROM = 2147483647;
+
+function _focus(monitor, workspace) {
+	return "hyprctl dispatch 'hl.dsp.focus({monitor=\"" + monitor + "\"})'; hyprctl dispatch 'hl.dsp.focus({workspace=" + workspace + "})';";
+}
+
+function saveWorkspaces(monitors) {
+	const saved = {};
+	(monitors || []).forEach(m => {
+		const id = m.activeWorkspace?.id;
+		if (/^[\w.-]+$/.test(m.name || "") && Number.isInteger(id) && id > 0) saved[m.name] = id;
+	});
+	return saved;
+}
+
+function leaveScript(saved) {
+	return Object.keys(saved).map(name => _focus(name, EMPTY_FROM - saved[name])).join(" ");
+}
+
+function returnScript(saved) {
+	return Object.keys(saved).map(name => _focus(name, saved[name])).join(" ");
+}
+
+function parseMarker(text) {
+	try {
+		return saveWorkspaces(Object.entries(JSON.parse(text)).map(([name, id]) => ({ name: name, activeWorkspace: { id: id } })));
+	} catch (e) {
+		return {};
+	}
+}
