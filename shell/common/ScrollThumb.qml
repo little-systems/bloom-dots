@@ -14,8 +14,8 @@ Rectangle {
 
 	objectName: "scrollThumb"
 	visible: root._max > 1
-	width: drag.containsMouse || drag.pressed ? 8 : 5
-	x: root.flickable.x + root.flickable.width - width - 2
+	width: drag.containsMouse || drag.pressed ? 6 : 3
+	x: root.flickable.x + root.flickable.width - width - 3
 	y: root.flickable.y + (root._max > 0 ? (root.flickable.contentY / root._max) * (root._track - root._size) : 0)
 	height: root._size
 	radius: 4

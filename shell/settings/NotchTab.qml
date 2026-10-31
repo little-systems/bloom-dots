@@ -41,7 +41,7 @@ Column {
 		}
 		SRow {
 			objectName: "notchPeek"
-			visible: root._peek; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+			visible: root._peek
 			theme: root.theme; icon: "timer"; label: "Peek Delay"; divider: false
 			desc: root._delay === 0 ? "Reveal instantly on top-edge contact" : "Rest on the top edge for " + root._delay + "ms to reveal"
 			SSlider { accessibleName: "Peek Delay"; theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-notch-edge-delay", value) }
@@ -57,7 +57,7 @@ Column {
 		}
 		SRow {
 			objectName: "timerSound"
-			visible: root._calendar; height: visible ? implicitHeight : 0; implicitHeight: 50.8
+			visible: root._calendar
 			theme: root.theme; icon: "bell-ring"; label: "Timer Sound"; desc: "Play a chime when the timer finishes"
 			SToggle { accessibleName: "Timer Sound"; theme: root.theme; checked: root._v["bloom-timer-sound-enabled"]; onToggled: value => root.set("bloom-timer-sound-enabled", value) }
 		}
@@ -75,7 +75,7 @@ Column {
 		}
 		SRow {
 			objectName: "defaultPanel"
-			visible: !root._memory; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+			visible: !root._memory
 			theme: root.theme; icon: "panel-top"; label: "Default Panel"; desc: "Open this panel when you click the notch"; divider: false
 			SSelect { accessibleName: "Default Panel";
 				theme: root.theme; popup: root.popup; value: root._v["bloom-notch-default-panel"]
@@ -180,9 +180,9 @@ Column {
 			TextInput {
 				id: cityField
 				objectName: "city"
-				x: 54
+				x: Tokens.settings.row.inset
 				y: 4
-				width: parent.width - 54 - 14 - 20
+				width: parent.width - Tokens.settings.row.inset - 34
 				height: 24
 				verticalAlignment: TextInput.AlignVCenter
 				text: root._city
@@ -226,9 +226,9 @@ Column {
 			Rectangle {
 				id: cityList
 				visible: root.cityResults.length > 0
-				x: 54
+				x: Tokens.settings.row.inset
 				y: cityField.y + cityField.height + 4
-				width: parent.width - 54 - 14
+				width: parent.width - Tokens.settings.row.inset - 14
 				height: cityColumn.implicitHeight + 8
 				radius: 8
 				color: root.theme.groupBg

@@ -28,7 +28,6 @@ Rectangle {
 	property string importLabel: "Import Settings"
 	property var cityResults: []
 	property var drives: []
-	property var apps: []
 	property var sys
 	property var net
 	property var bt
@@ -212,6 +211,7 @@ Rectangle {
 				onTextChanged: root.query = text
 				onAccepted: if (root._hits.length) root._open(root._hits[0])
 			}
+			Item { width: 1; height: 6 }
 			Text {
 				objectName: "noHits"
 				visible: root.query !== "" && root._hits.length === 0
@@ -299,7 +299,7 @@ Rectangle {
 							width: parent.width
 							height: Tokens.settings.tab.height
 							radius: Tokens.settings.tab.radius
-							color: tabItem.active ? Qt.rgba(root._accent.r, root._accent.g, root._accent.b, 0.22) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
+							color: tabItem.active ? Qt.rgba(1, 1, 1, 0.09) : tabHover.hovered ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
 							Behavior on color { ColorAnimation { duration: Tokens.settings.tab.ms } }
 
 							Rectangle {
@@ -491,15 +491,6 @@ Rectangle {
 						HoverHandler { cursorShape: Qt.PointingHandCursor }
 					}
 				}
-				FeaturePreview {
-					visible: !root._system && root.tab !== "about"
-					theme: root.theme
-					store: root.store
-					tab: root.tab
-					autostart: root.autostart
-					apps: root.apps
-				}
-				Item { width: 1; height: previewGap.visible ? 19 : 0; id: previewGap; visible: root.tab !== "about" && !root._system }
 				Loader {
 					width: parent.width
 					// A Loader keeps its last height when it goes inactive.

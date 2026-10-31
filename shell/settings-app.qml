@@ -54,14 +54,6 @@ ShellRoot {
 	}
 
 	function run(argv) { Quickshell.execDetached(argv); }
-	function _find(item, name) {
-		if (item.objectName === name) return item;
-		for (const child of item.children) {
-			const found = app._find(child, name);
-			if (found) return found;
-		}
-		return null;
-	}
 	function reset() {
 		const defaults = Logic.defaults();
 		Logic.keys().filter(key => app._keep.indexOf(key) < 0).forEach(key => Settings.set(key, defaults[key]));
@@ -145,7 +137,6 @@ ShellRoot {
 			net: Network
 			bt: Bluetooth
 			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])
-			apps: Dock.pinned.map(id => Apps.info(id)).filter(a => a.name)
 			onCityQueried: text => app.searchCity(text)
 			onAddFolderRequested: folderDialog.open()
 		}
@@ -217,10 +208,5 @@ ShellRoot {
 			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version, width: win.implicitWidth });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
-		function preview(open: bool): string {
-			const p = app._find(view, "featurePreview");
-			p.expanded = open;
-			return "ok";
-		}
 	}
 }

@@ -1,6 +1,7 @@
 import QtQuick
 import "../common"
 import "../common/render"
+import "../common/tokens.js" as Tokens
 
 // Bloom's .folder-chip.
 Rectangle {
@@ -19,12 +20,12 @@ Rectangle {
 	property bool active: false
 	signal clicked()
 
-	width: row.implicitWidth + 26
-	height: chipText.implicitHeight + 10
-	radius: height / 2
+	width: row.implicitWidth + 22
+	height: Tokens.settings.control
+	radius: Tokens.settings.controlRadius
 	border.width: 1
-	border.color: root.active ? root.accent : root.theme.border
-	color: root.active ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18) : hover.hovered ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.05)
+	border.color: root.active ? "transparent" : root.theme.border
+	color: root.active ? root.accent : hover.hovered ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(1, 1, 1, 0.05)
 
 	Row {
 		id: row
@@ -41,9 +42,9 @@ Rectangle {
 			id: chipText
 			text: root.text
 			textFormat: Text.PlainText
-			color: root.theme.text
+			color: root.active ? "white" : root.theme.text
 			font.family: Fonts.ui
-			font.pixelSize: 12
+			font.pixelSize: Tokens.settings.controlText
 		}
 	}
 	HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }

@@ -126,7 +126,7 @@ Column {
 				SToggle { objectName: "nightLight"; accessibleName: "Night Light"; theme: root.theme; checked: root.store.values["bloom-night-light"]; onToggled: value => root.store.set("bloom-night-light", value) }
 			}
 			SRow {
-				visible: root.store.values["bloom-night-light"]; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+				visible: root.store.values["bloom-night-light"]
 				theme: root.theme; icon: "sun"; label: "Warmth"; desc: root.store.values["bloom-night-temperature"] + " K"; divider: false
 				SSlider { accessibleName: "Warmth"; theme: root.theme; from: 2500; to: 6000; step: 100; value: root.store.values["bloom-night-temperature"]; onMoved: value => root.store.set("bloom-night-temperature", value) }
 			}
@@ -216,7 +216,7 @@ Column {
 				}
 			}
 			SRow {
-				visible: root.sys.batteryAvailable; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+				visible: root.sys.batteryAvailable
 				theme: root.theme; icon: "battery-full"; label: "Battery"; desc: root.sys.batteryLevel + "%"; divider: false
 			}
 		}
@@ -462,7 +462,7 @@ Column {
 				desc: root.sys.aiKey === "saved" ? "Saved in your keyring" : root.sys.aiKey === "missing" ? "Not set" : root.sys.aiKey === "unavailable" ? "Your keyring isn't available" : "Checking…"
 			}
 			Row {
-				x: 54
+				x: Tokens.settings.row.inset
 				spacing: 8
 				bottomPadding: 12
 				SField {

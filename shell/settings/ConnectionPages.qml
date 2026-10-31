@@ -117,7 +117,7 @@ Column {
 
 	component Message: Text {
 		width: parent.width
-		leftPadding: 54
+		leftPadding: Tokens.settings.row.inset
 		rightPadding: 14
 		bottomPadding: 10
 		wrapMode: Text.Wrap
@@ -132,7 +132,6 @@ Column {
 		visible: root.page === "network"
 		width: parent.width
 
-		SGroupLabel { theme: root.theme; text: "Wi-Fi"; above: 0 }
 		SGroup {
 			theme: root.theme
 			SRow {
@@ -142,17 +141,23 @@ Column {
 			}
 		}
 
-		SGroupLabel { visible: root.net.loaded && root.net.wifiEnabled; theme: root.theme; text: "Networks" }
+		Item {
+			visible: root.net.loaded && root.net.wifiEnabled
+			width: parent.width
+			height: 40
+			SGroupLabel { y: 2; theme: root.theme; text: "Networks · " + root.net.networks.length }
+			SChip {
+				objectName: "scan"
+				x: parent.width - width
+				y: 8
+				theme: root.theme; accent: root.accent; icon: "refresh-cw"
+				text: root.net.scanning ? "Scanning…" : "Scan"
+				onClicked: root.net.refresh(true)
+			}
+		}
 		SGroup {
 			visible: root.net.loaded && root.net.wifiEnabled
 			theme: root.theme
-			SRow {
-				objectName: "scan"
-				theme: root.theme; icon: "refresh-cw"; action: true; divider: root.net.networks.length > 0
-				label: root.net.scanning ? "Looking for Networks…" : "Scan Again"
-				desc: root.net.networks.length + " found"
-				onClicked: root.net.refresh(true)
-			}
 			Repeater {
 				model: root.net.networks
 				delegate: Column {
@@ -183,56 +188,65 @@ Column {
 							color: root.theme.textMuted
 						}
 					}
-					Column {
+					Rectangle {
 						visible: network.open
 						width: parent.width
-						bottomPadding: 12
-						spacing: 8
+						height: visible ? netDetail.implicitHeight : 0
+						color: Qt.rgba(1, 1, 1, 0.025)
+						Column {
+							id: netDetail
+							width: parent.width
+							topPadding: 2
+							bottomPadding: 10
+							spacing: 6
 
-						SField {
-							objectName: "password:" + network.modelData.ssid
-							visible: network.needsPassword || (network.error && network.error.code === "wrong-password")
-							x: 54
-							theme: root.theme
-							secret: true
-							placeholder: "Password"
-							text: root._password
-							onTextChanged: root._password = text
-							onAccepted: root._connect(network.modelData.ssid)
-						}
-						Message {
-							visible: network.enterprise
-							text: "This network needs a sign-in that Network Manager's own tools handle."
-						}
-						Message {
-							objectName: "netError"
-							visible: network.error !== null
-							text: root._errorText(network.error)
-							color: "#ff8a80"
-						}
-						Row {
-							x: 54
-							spacing: 8
-							SChip {
-								objectName: "netConnect:" + network.modelData.ssid
-								visible: !network.modelData.connected && !network.enterprise
-								theme: root.theme; accent: root.accent; active: true; text: "Connect"
-								onClicked: root._connect(network.modelData.ssid)
+							Message {
+								visible: network.enterprise
+								bottomPadding: 0
+								text: "This network needs a sign-in that Network Manager's own tools handle."
 							}
-							SChip {
-								objectName: "netDisconnect:" + network.modelData.ssid
-								visible: network.modelData.connected
-								theme: root.theme; accent: root.accent; text: "Disconnect"
-								onClicked: root.net.disconnect(network.modelData.ssid)
-							}
-							SChip {
-								objectName: "netForget:" + network.modelData.ssid
-								visible: network.modelData.saved
-								theme: root.theme; accent: root.accent; text: "Forget"
-								onClicked: {
-									root.net.forget(network.modelData.ssid);
-									root._openNet = "";
+							Row {
+								x: Tokens.settings.row.inset
+								spacing: 6
+								SField {
+									objectName: "password:" + network.modelData.ssid
+									visible: network.needsPassword || (network.error !== null && network.error.code === "wrong-password")
+									width: 220
+									theme: root.theme
+									secret: true
+									placeholder: "Password"
+									text: root._password
+									onTextChanged: root._password = text
+									onAccepted: root._connect(network.modelData.ssid)
 								}
+								SChip {
+									objectName: "netConnect:" + network.modelData.ssid
+									visible: !network.modelData.connected && !network.enterprise
+									theme: root.theme; accent: root.accent; active: true; text: "Connect"
+									onClicked: root._connect(network.modelData.ssid)
+								}
+								SChip {
+									objectName: "netDisconnect:" + network.modelData.ssid
+									visible: network.modelData.connected
+									theme: root.theme; accent: root.accent; text: "Disconnect"
+									onClicked: root.net.disconnect(network.modelData.ssid)
+								}
+								SChip {
+									objectName: "netForget:" + network.modelData.ssid
+									visible: network.modelData.saved
+									theme: root.theme; accent: root.accent; text: "Forget"
+									onClicked: {
+										root.net.forget(network.modelData.ssid);
+										root._openNet = "";
+									}
+								}
+							}
+							Message {
+								objectName: "netError"
+								visible: network.error !== null
+								bottomPadding: 0
+								text: root._errorText(network.error)
+								color: "#ff8a80"
 							}
 						}
 					}
@@ -244,7 +258,7 @@ Column {
 		Text {
 			objectName: "noVpn"
 			visible: !root.sys || root.sys.vpns.length === 0
-			leftPadding: 6
+			leftPadding: 2
 			text: "No VPNs are set up. Add one with NetworkManager."
 			color: root.theme.textMuted
 			font.family: Fonts.ui
@@ -273,7 +287,6 @@ Column {
 		visible: root.page === "bluetooth"
 		width: parent.width
 
-		SGroupLabel { theme: root.theme; text: "Bluetooth"; above: 0 }
 		SGroup {
 			theme: root.theme
 			SRow {
@@ -306,7 +319,7 @@ Column {
 					}
 					Row {
 						visible: device.open
-						x: 54
+						x: Tokens.settings.row.inset
 						bottomPadding: 12
 						spacing: 8
 						SChip {
@@ -377,14 +390,14 @@ Column {
 						SField {
 							objectName: "pin"
 							visible: !!candidate.prompt && candidate.prompt.kind === "provide"
-							x: 54
+							x: Tokens.settings.row.inset
 							theme: root.theme
 							placeholder: "PIN"
 							text: root._pin
 							onTextChanged: root._pin = text
 						}
 						Row {
-							x: 54
+							x: Tokens.settings.row.inset
 							spacing: 8
 							SChip {
 								objectName: "pairYes"

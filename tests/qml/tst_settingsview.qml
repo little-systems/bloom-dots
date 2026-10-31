@@ -203,18 +203,28 @@ Item {
 		}
 
 		// The app layout: it fills the window and reflows.
+		// Compact, and the same size on every page.
+		function test_compactSizes() {
+			const v = make();
+			waitForRendering(host);
+			verify(part(v, "row:24-Hour Time").height <= 42, "row height");
+			compare(part(v, "tab:display").height, 30);
+			compare(part(v, "time24").height, 20);
+			compare(part(v, "lowPower").height, 26);
+		}
+
 		function test_layoutFollowsTheWindow() {
 			const v = make();
 			waitForRendering(host);
 			const tab = part(v, "tab:display");
 			verify(tab.width > 40);
 			compare(part(v, "close").mapToItem(v, 0, 0).x + 28 + 16, v.width);
-			verify(part(v, "row:Launch at Login").width <= 760);
+			verify(part(v, "row:Launch at Login").width <= 640);
 		}
 
 		function test_narrowWindowsUseARail() {
 			const v = make();
-			v.width = 700;
+			v.width = 650;
 			waitForRendering(host);
 			verify(!part(v, "settingsSearch").visible, "icons only");
 			v.width = 1000;
@@ -393,78 +403,10 @@ Item {
 			compare(fakeStore.values["bloom-status-widgets"].left, ["weather", "cpu"]);
 		}
 
-		function test_previewFoldsAndStartsClosed() {
-			const v = make();
-			verify(!part(v, "previewStage").visible);
-			click(v, "preview:fold");
-			verify(part(v, "previewStage").visible);
-			compare(part(v, "previewStage").height, 150);
-			compare(part(v, "previewCaption").text, "12-hour time · Launch at login off · Update available: dot on");
-		}
-
-		function test_noPreviewOnAbout() {
-			verify(!part(make("about"), "featurePreview").visible);
-		}
-
-		function test_settingJumpsToItsScene() {
-			const v = make();
-			click(v, "preview:fold");
-			fakeStore.set("bloom-low-battery-threshold", 30);
-			tryCompare(part(v, "featurePreview"), "feature", "battery");
-			tryVerify(() => findChild(v, "previewBattery") !== null, 1000, "battery pill");
-			compare(findChild(v, "previewBattery").text, "Low Battery · 15%");
-			fakeStore.set("bloom-low-battery-threshold", 10);
-			tryCompare(findChild(v, "previewBattery"), "text", "On Battery · 15%");
-		}
-
-		function test_clockFollowsTheFormat() {
-			const v = make();
-			click(v, "preview:fold");
-			tryVerify(() => findChild(v, "previewClock") !== null, 1000, "clock");
-			compare(findChild(v, "previewClock").text, "3:42 PM");
-			fakeStore.set("bloom-time-format-24h", true);
-			compare(findChild(v, "previewClock").text, "15:42");
-		}
-
-		function test_notchScenes() {
-			const v = make("notch");
-			click(v, "preview:fold");
-			tryVerify(() => findChild(v, "previewPill") !== null, 1000, "pill");
-			compare(findChild(v, "previewPill").targetWidth, 300);
-			click(v, "scene:device");
-			tryCompare(part(v, "featurePreview"), "feature", "device");
-			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 330; }, 1000, "device width");
-			click(v, "scene:music");
-			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 340; }, 1000, "open player");
-			compare(part(v, "previewStage").height, 190);
-			click(v, "previewPlayerToggle");
-			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 230; }, 1000, "collapsed");
-		}
-
-		function test_dockPreviewFollowsSettings() {
-			const v = make("dock");
-			v.apps = [{ name: "Files", icon: "" }];
-			click(v, "preview:fold");
-			tryVerify(() => findChild(v, "dockTile:Files") !== null, 1000, "app tile");
-			verify(findChild(v, "dockTile:Trash") !== null, "extras on the left");
-			fakeStore.set("bloom-enabled-modules", []);
-			tryVerify(() => { const t = findChild(v, "previewDockOff"); return t && t.visible; }, 1000, "off");
-		}
-
-		function test_overlayPreview() {
-			const v = make("overlays");
-			click(v, "preview:fold");
-			tryVerify(() => { const e = findChild(v, "previewEdge"); return e && e.visible; }, 1000, "edge marker");
-			fakeStore.set("bloom-volume-hud-enabled", false);
-			tryVerify(() => { const t = findChild(v, "previewHudOff"); return t && t.visible; }, 1000, "off");
-			compare(findChild(v, "previewHudOff").text, "Volume HUD is off");
-		}
-
 		function test_systemPagesShowInTheSidebar() {
 			const v = make();
 			click(v, "tab:display");
 			compare(part(v, "heading").text, "Display");
-			verify(!part(v, "featurePreview").visible);
 			verify(part(v, "page:display").visible);
 		}
 
@@ -496,11 +438,10 @@ Item {
 		function test_noGapAfterLeavingASystemPage() {
 			const v = make("hyprland");
 			waitForRendering(host);
-			v.tab = "general";
+			v.tab = "overlays";
 			waitForRendering(host);
-			const preview = part(v, "featurePreview"), row = part(v, "row:Launch at Login");
-			const gap = row.mapToItem(v, 0, 0).y - (preview.mapToItem(v, 0, 0).y + preview.height);
-			fuzzyCompare(gap, 40, 3, "only the group label sits between them");
+			const y = part(v, "row:Volume HUD").mapToItem(part(v, "page").contentItem, 0, 0).y;
+			verify(y < 60, "the first group sits at the top, not at " + y);
 		}
 
 		function test_tabReachesControls() {

@@ -23,8 +23,6 @@ Column {
 		SRow {
 			objectName: "volumeEdge"
 			visible: root._volume
-			height: visible ? implicitHeight : 0
-			implicitHeight: 50.8
 			theme: root.theme; icon: "arrow-left-to-line"; label: "Show on Edge Hover"; desc: "Slide in from left edge"
 			SToggle { accessibleName: "Show on Edge Hover"; theme: root.theme; checked: root.store.values["bloom-volume-edge-enabled"]; onToggled: value => root.store.set("bloom-volume-edge-enabled", value) }
 		}
@@ -34,8 +32,6 @@ Column {
 		}
 		SRow {
 			visible: root._brightness
-			height: visible ? implicitHeight : 0
-			implicitHeight: 49.8
 			theme: root.theme; icon: "arrow-right-to-line"; label: "Show on Edge Hover"; desc: "Slide in from right edge"; divider: false
 			SToggle { accessibleName: "Show on Edge Hover"; theme: root.theme; checked: root.store.values["bloom-brightness-edge-enabled"]; onToggled: value => root.store.set("bloom-brightness-edge-enabled", value) }
 		}
@@ -60,12 +56,12 @@ Column {
 		}
 		SRow {
 			objectName: "maxJump"
-			visible: root._protect; height: visible ? implicitHeight : 0; implicitHeight: 50.8
+			visible: root._protect
 			theme: root.theme; icon: "sliders-vertical"; label: "Largest Jump"; desc: root.store.values["bloom-volume-max-jump"] + "% at a time"
 			SSlider { accessibleName: "Largest Jump"; theme: root.theme; from: 1; to: 50; step: 1; value: root.store.values["bloom-volume-max-jump"]; onMoved: value => root.store.set("bloom-volume-max-jump", value) }
 		}
 		SRow {
-			visible: root._protect; height: visible ? implicitHeight : 0; implicitHeight: 49.8
+			visible: root._protect
 			theme: root.theme; icon: "volume-2"; label: "Volume Limit"; desc: root.store.values["bloom-volume-max-level"] + "%"; divider: false
 			SSlider { accessibleName: "Volume Limit"; theme: root.theme; from: 20; to: 150; step: 1; value: root.store.values["bloom-volume-max-level"]; onMoved: value => root.store.set("bloom-volume-max-level", value) }
 		}

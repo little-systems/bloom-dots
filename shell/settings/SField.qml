@@ -1,5 +1,6 @@
 import QtQuick
 import "../common/render"
+import "../common/tokens.js" as Tokens
 
 // A text field in Settings' own style.
 Rectangle {
@@ -12,8 +13,8 @@ Rectangle {
 	signal accepted()
 
 	width: 240
-	height: 28
-	radius: 6
+	height: Tokens.settings.control
+	radius: Tokens.settings.controlRadius
 	color: root.theme.groupBg
 	border.width: 1
 	border.color: input.activeFocus ? "#0a84ff" : root.theme.border
@@ -36,7 +37,7 @@ Rectangle {
 		color: root.theme.text
 		clip: true
 		font.family: Fonts.ui
-		font.pixelSize: 12
+		font.pixelSize: Tokens.settings.controlText
 		Keys.onReturnPressed: root.accepted()
 		Text {
 			visible: input.text === ""

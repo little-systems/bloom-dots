@@ -69,8 +69,8 @@ Item {
 				font.family: Fonts.uiFor(Font.Medium)
 				font.pixelSize: Tokens.settings.row.label
 				font.weight: Font.Medium
-				height: 16.8
-				lineHeight: 16.8
+				height: Tokens.settings.row.labelLine
+				lineHeight: Tokens.settings.row.labelLine
 				lineHeightMode: Text.FixedHeight
 			}
 			Text {
@@ -83,8 +83,8 @@ Item {
 				opacity: 0.8
 				font.family: Fonts.ui
 				font.pixelSize: Tokens.settings.row.desc
-				height: 12
-				lineHeight: 12
+				height: Tokens.settings.row.descLine
+				lineHeight: Tokens.settings.row.descLine
 				lineHeightMode: Text.FixedHeight
 			}
 		}
