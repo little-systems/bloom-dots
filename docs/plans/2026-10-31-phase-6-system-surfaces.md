@@ -43,8 +43,8 @@ Grid of workspaces with live previews (the dock's previews already use Screencop
 
 The final review of this phase covers Phase 5's merged parity work too: that branch merged without its whole-branch review, at the owner's call.
 
-## Open questions for the owner
+## Owner decisions (2026-10-31)
 
-1. Launcher look: a Spotlight-style search bar that grows with results, or a fixed panel?
-2. Web search engine for the launcher's prefix.
-3. Prefix characters: the spec names the features, not the keys.
+1. Launcher: Spotlight-style, a centred search bar that grows on springs as results appear.
+2. Web search: Google, in the default browser.
+3. Prefixes: `;` clipboard, `:` emoji, `=` calculator, `>` command, `?` web, `!` user actions.
