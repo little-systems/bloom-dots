@@ -18,7 +18,10 @@ Column {
 	spacing: 0
 
 	readonly property var _h: root.sys.hypr
-	function hOpt(path, fallback) { return Sys.option(root._h, path, fallback); }
+	function hOpt(path, fallback) {
+		const value = Sys.option(root._h, path, undefined);
+		return value !== undefined ? value : root.sys.hyprLive[path] ?? fallback;
+	}
 
 	component Page: Column {
 		required property string pageId
@@ -28,6 +31,43 @@ Column {
 	}
 	Page {
 		pageId: "display"
+		// Nothing a bad mode can't undo by itself: no answer puts it back.
+		Rectangle {
+			objectName: "keepDisplay"
+			visible: root.sys.pendingDisplay !== null
+			width: parent.width
+			height: visible ? 74 : 0
+			radius: 12
+			color: root.theme.groupBg
+			border.width: 1
+			border.color: root.theme.border
+
+			Text {
+				x: 14
+				y: 12
+				text: "Keep these display settings?"
+				color: root.theme.text
+				font.family: Fonts.uiFor(Font.DemiBold)
+				font.pixelSize: 14
+				font.weight: Font.DemiBold
+			}
+			Text {
+				objectName: "keepCountdown"
+				x: 14
+				y: 36
+				text: "Reverting in " + root.sys.pendingSeconds + " seconds"
+				color: root.theme.textMuted
+				font.family: Fonts.ui
+				font.pixelSize: 12
+			}
+			Row {
+				x: parent.width - width - 14
+				anchors.verticalCenter: parent.verticalCenter
+				spacing: 8
+				SChip { objectName: "displayRevert"; theme: root.theme; text: "Revert"; onClicked: root.sys.revertDisplay() }
+				SChip { objectName: "displayKeep"; theme: root.theme; text: "Keep Changes"; active: true; onClicked: root.sys.keepDisplay() }
+			}
+		}
 		Repeater {
 			model: root.sys.monitors
 			delegate: Column {

@@ -22,6 +22,9 @@ Scope {
 	property int updates: -1
 	property var defaults: ({})
 	property var hypr: ({})
+	property var hyprLive: ({})
+	property var pendingDisplay: null
+	property int pendingSeconds: 0
 	property var _monitorLines: []
 
 	readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
@@ -40,7 +43,7 @@ Scope {
 	readonly property string _hyprState: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/bloom/hypr-settings.json"
 
 	function refresh() {
-		for (const p of [monitorsProc, disksProc, infoProc, timeProc, updatesProc]) p.running = true;
+		for (const p of [monitorsProc, disksProc, infoProc, timeProc, updatesProc, optionsProc]) p.running = true;
 		root._loadDefaults();
 	}
 	function setVolume(v) { Audio.setVolume(v); }
@@ -59,11 +62,30 @@ Scope {
 		Quickshell.execDetached(["hyprctl", "eval", Sys.hyprConfig(Sys.withOption({}, path, value))]);
 		root._save();
 	}
+	// Tried first, saved only on Keep: an unusable mode reverts by itself.
 	function setMonitor(monitor, mode, scale) {
+		if (root.pendingDisplay === null) {
+			root.pendingDisplay = { name: monitor.name, line: Sys.monitorLine(monitor, Sys.currentMode(monitor), monitor.scale) };
+		}
 		const line = Sys.monitorLine(monitor, mode, scale);
-		root._monitorLines = root._monitorLines.filter(l => l.indexOf('"' + monitor.name + '"') < 0).concat([line]);
+		root.pendingDisplay = Object.assign({}, root.pendingDisplay, { next: line });
+		root.pendingSeconds = 15;
+		pendingTimer.restart();
 		Quickshell.execDetached(["hyprctl", "eval", line]);
+		monitorsProc.running = true;
+	}
+	function keepDisplay() {
+		const pending = root.pendingDisplay;
+		pendingTimer.stop();
+		root.pendingDisplay = null;
+		root._monitorLines = root._monitorLines.filter(l => l.indexOf('"' + pending.name + '"') < 0).concat([pending.next]);
 		root._save();
+	}
+	function revertDisplay() {
+		const pending = root.pendingDisplay;
+		pendingTimer.stop();
+		root.pendingDisplay = null;
+		Quickshell.execDetached(["hyprctl", "eval", pending.line]);
 		monitorsProc.running = true;
 	}
 	function _save() {
@@ -81,6 +103,20 @@ Scope {
 		stateProc.running = true;
 	}
 
+	Timer {
+		id: pendingTimer
+		interval: 1000
+		repeat: true
+		onTriggered: {
+			root.pendingSeconds--;
+			if (root.pendingSeconds <= 0) root.revertDisplay();
+		}
+	}
+	Process {
+		id: optionsProc
+		command: ["sh", "-c", "for o in " + Sys.OPTIONS.join(" ") + "; do printf '%s|' \"$o\"; hyprctl getoption \"$(printf %s \"$o\" | tr . :)\" | head -1; done"]
+		stdout: StdioCollector { onStreamFinished: root.hyprLive = Sys.parseOptions(text) }
+	}
 	Process {
 		id: stateProc
 		command: ["cat", root._hyprState]

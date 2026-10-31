@@ -42,6 +42,11 @@ Item {
 		property var monitors: [{ name: "eDP-1", description: "Panel", width: 1920, height: 1080, refreshRate: 60.05, scale: 1, x: 0, y: 0, availableModes: ["1920x1080@60.05Hz", "1280x720@60.00Hz"] }]
 		property var disks: [{ path: "/", size: 2e11, used: 1e11 }]
 		property var hypr: ({})
+		property var hyprLive: ({ "general.gaps_in": 9 })
+		property var pendingDisplay: null
+		property int pendingSeconds: 15
+		function keepDisplay() { calls.push(["keep"]); pendingDisplay = null; }
+		function revertDisplay() { calls.push(["revert"]); pendingDisplay = null; }
 		property var calls: []
 		property var sinks: [{ name: "a", description: "Speakers" }]
 		property var sources: []
@@ -464,6 +469,24 @@ Item {
 			const v = make();
 			compare(part(v, "time24").accessibleName, "24-Hour Time");
 			compare(part(v, "battery").accessibleName, "Low Battery Alert");
+		}
+
+		function test_displayChangeAsksToKeep() {
+			fakeSys.calls = [];
+			const v = make("display");
+			verify(!part(v, "keepDisplay").visible);
+			fakeSys.pendingDisplay = { name: "eDP-1" };
+			verify(part(v, "keepDisplay").visible);
+			compare(part(v, "keepCountdown").text, "Reverting in 15 seconds");
+			click(v, "displayRevert");
+			compare(fakeSys.calls, [["revert"]]);
+			verify(!part(v, "keepDisplay").visible);
+		}
+
+		function test_pagesShowLiveValues() {
+			const v = make("hyprland");
+			compare(part(v, "gapsIn").value, 9);
+			compare(findChild(part(v, "row:Inner Gaps"), "desc").text, "9 px between windows");
 		}
 
 		function test_closeSignals() {

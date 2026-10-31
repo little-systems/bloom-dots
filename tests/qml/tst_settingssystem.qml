@@ -32,4 +32,9 @@ TestCase {
 		compare(Sys.appName("org.mozilla.firefox.desktop"), "firefox");
 		compare(Sys.appName(""), "Not set");
 	}
+
+	function test_liveOptions() {
+		const o = Sys.parseOptions("general.gaps_in|css gap data: 4 4 4 4\ninput.repeat_rate|int: 35\ninput.sensitivity|float: -0.200000\nanimations.enabled|bool: true\ndecoration.blur.enabled|bool: false\nnoise");
+		compare(o, { "general.gaps_in": 4, "input.repeat_rate": 35, "input.sensitivity": -0.2, "animations.enabled": true, "decoration.blur.enabled": false });
+	}
 }

@@ -73,3 +73,38 @@ var DEFAULTS = [
 function appName(desktopId) {
 	return String(desktopId || "").replace(/\.desktop$/, "").split(".").pop() || "Not set";
 }
+
+// Every Hyprland option a page shows, as `path` for hl.config.
+var OPTIONS = [
+	"input.repeat_delay", "input.repeat_rate", "input.sensitivity", "input.touchpad.natural_scroll",
+	"input.touchpad.disable_while_typing", "input.touchpad.scroll_factor", "general.gaps_in", "general.gaps_out",
+	"general.border_size", "decoration.rounding", "decoration.blur.enabled", "animations.enabled"
+];
+
+function optionName(path) {
+	return path.replace(/\./g, ":");
+}
+
+// `hyprctl getoption` per option, as "path|first line of its answer". Gaps read
+// "css gap data: 4 4 4 4"; the first number is the setting.
+function parseOptions(text) {
+	const out = {};
+	text.split("\n").forEach(line => {
+		const at = line.indexOf("|");
+		if (at < 0) return;
+		const path = line.slice(0, at), m = line.slice(at + 1).match(/^(int|float|bool|custom type|css gap data)[^:]*:\s*(\S+)/);
+		if (!m) return;
+		const value = m[2];
+		out[path] = value === "true" ? true : value === "false" ? false : Number(value);
+	});
+	return out;
+}
+
+function withValues(current, overrides) {
+	let out = {};
+	OPTIONS.forEach(path => {
+		const value = option(overrides, path, current[path]);
+		if (value !== undefined) out[path] = value;
+	});
+	return out;
+}
