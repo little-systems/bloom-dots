@@ -35,6 +35,8 @@ Grid of workspaces with live previews (the dock's previews already use Screencop
 
 `Quickshell.Services.Polkit` with a Bloom dialog. Exclusive with ii: one switch, never both, with a rollback step. The dock's tray host follows the same handover. Owner live check required.
 
+**Result (2026-10-31):** polkit switched, see `docs/handover/phase6-polkit-switch.md`. The tray needed no ii change: nothing held `org.kde.StatusNotifierWatcher` on the session bus, so adding `tray` to the modules made Bloom the watcher and host. No tray app was running at the time, so a real icon in the dock is still the owner's live check.
+
 ### 6E: Lock screen
 
 `WlSessionLock` with `Quickshell.Services.Pam`, config `hyprlock`'s PAM stack or our own. hyprlock stays the fallback; `misc:allow_session_lock_restore` keeps the session locked if the surface crashes. hypridle's `lock_cmd` currently calls ii, so changing it is an owner-approved step. Last, because a bug here is the one that can lock the owner out; TTY recovery steps are written before the first live test.
