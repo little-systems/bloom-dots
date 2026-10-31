@@ -265,6 +265,9 @@ var settings = {
 var osk = { width: 760, height: 280, margin: 12, radius: 18, gap: 6, key: 44, keyRadius: 9, text: 15 };
 var overlay = { dim: 0.45, radius: 14, padding: 14, crosshair: 18 };
 
+// Scrolling everywhere: slightly underdamped, so it settles with a small bounce.
+var scroll = { stiffness: 260, damping: 20, resistance: 0.3, settleMs: 90 };
+
 // Bloom's morph: surfaces open by growing in both width and height on the
 // notch's spring, not by scaling. `from` is the share of full size they start at.
 var morph = { stiffness: 450, damping: 34, mass: 0.8, from: 0.9 };
