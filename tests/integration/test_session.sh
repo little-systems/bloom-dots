@@ -36,5 +36,8 @@ pass "each action runs its command"
 assert_eq "$(ipc polkit state | jq -c .)" '{"enabled":false,"registered":false,"active":false}' "polkit is off"
 if log_has "bloom: polkit agent loaded"; then fail "a status call loaded the polkit agent"; fi
 pass "asking for polkit's state doesn't load the agent"
+assert_eq "$(ipc lock state | jq -c .)" '{"enabled":false,"locked":false}' "lock is off"
+assert_eq "$(ipc lock lock)" "off" "the lock refuses while its module is off"
+pass "the lock stays out of the way while it's off"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

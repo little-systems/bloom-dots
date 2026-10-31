@@ -249,6 +249,18 @@ var overview = {
 };
 
 // The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
+var lock = {
+	top: 0.26,
+	clock: 96,
+	date: 17,
+	user: 13,
+	message: 12,
+	gap: 12,
+	field: { width: 300, height: 40, radius: 20, size: 14, paddingH: 18 },
+	shake: { ms: 60, steps: [-10, 8, -5, 0] },
+	capsPollMs: 500
+};
+
 var polkit = {
 	width: 400,
 	padding: 20,

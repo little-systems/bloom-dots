@@ -41,6 +41,10 @@ Grid of workspaces with live previews (the dock's previews already use Screencop
 
 `WlSessionLock` with `Quickshell.Services.Pam`, config `hyprlock`'s PAM stack or our own. hyprlock stays the fallback; `misc:allow_session_lock_restore` keeps the session locked if the surface crashes. hypridle's `lock_cmd` currently calls ii, so changing it is an owner-approved step. Last, because a bug here is the one that can lock the owner out; TTY recovery steps are written before the first live test.
 
+**Design (2026-10-31):** a `lock` module, off by default, built from `WlSessionLock` and `PamContext` with the existing `hyprlock` PAM service, so Bloom needs no new file in `/etc/pam.d`. The surface is always opaque, because `session_lock_xray` is on and anything translucent would show the windows behind it. Solid black until Phase 7 owns the wallpaper. Clock, date, user, password field, Caps Lock warning, PAM messages. A marker in `$XDG_RUNTIME_DIR`, keyed by the compositor instance, re-locks after a crash; `bloom-shell` restarts on failure and `allow_session_lock_restore` lets it reclaim the lock. Only a PAM success unlocks.
+
+Tests run in headless sway with a fixture PAM stack (`pam_exec` comparing a fake password) and real keystrokes through `wtype`. Recovery steps live in `docs/handover/phase6-lock-recovery.md` and come before the first live test. Pointing `hypridle` and `Super+L` at Bloom is a separate owner-approved step.
+
 ## Review
 
 The final review of this phase covers Phase 5's merged parity work too: that branch merged without its whole-branch review, at the owner's call.

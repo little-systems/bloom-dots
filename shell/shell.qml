@@ -13,6 +13,7 @@ import "modules/launcher"
 import "modules/session"
 import "modules/overview"
 import "modules/polkit"
+import "modules/lock"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -83,6 +84,11 @@ ShellRoot {
 	}
 
 	// Exclusive with any other polkit agent: only one can register (§3.4).
+	LazyLoader {
+		id: lockLoader
+		active: _modules.indexOf("lock") >= 0
+		component: LockSurface {}
+	}
 	LazyLoader {
 		id: polkitLoader
 		active: _modules.indexOf("polkit") >= 0
@@ -379,6 +385,20 @@ ShellRoot {
 	}
 
 	// The agent's state, never what's typed: passwords don't come through IPC.
+	IpcHandler {
+		target: "lock"
+
+		function lock(): string {
+			if (!lockLoader.active) return "off";
+			lockLoader.item.lock();
+			return "ok";
+		}
+		function state(): string {
+			// As with polkit: never load it just to report that it's off.
+			return JSON.stringify(lockLoader.active ? lockLoader.item.status() : { enabled: false, locked: false });
+		}
+	}
+
 	IpcHandler {
 		target: "polkit"
 
