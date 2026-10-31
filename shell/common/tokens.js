@@ -217,7 +217,7 @@ var launcher = {
 	radius: 18,
 	maxRows: 8,
 	padding: 10,
-	preview: { width: 300, gap: 10, radius: 10, swatch: 96, text: 12 },
+	thumb: { width: 240, height: 150, padding: 8, radius: 10 },
 	gap: 6,
 	field: { paddingH: 14, height: 44, radius: 12, gap: 10, icon: 16, size: 15 },
 	sub: 11,

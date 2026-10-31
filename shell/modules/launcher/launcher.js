@@ -118,13 +118,13 @@ function clipRow(e, thumbs) {
 	const row = { id: e.id, name: e.text, sub: "", icon: "", glyph: "", symbol: "", swatch: "", action: { kind: "clip", value: e.raw } };
 	if (e.kind === "image") {
 		const thumb = thumbs[e.id] ? "file://" + thumbs[e.id] : "";
-		return Object.assign(row, { name: "Image", sub: [e.format, e.dims, e.size].filter(x => x).join(" · "), icon: thumb, symbol: "file-image", preview: { kind: "image", image: thumb, caption: e.dims } });
+		return Object.assign(row, { name: "Image", sub: [e.format, e.dims, e.size].filter(x => x).join(" · "), thumbnail: thumb, symbol: "file-image" });
 	}
-	if (e.kind === "binary") return Object.assign(row, { name: e.format + " data", sub: e.size, symbol: "file", preview: { kind: "text", text: e.format + " data, " + e.size } });
-	if (e.kind === "file") return Object.assign(row, { name: e.fileName, sub: e.path, symbol: fileIcon(e.fileName), preview: { kind: "text", text: e.path } });
-	if (e.kind === "link") return Object.assign(row, { sub: "Link", symbol: "globe", preview: { kind: "text", text: e.text } });
-	if (e.kind === "color") return Object.assign(row, { sub: "Color", swatch: e.color, preview: { kind: "color", color: e.color, text: e.text.toUpperCase() } });
-	return Object.assign(row, { sub: e.text.length + " characters", symbol: "type", preview: { kind: "text", text: e.text } });
+	if (e.kind === "binary") return Object.assign(row, { name: e.format + " data", sub: e.size, symbol: "file" });
+	if (e.kind === "file") return Object.assign(row, { name: e.fileName, sub: e.path, symbol: fileIcon(e.fileName) });
+	if (e.kind === "link") return Object.assign(row, { sub: "Link", symbol: "globe" });
+	if (e.kind === "color") return Object.assign(row, { sub: "Color", swatch: e.color });
+	return Object.assign(row, { sub: e.text.length + " characters", symbol: "type" });
 }
 
 function imageIds(entries) {

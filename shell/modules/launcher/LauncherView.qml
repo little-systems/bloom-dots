@@ -38,11 +38,15 @@ Item {
 	readonly property real barHeight: Tokens.launcher.field.height + 2 * Tokens.launcher.padding
 	readonly property real targetHeight: root.barHeight + (root.chatting
 		? Tokens.launcher.gap + Tokens.launcher.maxRows * Tokens.dock.popup.row.height
-		: root.results.length ? Tokens.launcher.gap + Math.min(root.results.length, Tokens.launcher.maxRows) * Tokens.dock.popup.row.height : 0)
+		: root.results.length ? Tokens.launcher.gap + root._listHeight : 0)
+	// Images run taller than the other rows, so the card grows by what's shown.
+	readonly property real _maxList: Tokens.launcher.maxRows * Tokens.dock.popup.row.height
+	readonly property real _listHeight: Math.min(root._maxList, root.results.reduce((sum, r) => sum + root._rowHeight(r), 0))
+	function _rowHeight(row) {
+		return row.thumbnail !== undefined ? Tokens.launcher.thumb.height + 2 * Tokens.launcher.thumb.padding : Tokens.dock.popup.row.height;
+	}
 
 	property bool _open: false
-	// What the selected row shows beside the list (the clipboard's previews).
-	readonly property var _preview: root.results[root.selectedIndex]?.preview ?? null
 
 	function open() {
 		field.text = "";
@@ -122,7 +126,7 @@ Item {
 		objectName: "card"
 		x: (root.width - width) / 2
 		y: root.height * Tokens.launcher.top
-		width: Tokens.launcher.width + (root._preview ? Tokens.launcher.preview.width + Tokens.launcher.preview.gap : 0)
+		width: Tokens.launcher.width
 		height: heightSpring.value
 		radius: Tokens.launcher.radius
 		color: root.theme.bgExpanded
@@ -209,7 +213,7 @@ Item {
 
 					objectName: "row:" + row.modelData.id
 					width: list.width
-					height: Tokens.dock.popup.row.height
+					height: root._rowHeight(row.modelData)
 					radius: Tokens.dock.popup.row.radius
 					color: row.selected ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, Tokens.dock.popup.selectedAlpha) : "transparent"
 					border.width: row.selected ? 1 : 0
@@ -225,9 +229,13 @@ Item {
 						id: iconBox
 						x: Tokens.dock.popup.row.paddingH
 						anchors.verticalCenter: parent.verticalCenter
-						width: Tokens.dock.popup.row.icon
-						height: width
-						radius: Tokens.dock.popup.row.iconRadius
+						readonly property bool big: row.modelData.thumbnail !== undefined
+
+						width: big ? Tokens.launcher.thumb.width : Tokens.dock.popup.row.icon
+
+						height: big ? Tokens.launcher.thumb.height : width
+
+						radius: big ? Tokens.launcher.thumb.radius : Tokens.dock.popup.row.iconRadius
 						color: root.theme.groupBg
 						clip: true
 
@@ -240,10 +248,22 @@ Item {
 						SvgIcon {
 							objectName: "symbol"
 							anchors.centerIn: parent
-							visible: !!row.modelData.symbol && rowImage.status !== Image.Ready
+							visible: !!row.modelData.symbol && rowImage.status !== Image.Ready && !row.modelData.thumbnail
 							name: row.modelData.symbol || "file"
 							size: 16
 							color: root.theme.textMuted
+						}
+						// Decoded at full size, not a reduced copy, so it stays sharp.
+						Image {
+							objectName: "thumbnail"
+							anchors.fill: parent
+							visible: iconBox.big
+							source: row.modelData.thumbnail ?? ""
+							asynchronous: true
+							cache: false
+							mipmap: true
+							smooth: true
+							fillMode: Image.PreserveAspectFit
 						}
 						Image {
 							id: rowImage
@@ -380,62 +400,6 @@ Item {
 					font.family: Fonts.family
 					font.pixelSize: 12
 				}
-			}
-		}
-
-		Rectangle {
-			objectName: "preview"
-			visible: root._preview !== null
-			x: Tokens.launcher.width
-			y: Tokens.launcher.padding
-			width: Tokens.launcher.preview.width - Tokens.launcher.padding + Tokens.launcher.preview.gap
-			height: parent.height - 2 * Tokens.launcher.padding
-			radius: Tokens.launcher.preview.radius
-			color: root.theme.groupBg
-			clip: true
-
-			Image {
-				objectName: "previewImage"
-				anchors.fill: parent
-				anchors.margins: 8
-				visible: root._preview?.kind === "image"
-				source: root._preview?.image ?? ""
-				asynchronous: true
-				fillMode: Image.PreserveAspectFit
-			}
-			Column {
-				anchors.centerIn: parent
-				visible: root._preview?.kind === "color"
-				spacing: 10
-				Rectangle {
-					objectName: "previewSwatch"
-					width: Tokens.launcher.preview.swatch
-					height: width
-					radius: 14
-					color: root._preview?.color ?? "transparent"
-					border.width: 1
-					border.color: root.theme.border
-				}
-				Text {
-					anchors.horizontalCenter: parent.horizontalCenter
-					text: root._preview?.text ?? ""
-					color: root.theme.text
-					font.family: Fonts.family
-					font.pixelSize: Tokens.launcher.preview.text
-				}
-			}
-			Text {
-				objectName: "previewText"
-				anchors.fill: parent
-				anchors.margins: 12
-				visible: root._preview?.kind === "text"
-				text: root._preview?.text ?? ""
-				textFormat: Text.PlainText
-				wrapMode: Text.WrapAnywhere
-				elide: Text.ElideRight
-				color: root.theme.text
-				font.family: Fonts.family
-				font.pixelSize: Tokens.launcher.preview.text
 			}
 		}
 	}

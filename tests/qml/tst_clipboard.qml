@@ -23,13 +23,12 @@ TestCase {
 		const r = row("[[ binary data 12 KiB png 80x60 ]]", { "7": "/run/x/7" });
 		compare(r.name, "Image");
 		compare(r.sub, "PNG · 80 × 60 · 12 KiB");
-		compare(r.icon, "file:///run/x/7");
-		compare(r.preview.image, "file:///run/x/7");
+		compare(r.thumbnail, "file:///run/x/7");
 	}
 
 	function test_imageWithoutAThumbnail() {
 		const r = row("[[ binary data 12 KiB png 80x60 ]]");
-		compare(r.icon, "");
+		compare(r.thumbnail, "");
 		compare(r.symbol, "file-image");
 	}
 
@@ -44,7 +43,6 @@ TestCase {
 	function test_colorAndText() {
 		compare(row("#336699").swatch, "#336699");
 		compare(row("hello").sub, "5 characters");
-		compare(row("hello").preview.text, "hello");
 	}
 
 	function test_pickingStillPastesTheOriginal() {

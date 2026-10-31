@@ -148,24 +148,25 @@ Item {
 			compare(Array.from(edited.signalArguments[edited.count - 1]), [";"]);
 		}
 
-		function test_clipboardPreview() {
+		function test_imageRowsAreLarge() {
 			const v = make();
 			v.open();
-			v.results = [
-				{ id: "1", name: "Image", sub: "PNG", icon: "", glyph: "", symbol: "file-image", preview: { kind: "image", image: "" } },
-				{ id: "2", name: "#ff0000", sub: "Color", swatch: "#ff0000", preview: { kind: "color", color: "#ff0000", text: "#FF0000" } }
-			];
-			tryVerify(() => findChild(v, "preview") !== null && findChild(v, "preview").visible, 1000, "preview shows");
-			compare(findChild(v, "card").width, 560 + 310);
-			v.selectedIndex = 1;
-			compare(String(findChild(v, "previewSwatch").color), "#ff0000");
+			v.results = [{ id: "1", name: "Image", sub: "PNG", icon: "", glyph: "", symbol: "file-image", thumbnail: "" }];
+			tryVerify(() => findChild(v, "row:1") !== null, 1000, "row");
+			compare(findChild(v, "row:1").height, 166);
+			compare(findChild(v, "card").width, 560);
+			tryCompare(findChild(v, "card"), "height", v.barHeight + 6 + 166, 2000);
+			const thumb = findChild(v, "thumbnail");
+			compare(thumb.width, 240);
+			compare(thumb.height, 150);
+			compare(thumb.sourceSize.width <= 0 || thumb.status !== Image.Ready, true, "no reduced decode");
 		}
 
-		function test_noPreviewKeepsTheBar() {
+		function test_listStaysBounded() {
 			const v = make();
 			v.open();
-			v.results = [{ id: "a", name: "App", sub: "", icon: "", glyph: "" }];
-			compare(findChild(v, "card").width, 560);
+			v.results = new Array(20).fill(0).map((_, i) => ({ id: String(i), name: "Image", sub: "", icon: "", glyph: "", thumbnail: "" }));
+			compare(v.targetHeight, v.barHeight + 6 + 8 * 48);
 		}
 
 		function test_chatSends() {
