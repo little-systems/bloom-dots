@@ -82,6 +82,15 @@ var FILE_ICONS = [
 	[/\.(xlsx?|csv|ods)$/i, "file-spreadsheet"]
 ];
 
+// A path can hold a bare %, which isn't valid escaping.
+function _decodePath(text) {
+	try {
+		return decodeURIComponent(text);
+	} catch (e) {
+		return text;
+	}
+}
+
 // What a clipboard entry is, from cliphist's one-line summary.
 function classifyClip(text) {
 	const t = String(text).trim();
@@ -91,7 +100,7 @@ function classifyClip(text) {
 		return { kind: image ? "image" : "binary", size: binary[1], format: binary[2].toUpperCase(), dims: binary[3] ? binary[3] + " × " + binary[4] : "" };
 	}
 	if (/^file:\/\//.test(t)) {
-		const path = decodeURIComponent(t.replace(/^file:\/\//, "").split(/\s/)[0]);
+		const path = _decodePath(t.replace(/^file:\/\//, "").split(/\s/)[0]);
 		return { kind: "file", path: path, fileName: path.split("/").pop() };
 	}
 	if (/^https?:\/\/\S+$/i.test(t)) return { kind: "link" };

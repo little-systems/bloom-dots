@@ -55,4 +55,12 @@ TestCase {
 		compare(Logic.imageIds(Logic.clipEntries("1\thi\n2\t[[ binary data 1 KiB png 1x1 ]]")), ["2"]);
 		compare(Logic.parseThumbs("2\t/run/2\nnoise\n"), { "2": "/run/2" });
 	}
+
+	// A real entry did this: one stray % blanked the whole history.
+	function test_oneBadEntryKeepsTheRest() {
+		const got = Logic.clipEntries("3\tfile:///a/100%.png\n2\thello\n1\tfile:///a/ok%20x.png");
+		compare(got.length, 3);
+		compare(got[0].fileName, "100%.png");
+		compare(got[2].fileName, "ok x.png");
+	}
 }
