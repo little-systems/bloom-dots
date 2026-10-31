@@ -81,6 +81,13 @@ ShellRoot {
 		}
 	}
 
+	// Exclusive with any other polkit agent: only one can register (§3.4).
+	LazyLoader {
+		id: polkitLoader
+		active: _modules.indexOf("polkit") >= 0
+		source: Qt.resolvedUrl("modules/polkit/PolkitSurface.qml")
+	}
+
 	LazyLoader {
 		id: dockLoader
 		active: _modules.indexOf("dock") >= 0
@@ -367,6 +374,15 @@ ShellRoot {
 		function move(address: string, workspace: int): string { return Overview.moveWindow(address, workspace); }
 		function state(): string {
 			return JSON.stringify({ opened: Overview.opened, activeWorkspace: Overview.activeWorkspace, windows: Overview.clients.length });
+		}
+	}
+
+	// The agent's state, never what's typed: passwords don't come through IPC.
+	IpcHandler {
+		target: "polkit"
+
+		function state(): string {
+			return JSON.stringify({ enabled: polkitLoader.active, registered: polkitLoader.item?.registered ?? false, active: polkitLoader.item?.active ?? false });
 		}
 	}
 

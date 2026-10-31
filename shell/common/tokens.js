@@ -248,6 +248,17 @@ var overview = {
 	dragThreshold: 6
 };
 
+// The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
+var polkit = {
+	width: 400,
+	padding: 20,
+	gap: 12,
+	icon: 36,
+	iconGlyph: 18,
+	title: 15,
+	message: 12
+};
+
 // Notch panels, copied from Bloom @ b5fb962 (App.css, components/QuickPanel.css).
 // Each group names the CSS rule it comes from.
 
