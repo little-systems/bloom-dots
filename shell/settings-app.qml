@@ -1,4 +1,5 @@
 //@ pragma UseQApplication
+//@ pragma AppId bloom-settings
 import QtQuick
 import QtQuick.Dialogs
 import Quickshell
