@@ -79,16 +79,28 @@ Item {
 			compare(part(v, "copy").text, "Make every surface feel at home on your desktop.");
 		}
 
-		// Bloom's boxes, from Settings.css.
-		function test_layout() {
+		// Bloom's boxes as Chromium lays them out (tools/bloom-audit/
+		// record-settings.cjs at zoom 1.25, divided back).
+		function test_matchesBloomsLayout() {
 			const v = make();
 			waitForRendering(host);
-			const tab = part(v, "tab:general"), p = tab.mapToItem(v, 0, 0);
-			compare(p.x, 8);
-			compare(tab.width, 153);
-			compare(tab.height, 36);
-			const close = part(v, "close"), c = close.mapToItem(v, 0, 0);
-			compare([c.x, c.y, close.width], [700, 16, 22]);
+			function at(item, x, y, w, h, what) {
+				const p = item.mapToItem(v, 0, 0);
+				fuzzyCompare(p.x, x, 1, what + " x");
+				fuzzyCompare(p.y, y, 1, what + " y");
+				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
+				if (h !== undefined) fuzzyCompare(item.height, h, 0.6, what + " height");
+			}
+			at(part(v, "tab:general"), 8.8, 124.8, 153.2, 36, "first tab");
+			at(part(v, "tab:appearance"), 8.8, 164.8, 153.2, 36, "second tab");
+			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
+			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
+			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
+			at(part(v, "featurePreview"), 192.8, 129.2, 524.4, 52.6, "preview");
+			at(part(v, "row:Launch at Login"), 193.8, 221.6, 522.8, undefined, "first row");
+			compare(part(v, "row:Launch at Login").height, 50.8);
+			const t = part(v, "time24").mapToItem(v, 0, 0);
+			fuzzyCompare(t.x, 660.4, 1, "toggle x");
 		}
 
 		function test_toggleWrites() {
@@ -139,6 +151,7 @@ Item {
 		function test_actionsSignal() {
 			const v = make();
 			const restart = spy(v, "restartRequested"), quit = spy(v, "quitRequested");
+			part(v, "page").contentY = 300;
 			click(v, "restart");
 			part(v, "page").contentY = 400;
 			click(v, "quit");
@@ -248,6 +261,73 @@ Item {
 			verify(part(v, "dragGhost").visible, "the pill follows the pointer");
 			mouseRelease(host, to.x, to.y);
 			compare(fakeStore.values["bloom-status-widgets"].left, ["weather", "cpu"]);
+		}
+
+		function test_previewFoldsAndStartsClosed() {
+			const v = make();
+			verify(!part(v, "previewStage").visible);
+			click(v, "preview:fold");
+			verify(part(v, "previewStage").visible);
+			compare(part(v, "previewStage").height, 150);
+			compare(part(v, "previewCaption").text, "12-hour time · Launch at login off · Update available: dot on");
+		}
+
+		function test_noPreviewOnAbout() {
+			verify(!part(make("about"), "featurePreview").visible);
+		}
+
+		function test_settingJumpsToItsScene() {
+			const v = make();
+			click(v, "preview:fold");
+			fakeStore.set("bloom-low-battery-threshold", 30);
+			tryCompare(part(v, "featurePreview"), "feature", "battery");
+			tryVerify(() => findChild(v, "previewBattery") !== null, 1000, "battery pill");
+			compare(findChild(v, "previewBattery").text, "Low Battery · 15%");
+			fakeStore.set("bloom-low-battery-threshold", 10);
+			tryCompare(findChild(v, "previewBattery"), "text", "On Battery · 15%");
+		}
+
+		function test_clockFollowsTheFormat() {
+			const v = make();
+			click(v, "preview:fold");
+			tryVerify(() => findChild(v, "previewClock") !== null, 1000, "clock");
+			compare(findChild(v, "previewClock").text, "3:42 PM");
+			fakeStore.set("bloom-time-format-24h", true);
+			compare(findChild(v, "previewClock").text, "15:42");
+		}
+
+		function test_notchScenes() {
+			const v = make("notch");
+			click(v, "preview:fold");
+			tryVerify(() => findChild(v, "previewPill") !== null, 1000, "pill");
+			compare(findChild(v, "previewPill").targetWidth, 300);
+			click(v, "scene:device");
+			tryCompare(part(v, "featurePreview"), "feature", "device");
+			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 330; }, 1000, "device width");
+			click(v, "scene:music");
+			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 340; }, 1000, "open player");
+			compare(part(v, "previewStage").height, 190);
+			click(v, "previewPlayerToggle");
+			tryVerify(() => { const p = findChild(v, "previewPill"); return p && p.targetWidth === 230; }, 1000, "collapsed");
+		}
+
+		function test_dockPreviewFollowsSettings() {
+			const v = make("dock");
+			v.apps = [{ name: "Files", icon: "" }];
+			click(v, "preview:fold");
+			tryVerify(() => findChild(v, "dockTile:Files") !== null, 1000, "app tile");
+			verify(findChild(v, "dockTile:Trash") !== null, "extras on the left");
+			fakeStore.set("bloom-enabled-modules", []);
+			tryVerify(() => { const t = findChild(v, "previewDockOff"); return t && t.visible; }, 1000, "off");
+		}
+
+		function test_overlayPreview() {
+			const v = make("overlays");
+			click(v, "preview:fold");
+			tryVerify(() => { const e = findChild(v, "previewEdge"); return e && e.visible; }, 1000, "edge marker");
+			fakeStore.set("bloom-volume-hud-enabled", false);
+			tryVerify(() => { const t = findChild(v, "previewHudOff"); return t && t.visible; }, 1000, "off");
+			compare(findChild(v, "previewHudOff").text, "Volume HUD is off");
 		}
 
 		function test_closeSignals() {

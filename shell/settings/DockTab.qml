@@ -31,7 +31,7 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Dock"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "Dock"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
@@ -53,7 +53,7 @@ Column {
 			}
 			SRow {
 				objectName: "dockPeek"
-				visible: !root._fixed; height: visible ? implicitHeight : 0; implicitHeight: 52
+				visible: !root._fixed; height: visible ? implicitHeight : 0; implicitHeight: 50.8
 				theme: root.theme; icon: "timer"; label: "Peek Delay"
 				desc: root._delay === 0 ? "Reveal instantly on bottom-edge contact" : "Rest on the bottom edge for " + root._delay + "ms to reveal"
 				SSlider { theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-dock-edge-delay", value) }
@@ -80,7 +80,7 @@ Column {
 			}
 			SRow {
 				objectName: "dockAdaptive"
-				visible: root._fixed; height: visible ? implicitHeight : 0; implicitHeight: 52
+				visible: root._fixed; height: visible ? implicitHeight : 0; implicitHeight: 50.8
 				theme: root.theme; icon: "maximize-2"; label: "Adaptive Mode"; desc: "Stretch to full width when a window is maximized"
 				SToggle { theme: root.theme; checked: root._v["bloom-dock-adaptive"]; onToggled: value => root.set("bloom-dock-adaptive", value) }
 			}

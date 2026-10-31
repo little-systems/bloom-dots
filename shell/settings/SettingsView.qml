@@ -27,6 +27,7 @@ Rectangle {
 	property string importLabel: "Import Settings"
 	property var cityResults: []
 	property var drives: []
+	property var apps: []
 
 	signal cityQueried(string text)
 	signal addFolderRequested()
@@ -60,7 +61,9 @@ Rectangle {
 
 	Item {
 		id: titleBar
-		width: parent.width
+		x: 1
+		y: 1
+		width: parent.width - 2
 		height: Tokens.settings.title.paddingTop + Tokens.settings.title.close + Tokens.settings.title.paddingBottom
 
 		// cursor: default — the title bar moves the window
@@ -106,9 +109,10 @@ Rectangle {
 
 	Rectangle {
 		id: sidebar
-		y: titleBar.height
+		x: 1
+		y: titleBar.y + titleBar.height
 		width: Tokens.settings.sidebar.width
-		height: parent.height - y
+		height: parent.height - y - 1
 		color: Qt.rgba(1, 1, 1, 0.015)
 
 		Rectangle {
@@ -136,12 +140,18 @@ Rectangle {
 					font.pixelSize: Tokens.settings.sidebar.intro.title
 					font.weight: Font.Bold
 					font.letterSpacing: -0.6
+					height: 20
+					lineHeight: 20
+					lineHeightMode: Text.FixedHeight
 				}
 				Text {
 					text: "Make it yours"
 					color: root.theme.textMuted
 					font.family: Fonts.family
 					font.pixelSize: Tokens.settings.sidebar.intro.sub
+					height: 12
+					lineHeight: 12
+					lineHeightMode: Text.FixedHeight
 				}
 			}
 			Repeater {
@@ -193,10 +203,10 @@ Rectangle {
 
 	Item {
 		id: content
-		x: sidebar.width
-		y: titleBar.height
-		width: parent.width - x
-		height: parent.height - y
+		x: sidebar.x + sidebar.width
+		y: sidebar.y
+		width: parent.width - x - 1
+		height: sidebar.height
 
 		QpScroll { flickable: page }
 
@@ -231,6 +241,9 @@ Rectangle {
 						font.pixelSize: Tokens.settings.heading.title
 						font.weight: 680
 						font.letterSpacing: -0.8
+						height: 28.6
+						lineHeight: 28.6
+						lineHeightMode: Text.FixedHeight
 					}
 					Text {
 						objectName: "copy"
@@ -238,8 +251,19 @@ Rectangle {
 						color: root.theme.textMuted
 						font.family: Fonts.family
 						font.pixelSize: Tokens.settings.heading.sub
+						height: 16.8
+						lineHeight: 16.8
+						lineHeightMode: Text.FixedHeight
 					}
 				}
+				FeaturePreview {
+					theme: root.theme
+					store: root.store
+					tab: root.tab
+					autostart: root.autostart
+					apps: root.apps
+				}
+				Item { width: 1; height: previewGap.visible ? 19 : 0; id: previewGap; visible: root.tab !== "about" }
 				Loader {
 					width: parent.width
 					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, about: aboutTab })[root.tab] ?? null

@@ -62,6 +62,9 @@ Item {
 				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: Tokens.settings.row.label
 				font.weight: Font.Medium
+				height: 16.8
+				lineHeight: 16.8
+				lineHeightMode: Text.FixedHeight
 			}
 			Text {
 				objectName: "desc"
@@ -73,6 +76,9 @@ Item {
 				opacity: 0.8
 				font.family: Fonts.family
 				font.pixelSize: Tokens.settings.row.desc
+				height: 12
+				lineHeight: 12
+				lineHeightMode: Text.FixedHeight
 			}
 		}
 		Item {

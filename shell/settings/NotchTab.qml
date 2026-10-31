@@ -28,7 +28,7 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Notch"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "Notch"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
@@ -41,7 +41,7 @@ Column {
 		}
 		SRow {
 			objectName: "notchPeek"
-			visible: root._peek; height: visible ? implicitHeight : 0; implicitHeight: 51
+			visible: root._peek; height: visible ? implicitHeight : 0; implicitHeight: 49.8
 			theme: root.theme; icon: "timer"; label: "Peek Delay"; divider: false
 			desc: root._delay === 0 ? "Reveal instantly on top-edge contact" : "Rest on the top edge for " + root._delay + "ms to reveal"
 			SSlider { theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-notch-edge-delay", value) }
@@ -69,7 +69,7 @@ Column {
 		}
 		SRow {
 			objectName: "defaultPanel"
-			visible: !root._memory; height: visible ? implicitHeight : 0; implicitHeight: 51
+			visible: !root._memory; height: visible ? implicitHeight : 0; implicitHeight: 49.8
 			theme: root.theme; icon: "panel-top"; label: "Default Panel"; desc: "Open this panel when you click the notch"; divider: false
 			SSelect {
 				theme: root.theme; popup: root.popup; value: root._v["bloom-notch-default-panel"]

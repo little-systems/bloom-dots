@@ -7,7 +7,7 @@ Rectangle {
 	property QtObject theme
 	default property alias rows: column.data
 	width: parent.width
-	height: column.implicitHeight
+	height: column.implicitHeight + 2
 	radius: Tokens.settings.group.radius
 	color: theme.groupBg
 	border.width: 1
@@ -16,6 +16,8 @@ Rectangle {
 
 	Column {
 		id: column
-		width: parent.width
+		x: 1
+		y: 1
+		width: parent.width - 2
 	}
 }

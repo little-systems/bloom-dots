@@ -15,7 +15,7 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "System"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "System"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {

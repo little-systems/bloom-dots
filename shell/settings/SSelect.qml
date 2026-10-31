@@ -16,7 +16,7 @@ Rectangle {
 	readonly property string _label: (root.options.find(o => o.value === root.value) || { label: root.value }).label
 
 	width: Math.max(Tokens.settings.select.minWidth, label.implicitWidth + 2 * Tokens.settings.select.paddingH + 2)
-	height: label.implicitHeight + 2 * Tokens.settings.select.paddingV + 2
+	height: 21.6
 	radius: Tokens.settings.select.radius
 	color: hover.hovered ? root.theme.border : root.theme.groupBg
 	border.width: 1

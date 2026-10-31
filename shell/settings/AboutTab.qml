@@ -13,7 +13,8 @@ Column {
 	signal exportRequested()
 	signal importRequested()
 
-	width: parent.width
+	x: Tokens.settings.about.padding[1]
+	width: parent.width - 2 * Tokens.settings.about.padding[1]
 	topPadding: Tokens.settings.about.padding[0]
 
 	Column {
@@ -73,7 +74,7 @@ Column {
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "Data"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "Data"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow { objectName: "export"; theme: root.theme; icon: "file-down"; label: root.exportLabel; desc: "Save settings to a file"; action: true; onClicked: root.exportRequested() }

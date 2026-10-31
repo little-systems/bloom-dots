@@ -34,5 +34,13 @@ pass "the window maps"
 assert_eq "$(call tab about)" "ok" "switch tab"
 assert_eq "$(call state | jq -r .tab)" "about" "tab"
 pass "tabs switch"
+assert_eq "$(call tab notch)" "ok" "notch tab"
+assert_eq "$(call preview true)" "ok" "open the preview"
+sleep 0.5
+assert_eq "$(call tab overlays)" "ok" "overlays tab"
+sleep 0.5
+assert_eq "$(call tab dock)" "ok" "dock tab"
+sleep 0.5
+pass "previews run with the real surfaces"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "app log has warnings"; fi
 pass "no warnings or errors in the app log"

@@ -12,7 +12,7 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Overlays"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "Overlays"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
@@ -23,7 +23,7 @@ Column {
 			objectName: "volumeEdge"
 			visible: root._volume
 			height: visible ? implicitHeight : 0
-			implicitHeight: 52
+			implicitHeight: 50.8
 			theme: root.theme; icon: "arrow-left-to-line"; label: "Show on Edge Hover"; desc: "Slide in from left edge"
 			SToggle { theme: root.theme; checked: root.store.values["bloom-volume-edge-enabled"]; onToggled: value => root.store.set("bloom-volume-edge-enabled", value) }
 		}
@@ -34,7 +34,7 @@ Column {
 		SRow {
 			visible: root._brightness
 			height: visible ? implicitHeight : 0
-			implicitHeight: 51
+			implicitHeight: 49.8
 			theme: root.theme; icon: "arrow-right-to-line"; label: "Show on Edge Hover"; desc: "Slide in from right edge"; divider: false
 			SToggle { theme: root.theme; checked: root.store.values["bloom-brightness-edge-enabled"]; onToggled: value => root.store.set("bloom-brightness-edge-enabled", value) }
 		}

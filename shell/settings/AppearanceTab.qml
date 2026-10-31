@@ -17,7 +17,7 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Theme"; above: Tokens.settings.group.label.firstTop }
+	SGroupLabel { theme: root.theme; text: "Theme"; above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
@@ -34,7 +34,7 @@ Column {
 		SRow {
 			visible: root._custom
 			height: visible ? implicitHeight : 0
-			implicitHeight: 52
+			implicitHeight: 50.8
 			theme: root.theme; icon: "droplet"; label: "Custom Theme Color"; desc: "Choose layout background color"
 			Row {
 				spacing: Tokens.settings.color.gap
@@ -65,7 +65,7 @@ Column {
 		SRow {
 			visible: root._advanced
 			height: visible ? implicitHeight : 0
-			implicitHeight: 52
+			implicitHeight: 50.8
 			theme: root.theme; icon: "droplets"; label: "Color Saturation"
 			desc: "Adjust theme color vibrancy (" + Math.round(root.store.values["bloom-theme-saturation"] * 100) + "%)"
 			SSlider { theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-saturation"]; onMoved: value => root.store.set("bloom-theme-saturation", value) }
@@ -73,7 +73,7 @@ Column {
 		SRow {
 			visible: root._advanced
 			height: visible ? implicitHeight : 0
-			implicitHeight: 51
+			implicitHeight: 49.8
 			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
 			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
 			SSlider { theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
