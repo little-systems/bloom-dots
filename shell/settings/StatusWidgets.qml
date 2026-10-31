@@ -1,5 +1,6 @@
 import QtQuick
 import "../common/render"
+import "../common/tokens.js" as Tokens
 import "logic.js" as Logic
 
 // Bloom's StatusWidgetConfig: left and right of the clock, then what's unused.
@@ -14,8 +15,8 @@ Column {
 	property point _dragAt: Qt.point(0, 0)
 	readonly property string _over: root._dragId === "" ? "" : root._zoneAt(root._dragAt)
 
-	x: 14
-	width: parent.width - 28
+	x: Tokens.settings.row.paddingH
+	width: parent.width - 2 * Tokens.settings.row.paddingH
 	topPadding: 8
 	bottomPadding: 12
 	spacing: 8

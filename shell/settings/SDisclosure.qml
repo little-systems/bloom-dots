@@ -31,13 +31,13 @@ Column {
 		Keys.onReturnPressed: root.open = !root.open
 		SFocusRing { inset: 1; radius: 6 }
 		width: parent.width
-		height: Math.max(summaryText.implicitHeight, 14) + 26
+		height: Math.max(summaryText.implicitHeight, 14) + 36
 		color: hover.hovered ? root.theme.border : "transparent"
 
 		Text {
 			id: summaryText
 			objectName: "summary"
-			x: 14
+			x: Tokens.settings.row.paddingH
 			anchors.verticalCenter: parent.verticalCenter
 			text: root.summary
 			color: root.theme.text
@@ -56,7 +56,7 @@ Column {
 		}
 		Rectangle {
 			id: chevron
-			x: parent.width - 14 - width
+			x: parent.width - Tokens.settings.row.paddingH - width
 			anchors.verticalCenter: parent.verticalCenter
 			anchors.verticalCenterOffset: root.open ? 1 : -1
 			width: 6

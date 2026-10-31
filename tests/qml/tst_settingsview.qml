@@ -207,10 +207,10 @@ Item {
 		function test_compactSizes() {
 			const v = make();
 			waitForRendering(host);
-			compare(Math.round(part(v, "row:24-Hour Time").height), 54);
-			compare(part(v, "tab:display").height, 34);
-			compare(part(v, "time24").height, 22);
-			compare(part(v, "lowPower").height, 28);
+			compare(Math.round(part(v, "row:24-Hour Time").height), 70);
+			compare(part(v, "tab:display").height, 38);
+			compare(part(v, "time24").height, 26);
+			compare(part(v, "lowPower").height, 32);
 		}
 
 		// One grid: page title, section label and row content line up.
@@ -231,7 +231,7 @@ Item {
 			const tab = part(v, "tab:display");
 			verify(tab.width > 40);
 			compare(part(v, "close").mapToItem(v, 0, 0).x + 28 + 16, v.width);
-			verify(part(v, "row:Launch at Login").width <= 680);
+			verify(part(v, "row:Launch at Login").width <= 720);
 		}
 
 		function test_narrowWindowsUseARail() {

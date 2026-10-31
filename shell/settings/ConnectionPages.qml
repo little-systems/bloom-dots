@@ -197,8 +197,8 @@ Column {
 							id: netDetail
 							width: parent.width
 							topPadding: 2
-							bottomPadding: 14
-							spacing: 8
+							bottomPadding: 18
+							spacing: 10
 
 							Message {
 								visible: network.enterprise
