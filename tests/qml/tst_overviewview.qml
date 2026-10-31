@@ -67,6 +67,22 @@ Item {
 			fuzzyCompare(w.height, cell.height, 0.51);
 		}
 
+		// A full-screen window covers its cell: the highlight and the number
+		// stay readable above it.
+		function test_highlightAndNumberSitAboveWindows() {
+			const v = make();
+			const cell = part(v, "workspace:3");
+			const frame = findChild(cell, "frame");
+			verify(frame, "a frame");
+			compare(frame.border.width, 2, "the active workspace");
+			compare(findChild(part(v, "workspace:6"), "frame").border.width, 0);
+			const chip = findChild(cell, "number");
+			verify(chip, "a number chip");
+			compare(chip.color.a, 0.55);
+			const kids = Array.from(cell.children);
+			verify(kids.indexOf(frame) > kids.findIndex(k => String(k).includes("Repeater") || k.objectName.startsWith("window:")), "the frame draws after the windows");
+		}
+
 		function test_clickGoes() {
 			const v = make();
 			const ws = spy(v, "workspaceChosen"), win = spy(v, "windowChosen");

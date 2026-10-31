@@ -266,14 +266,33 @@ Item {
 						}
 					}
 
-					Text {
-						x: Tokens.overview.label.x
-						y: Tokens.overview.label.y
-						text: cell.workspace
-						color: cell.active ? root.theme.text : root.theme.textMuted
-						font.family: Fonts.familyFor(Font.DemiBold)
-						font.pixelSize: Tokens.overview.label.size
-						font.weight: Font.DemiBold
+					// Above the windows: one can cover the whole cell.
+					Rectangle {
+						objectName: "frame"
+						anchors.fill: parent
+						radius: Tokens.overview.radius
+						color: "transparent"
+						border.width: cell.active || cell.selected || cell.dropTarget ? 2 : 0
+						border.color: root.accent
+					}
+					Rectangle {
+						objectName: "number"
+						x: Tokens.overview.label.x - 2
+						y: Tokens.overview.label.y - 1
+						width: numberText.implicitWidth + 10
+						height: numberText.implicitHeight + 2
+						radius: 6
+						color: Qt.rgba(0, 0, 0, 0.55)
+
+						Text {
+							id: numberText
+							anchors.centerIn: parent
+							text: cell.workspace
+							color: cell.active ? "white" : Qt.rgba(1, 1, 1, 0.7)
+							font.family: Fonts.familyFor(Font.DemiBold)
+							font.pixelSize: Tokens.overview.label.size
+							font.weight: Font.DemiBold
+						}
 					}
 				}
 			}

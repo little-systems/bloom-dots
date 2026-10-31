@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../dock"
@@ -29,7 +30,7 @@ PanelWindow {
 	readonly property var _toplevels: {
 		const out = {};
 		for (const t of ToplevelManager.toplevels.values) {
-			const raw = t.HyprlandToplevel?.address;
+			const raw = t.HyprlandToplevel.address;
 			if (raw) out[raw.startsWith("0x") ? raw : "0x" + raw] = t;
 		}
 		return out;
@@ -37,7 +38,7 @@ PanelWindow {
 
 	Component {
 		id: capture
-		DockCapture { streamLive: Overview.opened }
+		DockCapture { streamLive: Overview.opened; constraintSize: Qt.size(640, 360) }
 	}
 
 	OverviewView {
