@@ -153,24 +153,22 @@ Item {
 			}
 
 			// Paired devices.
-			ListView {
+			QpList {
 				id: pairedList
 				objectName: "list"
 				anchors.fill: parent
-				anchors.rightMargin: Tokens.qp.list.rightPad
 				visible: root.enabled && !root.adding && root.devices.length > 0
-				clip: true
-				spacing: Tokens.qp.list.gap
-				boundsBehavior: Flickable.StopAtBounds
-				model: root.enabled && !root.adding ? root.devices : []
+				theme: root.theme
+				keyName: "path"
+				items: root.enabled && !root.adding ? root.devices : []
 
 				delegate: Column {
 					id: device
-					required property var modelData
-					readonly property var d: device.modelData
+					required property string key
+					readonly property var d: pairedList.entry(device.key) ?? ({ path: device.key, name: "", kind: "other", connected: false, battery: null })
 					readonly property bool expanded: root.selected === device.d.path
 					readonly property bool isBusy: root.busy === device.d.path
-					width: pairedList.width
+					width: pairedList.rowWidth
 
 					QpRow {
 						objectName: "row:" + device.d.path
@@ -193,7 +191,7 @@ Item {
 								// .qp-chips: what the connection popup draws for it.
 								Loader {
 									active: device.d.kind === "audio"
-									width: pairedList.width - Tokens.qp.actions.left - Tokens.qp.actions.side
+									width: pairedList.rowWidth - Tokens.qp.actions.left - Tokens.qp.actions.side
 									sourceComponent: Flow {
 										readonly property string shown: root.looks[device.d.name] || root.guessFor(device.d)
 										spacing: Tokens.qp.chip.gap
@@ -257,24 +255,22 @@ Item {
 			}
 
 			// Nearby devices to pair.
-			ListView {
+			QpList {
 				id: nearbyList
 				objectName: "nearbyList"
 				anchors.fill: parent
-				anchors.rightMargin: Tokens.qp.list.rightPad
 				visible: root.enabled && root.adding && root.nearby.length > 0
-				clip: true
-				spacing: Tokens.qp.list.gap
-				boundsBehavior: Flickable.StopAtBounds
-				model: root.enabled && root.adding ? root.nearby : []
+				theme: root.theme
+				keyName: "path"
+				items: root.enabled && root.adding ? root.nearby : []
 
 				delegate: Column {
 					id: candidate
-					required property var modelData
-					readonly property var d: candidate.modelData
+					required property string key
+					readonly property var d: nearbyList.entry(candidate.key) ?? ({ path: candidate.key, name: "", kind: "other" })
 					readonly property bool isPairing: root.pairing === candidate.d.path
 					readonly property bool asking: candidate.isPairing && !!root.prompt && root.prompt.id === candidate.d.path
-					width: nearbyList.width
+					width: nearbyList.rowWidth
 
 					QpRow {
 						objectName: "row:" + candidate.d.path

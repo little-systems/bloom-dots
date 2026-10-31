@@ -32,10 +32,10 @@ Item {
 			verify(v);
 			return v;
 		}
+		// Rows are built on the next frame.
 		function part(v, name) {
-			const it = findChild(v, name);
-			verify(it, name);
-			return it;
+			tryVerify(() => findChild(v, name) !== null, 1000, name);
+			return findChild(v, name);
 		}
 		function click(v, name) {
 			// Lists and positioners lay out on the next polish: let a frame

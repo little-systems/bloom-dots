@@ -34,10 +34,10 @@ Item {
 			verify(v);
 			return v;
 		}
+		// Rows are built on the next frame.
 		function part(v, name) {
-			const it = findChild(v, name);
-			verify(it, name);
-			return it;
+			tryVerify(() => findChild(v, name) !== null, 1000, name);
+			return findChild(v, name);
 		}
 		function click(v, name) {
 			waitForRendering(host);
@@ -154,6 +154,48 @@ Item {
 			const empty = part(v, "empty");
 			compare(findChild(empty, "label").text, "Couldn't look for devices");
 			compare(findChild(empty, "glyph").visible, false);
+		}
+
+		// BlueZ refreshes the list several times a second while it looks: a
+		// new array must keep the rows and where the list is scrolled to.
+		function test_refreshKeepsTheScroll() {
+			const many = extra => Array.from({ length: 14 + extra }, (_, i) => ({ path: "/d" + i, name: "Device " + i, kind: "phone" }));
+			const v = make({ nearby: many(0), height: 264 });
+			click(v, "add");
+			waitForRendering(host);
+			const list = part(v, "nearbyList");
+			const view = part(list, "view");
+			const row = part(v, "row:/d0");
+			const p = list.mapToItem(host, 100, 60);
+			mouseWheel(host, p.x, p.y, 0, -240);
+			tryVerify(() => view.contentY > 50, 1000, "the wheel scrolls");
+			wait(300);
+			const y = view.contentY;
+			v.nearby = many(0);
+			v.nearby = many(1);
+			waitForRendering(host);
+			compare(view.contentY, y, "still scrolled");
+			compare(part(v, "row:/d0"), row, "the same row, not a rebuilt one");
+			verify(findChild(v, "row:/d14"), "the new device joined");
+			v.nearby = many(0).slice(1);
+			waitForRendering(host);
+			verify(!findChild(v, "row:/d0"), "a device that left is gone");
+			compare(part(v, "row:/d6").name, "Device 6");
+		}
+
+		// .qp-list::-webkit-scrollbar: 4 px, once the list overflows.
+		function test_scrollbar() {
+			const short = make({ height: 264 });
+			part(short, "row:/m");
+			verify(!part(short, "list").overflowing);
+			short.visible = false;
+			const v = make({ height: 264, devices: Array.from({ length: 14 }, (_, i) => ({ path: "/d" + i, name: "D" + i, kind: "phone", connected: false, battery: null })) });
+			const list = part(v, "list");
+			tryVerify(() => list.overflowing, 500);
+			const bar = part(list, "scrollbar");
+			verify(bar.visible);
+			compare(bar.width, 4);
+			fuzzyCompare(part(v, "row:/d0").width, list.width - 4 - 2, 0.01);
 		}
 
 		function test_pairing() {

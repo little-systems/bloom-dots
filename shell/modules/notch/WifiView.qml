@@ -151,24 +151,22 @@ Item {
 				text: !root.enabled ? "Wi-Fi is off" : root.scanning ? "Looking for networks…" : "No networks found"
 			}
 
-			ListView {
+			QpList {
 				id: list
 				objectName: "list"
 				anchors.fill: parent
-				anchors.rightMargin: Tokens.qp.list.rightPad
 				visible: root.enabled && root.networks.length > 0
-				clip: true
-				spacing: Tokens.qp.list.gap
-				boundsBehavior: Flickable.StopAtBounds
-				model: root.enabled ? root.networks : []
+				theme: root.theme
+				keyName: "ssid"
+				items: root.enabled ? root.networks : []
 
 				delegate: Column {
 					id: entry
-					required property var modelData
-					readonly property var n: entry.modelData
+					required property string key
+					readonly property var n: list.entry(entry.key) ?? ({ ssid: entry.key, signal: 0, security: "open", connected: false, saved: false })
 					readonly property bool expanded: root.selected === entry.n.ssid
 					readonly property bool isBusy: root.busy === entry.n.ssid
-					width: list.width
+					width: list.rowWidth
 
 					QpRow {
 						objectName: "row:" + entry.n.ssid
