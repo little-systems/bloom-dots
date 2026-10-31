@@ -1,6 +1,6 @@
 # Phase 7 wallpaper switch
 
-**Status:** waiting for the owner's OK. Nothing here has been run on the live system.
+**Status:** done on 2026-10-31 with the owner's OK. Backups: `~/Projects/bloom-wallpaper-handover-20261031-213122` and `~/Projects/bloom-settings.backup-20261031-213122.json`.
 
 ii draws the wallpaper today on the bottom layer. Bloom's layer sits there too, so ii's has to stop mapping or a restart of ii would put it back on top.
 

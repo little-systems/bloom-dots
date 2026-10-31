@@ -27,3 +27,9 @@ function move(index, direction, count, columns) {
 	if (direction === "up") return index - columns >= 0 ? index - columns : index;
 	return Math.min(count - 1, index + columns);
 }
+
+// `chance` is a number from 0 up to 1.
+function pickOther(items, current, chance) {
+	const others = items.filter(item => item !== current);
+	return others.length ? others[Math.floor(chance * others.length)] : "";
+}

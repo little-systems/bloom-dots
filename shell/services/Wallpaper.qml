@@ -20,6 +20,8 @@ Singleton {
 	property string accent: ""
 	property bool opened: false
 	property var items: []
+	property bool _pickRandom: false
+	readonly property string _themeScript: Quickshell.shellPath("scripts/adaptive-theme.sh")
 
 	function set(path) {
 		Settings.set("bloom-wallpaper", path);
@@ -31,14 +33,25 @@ Singleton {
 	}
 	function hide() { root.opened = false; }
 	function toggle() { if (root.opened) root.hide(); else root.show(); }
+	function random() {
+		root._pickRandom = true;
+		if (!listing.running) listing.running = true;
+	}
 	function _refreshAccent() {
 		if (!root.adaptive || root.path === "" || root.video) return;
 		colors.running = false;
 		colors.command = ["matugen", "image", root.path, "--dry-run", "--json", "hex", "--mode", "dark", "--source-color-index", "0"];
 		colors.running = true;
+		Quickshell.execDetached(["bash", root._themeScript, "apply", root.path]);
+	}
+	function _adaptiveChanged() {
+		if (root.adaptive) root._refreshAccent();
+		else Quickshell.execDetached(["bash", root._themeScript, "restore"]);
 	}
 	onPathChanged: root._refreshAccent()
-	onAdaptiveChanged: root._refreshAccent()
+	onAdaptiveChanged: root._adaptiveChanged()
+	// A stale backup means Adaptive ended while the shell was off.
+	Component.onCompleted: root._adaptiveChanged()
 
 	FileView {
 		id: iiConfig
@@ -49,7 +62,14 @@ Singleton {
 		id: listing
 		command: ["find", root.folder, "-maxdepth", "1", "-type", "f"]
 		stdout: StdioCollector {
-			onStreamFinished: root.items = Logic.parseList(text)
+			onStreamFinished: {
+				root.items = Logic.parseList(text);
+				if (root._pickRandom) {
+					root._pickRandom = false;
+					const next = Logic.pickOther(root.items, root.path, Math.random());
+					if (next) root.set(next);
+				}
+			}
 		}
 	}
 	Process {

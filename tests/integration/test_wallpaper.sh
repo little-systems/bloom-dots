@@ -28,6 +28,9 @@ echo "\$*" >> "$TEST_TMP/matugen-calls"
 echo '{"colors":{"primary":{"dark":{"color":"#336699"}}}}'
 SH
 printf '#!/bin/sh\necho started > "%s/mpvpaper-started"\nsleep 30\n' "$TEST_TMP" > "$TEST_TMP/bin/mpvpaper"
+# Theming reloads running apps: neither reaches the real session.
+printf '#!/bin/sh\nexit 0\n' > "$TEST_TMP/bin/pkill"
+printf '#!/bin/sh\nexit 0\n' > "$TEST_TMP/bin/plasma-apply-colorscheme"
 chmod +x "$TEST_TMP/bin/"*
 export PATH="$TEST_TMP/bin:$PATH"
 start_shell
@@ -37,6 +40,13 @@ wait_for "the accent from matugen" has_accent
 assert_eq "$(ipc wallpaper state | jq -r .path)" "$W/a.png" "the path sticks"
 grep -q 'bloom-wallpaper"' "$XDG_CONFIG_HOME/bloom/settings.json" || wait_for "the setting to save" grep -q "a.png" "$XDG_CONFIG_HOME/bloom/settings.json"
 pass "setting a wallpaper saves it and themes the shell"
+themed() { grep -q -- "--config" "$TEST_TMP/matugen-calls"; }
+wait_for "the apps to be themed" themed
+pass "Adaptive themes other apps from the wallpaper"
+assert_eq "$(ipc wallpaper random)" "ok" "random"
+moved() { [[ "$(ipc wallpaper state | jq -r .path)" == "$W/b.png" ]]; }
+wait_for "a different wallpaper" moved
+pass "random picks a different wallpaper"
 
 assert_eq "$(ipc wallpaper toggle)" "ok" "open the picker"
 two() { ipc wallpaper state | jq -e '.opened and .items == 2' >/dev/null; }
@@ -48,6 +58,10 @@ pass "the picker lists the folder"
 assert_eq "$(ipc wallpaper set "$W/clip.mp4")" "ok" "set a video"
 wait_for "mpvpaper to start" test -f "$TEST_TMP/mpvpaper-started"
 pass "a video runs through mpvpaper"
+
+printf '{"bloom-enabled-modules":["wallpaper"],"bloom-weather-enabled":false,"bloom-theme-mode":"dark"}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
+wait_for "the app themes to be restored" test -f "$XDG_STATE_HOME/bloom/app-themes/manifest.restored"
+pass "leaving Adaptive restores the app themes"
 
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|clip.mp4"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

@@ -24,6 +24,13 @@ TestCase {
 		compare(Logic.accentFrom("nope"), "");
 	}
 
+	function test_randomNeverRepeats() {
+		compare(Logic.pickOther(["a", "b", "c"], "a", 0), "b");
+		compare(Logic.pickOther(["a", "b", "c"], "a", 0.99), "c");
+		compare(Logic.pickOther(["a"], "a", 0.5), "");
+		compare(Logic.pickOther([], "", 0.5), "");
+	}
+
 	function test_gridMoves() {
 		compare(Logic.move(0, "right", 7, 3), 1);
 		compare(Logic.move(2, "right", 7, 3), 3);

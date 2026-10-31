@@ -433,6 +433,7 @@ ShellRoot {
 
 		function set(path: string): string { Wallpaper.set(path); return "ok"; }
 		function toggle(): string { Wallpaper.toggle(); return "ok"; }
+		function random(): string { Wallpaper.random(); return "ok"; }
 		function close(): string { Wallpaper.hide(); return "ok"; }
 		function state(): string {
 			return JSON.stringify({ path: Wallpaper.path, opened: Wallpaper.opened, items: Wallpaper.items.length, accent: Wallpaper.accent });

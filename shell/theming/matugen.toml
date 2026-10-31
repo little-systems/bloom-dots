@@ -1,0 +1,29 @@
+# Bloom's Adaptive theme for other apps (spec §5.3). adaptive-theme.sh runs this
+# against the wallpaper; it backs every output up first and restores it on the
+# way out of Adaptive.
+[config]
+version_check = false
+
+[templates.gtk3]
+input_path = 'templates/gtk3.css'
+output_path = '~/.config/gtk-3.0/gtk.css'
+
+[templates.gtk4]
+input_path = 'templates/gtk4.css'
+output_path = '~/.config/gtk-4.0/gtk.css'
+
+[templates.fuzzel]
+input_path = 'templates/fuzzel.ini'
+output_path = '~/.config/fuzzel/fuzzel_theme.ini'
+
+[templates.kitty]
+input_path = 'templates/kitty.conf'
+output_path = '~/.local/state/quickshell/user/generated/terminal/kitty-theme.conf'
+
+[templates.hyprland]
+input_path = 'templates/hyprland.lua'
+output_path = '~/.config/hypr/hyprland/colors.lua'
+
+[templates.qt]
+input_path = 'templates/qt.colors'
+output_path = '~/.local/share/color-schemes/BloomAdaptive.colors'
