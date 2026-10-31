@@ -470,7 +470,7 @@ ShellRoot {
 
 		function run(action: string): string {
 			if (_modules.indexOf("regiontools") < 0) return "off";
-			if (["screenshot", "annotate", "ocr", "translate", "lens", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
+			if (["screenshot", "annotate", "ocr", "translate", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
 			Quickshell.execDetached(["env", "BLOOM_TRANSLATE_TO=" + Settings.values["bloom-translate-to"], "bash", Quickshell.shellPath("scripts/region.sh"), action]);
 			return "ok";
 		}

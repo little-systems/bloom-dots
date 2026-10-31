@@ -59,9 +59,14 @@ Column {
 			}
 		}
 		SRow {
-			theme: root.theme; icon: "contrast"; label: "Background Opacity"; divider: root._advanced
+			theme: root.theme; icon: "contrast"; label: "Background Opacity"
 			desc: "Adjust theme transparency (" + Math.round(root.store.values["bloom-theme-opacity"] * 100) + "%)"
 			SSlider { accessibleName: "Background Opacity"; objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "layers"; label: "Translucent Apps"; divider: root._advanced
+			desc: "Use this opacity and blur on windows and the terminal"
+			SToggle { objectName: "translucent"; accessibleName: "Translucent Apps"; theme: root.theme; checked: root.store.values["bloom-translucent-apps"]; onToggled: value => root.store.set("bloom-translucent-apps", value) }
 		}
 		SRow {
 			visible: root._advanced
@@ -78,16 +83,6 @@ Column {
 			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
 			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
 			SSlider { accessibleName: "Background Brightness"; theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
-		}
-	}
-
-	SGroupLabel { theme: root.theme; text: "Spotlight" }
-	SGroup {
-		theme: root.theme
-		SRow {
-			theme: root.theme; icon: "contrast"; label: "Spotlight Opacity"; divider: false
-			desc: Math.round(root.store.values["bloom-launcher-opacity"] * 100) + "%"
-			SSlider { accessibleName: "Spotlight Opacity"; theme: root.theme; from: 0.3; to: 1; step: 0.05; value: root.store.values["bloom-launcher-opacity"]; onMoved: value => root.store.set("bloom-launcher-opacity", value) }
 		}
 	}
 

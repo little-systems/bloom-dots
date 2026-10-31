@@ -20,7 +20,6 @@ Item {
 		property color groupBg: Qt.rgba(1, 1, 1, 0.06)
 	}
 	property color accent: "#007aff"
-	property real cardOpacity: 1
 	// { id, name, sub, icon (a URL), glyph (a character shown as the icon) }
 	property var results: []
 	// Chat replaces the list while `chatting`: [{ role, text }].
@@ -130,7 +129,7 @@ Item {
 		width: Tokens.launcher.width
 		height: heightSpring.value
 		radius: Tokens.launcher.radius
-		color: Qt.rgba(root.theme.bgExpanded.r, root.theme.bgExpanded.g, root.theme.bgExpanded.b, Math.min(root.theme.bgExpanded.a, root.cardOpacity))
+		color: root.theme.bgExpanded
 		border.width: 1
 		border.color: root.theme.border
 		clip: true

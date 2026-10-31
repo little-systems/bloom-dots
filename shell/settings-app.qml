@@ -80,6 +80,22 @@ ShellRoot {
 	}
 
 	SystemStore { id: store }
+	readonly property var _look: [Settings.values["bloom-theme-opacity"], Settings.values["bloom-translucent-apps"]]
+	property bool _lookArmed: false
+	on_LookChanged: if (app._lookArmed) lookTimer.restart()
+	Timer {
+		id: lookTimer
+		interval: 300
+		onTriggered: store.setLook(Settings.values["bloom-theme-opacity"], Settings.values["bloom-translucent-apps"])
+	}
+	Timer {
+		interval: 800
+		running: true
+		onTriggered: {
+			app._lookArmed = true;
+			lookTimer.restart();
+		}
+	}
 	// Settings.set reports a refused write; dropping that would show a change
 	// that never happened.
 	property string saveError: ""

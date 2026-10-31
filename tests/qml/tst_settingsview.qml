@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-launcher-opacity": 1, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-translucent-apps": false, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",

@@ -101,15 +101,15 @@ var ROWS = [
 		"tab": "appearance"
 	},
 	{
+		"label": "Translucent Apps",
+		"tab": "appearance"
+	},
+	{
 		"label": "Color Saturation",
 		"tab": "appearance"
 	},
 	{
 		"label": "Background Brightness",
-		"tab": "appearance"
-	},
-	{
-		"label": "Spotlight Opacity",
 		"tab": "appearance"
 	},
 	{

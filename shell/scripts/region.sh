@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Region tools (spec §3.4): pick a region or a window, then screenshot, annotate,
-# read its text, translate it, look it up or record it.
-# Usage: region.sh screenshot|annotate|ocr|translate|lens|record|record-audio|status
+# read its text, translate it or record it.
+# Usage: region.sh screenshot|annotate|ocr|translate|record|record-audio|status
 set -euo pipefail
 
 action="${1:-}"
@@ -76,16 +76,6 @@ case "$action" in
 		fi
 		printf '%s' "$out" | wl-copy
 		tell "Translation copied" "$out"
-		;;
-	lens)
-		need grim curl jq xdg-open
-		region="$(select_region)" || exit 0
-		file="$(mktemp --suffix=.png)"
-		trap 'rm -f "$file"' EXIT
-		grim -g "$region" "$file"
-		link="$(curl -sf -F "files[]=@$file" "${BLOOM_LENS_HOST:-https://uguu.se/upload}" | jq -r '.files[0].url // empty' || true)"
-		[ -n "$link" ] || { tell "Google Lens" "Couldn't upload the image."; exit 0; }
-		xdg-open "https://lens.google.com/uploadbyurl?url=$link"
 		;;
 	record | record-audio)
 		if recording; then

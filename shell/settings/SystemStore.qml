@@ -39,6 +39,8 @@ Scope {
 	property var _queue: []
 	property int pendingSeconds: 0
 	property var _monitorLines: []
+	property var _rules: []
+	property string _terminalBefore: ""
 
 	readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
 	readonly property var sources: Pipewire.nodes.values.filter(n => !n.isSink && !n.isStream && n.audio)
@@ -97,6 +99,17 @@ Scope {
 		root._run(["systemctl", "--user", on ? "enable" : "disable", "bloom-shell"], "Couldn't change Launch at Login", () => { autostartProc.running = true; });
 	}
 	function clearError() { root.lastError = ""; }
+	// One look for everything: Background Opacity, here and in the shell.
+	function setLook(opacity, translucent) {
+		const windows = translucent ? Sys.windowOpacity(opacity) : 1;
+		root.setHypr("decoration.active_opacity", windows);
+		root.setHypr("decoration.inactive_opacity", windows);
+		root._rules = Sys.lookRules(translucent);
+		root._save();
+		terminalLook.command = ["sh", Quickshell.shellPath("scripts/terminal-opacity.sh"), translucent ? String(opacity) : "restore", root._terminalLook];
+		terminalLook.running = true;
+		reloadTimer.restart();
+	}
 	// One at a time, in order, so a failure belongs to the change that caused it.
 	function _run(argv, failure, after) {
 		root._queue = root._queue.concat([{ argv: argv, failure: failure, after: after }]);
@@ -153,9 +166,9 @@ Scope {
 		monitorsProc.running = true;
 	}
 	function _save() {
-		const state = JSON.stringify({ hypr: root.hypr, monitors: root._monitorLines });
+		const state = JSON.stringify({ hypr: root.hypr, monitors: root._monitorLines, rules: root._rules, terminalBefore: root._terminalBefore });
 		Quickshell.execDetached(["sh", "-c", 'mkdir -p "$(dirname "$1")" "$(dirname "$3")" && printf %s "$2" > "$1" && printf %s "$4" > "$3"', "sh",
-			root._hyprPath, Sys.hyprFile(root.hypr, root._monitorLines), root._hyprState, state]);
+			root._hyprPath, Sys.hyprFile(root.hypr, root._monitorLines.concat(root._rules)), root._hyprState, state]);
 	}
 	function _loadDefaults() {
 		defaultsProc.command = ["sh", "-c", "for m in " + Sys.DEFAULTS.map(d => d.mime).join(" ") + "; do xdg-mime query default \"$m\"; done"];
@@ -234,6 +247,17 @@ Scope {
 			onStreamFinished: root.aiCheck = Assistant.checkText(text)
 		}
 	}
+	readonly property string _terminalLook: Quickshell.env("HOME") + "/.local/state/quickshell/user/generated/terminal/kitty-transparency.conf"
+	Process {
+		id: terminalLook
+		onExited: code => { if (code !== 0) root.lastError = "Couldn't change the terminal's opacity"; }
+	}
+	// Rules only take hold on a reload.
+	Timer {
+		id: reloadTimer
+		interval: 600
+		onTriggered: Quickshell.execDetached(["hyprctl", "reload"])
+	}
 	Timer {
 		id: verifyTimer
 		interval: 300
@@ -273,6 +297,8 @@ Scope {
 					const state = JSON.parse(text);
 					root.hypr = state.hypr || {};
 					root._monitorLines = state.monitors || [];
+					root._rules = state.rules || [];
+					root._terminalBefore = state.terminalBefore || "";
 				} catch (e) {}
 			}
 		}

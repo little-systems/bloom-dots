@@ -90,7 +90,8 @@ function appName(desktopId) {
 var OPTIONS = [
 	"input.repeat_delay", "input.repeat_rate", "input.sensitivity", "input.touchpad.natural_scroll",
 	"input.touchpad.disable_while_typing", "input.touchpad.scroll_factor", "general.gaps_in", "general.gaps_out",
-	"general.border_size", "decoration.rounding", "decoration.blur.enabled", "animations.enabled"
+	"general.border_size", "decoration.rounding", "decoration.blur.enabled", "animations.enabled",
+	"decoration.active_opacity", "decoration.inactive_opacity"
 ];
 
 function optionName(path) {
@@ -152,4 +153,16 @@ function updatesLabel(count) {
 	if (count === -1) return "Checking for Updates";
 	if (count === -2) return "Couldn't Check for Updates";
 	return count === 0 ? "Up to Date" : count + (count === 1 ? " Update Available" : " Updates Available");
+}
+
+// Window opacity fades text too, so it stops short of what the shell can use.
+function windowOpacity(opacity) {
+	return Math.round(Math.max(0.75, opacity) * 100) / 100;
+}
+
+// Bloom's surfaces always blur what's behind them; apps only when asked.
+function lookRules(translucent) {
+	const lines = ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
+	if (translucent) lines.push('hl.window_rule({ match = { class = ".*" }, no_blur = false })');
+	return lines;
 }

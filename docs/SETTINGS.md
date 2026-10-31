@@ -68,7 +68,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |
 | `bloom-timer-sound-enabled` | bool | `true` | `true`, `false` | Play a chime when the timer finishes. |
 | `bloom-battery-sound-enabled` | bool | `true` | `true`, `false` | Play a sound when the battery reaches the alert level. |
-| `bloom-launcher-opacity` | number | `1` | 0.3 to 1 | How solid Spotlight's card is. |
+| `bloom-translucent-apps` | bool | `false` | `true`, `false` | Apply Background Opacity and blur to app windows and the terminal. |
 | `bloom-font-family` | string | `""` | text, up to 200 characters | Font for Bloom's surfaces. Empty uses Bloom's own. |
 | `bloom-translate-to` | string | `"en"` | text, up to 20 characters | Language translations go to, as a code such as en or hi. Text is sent to Google. |
 | `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |

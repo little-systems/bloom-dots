@@ -322,9 +322,9 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Play a sound when the battery reaches the alert level."
 	},
-	"bloom-launcher-opacity": {
-		type: "number", min: 0.3, max: 1, default: 1,
-		doc: "How solid Spotlight's card is."
+	"bloom-translucent-apps": {
+		type: "bool", default: false,
+		doc: "Apply Background Opacity and blur to app windows and the terminal."
 	},
 	"bloom-font-family": {
 		type: "string", maxLength: 200, default: "",

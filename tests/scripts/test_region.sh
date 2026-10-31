@@ -53,15 +53,6 @@ bash "$SCRIPT" translate
 called 'notify-send.*reach the translation' || fail "a failed translation wasn't reported"
 echo "ok - translate copies the result, and reports a failure"
 
-fake curl 'echo "{\"files\":[{\"url\":\"https://h/x.png\"}]}"'
-fake xdg-open
-bash "$SCRIPT" lens
-called 'xdg-open https://lens.google.com/uploadbyurl?url=https://h/x.png' || fail "lens didn't open"
-fake curl 'exit 22'
-bash "$SCRIPT" lens
-called 'notify-send.*upload the image' || fail "a failed upload wasn't reported"
-echo "ok - lens opens the upload, and reports a failure"
-
 bash "$SCRIPT" record
 called 'wf-recorder -g 1,2 30x40 -f' || fail "recording didn't start"
 [[ "$(bash "$SCRIPT" status)" == recording ]] || fail "not reported as recording"

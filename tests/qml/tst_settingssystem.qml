@@ -61,4 +61,12 @@ TestCase {
 		verify(!Sys.sameValue(undefined, 4));
 		compare(Sys.withoutOption({ general: { gaps_in: 1, gaps_out: 2 } }, "general.gaps_in"), { general: { gaps_out: 2 } });
 	}
+
+	function test_look() {
+		compare(Sys.windowOpacity(0.9), 0.9);
+		compare(Sys.windowOpacity(0.3), 0.75);
+		compare(Sys.lookRules(false).length, 1);
+		verify(Sys.lookRules(true)[1].indexOf("no_blur = false") > 0);
+		verify(Sys.lookRules(false)[0].indexOf("bloom:(notch") > 0);
+	}
 }
