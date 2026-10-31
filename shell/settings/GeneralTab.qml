@@ -31,6 +31,10 @@ Column {
 			SToggle { accessibleName: "24-Hour Time"; objectName: "time24"; theme: root.theme; checked: root.store.values["bloom-time-format-24h"]; onToggled: value => root.store.set("bloom-time-format-24h", value) }
 		}
 		SRow {
+			theme: root.theme; icon: "bell"; label: "Battery Sound"; desc: "Play a sound at the alert level"
+			SToggle { accessibleName: "Battery Sound"; theme: root.theme; checked: root.store.values["bloom-battery-sound-enabled"]; onToggled: value => root.store.set("bloom-battery-sound-enabled", value) }
+		}
+		SRow {
 			theme: root.theme; icon: "rotate-ccw"; label: "Reduce Motion"; desc: "Skip animations across Bloom"
 			SToggle { objectName: "reduceMotion"; accessibleName: "Reduce Motion"; theme: root.theme; checked: root.store.values["bloom-reduce-motion"]; onToggled: value => root.store.set("bloom-reduce-motion", value) }
 		}

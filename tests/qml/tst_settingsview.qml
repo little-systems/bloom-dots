@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-launcher-opacity": 1, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -129,7 +129,8 @@ Item {
 		function clearError() {}
 		function hold(k, w) { holds.push(w); }
 		function discover(w) { calls.push(["discover", w]); }
-		function setPowered(on) {}
+		property string refuse: ""
+		function setPowered(on) { return refuse; }
 		function setConnected(p, w) { calls.push(["connected", p, w]); }
 		function unpair(p) { calls.push(["unpair", p]); }
 		function pair(p) { calls.push(["pair", p]); }
@@ -188,8 +189,8 @@ Item {
 				if (w !== undefined) fuzzyCompare(item.width, w, 1, what + " width");
 				if (h !== undefined) fuzzyCompare(item.height, h, 0.6, what + " height");
 			}
-			at(part(v, "tab:display"), 8.8, 142.8, 153.2, 36, "first tab");
-			at(part(v, "tab:sound"), 8.8, 182.8, 153.2, 36, "second tab");
+			at(part(v, "tab:display"), 8.8, 174.8, 153.2, 36, "first tab");
+			at(part(v, "tab:sound"), 8.8, 214.8, 153.2, 36, "second tab");
 			at(part(v, "close"), 699.2, 16.8, 22, 22, "close");
 			at(part(v, "heading"), 194.8, 62.8, undefined, 28.6, "heading");
 			at(part(v, "copy"), 194.8, 94.4, undefined, 16.8, "copy");
@@ -230,6 +231,7 @@ Item {
 
 		function test_scaleButtonsStopAtTheEnds() {
 			const v = make("appearance");
+			part(v, "page").contentY = 400;
 			click(v, "scale:up");
 			click(v, "scale:up");
 			compare(fakeStore.values["bloom-scale"], 1.3);
@@ -664,6 +666,37 @@ Item {
 		function test_aiKeyIsHidden() {
 			const v = make("ai");
 			verify(part(v, "aiKey").secret);
+		}
+
+		function test_searchFindsARowOnAnotherPage() {
+			const v = make();
+			const field = part(v, "settingsSearch");
+			field.text = "gaps";
+			click(v, "hit:Inner Gaps");
+			compare(v.tab, "hyprland");
+			compare(field.text, "", "search clears after going there");
+		}
+
+		function test_searchWithNothing() {
+			const v = make();
+			part(v, "settingsSearch").text = "zzzz";
+			verify(part(v, "noHits").visible);
+		}
+
+		function test_missingFontIsRefused() {
+			const v = make("appearance");
+			part(v, "font").text = "Not A Real Font";
+			part(v, "font").accepted();
+			compare(fakeStore.sets, []);
+			compare(findChild(part(v, "fontRow"), "desc").text, "That font isn't installed");
+		}
+
+		function test_refusedBluetoothSays() {
+			const v = make("bluetooth");
+			fakeBt.refuse = "Bluetooth adapter unavailable";
+			click(v, "bluetooth");
+			compare(part(v, "toggleError").text, "Bluetooth adapter unavailable");
+			fakeBt.refuse = "";
 		}
 
 		function test_closeSignals() {

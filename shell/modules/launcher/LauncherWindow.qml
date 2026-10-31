@@ -34,6 +34,7 @@ PanelWindow {
 		theme: Theme
 		accent: Theme.accent
 		results: Launcher.results
+		cardOpacity: Settings.values["bloom-launcher-opacity"]
 		chatting: Launcher.chatting
 		messages: Assistant.messages
 		busy: Assistant.busy

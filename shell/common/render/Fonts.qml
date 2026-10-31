@@ -9,8 +9,10 @@ import QtQuick
 // The first use loads the files; loaded here, not through fontconfig, they
 // measure as Chromium draws them.
 QtObject {
-	readonly property string family: "Bloom Inter"
-	readonly property string medium: "Bloom Inter Medium"
+	// bloom-font-family, set by shell.qml: replaces Bloom's own font everywhere.
+	property string override: ""
+	readonly property string family: override || "Bloom Inter"
+	readonly property string medium: override || "Bloom Inter Medium"
 	readonly property bool ready: [regular, mediumLoader, semibold, bold].every(l => l.status === FontLoader.Ready)
 
 	function familyFor(weight) {
@@ -23,8 +25,9 @@ QtObject {
 	readonly property FontLoader _ui: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-regular.ttf") }
 	readonly property FontLoader _uiSemi: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-semibold.ttf") }
 	readonly property FontLoader _uiBold: FontLoader { source: Qt.resolvedUrl("../../assets/fonts/Selawik-bold.ttf") }
-	readonly property string ui: _ui.name
+	readonly property string ui: override || _ui.name
 	function uiFor(weight) {
+		if (override) return override;
 		return weight >= Font.Bold ? _uiBold.name : weight >= Font.Medium ? _uiSemi.name : _ui.name;
 	}
 	// Bloom's About title (Settings.css .about-title).

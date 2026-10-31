@@ -59,6 +59,9 @@ if [[ -f "$ROOT/tools/gen-icons.mjs" ]] && need node; then
 	node "$ROOT/tools/gen-icons.mjs" --check
 fi
 
+step "settings search index is up to date"
+node "$ROOT/tools/gen-settings-index.mjs" --check
+
 step "every clickable shows Bloom's cursor"
 if need node; then
 	node "$ROOT/tools/check-cursors.mjs"

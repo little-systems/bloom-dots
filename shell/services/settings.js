@@ -314,6 +314,22 @@ var SCHEMA = {
 		default: "gemini-2.5-flash",
 		doc: "Gemini model for chat in the launcher."
 	},
+	"bloom-timer-sound-enabled": {
+		type: "bool", default: true,
+		doc: "Play a chime when the timer finishes."
+	},
+	"bloom-battery-sound-enabled": {
+		type: "bool", default: true,
+		doc: "Play a sound when the battery reaches the alert level."
+	},
+	"bloom-launcher-opacity": {
+		type: "number", min: 0.3, max: 1, default: 1,
+		doc: "How solid Spotlight's card is."
+	},
+	"bloom-font-family": {
+		type: "string", maxLength: 200, default: "",
+		doc: "Font for Bloom's surfaces. Empty uses Bloom's own."
+	},
 	"bloom-low-power": {
 		type: "enum",
 		values: ["off", "auto", "on"],

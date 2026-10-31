@@ -22,10 +22,18 @@ import "common/render"
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
 ShellRoot {
 	// Layers render at the scale the stages are drawn (common/render).
+	// Reached once so its chimes are armed whichever surfaces are on.
+	readonly property var _sounds: Sounds
+
 	Binding {
 		target: Render
 		property: "reduceMotion"
 		value: Settings.values["bloom-reduce-motion"]
+	}
+	Binding {
+		target: Fonts
+		property: "override"
+		value: Settings.values["bloom-font-family"]
 	}
 	Binding {
 		target: Render

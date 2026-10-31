@@ -17,6 +17,36 @@ Column {
 	property string _openDevice: ""
 	property string _password: ""
 	property string _pin: ""
+	// A switch that hasn't reached the wanted state by now didn't work.
+	property var _wantWifi: null
+	property var _wantBt: null
+	property string _toggleError: ""
+	Timer {
+		id: toggleCheck
+		interval: 5000
+		onTriggered: {
+			if (root._wantWifi !== null && root.net.wifiEnabled !== root._wantWifi) root._toggleError = "Wi-Fi didn't change. Try again.";
+			if (root._wantBt !== null && root.bt.powered !== root._wantBt) root._toggleError = "Bluetooth didn't change. Try again.";
+			root._wantWifi = null;
+			root._wantBt = null;
+		}
+	}
+	function _setWifi(on) {
+		root._toggleError = "";
+		root._wantWifi = on;
+		root.net.setWifi(on);
+		toggleCheck.restart();
+	}
+	function _setBt(on) {
+		root._toggleError = "";
+		const refused = root.bt.setPowered(on);
+		if (refused) {
+			root._toggleError = refused;
+			return;
+		}
+		root._wantBt = on;
+		toggleCheck.restart();
+	}
 
 	width: parent.width
 
@@ -72,6 +102,18 @@ Column {
 		root._password = "";
 	}
 
+	Text {
+		objectName: "toggleError"
+		visible: root._toggleError !== ""
+		width: parent.width
+		bottomPadding: 10
+		leftPadding: 6
+		text: root._toggleError
+		color: "#ff8a80"
+		font.family: Fonts.ui
+		font.pixelSize: 12
+	}
+
 	component Message: Text {
 		width: parent.width
 		leftPadding: 54
@@ -95,7 +137,7 @@ Column {
 			SRow {
 				theme: root.theme; icon: "wifi"; label: "Wi-Fi"; divider: false
 				desc: !root.net.loaded ? "Checking…" : !root.net.available ? "No Wi-Fi adapter found" : !root.net.wifiEnabled ? "Off" : root.net.connected ? "Connected to " + root.net.ssid : "Not connected"
-				SToggle { objectName: "wifi"; accessibleName: "Wi-Fi"; theme: root.theme; enabled: root.net.loaded && root.net.available; checked: root.net.wifiEnabled; onToggled: root.net.setWifi(!root.net.wifiEnabled) }
+				SToggle { objectName: "wifi"; accessibleName: "Wi-Fi"; theme: root.theme; enabled: root.net.loaded && root.net.available; checked: root.net.wifiEnabled; onToggled: root._setWifi(!root.net.wifiEnabled) }
 			}
 		}
 
@@ -210,7 +252,7 @@ Column {
 			SRow {
 				theme: root.theme; icon: "bluetooth"; label: "Bluetooth"; divider: false
 				desc: !root.bt.loaded ? "Checking…" : root.bt.error ? "Couldn't read Bluetooth" : !root.bt.available ? "No Bluetooth adapter found" : root.bt.powered ? "On" : "Off"
-				SToggle { objectName: "bluetooth"; accessibleName: "Bluetooth"; theme: root.theme; enabled: root.bt.loaded && root.bt.available; checked: root.bt.powered; onToggled: root.bt.setPowered(!root.bt.powered) }
+				SToggle { objectName: "bluetooth"; accessibleName: "Bluetooth"; theme: root.theme; enabled: root.bt.loaded && root.bt.available; checked: root.bt.powered; onToggled: root._setBt(!root.bt.powered) }
 			}
 		}
 

@@ -66,6 +66,10 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-brightness-edge-enabled` | bool | `true` | `true`, `false` | Slide the brightness overlay in from the right edge on hover. |
 | `bloom-reduce-motion` | bool | `false` | `true`, `false` | Land every spring at once instead of animating it. |
 | `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |
+| `bloom-timer-sound-enabled` | bool | `true` | `true`, `false` | Play a chime when the timer finishes. |
+| `bloom-battery-sound-enabled` | bool | `true` | `true`, `false` | Play a sound when the battery reaches the alert level. |
+| `bloom-launcher-opacity` | number | `1` | 0.3 to 1 | How solid Spotlight's card is. |
+| `bloom-font-family` | string | `""` | text, up to 200 characters | Font for Bloom's surfaces. Empty uses Bloom's own. |
 | `bloom-low-power` | enum | `"off"` | `off`, `auto`, `on` | Turns off album-art glow and slows live previews. Auto does this while on battery. |
 | `bloom-media-ambience-enabled` | bool | `true` | `true`, `false` | Coloured glow from the album art behind the open player. |
 | `bloom-media-compact-glow-enabled` | bool | `true` | `true`, `false` | Glow around the album art in the collapsed notch. |

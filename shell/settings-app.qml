@@ -93,6 +93,11 @@ ShellRoot {
 		property: "reduceMotion"
 		value: Settings.values["bloom-reduce-motion"]
 	}
+	Binding {
+		target: Fonts
+		property: "override"
+		value: Settings.values["bloom-font-family"]
+	}
 
 	FloatingWindow {
 		id: win

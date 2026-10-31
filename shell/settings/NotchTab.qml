@@ -56,6 +56,12 @@ Column {
 			SToggle { accessibleName: "Calendar & Timer"; objectName: "calendar"; theme: root.theme; enabled: !(root._calendar && root._lastPanel); checked: root._calendar; onToggled: value => root.set("bloom-calendar-enabled", value) }
 		}
 		SRow {
+			objectName: "timerSound"
+			visible: root._calendar; height: visible ? implicitHeight : 0; implicitHeight: 50.8
+			theme: root.theme; icon: "bell-ring"; label: "Timer Sound"; desc: "Play a chime when the timer finishes"
+			SToggle { accessibleName: "Timer Sound"; theme: root.theme; checked: root._v["bloom-timer-sound-enabled"]; onToggled: value => root.set("bloom-timer-sound-enabled", value) }
+		}
+		SRow {
 			theme: root.theme; icon: "sliders-horizontal"; label: "Command Center"; desc: "Quick toggles, Wi-Fi and Bluetooth"
 			SToggle { accessibleName: "Command Center"; theme: root.theme; enabled: !(root._command && root._lastPanel); checked: root._command; onToggled: value => root.set("bloom-notch-command-center-enabled", value) }
 		}

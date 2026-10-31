@@ -9,6 +9,7 @@ Column {
 	property var store
 	property Item popup
 	signal colorRequested()
+	property bool _fontMissing: false
 
 	readonly property string _mode: root.store.values["bloom-theme-mode"]
 	readonly property bool _custom: root._mode === "custom"
@@ -77,6 +78,41 @@ Column {
 			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
 			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
 			SSlider { accessibleName: "Background Brightness"; theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
+		}
+	}
+
+	SGroupLabel { theme: root.theme; text: "Spotlight" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "contrast"; label: "Spotlight Opacity"; divider: false
+			desc: Math.round(root.store.values["bloom-launcher-opacity"] * 100) + "%"
+			SSlider { accessibleName: "Spotlight Opacity"; theme: root.theme; from: 0.3; to: 1; step: 0.05; value: root.store.values["bloom-launcher-opacity"]; onMoved: value => root.store.set("bloom-launcher-opacity", value) }
+		}
+	}
+
+	SGroupLabel { theme: root.theme; text: "Text" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			objectName: "fontRow"
+			theme: root.theme; icon: "type"; label: "Font"; divider: false
+			readonly property string family: root.store.values["bloom-font-family"]
+			desc: root._fontMissing ? "That font isn't installed" : family === "" ? "Bloom's own" : family
+			SField {
+				objectName: "font"
+				width: 160
+				theme: root.theme
+				placeholder: "Font name"
+				accessibleName: "Font"
+				text: root.store.values["bloom-font-family"]
+				onAccepted: {
+					const name = text.trim();
+					// A font that isn't there would silently fall back, so it isn't saved.
+					root._fontMissing = name !== "" && Qt.fontFamilies().indexOf(name) < 0;
+					if (!root._fontMissing) root.store.set("bloom-font-family", name);
+				}
+			}
 		}
 	}
 

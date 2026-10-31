@@ -4,6 +4,7 @@ import "../common/render"
 import "../common/tokens.js" as Tokens
 import "../modules/notch/qp"
 import "."
+import "search.js" as Search
 
 // Bloom's settings window: title bar, sidebar and the active tab. Pure:
 // `store` holds the values, and settings-app.qml does the system work.
@@ -35,6 +36,8 @@ Rectangle {
 
 	property string saveError: ""
 	signal errorDismissed()
+	property string query: ""
+	readonly property var _hits: Search.find(root.query)
 	signal cityQueried(string text)
 	signal addFolderRequested()
 	signal closeRequested()
@@ -82,6 +85,10 @@ Rectangle {
 
 	onTabChanged: page.contentY = 0
 
+	function _open(hit) {
+		root.tab = hit.tab;
+		searchField.text = "";
+	}
 	function _step(delta) {
 		const at = root._tabs.findIndex(t => t.id === root.tab);
 		root.tab = root._tabs[(at + delta + root._tabs.length) % root._tabs.length].id;
@@ -216,8 +223,67 @@ Rectangle {
 					lineHeightMode: Text.FixedHeight
 				}
 			}
+			SField {
+				id: searchField
+				objectName: "settingsSearch"
+				width: parent.width
+				theme: root.theme
+				placeholder: "Find a setting"
+				accessibleName: "Find a setting"
+				onTextChanged: root.query = text
+				onAccepted: if (root._hits.length) root._open(root._hits[0])
+			}
+			Text {
+				objectName: "noHits"
+				visible: root.query !== "" && root._hits.length === 0
+				leftPadding: 12
+				topPadding: 8
+				text: "Nothing found"
+				color: root.theme.textMuted
+				font.family: Fonts.ui
+				font.pixelSize: 12
+			}
 			Repeater {
-				model: root._groups
+				model: root._hits
+				delegate: Rectangle {
+					id: hit
+					required property var modelData
+					objectName: "hit:" + hit.modelData.label
+					width: parent.width
+					height: 40
+					radius: Tokens.settings.tab.radius
+					color: hitHover.hovered ? Qt.rgba(1, 1, 1, 0.05) : "transparent"
+					activeFocusOnTab: true
+					Accessible.role: Accessible.Button
+					Accessible.name: hit.modelData.label
+					Keys.onReturnPressed: root._open(hit.modelData)
+					SFocusRing { inset: 0 }
+					Column {
+						x: Tokens.settings.tab.paddingH
+						anchors.verticalCenter: parent.verticalCenter
+						width: parent.width - 2 * x
+						Text {
+							width: parent.width
+							text: hit.modelData.label
+							elide: Text.ElideRight
+							color: root.theme.text
+							font.family: Fonts.uiFor(Font.Medium)
+							font.pixelSize: 12
+							font.weight: Font.Medium
+						}
+						Text {
+							text: root._tabs.find(t => t.id === hit.modelData.tab)?.label ?? ""
+							color: root.theme.textMuted
+							font.family: Fonts.ui
+							font.pixelSize: 10
+						}
+					}
+					HoverHandler { id: hitHover; cursorShape: Qt.PointingHandCursor }
+					TapHandler { onTapped: root._open(hit.modelData) }
+				}
+			}
+			Repeater {
+				model: root.query === "" ? root._groups : []
 				delegate: Column {
 					id: tabGroup
 					required property var modelData
