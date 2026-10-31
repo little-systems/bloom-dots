@@ -33,6 +33,42 @@ var ROWS = [
 		"tab": "general"
 	},
 	{
+		"label": "Translate To",
+		"tab": "general"
+	},
+	{
+		"label": "English",
+		"tab": "general"
+	},
+	{
+		"label": "Hindi",
+		"tab": "general"
+	},
+	{
+		"label": "Spanish",
+		"tab": "general"
+	},
+	{
+		"label": "French",
+		"tab": "general"
+	},
+	{
+		"label": "German",
+		"tab": "general"
+	},
+	{
+		"label": "Japanese",
+		"tab": "general"
+	},
+	{
+		"label": "Chinese",
+		"tab": "general"
+	},
+	{
+		"label": "Arabic",
+		"tab": "general"
+	},
+	{
 		"label": "Reset to Defaults",
 		"tab": "general"
 	},

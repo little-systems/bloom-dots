@@ -56,6 +56,21 @@ Column {
 		}
 	}
 
+	SGroupLabel { theme: root.theme; text: "Translation" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			objectName: "translateRow"
+			theme: root.theme; icon: "languages"; label: "Translate To"; desc: "Screen text goes to Google to translate"; divider: false
+			SSelect {
+				objectName: "translateTo"; accessibleName: "Translate To"; theme: root.theme; popup: root.popup
+				value: root.store.values["bloom-translate-to"]
+				options: [{ value: "en", label: "English" }, { value: "hi", label: "Hindi" }, { value: "es", label: "Spanish" }, { value: "fr", label: "French" }, { value: "de", label: "German" }, { value: "ja", label: "Japanese" }, { value: "zh", label: "Chinese" }, { value: "ar", label: "Arabic" }]
+				onActivated: value => root.store.set("bloom-translate-to", value)
+			}
+		}
+	}
+
 	SGroupLabel { theme: root.theme; text: "App" }
 	SGroup {
 		theme: root.theme

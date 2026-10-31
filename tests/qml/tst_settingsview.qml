@@ -19,7 +19,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-launcher-opacity": 1, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-launcher-opacity": 1, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -156,6 +156,12 @@ Item {
 			tryVerify(() => findChild(v, name) !== null, 1000, name);
 			return findChild(v, name);
 		}
+		// Scrolls a row into view, however much sits above it.
+		function reveal(v, name) {
+			waitForRendering(host);
+			const page = part(v, "page");
+			page.contentY = Math.max(0, part(v, name).mapToItem(page.contentItem, 0, 0).y - 120);
+		}
 		function click(v, name) {
 			waitForRendering(host);
 			const it = part(v, name);
@@ -250,9 +256,9 @@ Item {
 		function test_actionsSignal() {
 			const v = make();
 			const restart = spy(v, "restartRequested"), quit = spy(v, "quitRequested");
-			part(v, "page").contentY = 300;
+			reveal(v, "restart");
 			click(v, "restart");
-			part(v, "page").contentY = 400;
+			reveal(v, "quit");
 			click(v, "quit");
 			compare([restart.count, quit.count], [1, 1]);
 		}
@@ -269,7 +275,7 @@ Item {
 		function test_resetAsksFirst() {
 			const v = make();
 			const confirmed = spy(v, "resetConfirmed");
-			part(v, "page").contentY = 300;
+			reveal(v, "reset");
 			click(v, "reset");
 			verify(part(v, "confirm").visible);
 			click(v, "confirmCancel");
