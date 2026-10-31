@@ -44,4 +44,27 @@ TestCase {
 		compare(Launcher.filterClips(got, "HELLO").length, 1);
 		compare(Launcher.filterClips(got, "").length, 2);
 	}
+
+	function test_emoji() {
+		const got = Launcher.emoji("grinning");
+		verify(got.length > 0);
+		compare(got[0].glyph, "😀");
+		compare(got[0].name, "Grinning face");
+		compare(Launcher.emoji("").length, 60, "a first page with no term");
+		compare(Launcher.emoji("nosuchemojiatall").length, 0);
+	}
+
+	// What each mode shows besides apps.
+	function test_singleRows() {
+		compare(Launcher.commandRow("ls -la"), [{ id: "command", name: "ls -la", sub: "Run this command", icon: "", glyph: ">", action: { kind: "command", value: "ls -la" } }]);
+		compare(Launcher.commandRow(""), []);
+		const web = Launcher.webRow("arch")[0];
+		compare(web.sub, "Search Google");
+		compare(web.action, { kind: "url", value: "https://www.google.com/search?q=arch" });
+		const calc = Launcher.calcRow("2+2", "4")[0];
+		compare(calc.name, "4");
+		compare(calc.sub, "2+2 · Enter copies it");
+		compare(calc.action, { kind: "copy", value: "4" });
+		compare(Launcher.calcRow("2+", ""), []);
+	}
 }

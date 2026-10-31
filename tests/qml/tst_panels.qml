@@ -29,6 +29,11 @@ TestCase {
 		compare(Panels.inset("shelf"), 12);
 		compare(Panels.inset("calendar"), 0);
 	}
+	// Panels with a field take the keyboard; Bluetooth's asks for a PIN.
+	function test_keyboardPanels() {
+		for (const panel of ["calendar", "shelf", "wifi", "bluetooth"]) verify(Panels.wantsKeyboard(panel), panel);
+		for (const panel of ["", "command-center", "devices"]) verify(!Panels.wantsKeyboard(panel), panel);
+	}
 	function test_sizes() {
 		compare(Panels.size("calendar", 5, 0), { width: 480, height: 273 });
 		compare(Panels.size("calendar", 6, 0), { width: 480, height: 305 });

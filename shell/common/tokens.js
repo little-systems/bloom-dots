@@ -209,6 +209,22 @@ var dock = {
 	drag: { y: -10, scale: 1.1, opacity: 0.8 }
 };
 
+// The launcher (Phase 6; Bloom has none, owner decision: Spotlight-style). The
+// language is Bloom's Add App card: its surface, search field, rows and spring.
+var launcher = {
+	width: 560,
+	top: 0.22, // of the screen's height, where the bar sits
+	radius: 18,
+	maxRows: 8,
+	padding: 10,
+	gap: 6,
+	field: { paddingH: 14, height: 44, radius: 12, gap: 10, icon: 16, size: 15 },
+	sub: 11,
+	height: { stiffness: 400, damping: 31 }, // the notch's width spring
+	enter: { stiffness: 300, damping: 28, mass: 0.9, scale: 0.96 }, // popupScale
+	exitMs: 120
+};
+
 // Notch panels, copied from Bloom @ b5fb962 (App.css, components/QuickPanel.css).
 // Each group names the CSS rule it comes from.
 

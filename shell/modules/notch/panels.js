@@ -41,3 +41,8 @@ function inset(panel) {
 	if (panel === "command-center") return 14;
 	return 12;
 }
+
+// Panels with a text field: the layer takes the keyboard while one is open.
+function wantsKeyboard(panel) {
+	return ["calendar", "shelf", "wifi", "bluetooth"].includes(panel);
+}

@@ -5,6 +5,7 @@ import qs.services
 import "."
 import "../../common/tokens.js" as Tokens
 import "notch.js" as Logic
+import "panels.js" as Panels
 import "calendar.js" as CalendarLogic
 
 // One notch per screen: a fixed-size top layer surface (it never resizes,
@@ -29,7 +30,7 @@ PanelWindow {
 	// draws over fullscreen windows, so while one is in front the notch drops
 	// to Top, which Hyprland keeps under fullscreen windows.
 	WlrLayershell.layer: win._fullscreen ? WlrLayer.Top : WlrLayer.Overlay
-	WlrLayershell.keyboardFocus: view.panel === "calendar" || view.panel === "shelf" || view.panel === "wifi" ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+	WlrLayershell.keyboardFocus: Panels.wantsKeyboard(view.panel) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)

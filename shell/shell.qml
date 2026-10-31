@@ -9,6 +9,7 @@ import qs.services
 import "modules/notch"
 import "modules/dock"
 import "modules/osd"
+import "modules/launcher"
 import "common/render"
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -40,6 +41,18 @@ ShellRoot {
 	LazyLoader {
 		active: _modules.indexOf("notch") >= 0 && Settings.values["bloom-calendar-enabled"]
 		component: Scope { Component.onCompleted: CalendarState.remaining() }
+	}
+
+	LazyLoader {
+		id: launcherLoader
+		active: _modules.indexOf("launcher") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/launcher/LauncherWindow.qml"), { modelData: modelData })
+			}
+		}
 	}
 
 	LazyLoader {
@@ -297,6 +310,18 @@ ShellRoot {
 		function respond(accept: bool, pin: string): string { return Bluetooth.respond(accept, pin); }
 		function unpair(path: string): string { return Bluetooth.unpair(path); }
 		function connect(path: string, wanted: bool): string { return Bluetooth.setConnected(path, wanted); }
+	}
+
+	IpcHandler {
+		target: "launcher"
+
+		function toggle(): string { Launcher.toggle(); return "ok"; }
+		function close(): string { Launcher.hide(); return "ok"; }
+		function search(text: string): string { Launcher.setQuery(text); return "ok"; }
+		function accept(index: int): string { return Launcher.accept(Launcher.results[index]); }
+		function state(): string {
+			return JSON.stringify({ opened: Launcher.opened, query: Launcher.query, results: Launcher.results.map(r => ({ id: r.id, name: r.name, sub: r.sub })) });
+		}
 	}
 
 	IpcHandler {
