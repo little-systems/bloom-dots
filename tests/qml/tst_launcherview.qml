@@ -139,5 +139,13 @@ Item {
 			v.open();
 			compare(part(v, "placeholder").text, "Search apps, or ; : = > ? ! for more");
 		}
+
+		function test_opensStraightIntoAMode() {
+			const v = make();
+			const edited = spy(v, "queryEdited");
+			v.openWith(";");
+			compare(findChild(v, "field").text, ";");
+			compare(Array.from(edited.signalArguments[edited.count - 1]), [";"]);
+		}
 	}
 }

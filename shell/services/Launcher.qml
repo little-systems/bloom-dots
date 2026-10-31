@@ -20,6 +20,17 @@ Singleton {
 	function show() { root.opened = true; root.setQuery(""); }
 	function hide() { root.opened = false; }
 	function toggle() { if (root.opened) root.hide(); else root.show(); }
+	// Straight into a mode, such as `;` for the clipboard. The same key closes it.
+	signal openedWith(string text)
+	function toggleWith(prefix) {
+		if (root.opened && root.query.startsWith(prefix)) {
+			root.hide();
+			return;
+		}
+		root.opened = true;
+		root.setQuery(prefix);
+		root.openedWith(prefix);
+	}
 
 	function setQuery(text) {
 		root.query = text;

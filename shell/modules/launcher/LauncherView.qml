@@ -42,6 +42,12 @@ Item {
 		enter.jump(0);
 		field.forceActiveFocus();
 	}
+	// Opens, or if open moves, with this text already typed.
+	function openWith(text) {
+		if (!root._open) root.open();
+		field.text = text;
+		field.cursorPosition = text.length;
+	}
 	function close() {
 		root._open = false;
 	}

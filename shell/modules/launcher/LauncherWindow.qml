@@ -45,5 +45,6 @@ PanelWindow {
 			if (Launcher.opened) view.open();
 			else view.close();
 		}
+		function onOpenedWith(text) { view.openWith(text); }
 	}
 }

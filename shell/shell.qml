@@ -202,6 +202,11 @@ ShellRoot {
 	IpcHandler {
 		target: "settings"
 
+		function toggleTheme(): string {
+			Settings.set("bloom-theme-mode", Theme.isLight ? "dark" : "light");
+			return "ok";
+		}
+
 		// The settings app, its own process so a crash there leaves the shell up.
 		function open(): string {
 			Quickshell.execDetached(["qs", "--no-duplicate", "-p", Quickshell.shellPath("settings-app.qml")]);
@@ -388,6 +393,7 @@ ShellRoot {
 		target: "launcher"
 
 		function toggle(): string { Launcher.toggle(); return "ok"; }
+		function mode(prefix: string): string { Launcher.toggleWith(prefix); return "ok"; }
 		function close(): string { Launcher.hide(); return "ok"; }
 		function search(text: string): string { Launcher.setQuery(text); return "ok"; }
 		function accept(index: int): string { return Launcher.accept(Launcher.results[index]); }
