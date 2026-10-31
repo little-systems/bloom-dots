@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+Comment=Bloom and system settings
+Exec=qs --no-duplicate -p %h/.config/quickshell/bloom/settings-app.qml
+Icon=%h/.config/quickshell/bloom/assets/bloom.png
+Terminal=false
+Categories=Settings;
+Keywords=bloom;preferences;system;control;
+StartupWMClass=org.quickshell
