@@ -17,7 +17,7 @@ BACKUP=~/Projects/bloom-polkit-handover-$(date +%Y%m%d-%H%M%S)
 scripts/phase6-ii-polkit.sh apply ~/.config/quickshell/ii ~/dots-hyprland/dots/.config/quickshell/ii "$BACKUP"
 ```
 
-1. Restart ii: `pkill -x qs -f '^qs -c ii$'`. The watchdog loop in the session starts it again within 5 seconds.
+1. Restart ii: `pkill -f '^qs -c ii$'`. The watchdog loop in the session starts it again within 5 seconds.
 2. Add `polkit` to the modules and restart `bloom-shell`.
 3. `qs -c bloom ipc call polkit state` must read `"enabled":true,"registered":true`.
 4. The owner runs `pkexec true` and types the password into Bloom's dialog. Also try a wrong password once, and Cancel once.
