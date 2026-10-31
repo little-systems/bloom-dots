@@ -42,7 +42,8 @@ PY
 python3 "$T/server.py" > "$T/port" &
 SERVER=$!
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do [[ -s "$T/port" ]] && break; sleep 0.1; done
-export BLOOM_GEMINI_URL="http://127.0.0.1:$(cat "$T/port")"
+BLOOM_GEMINI_URL="http://127.0.0.1:$(cat "$T/port")"
+export BLOOM_GEMINI_URL
 run() { printf '%s' "$1" | python3 "$ROOT/shell/scripts/assistant.py"; }
 JOB='{"model":"m","contents":[{"role":"user","parts":[{"text":"hi"}]}]}'
 
