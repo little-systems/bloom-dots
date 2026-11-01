@@ -16,7 +16,7 @@ cleanup_notification_test() {
 trap cleanup_notification_test EXIT
 start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom"
-printf '{"bloom-enabled-modules":["notifications"],"bloom-notifications-timeout":3500}' >"$XDG_CONFIG_HOME/bloom/settings.json"
+printf '{"bloom-enabled-modules":["notifications"],"bloom-notifications-timeout":2500}' >"$XDG_CONFIG_HOME/bloom/settings.json"
 start_shell
 wait_for 'Bloom notification bus owner' busctl --user status org.freedesktop.Notifications
 owned_status() { ipc notifications state | jq -e '.ownership=="owned" and .ownershipError==""' >/dev/null; }
@@ -35,11 +35,26 @@ wait "$SECOND_SHELL_PID" 2>/dev/null || true
 SECOND_SHELL_PID=""
 pass 'a second Bloom instance reports the existing notification owner'
 
+transient_hover_id="$(notify-send -p -e -t 10000 -a 'Test App' 'Transient hover')"
+transient_arrival() { ipc notifications state | jq -e 'any(.cards[]; .summary=="Transient hover")' >/dev/null; }
+wait_for 'transient arrival card' transient_arrival
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 hover 4000 &
+TRANSIENT_HOVER_PID=$!
+transient_hover_visible() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and (.cornerHovered or .hovered) and .mode=="arrival")' >/dev/null; }
+wait_for 'transient card stays visible on corner hover' transient_hover_visible
+sleep 2.7
+transient_hover_visible || fail 'transient card slid out while hovered'
+wait "$TRANSIENT_HOVER_PID"
+ipc notifications dismiss "$transient_hover_id" >/dev/null
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 300 600 wheel 0 &
+wait $!
+pass 'corner hover keeps a transient arrival card visible without history'
+
 id="$(notify-send -p -a 'Test App' -t 5000 'First' 'body')"
 [[ "$id" =~ ^[0-9]+$ ]] || fail "notify-send did not return an ID: $id"
 has_summary() { ipc notifications state | jq -e --arg s "$1" 'any(.history[]; .summary==$s)' >/dev/null; }
 wait_for 'first notification' has_summary First
-cards_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="cards" and .visible)' >/dev/null; }
+cards_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .mode=="arrival")' >/dev/null; }
 wait_for 'visible card surface' cards_mapped
 if [[ -n "${BLOOM_NOTIFICATION_SCREENSHOT:-}" ]]; then
 	sleep 0.25
@@ -50,9 +65,9 @@ wait_for 'replacement' has_summary Replaced
 [[ "$(ipc notifications state | jq '.history | length')" == 1 ]] || fail 'replacement duplicated history'
 pass 'replacement updates one history entry'
 notify-send -a 'Test App' -t 5000 'Grouped' 'same app'
-grouped_cards() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="cards" and any(.groups[]; .app=="Test App" and .count==2))' >/dev/null; }
-wait_for 'one grouped app card' grouped_cards
-pass 'same-app notifications share one card group'
+stacked_cards() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .cards==2)' >/dev/null; }
+wait_for 'two cards in the stack' stacked_cards
+pass 'same-app notifications occupy separate stacked cards'
 
 ipc settings set bloom-notifications-dnd true >/dev/null
 notify-send -a 'Test App' 'Quiet' 'kept in history'
@@ -65,12 +80,12 @@ pass 'DND retains normal history and shows critical cards'
 
 no_cards() { ipc notifications state | jq -e '.cards | length == 0' >/dev/null; }
 wait_for 'temporary banners to clear' no_cards
-hover_target() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="history" and .hoverTargetVisible)' >/dev/null; }
+hover_target() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .cornerAvailable and (.visible==false))' >/dev/null; }
 wait_for 'top-right hover target' hover_target
 unread_before_hover="$(ipc notifications state | jq '.unread')"
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 wheel 0 &
 HOVER_PID=$!
-history_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="history" and .visible)' >/dev/null; }
+history_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .mode=="history")' >/dev/null; }
 wait_for 'history to open from top-right hover' history_mapped
 [[ "$(ipc notifications state | jq '.unread')" == "$unread_before_hover" ]] || fail 'hover marked notifications read'
 if [[ -n "${BLOOM_NOTIFICATION_HISTORY_SCREENSHOT:-}" ]]; then
@@ -80,10 +95,10 @@ fi
 wait "$HOVER_PID"
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 300 600 wheel 0 &
 LEAVE_PID=$!
-history_closed() { ipc notifications state | jq -e 'all(.surfaces[]; .kind!="history" or (.visible==false))' >/dev/null; }
+history_closed() { ipc notifications state | jq -e 'all(.surfaces[]; .kind!="stack" or (.visible==false))' >/dev/null; }
 wait_for 'hover history to close after leaving' history_closed
 wait "$LEAVE_PID"
-pass 'top-right hover reveals recent notifications and leaves cleanly'
+pass 'top-right hover slides the same card stack back in and leaves cleanly'
 
 ipc notifications markRead >/dev/null
 [[ "$(ipc notifications state | jq '.unread')" == 0 ]] || fail 'markRead kept unread items'
@@ -93,10 +108,10 @@ wait_for 'notification state file' test -s "$state_file"
 pass 'notification history persists as JSON primitives'
 
 assert_eq "$(ipc notifications openHistory)" 'ok' 'open history'
-wait_for 'top-right history surface' history_mapped
+wait_for 'history cards in the same stack' history_mapped
 assert_eq "$(ipc notifications closeHistory)" 'ok' 'close history'
-wait_for 'history sheet to close' history_closed
-pass 'top-right history sheet opens and closes by IPC'
+wait_for 'history cards to slide away' history_closed
+pass 'IPC reveals and hides history in the same stack'
 
 ipc settings set bloom-notifications-dnd false >/dev/null
 long_id="$(notify-send -p -a 'Test App' -t 10000 'Brief banner' 'kept in history')"
@@ -104,13 +119,13 @@ long_card() { ipc notifications state | jq -e --argjson id "$long_id" 'any(.card
 wait_for 'long sender timeout still shows a banner' long_card
 WAIT_S=5 wait_for 'banner to hide by the Bloom timeout' no_cards
 has_summary 'Brief banner' || fail 'hidden banner was lost from history'
-pass 'ordinary banners hide within 3.5 seconds even when an app requests longer'
+pass 'ordinary banners hide within 2.5 seconds even when an app requests longer'
 hover_id="$(notify-send -p -a 'Test App' -t 10000 'Hover banner' 'stay while the pointer is here')"
 hover_card() { ipc notifications state | jq -e --argjson id "$hover_id" 'any(.cards[]; .id==$id)' >/dev/null; }
 wait_for 'hover banner' hover_card
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1750 60 hover 4500 &
 CARD_HOVER_PID=$!
-card_hovered() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="cards" and .hovered)' >/dev/null; }
+card_hovered() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .hovered)' >/dev/null; }
 wait_for 'pointer over the banner' card_hovered
 sleep 3.7
 hover_card || fail 'banner expired while hovered'
@@ -159,6 +174,10 @@ wait_for 'restored history' history_restored
 [[ "$(ipc notifications state | jq '.unread')" == "$saved_unread" ]] || fail 'restart lost unread state'
 pass 'restart restores history and unread without resurrecting popups'
 
+# The first session used ID 1 for the transient hover case, so advance the
+# restarted session to the first ID that also exists in persisted history.
+restart_transient_id="$(notify-send -p -e -t 1000 -a 'Test App' 'Restart transient')"
+ipc notifications dismiss "$restart_transient_id" >/dev/null
 notify-send -p -t 5000 -A 'open=Open' -a 'Test App' 'New session action' >"$TEST_TMP/new-action.out" 2>"$TEST_TMP/new-action.err" &
 NEW_ACTION_PID=$!
 wait_for 'new action ID' test -s "$TEST_TMP/new-action.out"

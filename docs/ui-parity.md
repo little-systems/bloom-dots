@@ -56,10 +56,10 @@ Owner updates, 2026-11-01:
   Normalize Qt list signal arguments before saving app order. Exercise drag
   input through the compositor and verify the saved order after a shell restart;
   view-only drag tests cannot catch a rejected service write.
-- Notifications use brief top-right banners and a separate top-right history
-  sheet revealed from its bell target. The notch no longer owns notification
-  badges or history controls. Ordinary banners use a 3.5 second default cap;
-  app-requested persistent alerts remain until dismissed.
+- Notifications share one card stack that slides in from the top-right for
+  2.5 seconds and returns when the corner is hovered. The stack shows recent
+  history with no separate sheet, bell, or notch badge. App-requested
+  persistent alerts stay in history until dismissed.
 - The selected theme drives supported GTK, Qt, Kitty, Fuzzel and Hyprland
   palettes in every mode, through `Theme` and `scripts/adaptive-theme.sh`.
   GTK3 uses an installed light/dark theme (preferring adw-gtk3), rather than

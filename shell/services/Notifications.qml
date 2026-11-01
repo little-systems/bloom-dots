@@ -102,6 +102,13 @@ Scope {
 		root._save();
 		return "ok";
 	}
+	function remove(key, id) {
+		const live = root.liveFor(key, id);
+		if (live) root.dismiss(id);
+		root.history = root.history.filter(item => item.key !== key);
+		root._save();
+		return "ok";
+	}
 
 	StateFile {
 		id: state

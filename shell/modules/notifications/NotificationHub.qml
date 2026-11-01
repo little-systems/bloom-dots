@@ -2,8 +2,8 @@ import QtQuick
 import Quickshell
 import qs.services
 
-// The optional notification module: one service plus per-screen visual
-// surfaces. History windows are created only while the panel is open.
+// The optional notification module: one service and one sliding card stack
+// on the focused screen. The stack shows both arrivals and recent history.
 Scope {
 	id: root
 	Notifications { id: service }
@@ -15,7 +15,7 @@ Scope {
 	}
 	function stateObject() {
 		const result = service.stateObject();
-		result.surfaces = _surfaces(cardVariants).concat(_surfaces(historyVariants));
+		result.surfaces = _surfaces(cardVariants);
 		return result;
 	}
 	function openHistory() { return service.openHistory(); }
@@ -32,14 +32,6 @@ Scope {
 		delegate: Loader {
 			required property var modelData
 			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationCards.qml"), { modelData: modelData, hub: service })
-		}
-	}
-	Variants {
-		id: historyVariants
-		model: Quickshell.screens
-		delegate: Loader {
-			required property var modelData
-			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationHistoryWindow.qml"), { modelData: modelData, hub: service })
 		}
 	}
 }

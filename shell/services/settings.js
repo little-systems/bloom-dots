@@ -250,7 +250,7 @@ var SCHEMA = {
 		doc: "Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear."
 	},
 	"bloom-notifications-timeout": {
-		type: "number", min: 1000, max: 60000, default: 3500,
+		type: "number", min: 1000, max: 60000, default: 2500,
 		doc: "Maximum time for an ordinary notification banner in milliseconds; senders may request less or a persistent alert."
 	},
 	"bloom-notifications-history-limit": {
