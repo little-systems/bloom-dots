@@ -16,7 +16,9 @@ fake hyprctl 'if [ "$1" = monitors ]; then echo "[{\"activeWorkspace\":{\"id\":1
 fake slurp 'cat > "'"$T"'/slurp-in"; echo "1,2 30x40"'
 fake grim 'for last; do :; done; if [ "$last" = - ]; then printf PNG; else printf PNG > "$last"; fi'
 fake wl-copy 'cat > "'"$T"'/clip"'
-fake tesseract 'echo recognised text'
+# Like the real OCR process, drain the image before returning text. Exiting
+# early races grim's write and can make pipefail report SIGPIPE (141).
+fake tesseract 'cat > /dev/null; echo recognised text'
 fake notify-send
 fake swappy 'cat > /dev/null'
 fake wf-recorder 'trap "exit 0" INT TERM; sleep 30 & wait'
