@@ -57,9 +57,11 @@ Owner updates, 2026-11-01:
   input through the compositor and verify the saved order after a shell restart;
   view-only drag tests cannot catch a rejected service write.
 - Notifications share one card stack that slides in from the top-right for
-  2.5 seconds and returns when the corner is hovered. The stack shows recent
-  history with no separate sheet, bell, or notch badge. App-requested
-  persistent alerts stay in history until dismissed.
+  2.5 seconds and returns when the corner is hovered. A compact top card shows
+  the remaining count; its footer expands a height-capped, scrollable stack or
+  collapses it again. A floating round button clears live cards and history.
+  There is no separate sheet, bell, or notch badge. App-requested persistent
+  alerts stay in history until dismissed.
 - The selected theme drives supported GTK, Qt, Kitty, Fuzzel and Hyprland
   palettes in every mode, through `Theme` and `scripts/adaptive-theme.sh`.
   GTK3 uses an installed light/dark theme (preferring adw-gtk3), rather than

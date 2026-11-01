@@ -98,6 +98,8 @@ Scope {
 		return "ok";
 	}
 	function clear() {
+		for (const id of Object.keys(root.live)) root.dismiss(Number(id));
+		root.cards = [];
 		root.history = [];
 		root._save();
 		return "ok";

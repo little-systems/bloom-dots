@@ -2,6 +2,7 @@
 """Virtual pointer for a test compositor, raw Wayland wire protocol.
 Usage: vpointer.py W H x y wheel|touch N   (run with the test WAYLAND_DISPLAY)
        vpointer.py W H x y hover MILLISECONDS
+       vpointer.py W H x y click 1
        vpointer.py W H x y drag DX
 Moves to x,y, waits, then scrolls or drags horizontally by DX screen pixels."""
 import os, socket, struct, sys, time
@@ -49,12 +50,18 @@ W_, H, x, y, mode, n = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), int
 t = lambda: int(time.monotonic() * 1000) & 0xffffffff
 fixed = lambda v: int(v * 256)
 w.send(vp, 1, struct.pack("<IIIII", t(), x, y, W_, H)); w.send(vp, 4)
-time.sleep(1.2)
+time.sleep(0.2 if mode == "click" else 1.2)
 # Nudge, so the surface sees motion after mapping.
 w.send(vp, 1, struct.pack("<IIIII", t(), x + 1, y, W_, H)); w.send(vp, 4)
-time.sleep(0.6)
+time.sleep(0.15 if mode == "click" else 0.6)
 if mode == "hover":
     time.sleep(n / 1000)
+    sys.exit(0)
+if mode == "click":
+    w.send(vp, 2, struct.pack("<III", t(), 272, 1)); w.send(vp, 4)
+    time.sleep(0.08)
+    w.send(vp, 2, struct.pack("<III", t(), 272, 0)); w.send(vp, 4)
+    time.sleep(0.3)
     sys.exit(0)
 if mode == "drag":
     w.send(vp, 2, struct.pack("<III", t(), 272, 1))

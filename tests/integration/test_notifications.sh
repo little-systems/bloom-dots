@@ -93,6 +93,17 @@ if [[ -n "${BLOOM_NOTIFICATION_HISTORY_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_HISTORY_SCREENSHOT"
 fi
 wait "$HOVER_PID"
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1770 155 click 1
+stack_expanded() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .shown>=4)' >/dev/null; }
+wait_for 'notification stack to expand from its count row' stack_expanded
+if [[ -n "${BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT:-}" ]]; then
+	sleep 1.5
+	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT"
+fi
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1770 155 click 1
+stack_collapsed() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and (.expanded==false) and .shown>=4)' >/dev/null; }
+wait_for 'notification stack to collapse from its count row' stack_collapsed
+pass 'notification count row expands and collapses the bounded stack'
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 300 600 wheel 0 &
 LEAVE_PID=$!
 history_closed() { ipc notifications state | jq -e 'all(.surfaces[]; .kind!="stack" or (.visible==false))' >/dev/null; }
@@ -188,6 +199,15 @@ assert_eq "$(ipc notifications historyAction "$old_key" "$new_id" open)" 'action
 assert_eq "$(ipc notifications action "$new_id" open)" 'ok' 'new action'
 wait "$NEW_ACTION_PID" || fail "new action sender failed: $(cat "$TEST_TMP/new-action.err")"
 pass 'old history cannot invoke a new session action with the same ID'
+assert_eq "$(ipc notifications openHistory)" 'ok' 'open stack for clear all'
+clear_target() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .clearVisible and .expansionProgress >= 0.99)' >/dev/null; }
+wait_for 'floating clear-all button' clear_target
+read -r clear_x clear_y < <(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | "\(.clearX | round) \(.clearY | round)"')
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$clear_x" "$clear_y" click 1
+cleared() { ipc notifications state | jq -e '(.history|length)==0 and (.cards|length)==0' >/dev/null; }
+wait_for 'floating button to clear history and live cards' cleared
+wait_for 'cleared history on disk' jq -e '.entries | length == 0' "$state_file"
+pass 'floating clear-all button dismisses live cards and clears history'
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" "$TEST_TMP/restarted.log" || true)"
 problems="$(grep -viE 'upower|powerprofiles|dbus|pipewire' <<<"$problems" || true)"
 [[ -z "$problems" ]] || fail "notification shell logged warnings or errors: $problems"
