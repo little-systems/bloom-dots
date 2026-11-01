@@ -15,12 +15,17 @@ PanelWindow {
 	id: win
 
 	required property var modelData
+	property bool sessionLocked: false
+	property bool lockPreparing: false
 	readonly property alias view: view
 	readonly property string _key: "notch-" + win.modelData.name
 
 	screen: win.modelData
 	anchors.top: true
-	exclusiveZone: 0
+	// Fixed mode claims only the collapsed top strip for app windows. The
+	// surface stays large enough for expanded panels without reserving them.
+	exclusiveZone: !win.sessionLocked && view.mode === "fixed" && view.userVisible ? Math.round(Tokens.notch.reserve * view.uiScale) : 0
+	visible: !win.sessionLocked
 	implicitWidth: Tokens.notch.surface.width
 	implicitHeight: Tokens.notch.surface.height
 	color: "transparent"
@@ -105,6 +110,8 @@ PanelWindow {
 		})
 		onTimerResetRequested: CalendarState.reset()
 		mode: Settings.values["bloom-notch-mode"]
+		sessionLocked: win.sessionLocked
+		lockPreparing: win.lockPreparing
 		defaultPanel: Settings.values["bloom-notch-default-panel"]
 		lastPanel: PanelState.lastPanel
 		rememberPanel: Settings.values["bloom-notch-panel-memory"]

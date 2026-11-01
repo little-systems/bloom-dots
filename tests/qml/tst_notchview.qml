@@ -208,6 +208,43 @@ Item {
 			compare(v.target.opacity, 0);
 		}
 
+		function test_lockHidesAndRestoresTheSelectedMode() {
+			const v = make({ media: playing() });
+			settle(v);
+			v.openMusic();
+			compare(v.open, true);
+			v.lockPreparing = true;
+			compare(v.target.y, -150, "the notch starts its exit before lock presentation");
+			compare(v.target.opacity, 0);
+			v.sessionLocked = true;
+			v.lockPreparing = false;
+			compare(v.mode, "fixed");
+			compare(v.target.opacity, 0);
+			compare(v.open, false);
+			compare(v.bandActive, false);
+			v.sessionLocked = false;
+			compare(v.target.opacity, 1);
+			v.mode = "peek";
+			tryCompare(v, "hidden", true, 1000);
+			v.sessionLocked = true;
+			v.sessionLocked = false;
+			compare(v.mode, "peek");
+			compare(v.hidden, true);
+			v.sessionLocked = true;
+			v.peek(1000);
+			compare(v.openPanel("calendar"), "locked");
+			v.openMusic();
+			v.sessionLocked = false;
+			compare(v.hidden, true, "lock-time events do not reveal peek mode on unlock");
+			compare(v.open, false);
+			v.lockPreparing = true;
+			v.peek(1000);
+			compare(v.openPanel("calendar"), "locked");
+			v.openMusic();
+			v.lockPreparing = false;
+			compare(v.hidden, true, "pre-lock events do not reveal peek mode");
+		}
+
 		function test_statsWantedOnlyForStatsWidgets() {
 			const v = make({ widgets: { left: ["cpu"], right: ["battery"] } });
 			const spy = createTemporaryQmlObject("import QtQuick; import QtTest; SignalSpy { signalName: \"statsWanted\" }", host);
@@ -424,6 +461,20 @@ Item {
 			const pill = findChild(v, "pillArea");
 			const box = p.mapToItem(pill, 0, 0);
 			compare([box.x, box.y, p.width, p.height], [0, 0, pill.width, pill.height]);
+		}
+
+		function test_openMusicRevealsInsideThePill() {
+			const v = make({ media: playing() });
+			settle(v);
+			v.openMusic();
+			const loader = findChild(v, "musicPlayerLoader");
+			verify(loader && loader.item, "the player is loaded");
+			let clip = loader.parent;
+			while (clip && !clip.clip) clip = clip.parent;
+			verify(clip, "the player stays clipped as the pill opens");
+			const pill = findChild(v, "pillArea");
+			const topLeft = clip.mapToItem(pill, 0, 0);
+			compare([topLeft.x, topLeft.y, clip.width, clip.height], [0, 0, pill.width, pill.height]);
 		}
 
 		function test_musicOffFallsBackToStatus() {

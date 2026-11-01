@@ -22,6 +22,7 @@ Scope {
 	property var monitors: HyprState.monitors
 
 	readonly property bool locked: session.locked
+	property bool preparing: false
 	readonly property string _marker: Quickshell.env("XDG_RUNTIME_DIR") + "/bloom-locked-"
 		+ (Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE") || Quickshell.env("WAYLAND_DISPLAY") || "session")
 
@@ -39,29 +40,43 @@ Scope {
 	property bool _covered: false
 	property var _saved: ({})
 	signal failed()
+	signal chromeStateChanged(bool locked, bool preparing)
 
 	function lock() {
-		if (session.locked) return;
+		if (session.locked || root.preparing) return;
 		root._setMessage("", false);
 		root._text = "";
 		root._saved = Lock.saveWorkspaces(root.monitors);
 		// The marker goes first: a crash in between then errs towards locked,
 		// and it carries the way back to the workspaces.
 		Quickshell.execDetached(["sh", "-c", 'umask 077; printf %s "$1" > "$2"', "sh", JSON.stringify(root._saved), root._marker]);
-		root._engage();
-		root._dispatch(Lock.leaveScript(root._saved));
+		// Let the desktop notch and dock collapse before the lock surface maps.
+		root.preparing = true;
+		root.chromeStateChanged(false, true);
+		prepareTimer.restart();
+	}
+	Timer {
+		id: prepareTimer
+		interval: Tokens.lock.enter.chromeExitMs
+		onTriggered: {
+			root._engage();
+			root.preparing = false;
+			root.chromeStateChanged(true, false);
+			root._dispatch(Lock.leaveScript(root._saved));
+		}
 	}
 	function _engage() {
 		root._now = new Date();
 		root._covered = false;
 		session.locked = true;
+		root.chromeStateChanged(true, root.preparing);
 	}
 	function _dispatch(script) {
 		if (script !== "") Quickshell.execDetached(["sh", "-c", script]);
 	}
 	function status() {
 		return {
-			enabled: true, locked: session.locked, secure: session.secure, busy: root._busy,
+			enabled: true, locked: session.locked, preparing: root.preparing, secure: session.secure, busy: root._busy,
 			leaving: root._leaving, covered: root._covered, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
 		};
 	}
@@ -107,6 +122,7 @@ Scope {
 		interval: Tokens.lock.leave.ms
 		onTriggered: {
 			session.locked = false;
+			root.chromeStateChanged(false, false);
 			root._leaving = false;
 			root._busy = false;
 			root._saved = {};
@@ -201,6 +217,7 @@ Scope {
 				anchors.fill: parent
 				source: root._wallpaper
 				zoom: Wallpaper.zoom
+				locked: session.locked
 				leaving: root._leaving
 				onCovered: root._covered = true
 			}
@@ -214,7 +231,7 @@ Scope {
 				theme: Theme
 				user: Quickshell.env("USER")
 				layout: root._layout
-				leaving: root._leaving || !backdrop.shown
+				leaving: root._leaving || root.preparing || !backdrop.shown
 				time: root._now
 				clockTurning: root.clockTurning && !Performance.lowPower
 				text: root._text

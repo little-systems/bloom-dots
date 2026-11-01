@@ -23,6 +23,24 @@ import "common/render"
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
 ShellRoot {
+	id: shell
+	function syncLockChrome(locked, preparing) {
+		const lock = lockLoader.active ? lockLoader.item : null;
+		if (locked === undefined) locked = lock ? lock.locked : false;
+		if (preparing === undefined) preparing = lock ? lock.preparing : false;
+		for (const variants of [notchLoader.active ? notchLoader.item : null, dockLoader.active ? dockLoader.item : null]) {
+			if (!variants) continue;
+			for (const loader of variants.instances) {
+				if (!loader.item) continue;
+				loader.item.sessionLocked = locked;
+				loader.item.lockPreparing = preparing;
+			}
+		}
+	}
+	Connections {
+		target: lockLoader.active ? lockLoader.item : null
+		function onChromeStateChanged(locked, preparing) { shell.syncLockChrome(locked, preparing); }
+	}
 	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
 	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
 
@@ -64,7 +82,11 @@ ShellRoot {
 			model: Quickshell.screens
 			delegate: Loader {
 				required property var modelData
-				Component.onCompleted: setSource(Qt.resolvedUrl("modules/notch/NotchWindow.qml"), { modelData: modelData })
+				onLoaded: shell.syncLockChrome()
+				Component.onCompleted: {
+					setSource(Qt.resolvedUrl("modules/notch/NotchWindow.qml"), { modelData: modelData });
+					Qt.callLater(shell.syncLockChrome);
+				}
 			}
 		}
 	}
@@ -175,7 +197,11 @@ ShellRoot {
 			model: Quickshell.screens
 			delegate: Loader {
 				required property var modelData
-				Component.onCompleted: setSource(Qt.resolvedUrl("modules/dock/DockWindow.qml"), { modelData: modelData })
+				onLoaded: shell.syncLockChrome()
+				Component.onCompleted: {
+					setSource(Qt.resolvedUrl("modules/dock/DockWindow.qml"), { modelData: modelData });
+					Qt.callLater(shell.syncLockChrome);
+				}
 			}
 		}
 	}

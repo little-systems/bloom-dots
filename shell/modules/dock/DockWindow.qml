@@ -14,6 +14,8 @@ PanelWindow {
 	id: win
 
 	required property var modelData
+	property bool sessionLocked: false
+	property bool lockPreparing: false
 	readonly property alias view: view
 	readonly property string _key: "dock-" + win.modelData.name
 	function _reportExtra(result) { if (result && result !== "ok") Dock.notify(result); }
@@ -24,7 +26,8 @@ PanelWindow {
 	anchors.right: true
 	implicitHeight: Tokens.dock.surfaceHeight
 	color: "transparent"
-	exclusiveZone: view.mode === "fixed" && view.userVisible ? Math.round(Tokens.dock.reserve * view.uiScale) : 0
+	exclusiveZone: !win.sessionLocked && view.mode === "fixed" && view.userVisible ? Math.round(Tokens.dock.reserve * view.uiScale) : 0
+	visible: !win.sessionLocked
 	WlrLayershell.namespace: "bloom:dock"
 	WlrLayershell.layer: WlrLayer.Top
 	WlrLayershell.keyboardFocus: view.keyboardWanted ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
@@ -96,6 +99,8 @@ PanelWindow {
 		id: view
 		anchors.fill: parent
 		mode: Settings.values["bloom-dock-mode"]
+		sessionLocked: win.sessionLocked
+		lockPreparing: win.lockPreparing
 		edgeDelay: Settings.values["bloom-dock-edge-delay"]
 		uiScale: Settings.values["bloom-scale"]
 		iconOnly: Settings.values["bloom-dock-icon-only"]

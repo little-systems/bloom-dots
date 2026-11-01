@@ -30,7 +30,7 @@ Scope {
 		anchors.left: true
 		anchors.right: true
 		color: "transparent"
-		exclusiveZone: 0
+		exclusiveZone: -1
 		visible: OverlayState.crosshair
 		mask: Region {}
 		WlrLayershell.namespace: "bloom:crosshair"
@@ -49,7 +49,7 @@ Scope {
 		anchors.left: true
 		anchors.right: true
 		color: "transparent"
-		exclusiveZone: 0
+		exclusiveZone: -1
 		visible: root.targetScreen && (OverlayState.opened || view.shown)
 		WlrLayershell.namespace: "bloom:overlay"
 		WlrLayershell.layer: WlrLayer.Overlay

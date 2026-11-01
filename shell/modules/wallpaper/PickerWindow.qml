@@ -19,7 +19,8 @@ PanelWindow {
 	anchors.left: true
 	anchors.right: true
 	color: "transparent"
-	exclusiveZone: 0
+	// Keep the full-screen picker aligned to the output, even with fixed panels.
+	exclusiveZone: -1
 	visible: targetScreen && (Wallpaper.opened || view.shown)
 	WlrLayershell.namespace: "bloom:wallpaper-picker"
 	WlrLayershell.layer: WlrLayer.Overlay

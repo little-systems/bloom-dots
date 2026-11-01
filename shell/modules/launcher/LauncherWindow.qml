@@ -19,7 +19,7 @@ PanelWindow {
 	anchors.left: true
 	anchors.right: true
 	color: "transparent"
-	exclusiveZone: 0
+	exclusiveZone: -1
 	visible: targetScreen && (Launcher.opened || view.shown)
 	WlrLayershell.namespace: "bloom:launcher"
 	WlrLayershell.layer: WlrLayer.Overlay

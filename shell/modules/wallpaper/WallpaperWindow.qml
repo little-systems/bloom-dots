@@ -16,7 +16,9 @@ PanelWindow {
 	anchors.left: true
 	anchors.right: true
 	color: "black"
-	exclusiveZone: 0
+	// Ignore fixed panels' work-area reservations: the image belongs to the
+	// physical output, including the space behind the notch and dock.
+	exclusiveZone: -1
 	visible: !Wallpaper.video
 	mask: Region {}
 	WlrLayershell.namespace: "bloom:wallpaper"

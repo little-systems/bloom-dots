@@ -56,6 +56,10 @@ called 'notify-send.*reach the translation' || fail "a failed translation wasn't
 echo "ok - translate copies the result, and reports a failure"
 
 bash "$SCRIPT" record
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+	called 'wf-recorder -g 1,2 30x40 -f' && break
+	sleep 0.1
+done
 called 'wf-recorder -g 1,2 30x40 -f' || fail "recording didn't start"
 [[ "$(bash "$SCRIPT" status)" == recording ]] || fail "not reported as recording"
 if called 'wf-recorder.*-a'; then fail "audio on a silent recording"; fi

@@ -63,7 +63,7 @@ PanelWindow {
 	color: "transparent"
 	// Stay mapped so the transparent edge target can receive pointer hover.
 	visible: targetScreen && (edge === "left" || Brightness.available)
-	exclusiveZone: 0
+	exclusiveZone: -1
 	WlrLayershell.namespace: "bloom:osd-" + edge
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None

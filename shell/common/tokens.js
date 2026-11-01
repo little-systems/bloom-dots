@@ -77,6 +77,7 @@ var notch = {
 	// Fixed layer surface: room for the widest panel (480) at the largest scale
 	// (1.3) with flares and tooltips. The surface never resizes (spec §3.3).
 	surface: { width: 1000, height: 480 },
+	reserve: 40,
 	hidden: { width: 39.1, height: 28.9, y: -100 },
 	invisibleY: -150,
 	startup: { width: 30.6, height: 44.2, y: 250, readySize: 34, impactDelayMs: 240, animatingMs: 1500 },
@@ -323,7 +324,7 @@ var lock = {
 		enter: { stiffness: 320, damping: 36, mass: 0.9, scale: 0.97 }
 	},
 	shake: { ms: 50, steps: [-4, 3, -2, 0] },
-	enter: { coverMs: 250, maxMs: 500 },
+	enter: { coverMs: 250, maxMs: 500, chromeExitMs: 400 },
 	leave: { viewMs: 200, ms: 400, returnMs: 150 },
 	capsPollMs: 500,
 	clearMs: 10000

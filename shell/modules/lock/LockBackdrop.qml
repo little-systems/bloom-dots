@@ -13,7 +13,9 @@ Rectangle {
 	property real zoom: 1
 	// Only after a correct password does this let anything through.
 	property bool leaving: false
+	property bool locked: false
 	property bool shown: false
+	onLockedChanged: if (root.locked) root.shown = false
 	signal covered()
 
 	objectName: "backdrop"
@@ -77,7 +79,7 @@ Rectangle {
 	// The blur's own layers need a frame to fill before the still is taken.
 	Timer {
 		interval: Tokens.lock.blur.settleMs
-		running: wallpaper.status === Image.Ready
+		running: root.locked && wallpaper.status === Image.Ready
 		onTriggered: {
 			still.scheduleUpdate();
 			still.visible = true;
@@ -86,7 +88,7 @@ Rectangle {
 	}
 	Timer {
 		interval: Tokens.lock.enter.maxMs - Tokens.lock.enter.coverMs
-		running: true
+		running: root.locked
 		onTriggered: root.shown = true
 	}
 

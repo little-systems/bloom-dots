@@ -17,6 +17,9 @@ Item {
 	property bool maximized: false
 	property bool adaptiveEnabled: false
 	property bool userVisible: true
+	property bool sessionLocked: false
+	property bool lockPreparing: false
+	readonly property bool surfaceVisible: root.userVisible && !root.lockPreparing && !root.sessionLocked
 	property bool suppressed: false
 	property bool iconOnly: false
 	property bool separatorEnabled: true
@@ -87,7 +90,7 @@ Item {
 
 	function _cancelPreview() { previewDwell.stop(); previewRelease.stop(); root._previewId = ""; root._previewHoverId = ""; }
 	function _beginPreview(id, anchor) {
-		if (!root.previewEnabled || !root.userVisible || root.hidden || root.grabWanted || root._dragKey !== "") return;
+		if (!root.previewEnabled || !root.surfaceVisible || root.hidden || root.grabWanted || root._dragKey !== "") return;
 		const item = root.items.pinned.concat(root.items.unpinned).find(i => i.id === id);
 		if (!item || item.windows.length === 0) return;
 		previewRelease.stop();
@@ -160,20 +163,21 @@ Item {
 	readonly property bool hidden: Dock.isHidden(root.mode, root.overlapped, root.interaction, root.startupAnimating)
 	readonly property real naturalWidth: root._layout.width + 2 * Tokens.dock.padding
 	readonly property bool adaptive: root.adaptiveEnabled && root.mode === "fixed" && root.maximized
-		&& root.expanded && !root.hidden && root.userVisible
+		&& root.expanded && !root.hidden && root.surfaceVisible
 	readonly property var target: Dock.geometry({
-		ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded,
+		ready: root.ready, visible: root.surfaceVisible, hidden: root.hidden, expanded: root.expanded,
 		impacted: root.impacted, contentWidth: root.naturalWidth, adaptive: root.adaptive,
 		adaptiveWidth: Dock.adaptiveWidth(root.width, root.uiScale)
 	})
-	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.userVisible && !root.suppressed
+	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.surfaceVisible && !root.suppressed
 	readonly property Item hitItem: pillArea
 	readonly property Item bandItem: band
 
 	function stateObject() {
 		return {
 			mode: root.mode, hidden: root.hidden, interaction: root.interaction, overlapped: root.overlapped,
-			visible: root.userVisible, expanded: root.expanded, adaptive: root.adaptive,
+			visible: root.surfaceVisible, expanded: root.expanded, adaptive: root.adaptive,
+			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
 			previewOpen: root.previewOpen,
 			keys: root._rows.map(r => r.key)
@@ -195,7 +199,15 @@ Item {
 
 	// Interaction and its 800 ms grace (Bloom interactionState).
 	// Bloom counts an open menu or Add App card as interaction too.
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.grabWanted || root.previewOpen
+	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked && (root.pillHovered || root.edgeArmed || root.grabWanted || root.previewOpen)
+	function closeForLock() {
+		root.closeMenus();
+		root.edgeArmed = false;
+		root.interaction = "none";
+		graceTimer.stop();
+	}
+	onLockPreparingChanged: if (root.lockPreparing) root.closeForLock()
+	onSessionLockedChanged: if (root.sessionLocked) root.closeForLock()
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -216,6 +228,7 @@ Item {
 	// Shown for `ms` as if from the edge (the Command Center's System Tray
 	// button); reaching the pill takes over as an edge reveal does.
 	function reveal(ms) {
+		if (root.lockPreparing || root.sessionLocked) return;
 		handoff.stop();
 		root.edgeArmed = true;
 		revealTimer.interval = Math.max(1, ms);

@@ -25,6 +25,9 @@ Item {
 	property real uiScale: 1
 	property bool overlapped: false
 	property bool userVisible: true
+	property bool sessionLocked: false
+	property bool lockPreparing: false
+	readonly property bool surfaceVisible: root.userVisible && !root.lockPreparing && !root.sessionLocked
 	property color bg: Qt.rgba(0, 0, 0, 0.8)
 	property color bgExpanded: Qt.rgba(0, 0, 0, 0.92)
 	property color textColor: "white"
@@ -85,6 +88,7 @@ Item {
 	onDeviceAlertChanged: if (root.deviceAlert && root.mode === "peek") root.peek(root.deviceAlert.connected === false ? 2600 : 4200)
 	signal panelRemembered(string panel)
 	function openPanel(name) {
+		if (root.lockPreparing || root.sessionLocked) return "locked";
 		const choice = name || Panels.opening(root.lastPanel, root.defaultPanel, root.rememberPanel, root.enabledPanels);
 		if (!choice) return "no enabled panels";
 		if (Panels.ORDER.indexOf(choice) < 0 && choice !== "wifi" && choice !== "bluetooth" && choice !== "shelf") return "unknown panel";
@@ -172,10 +176,10 @@ Item {
 	readonly property bool pillHovered: pillHover.hovered
 	readonly property bool hidden: Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating)
 	// Bloom isHovered: the strip opens on the shown, expanded pill.
-	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.userVisible
+	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.surfaceVisible
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
-		{ ready: root.ready, visible: root.userVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
+		{ ready: root.ready, visible: root.surfaceVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
 		(root.panel ? Panels.size(root.panel, root.calendarRows, root.devicesHeight, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
@@ -194,20 +198,21 @@ Item {
 	// A fullscreen app on this monitor: the top edge is the app's (Bloom drops
 	// its edge input while a fullscreen window is in front).
 	property bool suppressed: false
-	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.userVisible && !root.suppressed
+	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.surfaceVisible && !root.suppressed
 
 	readonly property bool _statsShown: root.statusHover && ["cpu", "ram", "disk", "net"].some(w => root.widgets.left.indexOf(w) >= 0 || root.widgets.right.indexOf(w) >= 0)
 	property bool _statsHeld: false
 
 	property real _peekUntil: 0
 	function peek(ms) {
+		if (root.lockPreparing || root.sessionLocked) return;
 		root._peekUntil = Pulses.peekUntil(Date.now(), root._peekUntil, ms);
 		root.eventPeek = true;
 		peekTimer.interval = Math.max(1, root._peekUntil - Date.now());
 		peekTimer.restart();
 	}
 	function openMusic() {
-		if (!(root.musicEnabled && root.media.hasMedia))
+		if (root.lockPreparing || root.sessionLocked || !(root.musicEnabled && root.media.hasMedia))
 			return;
 		root.closePanel();
 		root.open = true;
@@ -270,7 +275,7 @@ Item {
 
 	// The collapsed visualizer only counts while the notch is actually shown.
 	readonly property bool _watching: root.open || (root._musicIcons && root.visualizerEnabled && root.media.isPlaying
-		&& root.expanded && !root.hidden && root.userVisible)
+		&& root.expanded && !root.hidden && root.surfaceVisible)
 	property bool _watchHeld: false
 	on_WatchingChanged: {
 		root._watchHeld = root._watching;
@@ -339,7 +344,8 @@ Item {
 	function stateObject() {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
-			overlapped: root.overlapped, visible: root.userVisible,
+			overlapped: root.overlapped, visible: root.surfaceVisible,
+			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
 			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
@@ -388,7 +394,17 @@ Item {
 
 	// Bloom interactionState: active while hovered, then an 800 ms grace.
 	// An open player counts too, so a hidden notch shows while it is open.
-	readonly property bool _anyInteraction: root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible
+	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked && (root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
+	function closeForLock() {
+		root.closePanel();
+		root.open = false;
+		root.edgeArmed = false;
+		root.eventPeek = false;
+		root.interaction = "none";
+		graceTimer.stop();
+	}
+	onLockPreparingChanged: if (root.lockPreparing) root.closeForLock()
+	onSessionLockedChanged: if (root.sessionLocked) root.closeForLock()
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
@@ -652,7 +668,7 @@ Item {
 
 						Visualizer {
 							objectName: "collapsedVisualizer"
-							active: visible && !root.open && root.expanded && !root.hidden && root.userVisible
+							active: visible && !root.open && root.expanded && !root.hidden && root.surfaceVisible
 							anchors.left: parent.left
 							anchors.verticalCenter: parent.verticalCenter
 							visible: root._musicIcons && root.visualizerEnabled
@@ -785,16 +801,18 @@ Item {
 						opacity: standardRow.opacity
 					}
 				}
-			}
 
-			Loader {
-				x: Tokens.sizes.padding
-				width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
-				height: parent.height
-				active: root.open && root.panel === ""
-				opacity: root.open ? 1 : 0
-				Behavior on opacity { NumberAnimation { duration: 100 } }
-				sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
+				// Reveal the player inside the growing pill, like the clock row.
+				Loader {
+					objectName: "musicPlayerLoader"
+					x: Tokens.sizes.padding
+					width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
+					height: parent.height
+					active: root.open && root.panel === ""
+					opacity: root.open ? 1 : 0
+					Behavior on opacity { NumberAnimation { duration: 100 } }
+					sourceComponent: root.layout === "compact" ? compactComponent : classicComponent
+				}
 			}
 			// The pill's rounded shape, for masking a panel while the pill moves.
 			Item {

@@ -127,6 +127,35 @@ Item {
 			compare(v.target.opacity, 0);
 		}
 
+		function test_lockHidesAndRestoresTheSelectedMode() {
+			const v = make();
+			settle(v);
+			v.lockPreparing = true;
+			compare(v.mode, "fixed");
+			compare(v.target.y, 150, "the dock starts its exit before lock presentation");
+			compare(v.target.opacity, 0);
+			v.sessionLocked = true;
+			v.lockPreparing = false;
+			compare(v.target.opacity, 0);
+			compare(v.bandActive, false);
+			v.sessionLocked = false;
+			compare(v.target.opacity, 1);
+			v.mode = "peek";
+			tryCompare(v, "hidden", true, 1000);
+			v.sessionLocked = true;
+			v.sessionLocked = false;
+			compare(v.mode, "peek");
+			compare(v.hidden, true);
+			v.sessionLocked = true;
+			v.reveal(1000);
+			v.sessionLocked = false;
+			compare(v.hidden, true, "lock-time reveals do not survive unlock");
+			v.lockPreparing = true;
+			v.reveal(1000);
+			v.lockPreparing = false;
+			compare(v.hidden, true, "pre-lock reveals do not survive the transition");
+		}
+
 		function test_addAndRemoveItems() {
 			const v = make();
 			settle(v);
