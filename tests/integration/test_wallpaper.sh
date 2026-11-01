@@ -68,6 +68,9 @@ assert_eq "$(ipc settings set bloom-theme-mode light)" "ok" "select Light"
 light_apps() { grep -q 'window_bg_color #f5f5f7;' "$BLOOM_THEME_HOME/.config/gtk-4.0/gtk.css"; }
 wait_for "the selected Light palette" light_apps
 pass "apps follow Light without changing the wallpaper"
+# GTK is written before the Qt palette. Let the whole palette transaction
+# finish before cleanup removes the throwaway home beneath its writer.
+wait_for "the app theme writes to finish" flock -n "$XDG_STATE_HOME/bloom/app-themes/.lock" true
 
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|clip.mp4"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"
