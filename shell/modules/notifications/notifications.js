@@ -37,7 +37,7 @@ function ingest(history, raw, now, session, dnd, limit) {
 
 function timeout(expireTimeout, defaultTimeout) {
 	if (expireTimeout === 0) return 0;
-	return Number.isFinite(expireTimeout) && expireTimeout > 0 ? expireTimeout : defaultTimeout;
+	return Number.isFinite(expireTimeout) && expireTimeout > 0 ? Math.min(expireTimeout, defaultTimeout) : defaultTimeout;
 }
 
 function unread(history) { return (history || []).filter(x => !x.read).length; }

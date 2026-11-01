@@ -54,8 +54,6 @@ Item {
 	property real volume: 0
 	property bool muted: false
 	property bool mixerAvailable: false
-	property int notificationUnread: 0
-	signal notificationHistoryRequested()
 	property string panel: ""
 	property string defaultPanel: "calendar"
 	property string lastPanel: "calendar"
@@ -877,19 +875,9 @@ Item {
 				function onNextRequested() { root.cyclePanel(1); }
 				function onPreviousRequested() { root.cyclePanel(-1); }
 				function onSubpanelRequested(name) {
-					if (name === "notifications") root.notificationHistoryRequested();
-					else root.openPanel(name);
+					root.openPanel(name);
 				}
 				function onCalendarRowCountChanged() { root.calendarRows = panelLoader.item?.calendarRowCount ?? 5; }
-			}
-			Rectangle {
-				objectName: "notification-unread"
-				visible: root.notificationUnread > 0 && root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible
-				width: 16; height: 16; radius: 8
-				x: pillArea.width - width - 2; y: 2
-				color: Tokens.status.green
-				Text { font.family: Fonts.familyFor(Font.Bold); anchors.centerIn: parent; text: root.notificationUnread > 9 ? "9+" : root.notificationUnread; color: "black"; font.pixelSize: Fonts.px(9); font.bold: true }
-				MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.notificationHistoryRequested() }
 			}
 		}
 

@@ -22,7 +22,7 @@ Item {
 	readonly property var defaults: ({
 		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
-		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 7000, "bloom-notifications-history-limit": 200,
+		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 3500, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
 		"bloom-low-battery-threshold": 20, "bloom-theme-mode": "dark", "bloom-theme-color": "#007aff",
 		"bloom-theme-opacity": 0.8, "bloom-theme-saturation": 0.5, "bloom-theme-brightness": 0.15, "bloom-scale": 1.1,

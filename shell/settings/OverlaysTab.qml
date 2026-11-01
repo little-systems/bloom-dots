@@ -47,6 +47,23 @@ Column {
 		}
 	}
 
+	SGroupLabel { theme: root.theme; text: "Notifications" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "bell-off"; label: "Do Not Disturb"; desc: "Keep notifications quiet"
+			SToggle { objectName: "dnd"; accessibleName: "Do Not Disturb"; theme: root.theme; checked: root.store.values["bloom-notifications-dnd"]; onToggled: value => root.store.set("bloom-notifications-dnd", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "timer"; label: "Banner Timeout"; desc: "Hide after " + (root.store.values["bloom-notifications-timeout"] / 1000).toFixed(1) + " s"
+			SSlider { accessibleName: "Banner Timeout"; theme: root.theme; from: 1000; to: 30000; step: 500; value: root.store.values["bloom-notifications-timeout"]; onMoved: value => root.store.set("bloom-notifications-timeout", value) }
+		}
+		SRow {
+			theme: root.theme; icon: "archive"; label: "History"; desc: "Keep the last " + root.store.values["bloom-notifications-history-limit"]; divider: false
+			SSlider { accessibleName: "History"; theme: root.theme; from: 0; to: 500; step: 10; value: root.store.values["bloom-notifications-history-limit"]; onMoved: value => root.store.set("bloom-notifications-history-limit", value) }
+		}
+	}
+
 	SGroupLabel { theme: root.theme; text: "Volume Protection" }
 	SGroup {
 		theme: root.theme

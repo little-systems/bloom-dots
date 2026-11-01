@@ -3,7 +3,7 @@ import QtTest
 import "../../shell/modules/notch"
 
 // Bloom's Command Center (App.tsx .command-center-content-minimal, App.css
-// .cc-*) and the owner's six round buttons (UI parity 1, decision 1).
+// .cc-*) with notification history moved out to the top-right corner.
 Item {
 	id: host
 	width: 400
@@ -47,7 +47,6 @@ Item {
 	SignalSpy { id: dnd; target: cc; signalName: "dndToggled" }
 	SignalSpy { id: saver; target: cc; signalName: "energySaverToggled" }
 	SignalSpy { id: tray; target: cc; signalName: "trayRequested" }
-	SignalSpy { id: notes; target: cc; signalName: "notificationsRequested" }
 	SignalSpy { id: settings; target: cc; signalName: "settingsRequested" }
 	SignalSpy { id: restart; target: cc; signalName: "restartRequested" }
 	SignalSpy { id: volumeChosen; target: cc; signalName: "volumeChosen" }
@@ -97,7 +96,7 @@ Item {
 			cc.energySaver = false;
 			cc.volume = 0.25;
 			cc.brightness = 40;
-			[wifiToggled, wifiOpened, btToggled, btOpened, dockCycled, notchCycled, dnd, saver, tray, notes, settings, restart, volumeChosen, brightnessChosen].forEach(s => s.clear());
+			[wifiToggled, wifiOpened, btToggled, btOpened, dockCycled, notchCycled, dnd, saver, tray, settings, restart, volumeChosen, brightnessChosen].forEach(s => s.clear());
 		}
 
 		function cleanup() {
@@ -276,14 +275,14 @@ Item {
 		}
 
 		function test_roundButtons() {
-			const names = ["dnd", "energy", "tray", "notifications", "settings", "restart"];
-			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-tray", "bloom-bell", "bloom-settings", "bloom-reload"];
-			const sizes = [18, 18, 14, 14, 14, 14];
+			const names = ["dnd", "energy", "tray", "settings", "restart"];
+			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-tray", "bloom-settings", "bloom-reload"];
+			const sizes = [18, 18, 14, 14, 14];
 			const buttons = names.map(n => part(cc, "round-" + n));
 			// padding 0 4, justify-content space-between.
 			compare(at(buttons[0]).x, 4);
-			compare(at(buttons[5]).x + 32, 322 - 4);
-			const step = (322 - 8 - 32) / 5;
+			compare(at(buttons[4]).x + 32, 322 - 4);
+			const step = (322 - 8 - 32) / 4;
 			buttons.forEach((b, i) => {
 				fuzzyCompare(at(b).x, 4 + i * step, 0.01);
 				compare(b.width, 32);
@@ -294,8 +293,8 @@ Item {
 				compare(part(b, "background").color, colours.groupBg);
 				compare(part(b, "background").border.color, colours.border);
 			});
-			compare(part(buttons[4], "glyph").opacity, 0.9);
-			const spies = [dnd, saver, tray, notes, settings, restart];
+			compare(part(buttons[3], "glyph").opacity, 0.9);
+			const spies = [dnd, saver, tray, settings, restart];
 			buttons.forEach((b, i) => {
 				mouseClick(b);
 				compare(spies[i].count, 1, names[i]);

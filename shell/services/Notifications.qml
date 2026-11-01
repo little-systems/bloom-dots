@@ -12,26 +12,31 @@ Scope {
 	property var cards: []
 	property var live: ({})
 	property var timers: ({})
+	property bool cardsHovered: false
 	property bool historyOpen: false
 	property string ownership: "checking"
 	property string ownershipError: ""
 	property int _ownershipChecks: 0
 	readonly property int unread: Logic.unread(root.history)
 	readonly property string session: String(Date.now())
-	onUnreadChanged: NotificationBridge.unread = root.unread
-	Component.onCompleted: NotificationBridge.unread = root.unread
-	Component.onDestruction: NotificationBridge.unread = 0
-	Connections {
-		target: NotificationBridge
-		function onHistoryRequested() { root.openHistory(); }
-	}
 
 	function stateObject() { return { history: history, cards: cards, unread: unread,
 		dnd: Settings.values["bloom-notifications-dnd"], ownership: ownership, ownershipError: ownershipError }; }
-	function openHistory() { root.historyOpen = true; root.markRead(); return "ok"; }
+	function openHistory() { root.historyOpen = true; return "ok"; }
 	function closeHistory() { root.historyOpen = false; return "ok"; }
 	function _save() { state.save({ entries: root.history }); }
 	function _removeCard(id) { root.cards = root.cards.filter(c => c.id !== id); }
+	function setCardsHovered(hovered) {
+		if (root.cardsHovered === hovered) return;
+		root.cardsHovered = hovered;
+		for (const card of root.cards) {
+			const timer = root.timers[card.id];
+			if (timer) {
+				if (hovered) timer.stop();
+				else timer.restart();
+			}
+		}
+	}
 	function _stopTimer(id) {
 		const timer = root.timers[id];
 		if (timer) { timer.stop(); timer.destroy(); }
@@ -169,7 +174,7 @@ Scope {
 			if (duration > 0) {
 				const timer = timeoutComponent.createObject(root, { notificationId: id, interval: duration });
 				root.timers = Object.assign({}, root.timers, { [id]: timer });
-				timer.start();
+				if (!root.cardsHovered || !result.popup) timer.start();
 			}
 			notification.closed.connect(reason => root._closed(id, notification, reason));
 			notification.summaryChanged.connect(() => root._updated(id, notification));

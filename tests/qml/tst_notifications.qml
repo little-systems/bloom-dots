@@ -32,6 +32,7 @@ TestCase {
 		compare(N.timeout(0, 7000), 0);
 		compare(N.timeout(-1, 7000), 7000);
 		compare(N.timeout(2000, 7000), 2000);
+		compare(N.timeout(9000, 3500), 3500);
 		const h = [
 			{ key: "s:3", app: "Mail", time: 300 },
 			{ key: "s:2", app: "Chat", time: 200 },

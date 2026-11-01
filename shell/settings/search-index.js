@@ -185,18 +185,6 @@ var ROWS = [
 		"tab": "notch"
 	},
 	{
-		"label": "Do Not Disturb",
-		"tab": "notch"
-	},
-	{
-		"label": "Timeout",
-		"tab": "notch"
-	},
-	{
-		"label": "History",
-		"tab": "notch"
-	},
-	{
 		"label": "Keep Items",
 		"tab": "notch"
 	},
@@ -302,6 +290,18 @@ var ROWS = [
 	},
 	{
 		"label": "HUD Timeout",
+		"tab": "overlays"
+	},
+	{
+		"label": "Do Not Disturb",
+		"tab": "overlays"
+	},
+	{
+		"label": "Banner Timeout",
+		"tab": "overlays"
+	},
+	{
+		"label": "History",
 		"tab": "overlays"
 	},
 	{

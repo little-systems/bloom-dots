@@ -3,7 +3,7 @@ import "../../common/tokens.js" as Tokens
 import "qp"
 
 // Bloom's Command Center (App.tsx .command-center-content-minimal): four
-// tiles, six round buttons and two sliders, spread top to bottom with
+// tiles, five round buttons and two sliders, spread top to bottom with
 // justify-content: space-between. Pure: CommandCenter.qml binds the services.
 Item {
 	id: root
@@ -35,7 +35,6 @@ Item {
 	signal dndToggled()
 	signal energySaverToggled()
 	signal trayRequested()
-	signal notificationsRequested()
 	signal settingsRequested()
 	signal restartRequested()
 	signal volumeChosen(real value)
@@ -124,7 +123,7 @@ Item {
 		width: root.width - Tokens.cc.round.sidePad * 2
 		height: Tokens.cc.round.size
 
-		readonly property real step: (width - Tokens.cc.round.size) / 5
+		readonly property real step: (width - Tokens.cc.round.size) / 4
 
 		CcRoundButton {
 			objectName: "round-dnd"
@@ -155,16 +154,8 @@ Item {
 		}
 
 		CcRoundButton {
-			objectName: "round-notifications"
-			x: roundRow.step * 3
-			theme: root.theme
-			icon: "bloom-bell"
-			onClicked: root.notificationsRequested()
-		}
-
-		CcRoundButton {
 			objectName: "round-settings"
-			x: roundRow.step * 4
+			x: roundRow.step * 3
 			theme: root.theme
 			icon: "bloom-settings"
 			glyphOpacity: 0.9
@@ -173,7 +164,7 @@ Item {
 
 		CcRoundButton {
 			objectName: "round-restart"
-			x: roundRow.step * 5
+			x: roundRow.step * 4
 			theme: root.theme
 			icon: "bloom-reload"
 			onClicked: root.restartRequested()

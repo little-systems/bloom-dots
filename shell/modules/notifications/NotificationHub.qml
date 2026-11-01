@@ -15,7 +15,7 @@ Scope {
 	}
 	function stateObject() {
 		const result = service.stateObject();
-		result.surfaces = _surfaces(cardVariants).concat(_surfaces(historyLoader.item));
+		result.surfaces = _surfaces(cardVariants).concat(_surfaces(historyVariants));
 		return result;
 	}
 	function openHistory() { return service.openHistory(); }
@@ -34,15 +34,12 @@ Scope {
 			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationCards.qml"), { modelData: modelData, hub: service })
 		}
 	}
-	LazyLoader {
-		id: historyLoader
-		active: service.historyOpen
-		component: Variants {
-			model: Quickshell.screens
-			delegate: Loader {
-				required property var modelData
-				Component.onCompleted: setSource(Qt.resolvedUrl("NotificationHistoryWindow.qml"), { modelData: modelData, hub: service })
-			}
+	Variants {
+		id: historyVariants
+		model: Quickshell.screens
+		delegate: Loader {
+			required property var modelData
+			Component.onCompleted: setSource(Qt.resolvedUrl("NotificationHistoryWindow.qml"), { modelData: modelData, hub: service })
 		}
 	}
 }

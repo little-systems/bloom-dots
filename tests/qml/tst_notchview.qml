@@ -88,18 +88,6 @@ Item {
 			compare(v.target.width, 140);
 		}
 
-		function test_unreadBadgeOpensNotificationHistory() {
-			const v = make({ notificationUnread: 3 });
-			const spy = createTemporaryQmlObject("import QtQuick; import QtTest; SignalSpy { signalName: \"notificationHistoryRequested\" }", host);
-			spy.target = v;
-			settle(v);
-			const badge = findChild(v, "notification-unread");
-			verify(badge !== null && badge.visible);
-			wait(500);
-			mouseClick(v, 560, 10);
-			compare(spy.count, 1);
-		}
-
 		function test_privacyDotsClearPromptly() {
 			const v = make();
 			settle(v);

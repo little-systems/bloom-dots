@@ -3,7 +3,7 @@ import qs.services
 import "../../common/tokens.js" as Tokens
 
 // The Command Center panel: binds CommandCenterView to the services and runs
-// its actions (owner decision 1 maps Bloom's six round buttons to Linux).
+// its actions (notification history now lives at the top-right corner).
 CommandCenterView {
 	id: root
 
@@ -46,7 +46,6 @@ CommandCenterView {
 	onDndToggled: Settings.set("bloom-notifications-dnd", !root.dnd)
 	onEnergySaverToggled: Battery.setEnergySaver(!root.energySaver)
 	onTrayRequested: Dock.reveal(Tokens.dock.revealMs)
-	onNotificationsRequested: NotificationBridge.openHistory()
 	// Bloom Settings is Phase 7; until then the button opens settings.json.
 	onSettingsRequested: Apps.run(["xdg-open", Settings.path], "bloom-settings")
 	onRestartRequested: Dock.restartShell()

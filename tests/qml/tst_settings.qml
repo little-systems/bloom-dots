@@ -64,7 +64,7 @@ TestCase {
 		compare(d["bloom-volume-max-jump"], 10);
 		compare(d["bloom-volume-max-level"], 99);
 		compare(d["bloom-notifications-dnd"], false);
-		compare(d["bloom-notifications-timeout"], 7000);
+		compare(d["bloom-notifications-timeout"], 3500);
 		compare(d["bloom-notifications-history-limit"], 200);
 		verify(Settings.validateOne("bloom-osd-timeout", 250).ok);
 		verify(!Settings.validateOne("bloom-osd-timeout", 0).ok);

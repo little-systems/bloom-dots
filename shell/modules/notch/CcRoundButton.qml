@@ -4,7 +4,7 @@ import "../../common"
 import "../../common/tokens.js" as Tokens
 import "qp"
 
-// .cc-circular-btn: one of the Command Center's six round buttons.
+// .cc-circular-btn: one of the Command Center's round buttons.
 Item {
 	id: root
 

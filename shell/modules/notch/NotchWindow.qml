@@ -147,8 +147,6 @@ PanelWindow {
 		volume: audio.item?.volume ?? 0
 		muted: audio.item?.muted ?? false
 		mixerAvailable: audio.item?.mixerAvailable ?? false
-		notificationUnread: NotificationBridge.unread
-		onNotificationHistoryRequested: NotificationBridge.openHistory()
 		onTogglePlay: music.item?.togglePlay()
 		onPreviousTrack: music.item?.previousTrack()
 		onNextTrack: music.item?.nextTrack()
