@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Virtual pointer for a test compositor, raw Wayland wire protocol.
 Usage: vpointer.py W H x y wheel|touch N   (run with the test WAYLAND_DISPLAY)
-Moves to x,y, waits, then sends N wheel notches or N touchpad swipes down."""
+       vpointer.py W H x y drag DX
+Moves to x,y, waits, then scrolls or drags horizontally by DX screen pixels."""
 import os, socket, struct, sys, time
 
 def pad(s):
@@ -51,6 +52,18 @@ time.sleep(1.2)
 # Nudge, so the surface sees motion after mapping.
 w.send(vp, 1, struct.pack("<IIIII", t(), x + 1, y, W_, H)); w.send(vp, 4)
 time.sleep(0.6)
+if mode == "drag":
+    w.send(vp, 2, struct.pack("<III", t(), 272, 1))
+    w.send(vp, 4)
+    time.sleep(0.15)
+    for step in range(1, 41):
+        w.send(vp, 1, struct.pack("<IIIII", t(), round(x + 1 + n * step / 40), y, W_, H))
+        w.send(vp, 4)
+        time.sleep(0.025)
+    w.send(vp, 2, struct.pack("<III", t(), 272, 0))
+    w.send(vp, 4)
+    time.sleep(0.5)
+    sys.exit(0)
 for i in range(n):
     if mode == "wheel":
         w.send(vp, 5, struct.pack("<I", 0))  # source wheel

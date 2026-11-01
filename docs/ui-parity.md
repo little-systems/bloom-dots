@@ -53,6 +53,9 @@ Owner updates, 2026-11-01:
 - Dock content is clipped and revealed with its opening surface. Pinned apps
   and running apps can be reordered; running order is saved in dock state.
   Dropping a running app into the pinned area pins it at the selected position.
+  Normalize Qt list signal arguments before saving app order. Exercise drag
+  input through the compositor and verify the saved order after a shell restart;
+  view-only drag tests cannot catch a rejected service write.
 - The selected theme drives supported GTK, Qt, Kitty, Fuzzel and Hyprland
   palettes in every mode, through `Theme` and `scripts/adaptive-theme.sh`.
   GTK3 uses an installed light/dark theme (preferring adw-gtk3), rather than

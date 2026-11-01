@@ -142,8 +142,10 @@ PanelWindow {
 		onTrayMenuRequested: (key, x, y) => Dock.trayMenu(key, win, Math.round(x), Math.round(y))
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
-		onReordered: ids => Dock.reorder(ids)
-		onRunningReordered: ids => Dock.reorderRunning(ids)
+		// QML signal arguments can arrive as a Qt list rather than a JS Array.
+		// Normalize at the boundary before the service validates the permutation.
+		onReordered: ids => win._reportExtra(Dock.reorder(Array.from(ids)))
+		onRunningReordered: ids => win._reportExtra(Dock.reorderRunning(Array.from(ids)))
 		onPinReordered: (id, index) => Dock.pinAt(id, index)
 		onMenuChosen: (id, key) => {
 			if (!id.startsWith("extra:")) { Dock.runMenu(id, key); return; }
