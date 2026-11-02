@@ -5,6 +5,7 @@ import Quickshell.Wayland
 import qs.services
 import "../../common"
 import "../../common/screens.js" as Screens
+import "../../common/tokens.js" as Tokens
 import "../../common/render"
 
 // A single stack slides from the physical top-right corner. At rest only an
@@ -49,7 +50,8 @@ PanelWindow {
 			scrollX: modelData.width - win.width + scrollHit.x + scrollHit.width / 2,
 			scrollTopY: scrollHit.y + 12 * uiScale,
 			scrollBottomY: scrollHit.y + scrollHit.height - 12 * uiScale,
-			contentY: stack.contentY, contentHeight: stack.contentHeight,
+			contentY: stack.contentY, contentHeight: stack.contentHeight, originY: stack.originY,
+			maxY: stack.originY + stack.contentHeight - stack.height,
 			progress: Math.max(0, Math.min(1, slide.value)) };
 	}
 	function revealArrival() {
@@ -177,7 +179,7 @@ PanelWindow {
 			width: stack.width
 			height: win.expanded ? Math.max(0, stack.height - win.penultimateCardHeight - stack.spacing - win.lastCardHeight) : 0
 		}
-		ScrollGlide { flickable: stack }
+		ScrollGlide { id: glide; flickable: stack }
 		HoverHandler {
 			id: stackHover
 			onHoveredChanged: {
@@ -405,6 +407,16 @@ PanelWindow {
 				moveThumb(mouse.y);
 			}
 			onPositionChanged: mouse => { if (pressed) moveThumb(mouse.y); }
+		}
+		WheelHandler {
+			target: null
+			acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+			onWheel: event => {
+				const pixels = event.pixelDelta.y !== 0 || event.phase !== Qt.NoScrollPhase;
+				const delta = pixels ? -event.pixelDelta.y : -event.angleDelta.y / 120 * Tokens.scroll.wheelStep;
+				glide.scroll(delta, pixels, Date.now(), event.phase);
+				event.accepted = true;
+			}
 		}
 	}
 	Rectangle {

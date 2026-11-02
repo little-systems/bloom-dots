@@ -70,6 +70,8 @@ Owner updates, 2026-11-01:
   nearby desktop. The first card's top control expands or collapses a stack
   showing two complete cards at a time; a thin draggable scrollbar sits in its
   own gutter. The stack height stays stable as the list reaches its end.
+  Wheel and trackpad input over that gutter scrolls the same list as input
+  over the cards.
   A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent
   alerts stay in history until dismissed.
