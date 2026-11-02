@@ -20,6 +20,8 @@ PanelWindow {
 	property var visualItems: []
 	property real firstCardHeight: 108 * uiScale
 	property real secondCardHeight: 108 * uiScale
+	property real penultimateCardHeight: 108 * uiScale
+	property real lastCardHeight: 108 * uiScale
 	readonly property real uiScale: Settings.values["bloom-scale"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 	readonly property bool showHistory: (hoverOpen || expanded || hub.historyOpen) && hub.history.length > 0
@@ -43,8 +45,11 @@ PanelWindow {
 			x: stack.x, y: stack.y, viewportHeight: stack.height,
 			renderedCardHeight: stack.itemAtIndex(0)?.height ?? 0,
 			secondCardHeight: stack.itemAtIndex(1)?.height ?? 0,
-			scrollbarVisible: scrollTrack.visible,
-			contentY: stack.contentY,
+			scrollbarVisible: scrollHit.visible,
+			scrollX: modelData.width - win.width + scrollHit.x + scrollHit.width / 2,
+			scrollTopY: scrollHit.y + 12 * uiScale,
+			scrollBottomY: scrollHit.y + scrollHit.height - 12 * uiScale,
+			contentY: stack.contentY, contentHeight: stack.contentHeight,
 			progress: Math.max(0, Math.min(1, slide.value)) };
 	}
 	function revealArrival() {
@@ -75,6 +80,7 @@ PanelWindow {
 	mask: Region {
 		item: corner
 		Region { item: win.stackShown || slide.value > 0.01 ? stack : null }
+		Region { item: scrollHit.visible ? scrollHit : null }
 		Region { item: clearButton.visible ? clearButton : null }
 	}
 
@@ -153,17 +159,24 @@ PanelWindow {
 		objectName: "notificationStack"
 		x: 12 * win.uiScale + (1 - Math.max(0, Math.min(1, slide.value))) * win.width
 		y: 12 * win.uiScale
-		width: win.width - 24 * win.uiScale
-		readonly property real expandedHeight: Math.max(win.compactHeight, Math.min(contentHeight,
-			win.firstCardHeight + spacing + win.secondCardHeight, win.height - 90 * win.uiScale))
+		width: win.width - 42 * win.uiScale
+		readonly property real expandedHeight: Math.max(win.compactHeight, Math.min(
+			Math.max(win.firstCardHeight + spacing + win.secondCardHeight,
+				win.penultimateCardHeight + spacing + win.lastCardHeight), win.height - 90 * win.uiScale))
 		height: win.compactHeight + (expandedHeight - win.compactHeight) * Math.max(0, Math.min(1, expansion.value))
 		model: win.displayed
 		spacing: 8 * win.uiScale
 		clip: true
 		opacity: 1
 		interactive: win.expanded && contentHeight > height
+		snapMode: ListView.SnapToItem
+		boundsBehavior: Flickable.StopAtBounds
 		remove: Transition { NumberAnimation { properties: "x"; to: stack.width; duration: 150; easing.type: Easing.OutCubic } }
 		displaced: Transition { NumberAnimation { properties: "y"; duration: 190; easing.type: Easing.OutCubic } }
+		footer: Item {
+			width: stack.width
+			height: win.expanded ? Math.max(0, stack.height - win.penultimateCardHeight - stack.spacing - win.lastCardHeight) : 0
+		}
 		ScrollGlide { flickable: stack }
 		HoverHandler {
 			id: stackHover
@@ -205,6 +218,8 @@ PanelWindow {
 			function reportHeight() {
 				if (index === 0) win.firstCardHeight = height;
 				else if (index === 1) win.secondCardHeight = height;
+				if (index === win.itemCount - 2) win.penultimateCardHeight = height;
+				if (index === win.itemCount - 1) win.lastCardHeight = height;
 			}
 			onHeightChanged: reportHeight()
 			onIndexChanged: reportHeight()
@@ -353,19 +368,43 @@ PanelWindow {
 		}
 	}
 	Item {
-		id: scrollTrack
-		x: stack.x + stack.width - width - 2 * win.uiScale
-		y: stack.y + 7 * win.uiScale
-		width: 3 * win.uiScale
-		height: Math.max(0, stack.height - 14 * win.uiScale)
+		id: scrollHit
+		x: stack.x + stack.width + 5 * win.uiScale
+		y: stack.y
+		width: 15 * win.uiScale
+		height: stack.height
 		visible: win.expanded && expansion.value > 0.95 && stack.contentHeight > stack.height + 1
-		Rectangle { anchors.fill: parent; radius: width / 2; color: Theme.border }
 		Rectangle {
-			width: parent.width
-			height: Math.max(24 * win.uiScale, stack.visibleArea.heightRatio * parent.height)
+			x: (parent.width - width) / 2; y: 3 * win.uiScale
+			width: 4 * win.uiScale; height: parent.height - 6 * win.uiScale
+			radius: width / 2; color: Theme.border
+		}
+		Rectangle {
+			id: scrollThumb
+			x: (parent.width - width) / 2
+			width: 4 * win.uiScale
+			height: Math.max(28 * win.uiScale, stack.visibleArea.heightRatio * parent.height)
 			y: Math.max(0, Math.min(parent.height - height, stack.visibleArea.yPosition * parent.height))
 			radius: width / 2
-			color: Theme.textMuted
+			color: Theme.text
+			opacity: 0.7
+		}
+		MouseArea {
+			anchors.fill: parent
+			cursorShape: Qt.PointingHandCursor
+			property real grab: 0
+			function moveThumb(y) {
+				const travel = scrollHit.height - scrollThumb.height;
+				if (travel <= 0) return;
+				stack.contentY = Math.max(0, Math.min(stack.contentHeight - stack.height,
+					(y - grab) / travel * (stack.contentHeight - stack.height)));
+			}
+			onPressed: mouse => {
+				grab = mouse.y >= scrollThumb.y && mouse.y <= scrollThumb.y + scrollThumb.height
+					? mouse.y - scrollThumb.y : scrollThumb.height / 2;
+				moveThumb(mouse.y);
+			}
+			onPositionChanged: mouse => { if (pressed) moveThumb(mouse.y); }
 		}
 	}
 	Rectangle {

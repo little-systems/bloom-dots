@@ -68,7 +68,8 @@ Owner updates, 2026-11-01:
   height so wrapped bodies and action buttons keep their rounded bottom edge.
   The top-right trigger is a four-pixel strip at the screen edge, not the
   nearby desktop. The first card's top control expands or collapses a stack
-  showing two complete cards at a time; a thin scrollbar reveals older cards.
+  showing two complete cards at a time; a thin draggable scrollbar sits in its
+  own gutter. The stack height stays stable as the list reaches its end.
   A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent
   alerts stay in history until dismissed.

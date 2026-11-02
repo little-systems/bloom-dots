@@ -109,12 +109,26 @@ wait_for 'notification stack to expand from its count row' stack_expanded
 [[ "$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .y')" == "$anchor_y" ]] || fail 'expansion changed the top card vertical position'
 two_full_cards() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .secondCardHeight>0 and .scrollbarVisible and (.viewportHeight >= .renderedCardHeight + 8 + .secondCardHeight - 2) and (.viewportHeight <= .renderedCardHeight + 8 + .secondCardHeight + 3))' >/dev/null; }
 wait_for 'two complete cards and a visible scrollbar' two_full_cards
+expanded_height="$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .viewportHeight')"
 if [[ -n "${BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT"
 fi
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1700 120 wheel 5
+read -r scroll_x scroll_top scroll_bottom < <(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | "\(.scrollX | round) \(.scrollTopY | round) \(.scrollBottomY | round)"')
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$scroll_x" "$scroll_bottom" click 1
 scrolled_history() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .contentY>10)' >/dev/null; }
+wait_for 'scrollbar track moves to older cards' scrolled_history
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$scroll_x" "$scroll_top" click 1
+back_to_start() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .contentY<3)' >/dev/null; }
+wait_for 'scrollbar track returns to newest cards' back_to_start
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1700 120 wheel 24
 wait_for 'older cards reachable by scrolling' scrolled_history
+at_end() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .contentY >= .contentHeight - .viewportHeight - 3)' >/dev/null; }
+wait_for 'notification scroll reaches its end' at_end
+end_height="$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .viewportHeight')"
+awk -v start="$expanded_height" -v end="$end_height" 'BEGIN { d = start - end; if (d < 0) d = -d; exit (d > 2) }' || fail 'the two-card viewport changed height while scrolling'
+if [[ -n "${BLOOM_NOTIFICATION_END_SCREENSHOT:-}" ]]; then
+	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_END_SCREENSHOT"
+fi
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$expand_x" "$expand_y" click 1
 stack_collapsed() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and (.expanded==false) and .shown>=4)' >/dev/null; }
 wait_for 'notification stack to collapse from its count row' stack_collapsed
