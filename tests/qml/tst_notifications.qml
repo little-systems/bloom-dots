@@ -71,9 +71,17 @@ TestCase {
 	}
 
 	function test_imageUrlsStayLocal() {
+		const fromApp = N.ingest([], { id: 11, appName: "ChatGPT", appIcon: "chatgpt", desktopEntry: "chatgpt" }, 100, "s", false, 200).history[0];
+		compare(fromApp.icon, "chatgpt");
+		compare(fromApp.desktopEntry, "chatgpt");
+		compare(N.restore({ entries: [fromApp] }, 200)[0].icon, "chatgpt");
 		compare(N.safeImage("image://notifications/123"), "image://notifications/123");
 		compare(N.safeImage("file:///tmp/cover.png"), "file:///tmp/cover.png");
 		compare(N.safeImage("https://example.org/track"), "");
 		compare(N.safeImage("data:image/png;base64,AAAA"), "");
+		compare(N.safeIcon("folder"), "folder");
+		compare(N.safeIcon("file:///usr/share/icons/folder.svg"), "file:///usr/share/icons/folder.svg");
+		compare(N.safeIcon("https://example.org/icon.svg"), "");
+		compare(N.safeIcon("../../private"), "");
 	}
 }

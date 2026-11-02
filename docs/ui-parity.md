@@ -59,6 +59,9 @@ Owner updates, 2026-11-01:
 - Notifications share one card stack that slides in from the top-right for
   2.5 seconds and returns when the corner is hovered. Each card puts the app
   icon and controls in its top row, with a readable full-width title and body.
+  Resolve sender icons from notification hints or installed desktop entries;
+  fall back to an initial only when no icon is available. The compact view is
+  one intact card with a count, and cards slide without fading in or out.
   The first card's top control expands or collapses a height-capped scrollable
   stack. A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent

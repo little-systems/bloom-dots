@@ -35,13 +35,17 @@ wait "$SECOND_SHELL_PID" 2>/dev/null || true
 SECOND_SHELL_PID=""
 pass 'a second Bloom instance reports the existing notification owner'
 
-transient_hover_id="$(notify-send -p -e -t 10000 -a 'Test App' 'Transient hover')"
+transient_hover_id="$(notify-send -p -e -t 10000 -a 'ChatGPT' 'Transient hover')"
 transient_arrival() { ipc notifications state | jq -e 'any(.cards[]; .summary=="Transient hover")' >/dev/null; }
 wait_for 'transient arrival card' transient_arrival
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 hover 4000 &
 TRANSIENT_HOVER_PID=$!
 transient_hover_visible() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and (.cornerHovered or .hovered) and .mode=="arrival")' >/dev/null; }
 wait_for 'transient card stays visible on corner hover' transient_hover_visible
+if [[ -n "${BLOOM_NOTIFICATION_APP_ICON_SCREENSHOT:-}" ]]; then
+	sleep 0.25
+	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_APP_ICON_SCREENSHOT"
+fi
 sleep 2.7
 transient_hover_visible || fail 'transient card slid out while hovered'
 wait "$TRANSIENT_HOVER_PID"
@@ -50,10 +54,11 @@ python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 300 600 wheel 0 &
 wait $!
 pass 'corner hover keeps a transient arrival card visible without history'
 
-id="$(notify-send -p -a 'Test App' -t 5000 'First' 'body')"
+id="$(notify-send -p -a 'Test App' -i folder -t 5000 'First' 'body')"
 [[ "$id" =~ ^[0-9]+$ ]] || fail "notify-send did not return an ID: $id"
 has_summary() { ipc notifications state | jq -e --arg s "$1" 'any(.history[]; .summary==$s)' >/dev/null; }
 wait_for 'first notification' has_summary First
+ipc notifications state | jq -e 'any(.cards[]; .summary=="First" and .image!="")' >/dev/null || fail 'notification image icon was not available to the card'
 cards_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .mode=="arrival")' >/dev/null; }
 wait_for 'visible card surface' cards_mapped
 if [[ -n "${BLOOM_NOTIFICATION_SCREENSHOT:-}" ]]; then
@@ -120,8 +125,19 @@ wait_for 'notification state file' test -s "$state_file"
 pass 'notification history persists as JSON primitives'
 
 assert_eq "$(ipc notifications openHistory)" 'ok' 'open history'
+if [[ -n "${BLOOM_NOTIFICATION_MOTION_DIR:-}" ]]; then
+	mkdir -p "$BLOOM_NOTIFICATION_MOTION_DIR"
+	sleep 0.04; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/open-04.png"
+	sleep 0.08; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/open-12.png"
+	sleep 0.15; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/open-27.png"
+fi
 wait_for 'history cards in the same stack' history_mapped
 assert_eq "$(ipc notifications closeHistory)" 'ok' 'close history'
+if [[ -n "${BLOOM_NOTIFICATION_MOTION_DIR:-}" ]]; then
+	sleep 0.04; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/close-04.png"
+	sleep 0.08; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/close-12.png"
+	sleep 0.15; grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MOTION_DIR/close-27.png"
+fi
 wait_for 'history cards to slide away' history_closed
 pass 'IPC reveals and hides history in the same stack'
 

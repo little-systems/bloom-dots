@@ -11,12 +11,24 @@ function urgency(value) {
 	return "normal";
 }
 
+function safeIcon(value) {
+	if (typeof value !== "string" || value.length > 256 || /[\u0000-\u001f\u007f]/.test(value)) return "";
+	const icon = value.trim();
+	if (icon.split("/").includes("..")) return "";
+	return /^[A-Za-z0-9._+-]+$/.test(icon)
+		|| /^\/[A-Za-z0-9_./+ -]+$/.test(icon)
+		|| /^file:\/\/\/[A-Za-z0-9_./+% -]+$/.test(icon)
+		|| /^image:\/\/[A-Za-z0-9_./+%-]+$/.test(icon) ? icon : "";
+}
+
 function normalize(raw, now, session) {
 	if (!raw || !Number.isInteger(raw.id) || raw.id <= 0 || raw.id > 2147483647) return null;
 	return {
 		key: String(session) + ":" + raw.id,
 		id: raw.id,
 		app: text(raw.appName, "Unknown app", 128) || "Unknown app",
+		icon: safeIcon(raw.appIcon),
+		desktopEntry: safeIcon(raw.desktopEntry),
 		summary: text(raw.summary, "", 256),
 		body: text(raw.body, "", 2048),
 		time: Number.isFinite(now) ? now : 0,
@@ -72,6 +84,7 @@ function restore(value, limit) {
 			|| typeof item.summary !== "string" || typeof item.body !== "string"
 			|| !Number.isFinite(item.time) || typeof item.urgency !== "string" || typeof item.read !== "boolean") continue;
 		const restored = { key: text(item.key, "", 80), id: item.id, app: text(item.app, "Unknown app", 128),
+			icon: safeIcon(item.icon), desktopEntry: safeIcon(item.desktopEntry),
 			summary: text(item.summary, "", 256), body: text(item.body, "", 2048), time: item.time,
 			urgency: urgency(item.urgency), read: item.read };
 		if (["expired", "dismissed", "closeRequested"].indexOf(item.closeReason) >= 0)

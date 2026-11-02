@@ -21,7 +21,9 @@ PanelWindow {
 	readonly property real uiScale: Settings.values["bloom-scale"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 	readonly property bool showHistory: (hoverOpen || expanded || hub.historyOpen) && hub.history.length > 0
-	readonly property var displayed: showHistory ? hub.history : (hub.cards.length > 0 ? hub.cards : visualItems)
+	readonly property bool closing: !previewOpen && !hoverOpen && !expanded && !hub.historyOpen
+	readonly property var activeItems: showHistory ? hub.history : hub.cards
+	readonly property var displayed: closing ? visualItems : (activeItems.length > 0 ? activeItems : visualItems)
 	readonly property int itemCount: displayed.length
 	readonly property real compactHeight: itemCount > 0 ? (stack.itemAtIndex(0)?.height ?? 108 * uiScale) : 0
 	readonly property bool stackShown: ((previewOpen || hoverOpen) && hub.cards.length > 0) || showHistory || (expanded && itemCount > 0)
@@ -106,16 +108,16 @@ PanelWindow {
 		id: slide
 		initial: 0
 		target: win.stackShown ? 1 : 0
-		stiffness: 480
-		damping: 46
+		stiffness: 300
+		damping: 36
 		onSettledChanged: if (settled && target === 0) win.visualItems = []
 	}
 	Spring {
 		id: expansion
 		initial: 0
 		target: win.expanded && win.itemCount > 1 ? 1 : 0
-		stiffness: 500
-		damping: 48
+		stiffness: 380
+		damping: 42
 	}
 
 	Item {
@@ -139,22 +141,6 @@ PanelWindow {
 		}
 	}
 
-	Repeater {
-		model: Math.min(2, Math.max(0, win.itemCount - 1))
-		delegate: Rectangle {
-			required property int index
-			x: stack.x + (index + 1) * 8 * win.uiScale
-			y: stack.y + win.compactHeight - 3 * win.uiScale + index * 8 * win.uiScale
-			width: stack.width - (index + 1) * 16 * win.uiScale
-			height: 18 * win.uiScale
-			radius: 12 * win.uiScale
-			color: Theme.bgExpanded
-			border.color: Theme.border
-			border.width: 1
-			opacity: (1 - Math.max(0, Math.min(1, expansion.value))) * Math.max(0, Math.min(1, slide.value))
-		}
-	}
-
 	ListView {
 		id: stack
 		objectName: "notificationStack"
@@ -166,10 +152,10 @@ PanelWindow {
 		model: win.displayed
 		spacing: 8 * win.uiScale
 		clip: true
-		opacity: Math.max(0, Math.min(1, slide.value))
+		opacity: 1
 		interactive: win.expanded && contentHeight > height
-		remove: Transition { NumberAnimation { properties: "opacity"; to: 0; duration: 160; easing.type: Easing.OutCubic } }
-		displaced: Transition { NumberAnimation { properties: "y"; duration: 200; easing.type: Easing.OutCubic } }
+		remove: Transition { NumberAnimation { properties: "x"; to: stack.width; duration: 150; easing.type: Easing.OutCubic } }
+		displaced: Transition { NumberAnimation { properties: "y"; duration: 190; easing.type: Easing.OutCubic } }
 		ScrollGlide { flickable: stack }
 		HoverHandler {
 			id: stackHover
@@ -192,6 +178,18 @@ PanelWindow {
 			required property var modelData
 			required property int index
 			readonly property var actions: win.hub.liveFor(modelData.key, modelData.id)?.actions ?? []
+			readonly property string appIconSource: {
+				Apps.revision;
+				const icon = modelData.icon || "";
+				if (icon.startsWith("file:///") || icon.startsWith("image://")) return icon;
+				if (icon.startsWith("/")) return "file://" + icon;
+				const entry = (modelData.desktopEntry ? DesktopEntries.byId(modelData.desktopEntry) : null)
+					|| DesktopEntries.heuristicLookup(modelData.app);
+				return (icon ? Quickshell.iconPath(icon, true) : "")
+					|| (entry?.icon ? Quickshell.iconPath(entry.icon, true) : "")
+					|| Quickshell.iconPath(modelData.app.toLowerCase(), true)
+					|| modelData.image || "";
+			}
 			readonly property real contentBottom: bodyText.visible
 				? bodyText.y + bodyText.implicitHeight : summaryText.y + summaryText.implicitHeight
 			width: stack.width
@@ -200,10 +198,8 @@ PanelWindow {
 			color: Theme.bgExpanded
 			border.color: Theme.border
 			border.width: 1
-			opacity: Math.max(0, Math.min(1, cardIn.value))
-				* (index === 0 ? 1 : Math.max(0, Math.min(1, expansion.value)))
-			transform: Translate { y: -8 * win.uiScale * (1 - Math.max(0, Math.min(1, cardIn.value))) }
-			Spring { id: cardIn; initial: 0; target: 1; stiffness: 540; damping: 50 }
+			opacity: index === 0 ? 1 : Math.max(0, Math.min(1, expansion.value))
+			transform: Translate { y: index === 0 ? 0 : -10 * win.uiScale * (1 - Math.max(0, Math.min(1, expansion.value))) }
 
 			Rectangle {
 				visible: card.modelData.urgency === "critical"
@@ -218,9 +214,9 @@ PanelWindow {
 				Image {
 					id: appImage
 					anchors.fill: parent
-					source: card.modelData.image || ""
+					source: card.appIconSource
 					fillMode: Image.PreserveAspectCrop
-					asynchronous: true
+					asynchronous: false
 					visible: status === Image.Ready
 				}
 				Text {
@@ -264,7 +260,7 @@ PanelWindow {
 				textFormat: Text.PlainText
 				wrapMode: Text.Wrap
 				elide: Text.ElideRight
-				maximumLineCount: win.expanded ? 4 : 2
+				maximumLineCount: 3
 				font.family: Fonts.family
 				font.pixelSize: Fonts.px(13 * win.uiScale)
 				color: Theme.text
@@ -351,7 +347,7 @@ PanelWindow {
 		border.color: Theme.border
 		border.width: 1
 		visible: win.itemCount > 0 && expansion.value > 0.05 && win.stackShown
-		opacity: Math.max(0, Math.min(1, expansion.value)) * Math.max(0, Math.min(1, slide.value))
+		opacity: Math.max(0, Math.min(1, expansion.value))
 		scale: 0.88 + 0.12 * Math.max(0, Math.min(1, expansion.value))
 		SvgIcon { anchors.centerIn: parent; name: "trash-2"; size: 18 * win.uiScale; color: Theme.text }
 		HoverHandler { id: clearHover; onHoveredChanged: if (hovered) hoverClose.stop(); else if (win.hoverOpen) hoverClose.restart() }

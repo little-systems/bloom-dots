@@ -189,6 +189,8 @@ Scope {
 			notification.summaryChanged.connect(() => root._updated(id, notification));
 			notification.bodyChanged.connect(() => root._updated(id, notification));
 			notification.appNameChanged.connect(() => root._updated(id, notification));
+			notification.appIconChanged.connect(() => root._updated(id, notification));
+			notification.desktopEntryChanged.connect(() => root._updated(id, notification));
 			notification.urgencyChanged.connect(() => root._updated(id, notification));
 		}
 	}
