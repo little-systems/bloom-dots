@@ -71,7 +71,8 @@ Owner updates, 2026-11-01:
   showing two complete cards at a time; a thin draggable scrollbar sits in its
   own gutter. The stack height stays stable as the list reaches its end.
   Wheel and trackpad input over that gutter scrolls the same list as input
-  over the cards.
+  over the cards. Leave native `ListView` snapping off: it fights `ScrollGlide`
+  when neighboring cards have equal heights and can stop wheel scrolling.
   A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent
   alerts stay in history until dismissed.

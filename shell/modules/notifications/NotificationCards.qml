@@ -33,6 +33,7 @@ PanelWindow {
 	readonly property real compactHeight: itemCount > 0 ? firstCardHeight : 0
 	readonly property bool stackShown: ((previewOpen || hoverOpen) && hub.cards.length > 0) || showHistory || (expanded && itemCount > 0)
 	function stateObject() {
+		const lastCard = stack.itemAtIndex(itemCount - 1);
 		return { kind: "stack", screen: modelData.name, visible: stackShown && targetScreen,
 			mode: showHistory ? "history" : "arrival", expanded: expanded, shown: itemCount,
 			expansionProgress: Math.max(0, Math.min(1, expansion.value)),
@@ -52,6 +53,8 @@ PanelWindow {
 			scrollBottomY: scrollHit.y + scrollHit.height - 12 * uiScale,
 			contentY: stack.contentY, contentHeight: stack.contentHeight, originY: stack.originY,
 			maxY: stack.originY + stack.contentHeight - stack.height,
+			lastCardVisible: !!lastCard && lastCard.y + lastCard.height - stack.contentY <= stack.height + 2
+				&& lastCard.y + lastCard.height - stack.contentY > 0,
 			progress: Math.max(0, Math.min(1, slide.value)) };
 	}
 	function revealArrival() {
@@ -171,7 +174,6 @@ PanelWindow {
 		clip: true
 		opacity: 1
 		interactive: win.expanded && contentHeight > height
-		snapMode: ListView.SnapToItem
 		boundsBehavior: Flickable.StopAtBounds
 		remove: Transition { NumberAnimation { properties: "x"; to: stack.width; duration: 150; easing.type: Easing.OutCubic } }
 		displaced: Transition { NumberAnimation { properties: "y"; duration: 190; easing.type: Easing.OutCubic } }
@@ -179,6 +181,8 @@ PanelWindow {
 			width: stack.width
 			height: win.expanded ? Math.max(0, stack.height - win.penultimateCardHeight - stack.spacing - win.lastCardHeight) : 0
 		}
+		// Native snap repositions contentY during ScrollGlide's spring and can
+		// cancel every wheel step when adjacent cards have the same height.
 		ScrollGlide { id: glide; flickable: stack }
 		HoverHandler {
 			id: stackHover
