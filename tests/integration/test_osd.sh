@@ -42,6 +42,21 @@ pass 'OSD pill follows the UI scale'
 
 wait_for 'OSD timeout' all_closed
 pass 'OSD windows close after timeout'
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 3 100 hover 500
+all_closed || fail 'upper left edge revealed volume OSD outside its centered trigger'
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1917 100 hover 500
+all_closed || fail 'upper right edge revealed brightness OSD outside its centered trigger'
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 3 540 hover 800 &
+LEFT_HOVER_PID=$!
+wait_for 'centered left trigger' left_visible
+wait "$LEFT_HOVER_PID"
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 300 540 wheel 0
+wait_for 'volume OSD to close after leaving centered trigger' all_closed
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1917 540 hover 800 &
+RIGHT_HOVER_PID=$!
+wait_for 'centered right trigger' right_visible
+wait "$RIGHT_HOVER_PID"
+pass 'only the centered edge region reveals either OSD'
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" || true)"
 problems="$(grep -viE 'upower|powerprofiles|dbus|pipewire' <<<"$problems" || true)"
 [[ -z "$problems" ]] || fail "OSD shell logged warnings or errors: $problems"

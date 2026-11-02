@@ -73,7 +73,7 @@ ipc settings set bloom-notifications-dnd true >/dev/null
 notify-send -a 'Test App' 'Quiet' 'kept in history'
 wait_for 'quiet history' has_summary Quiet
 [[ "$(ipc notifications state | jq '[.cards[] | select(.summary=="Quiet")] | length')" == 0 ]] || fail 'DND showed a normal card'
-notify-send -u critical -a 'Test App' 'Critical' 'still shown'
+notify-send -u critical -a 'Test App' 'Critical' 'The notification body should remain readable as it wraps across several lines. Expand the stack to read more without losing the title or controls.'
 critical_card() { ipc notifications state | jq -e 'any(.cards[]; .summary=="Critical")' >/dev/null; }
 wait_for 'critical card' critical_card
 pass 'DND retains normal history and shows critical cards'
@@ -93,14 +93,15 @@ if [[ -n "${BLOOM_NOTIFICATION_HISTORY_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_HISTORY_SCREENSHOT"
 fi
 wait "$HOVER_PID"
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1770 155 click 1
+read -r expand_x expand_y < <(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | "\(.expandX | round) \(.expandY | round)"')
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$expand_x" "$expand_y" click 1
 stack_expanded() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .shown>=4)' >/dev/null; }
 wait_for 'notification stack to expand from its count row' stack_expanded
 if [[ -n "${BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT:-}" ]]; then
 	sleep 1.5
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT"
 fi
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1770 155 click 1
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$expand_x" "$expand_y" click 1
 stack_collapsed() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and (.expanded==false) and .shown>=4)' >/dev/null; }
 wait_for 'notification stack to collapse from its count row' stack_collapsed
 pass 'notification count row expands and collapses the bounded stack'

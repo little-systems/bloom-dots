@@ -61,7 +61,7 @@ PanelWindow {
 	// Room for the card with its widest mixer (4 columns) and edge flares.
 	implicitWidth: Math.ceil((edge === "left" ? 360 : 60) * uiScale)
 	color: "transparent"
-	// Stay mapped so the transparent edge target can receive pointer hover.
+	// Stay mapped so the centered edge target can receive pointer hover.
 	visible: targetScreen && (edge === "left" || Brightness.available)
 	exclusiveZone: -1
 	WlrLayershell.namespace: "bloom:osd-" + edge
@@ -94,9 +94,10 @@ PanelWindow {
 	Item {
 		id: edgeTarget
 		x: win.edge === "left" ? 0 : win.width - width
+		y: cardBox.y
 		width: 8 * win.uiScale
-		height: win.height
-		// cursor: default — the screen-edge reveal band
+		height: cardBox.height
+		// Reveal only beside the OSD pill, not along the whole screen edge.
 		MouseArea {
 			id: edgeArea
 			enabled: win.edgeEnabled
