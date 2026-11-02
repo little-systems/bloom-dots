@@ -18,6 +18,8 @@ PanelWindow {
 	property bool controlsHovered: false
 	property bool expanded: false
 	property var visualItems: []
+	property real firstCardHeight: 108 * uiScale
+	property real secondCardHeight: 108 * uiScale
 	readonly property real uiScale: Settings.values["bloom-scale"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 	readonly property bool showHistory: (hoverOpen || expanded || hub.historyOpen) && hub.history.length > 0
@@ -25,7 +27,7 @@ PanelWindow {
 	readonly property var activeItems: showHistory ? hub.history : hub.cards
 	readonly property var displayed: closing ? visualItems : (activeItems.length > 0 ? activeItems : visualItems)
 	readonly property int itemCount: displayed.length
-	readonly property real compactHeight: itemCount > 0 ? (stack.itemAtIndex(0)?.height ?? 108 * uiScale) : 0
+	readonly property real compactHeight: itemCount > 0 ? firstCardHeight : 0
 	readonly property bool stackShown: ((previewOpen || hoverOpen) && hub.cards.length > 0) || showHistory || (expanded && itemCount > 0)
 	function stateObject() {
 		return { kind: "stack", screen: modelData.name, visible: stackShown && targetScreen,
@@ -38,7 +40,12 @@ PanelWindow {
 			clearY: clearButton.y + clearButton.height / 2,
 			cards: hub.cards.length, history: hub.history.length,
 			hovered: stackHover.hovered, cornerHovered: cornerHover.hovered, cornerAvailable: true,
-			x: stack.x, y: stack.y, progress: Math.max(0, Math.min(1, slide.value)) };
+			x: stack.x, y: stack.y, viewportHeight: stack.height,
+			renderedCardHeight: stack.itemAtIndex(0)?.height ?? 0,
+			secondCardHeight: stack.itemAtIndex(1)?.height ?? 0,
+			scrollbarVisible: scrollTrack.visible,
+			contentY: stack.contentY,
+			progress: Math.max(0, Math.min(1, slide.value)) };
 	}
 	function revealArrival() {
 		if (win.hoverOpen || win.hub.historyOpen) return;
@@ -126,7 +133,7 @@ PanelWindow {
 		x: win.width - width
 		y: 0
 		width: 48 * win.uiScale
-		height: 48 * win.uiScale
+		height: 4 * win.uiScale
 		HoverHandler {
 			id: cornerHover
 			onHoveredChanged: {
@@ -145,9 +152,10 @@ PanelWindow {
 		id: stack
 		objectName: "notificationStack"
 		x: 12 * win.uiScale + (1 - Math.max(0, Math.min(1, slide.value))) * win.width
-		y: (12 - 8 * (1 - Math.max(0, Math.min(1, slide.value)))) * win.uiScale
+		y: 12 * win.uiScale
 		width: win.width - 24 * win.uiScale
-		readonly property real expandedHeight: Math.max(win.compactHeight, Math.min(contentHeight, 360 * win.uiScale, win.height - 90 * win.uiScale))
+		readonly property real expandedHeight: Math.max(win.compactHeight, Math.min(contentHeight,
+			win.firstCardHeight + spacing + win.secondCardHeight, win.height - 90 * win.uiScale))
 		height: win.compactHeight + (expandedHeight - win.compactHeight) * Math.max(0, Math.min(1, expansion.value))
 		model: win.displayed
 		spacing: 8 * win.uiScale
@@ -194,6 +202,13 @@ PanelWindow {
 				? bodyText.y + bodyText.implicitHeight : summaryText.y + summaryText.implicitHeight
 			width: stack.width
 			height: Math.ceil(contentBottom + (actions.length > 0 ? 42 : 14) * win.uiScale)
+			function reportHeight() {
+				if (index === 0) win.firstCardHeight = height;
+				else if (index === 1) win.secondCardHeight = height;
+			}
+			onHeightChanged: reportHeight()
+			onIndexChanged: reportHeight()
+			Component.onCompleted: reportHeight()
 			radius: 15 * win.uiScale
 			color: Theme.bgExpanded
 			border.color: Theme.border
@@ -335,6 +350,22 @@ PanelWindow {
 					}
 				}
 			}
+		}
+	}
+	Item {
+		id: scrollTrack
+		x: stack.x + stack.width - width - 2 * win.uiScale
+		y: stack.y + 7 * win.uiScale
+		width: 3 * win.uiScale
+		height: Math.max(0, stack.height - 14 * win.uiScale)
+		visible: win.expanded && expansion.value > 0.95 && stack.contentHeight > stack.height + 1
+		Rectangle { anchors.fill: parent; radius: width / 2; color: Theme.border }
+		Rectangle {
+			width: parent.width
+			height: Math.max(24 * win.uiScale, stack.visibleArea.heightRatio * parent.height)
+			y: Math.max(0, Math.min(parent.height - height, stack.visibleArea.yPosition * parent.height))
+			radius: width / 2
+			color: Theme.textMuted
 		}
 	}
 	Rectangle {

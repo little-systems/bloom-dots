@@ -51,6 +51,14 @@ Item {
 			const card = part(v, "card");
 			fuzzyCompare(card.x + card.width / 2, 450, 0.51);
 			fuzzyCompare(card.y + card.height / 2, 300, 0.51);
+			const top = part(v, "action:lock").mapToItem(card, 0, 0).y;
+			fuzzyCompare(part(v, "action:suspend").mapToItem(card, 0, 0).y, top, 0.51);
+			fuzzyCompare(part(v, "action:hibernate").mapToItem(card, 0, 0).y, top, 0.51);
+			const power = part(v, "action:logout").mapToItem(card, 0, 0).y;
+			verify(power > top);
+			fuzzyCompare(part(v, "action:reboot").mapToItem(card, 0, 0).y, power, 0.51);
+			fuzzyCompare(part(v, "action:shutdown").mapToItem(card, 0, 0).y, power, 0.51);
+			verify(part(v, "action:firmware").mapToItem(card, 0, 0).y > power);
 		}
 
 		function test_clickRuns() {

@@ -38,7 +38,7 @@ pass 'a second Bloom instance reports the existing notification owner'
 transient_hover_id="$(notify-send -p -e -t 10000 -a 'ChatGPT' 'Transient hover')"
 transient_arrival() { ipc notifications state | jq -e 'any(.cards[]; .summary=="Transient hover")' >/dev/null; }
 wait_for 'transient arrival card' transient_arrival
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 hover 4000 &
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 1 hover 4000 &
 TRANSIENT_HOVER_PID=$!
 transient_hover_visible() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and (.cornerHovered or .hovered) and .mode=="arrival")' >/dev/null; }
 wait_for 'transient card stays visible on corner hover' transient_hover_visible
@@ -61,6 +61,7 @@ wait_for 'first notification' has_summary First
 ipc notifications state | jq -e 'any(.cards[]; .summary=="First" and .image!="")' >/dev/null || fail 'notification image icon was not available to the card'
 cards_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .mode=="arrival")' >/dev/null; }
 wait_for 'visible card surface' cards_mapped
+anchor_y="$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .y')"
 if [[ -n "${BLOOM_NOTIFICATION_SCREENSHOT:-}" ]]; then
 	sleep 0.25
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_SCREENSHOT"
@@ -88,10 +89,13 @@ wait_for 'temporary banners to clear' no_cards
 hover_target() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .cornerAvailable and (.visible==false))' >/dev/null; }
 wait_for 'top-right hover target' hover_target
 unread_before_hover="$(ipc notifications state | jq '.unread')"
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 wheel 0 &
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 28 wheel 0
+ipc notifications state | jq -e 'all(.surfaces[]; .kind!="stack" or (.visible==false))' >/dev/null || fail 'nearby desktop space opened notification history'
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1885 1 wheel 0 &
 HOVER_PID=$!
 history_mapped() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .mode=="history")' >/dev/null; }
 wait_for 'history to open from top-right hover' history_mapped
+[[ "$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .y')" == "$anchor_y" ]] || fail 'history changed the top card vertical position'
 [[ "$(ipc notifications state | jq '.unread')" == "$unread_before_hover" ]] || fail 'hover marked notifications read'
 if [[ -n "${BLOOM_NOTIFICATION_HISTORY_SCREENSHOT:-}" ]]; then
 	sleep 0.25
@@ -102,10 +106,15 @@ read -r expand_x expand_y < <(ipc notifications state | jq -r '.surfaces[] | sel
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$expand_x" "$expand_y" click 1
 stack_expanded() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .shown>=4)' >/dev/null; }
 wait_for 'notification stack to expand from its count row' stack_expanded
+[[ "$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .y')" == "$anchor_y" ]] || fail 'expansion changed the top card vertical position'
+two_full_cards() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .expanded and .secondCardHeight>0 and .scrollbarVisible and (.viewportHeight >= .renderedCardHeight + 8 + .secondCardHeight - 2) and (.viewportHeight <= .renderedCardHeight + 8 + .secondCardHeight + 3))' >/dev/null; }
+wait_for 'two complete cards and a visible scrollbar' two_full_cards
 if [[ -n "${BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT:-}" ]]; then
-	sleep 1.5
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_EXPANDED_SCREENSHOT"
 fi
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1700 120 wheel 5
+scrolled_history() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .contentY>10)' >/dev/null; }
+wait_for 'older cards reachable by scrolling' scrolled_history
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$expand_x" "$expand_y" click 1
 stack_collapsed() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and (.expanded==false) and .shown>=4)' >/dev/null; }
 wait_for 'notification stack to collapse from its count row' stack_collapsed
@@ -163,11 +172,19 @@ CARD_LEAVE_PID=$!
 WAIT_S=5 wait_for 'banner to expire after pointer leaves' no_cards
 wait "$CARD_LEAVE_PID"
 pass 'hover pauses a banner and leaving resumes its timeout'
-notify-send -p -t 5000 -A 'open=Open' -a 'Test App' 'Actionable' >"$TEST_TMP/action.out" 2>"$TEST_TMP/action.err" &
+notify-send -p -t 5000 -A 'open=Open' -a 'Test App' 'Actionable' 'A long notification body wraps across several lines while its action stays fully inside the rounded card.' >"$TEST_TMP/action.out" 2>"$TEST_TMP/action.err" &
 ACTION_PID=$!
 wait_for 'action notification ID' test -s "$TEST_TMP/action.out"
 action_id="$(head -1 "$TEST_TMP/action.out")"
 [[ "$action_id" =~ ^[0-9]+$ ]] || fail 'action notification had no ID'
+action_card() { ipc notifications state | jq -e --argjson id "$action_id" 'any(.cards[]; .id==$id)' >/dev/null; }
+wait_for 'action card with wrapped body' action_card
+action_fits() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .visible and .renderedCardHeight>0 and .viewportHeight+0.5 >= .renderedCardHeight)' >/dev/null; }
+wait_for 'wrapped action card fully inside its viewport' action_fits
+if [[ -n "${BLOOM_NOTIFICATION_ACTION_SCREENSHOT:-}" ]]; then
+	sleep 0.25
+	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_ACTION_SCREENSHOT"
+fi
 assert_eq "$(ipc notifications action "$action_id" open)" 'ok' 'invoke action'
 wait_for 'sender sees action' grep -Fxq open "$TEST_TMP/action.out"
 wait "$ACTION_PID" || fail "action sender failed: $(cat "$TEST_TMP/action.err")"

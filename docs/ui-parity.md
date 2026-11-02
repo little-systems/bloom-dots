@@ -48,8 +48,10 @@ Owner updates, 2026-11-01:
 - AI chat has a dedicated conversation layout in `ChatView` / `ChatMessage`,
   with stable streaming rows, a multiline composer, stop/retry/copy actions,
   common math normalization and opt-in following of new text while reading.
-- The session menu groups break actions and power actions in a compact panel.
-  Keep package/download confirmations intact when changing its layout.
+- The session menu presents screen/sleep and session/power actions as two
+  labeled rows of tiles, with a short consequence on each choice. Firmware
+  setup sits below those common actions. Keep package/download confirmations
+  and keyboard navigation intact when changing its layout.
 - Dock content is clipped and revealed with its opening surface. Pinned apps
   and running apps can be reordered; running order is saved in dock state.
   Dropping a running app into the pinned area pins it at the selected position.
@@ -61,9 +63,13 @@ Owner updates, 2026-11-01:
   icon and controls in its top row, with a readable full-width title and body.
   Resolve sender icons from notification hints or installed desktop entries;
   fall back to an initial only when no icon is available. The compact view is
-  one intact card with a count, and cards slide without fading in or out.
-  The first card's top control expands or collapses a height-capped scrollable
-  stack. A floating round button clears live cards and history.
+  one intact card with a count, and cards slide horizontally without fading
+  or shifting their top edge. The viewport tracks the first card's rendered
+  height so wrapped bodies and action buttons keep their rounded bottom edge.
+  The top-right trigger is a four-pixel strip at the screen edge, not the
+  nearby desktop. The first card's top control expands or collapses a stack
+  showing two complete cards at a time; a thin scrollbar reveals older cards.
+  A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent
   alerts stay in history until dismissed.
 - The volume and brightness OSDs reveal only from the centered portion of

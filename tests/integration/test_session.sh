@@ -25,6 +25,10 @@ touch "$BLOOM_PACMAN_LOCK" "$TEST_TMP/Downloads/film.iso.part"
 assert_eq "$(ipc session toggle)" "ok" "open"
 seen() { ipc session state | jq -e '.opened and .busy.pacman and .busy.downloads == 1' >/dev/null; }
 wait_for "pacman and the download noticed" seen
+if [[ -n "${BLOOM_SESSION_SCREENSHOT:-}" ]]; then
+	sleep 0.5
+	grim -o HEADLESS-1 "$BLOOM_SESSION_SCREENSHOT"
+fi
 pass "opening checks what's running"
 for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:systemctl reboot --firmware-setup" "lock:loginctl lock-session"; do
 	assert_eq "$(ipc session run "${pair%%:*}")" "ok" "run ${pair%%:*}"

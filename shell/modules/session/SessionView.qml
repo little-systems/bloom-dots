@@ -7,9 +7,8 @@ import "../notch"
 import "../notch/qp"
 import "session.js" as Logic
 
-// The session menu: lock, log out, suspend, hibernate, restart, shut down and
-// firmware setup on the launcher's card, as Command Center's round buttons.
-// Ending the session with pacman or a download running asks first. Pure:
+// The session menu: common screen/sleep actions and session-ending actions
+// on a compact card. Ending the session with work in progress asks first. Pure:
 // SessionWindow.qml binds the Session service.
 Item {
 	id: root
@@ -120,12 +119,16 @@ Item {
 		Column {
 			id: content
 			anchors.centerIn: parent
-			width: Math.min(324, root.width - 80)
-			spacing: 12
+			width: Math.min(520, root.width - 80)
+			spacing: 15
 			Item {
-				width: parent.width; height: Math.max(34, Fonts.px(18) * 1.4)
-				SvgIcon { x: 8; anchors.verticalCenter: parent.verticalCenter; name: root._asking ? root._asking.icon : "power"; size: 18; color: root.theme.textMuted }
-				Text { x: 38; anchors.verticalCenter: parent.verticalCenter; text: root._asking ? root._asking.label + "?" : "Session"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(16); font.weight: Font.DemiBold }
+				width: parent.width; height: 45
+				SvgIcon { x: 2; y: 2; name: root._asking ? root._asking.icon : "power"; size: 20; color: root.theme.text }
+				Column {
+					x: 32; y: 0; spacing: 2
+					Text { text: root._asking ? root._asking.label + "?" : "Session"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(18); font.weight: Font.DemiBold }
+					Text { text: root._asking ? "Check before continuing" : "Choose what to do with this computer"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
+				}
 				Rectangle {
 					anchors.right: parent.right; width: 28; height: 28; radius: 8; color: closeHover.hovered ? root.theme.groupBg : "transparent"
 					SvgIcon { anchors.centerIn: parent; name: "x"; size: 13; color: root.theme.textMuted }
@@ -133,33 +136,53 @@ Item {
 					TapHandler { onTapped: root.dismissed() }
 				}
 			}
-			Rectangle { width: parent.width; height: 1; color: root.theme.border }
 			Column {
 				visible: !root._asking
-				width: parent.width; spacing: 2
-				Repeater {
-					model: root._actions
-					delegate: Column {
-						id: group
-						required property var modelData
-						required property int index
-						width: content.width
-						Rectangle {
-							id: actionRow
-							objectName: "action:" + group.modelData.id
-							width: parent.width; height: Math.max(40, Fonts.px(14) * 1.4 + 18); radius: 9
-							color: rowHover.hovered || root.selectedIndex === group.index ? root.theme.groupBg : "transparent"
-							Behavior on color { ColorAnimation { duration: 120 } }
-							Accessible.role: Accessible.Button; Accessible.name: group.modelData.label
-							SvgIcon { x: 10; anchors.verticalCenter: parent.verticalCenter; name: group.modelData.icon; color: group.modelData.id === "shutdown" ? "#ff453a" : root.theme.textMuted; size: 17 }
-							Text { objectName: "label"; x: 38; anchors.verticalCenter: parent.verticalCenter; text: group.modelData.label; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(14) }
-							SvgIcon { visible: group.modelData.id === "firmware"; anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; name: "chevron-right"; size: 13; color: root.theme.textMuted }
-							HoverHandler { id: rowHover; cursorShape: Qt.PointingHandCursor; onHoveredChanged: if (hovered) root.selectedIndex = group.index }
-							TapHandler { onTapped: root._choose(group.modelData, false) }
+				width: parent.width; spacing: 10
+				Text { text: "SCREEN & SLEEP"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
+				Row {
+					width: parent.width; spacing: 8
+					Repeater {
+						model: root._actions.slice(0, 3)
+						delegate: ActionTile {
+							required property var modelData
+							required property int index
+							action: modelData; actionIndex: index; theme: root.theme
+							selected: root.selectedIndex === index
+							onPointed: root.selectedIndex = index
+							onChosen: root._choose(modelData, false)
 						}
-						Item { width: parent.width; height: group.index === 2 || group.index === 5 ? 11 : 0; Rectangle { x: 8; y: 5; width: parent.width - 16; height: 1; visible: parent.height > 0; color: root.theme.border } }
 					}
 				}
+				Item { width: 1; height: 4 }
+				Text { text: "SESSION & POWER"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
+				Row {
+					width: parent.width; spacing: 8
+					Repeater {
+						model: root._actions.slice(3, 6)
+						delegate: ActionTile {
+							required property var modelData
+							required property int index
+							action: modelData; actionIndex: index + 3; theme: root.theme
+							selected: root.selectedIndex === index + 3
+							onPointed: root.selectedIndex = index + 3
+							onChosen: root._choose(modelData, false)
+						}
+					}
+				}
+			}
+			Rectangle {
+				visible: !root._asking
+				objectName: "action:firmware"
+				width: parent.width; height: 39; radius: 10
+				color: firmwareHover.hovered || root.selectedIndex === 6 ? root.theme.groupBg : "transparent"
+				border.width: 1; border.color: root.theme.border
+				Accessible.role: Accessible.Button; Accessible.name: "Firmware setup, restart into firmware settings"
+				SvgIcon { x: 11; anchors.verticalCenter: parent.verticalCenter; name: "cpu"; size: 16; color: root.theme.textMuted }
+				Text { x: 36; anchors.verticalCenter: parent.verticalCenter; text: "Firmware setup"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(12) }
+				Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: "Restart into firmware settings"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
+				HoverHandler { id: firmwareHover; cursorShape: Qt.PointingHandCursor; onHoveredChanged: if (hovered) root.selectedIndex = 6 }
+				TapHandler { onTapped: root._choose(root._actions[6], false) }
 			}
 			Text {
 				objectName: "warning"
@@ -172,7 +195,7 @@ Item {
 				QpButton { objectName: "cancel"; theme: root.theme; text: "Cancel"; onClicked: root._asking = null }
 				QpButton { objectName: "confirm"; theme: root.theme; primary: true; text: root._asking ? root._asking.label + " anyway" : ""; onClicked: root._choose(root._asking, true) }
 			}
-			Text { anchors.right: parent.right; text: root._asking ? "Enter to continue · Esc to cancel" : "↑ ↓ to choose · Esc to close"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10) }
+			Text { anchors.right: parent.right; text: root._asking ? "Enter to continue · Esc to cancel" : "Arrow keys to choose · Enter to select · Esc to close"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10) }
 		}
 	}
 }
