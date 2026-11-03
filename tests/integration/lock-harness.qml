@@ -10,6 +10,7 @@ ShellRoot {
 		pamConfig: "bloom-test"
 		pamDir: Quickshell.env("BLOOM_TEST_PAM")
 		clockTurning: false
+		mediaSource: null
 		monitors: [{ name: "HEADLESS-1", activeWorkspace: { id: 3 } }]
 	}
 	IpcHandler {

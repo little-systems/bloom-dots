@@ -145,6 +145,10 @@ var SCHEMA = {
 		type: "string", maxLength: 4096, default: "",
 		doc: "Image behind the lock screen. Empty uses the desktop wallpaper, or black if there is none."
 	},
+	"bloom-lock-media-enabled": {
+		type: "bool", default: true,
+		doc: "Show a compact transport card inside the secure lock screen when media is playing. After pausing there it remains available to resume. No app-launch action is offered."
+	},
 	"bloom-low-battery-threshold": {
 		type: "number",
 		min: 5,

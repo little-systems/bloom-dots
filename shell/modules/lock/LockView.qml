@@ -33,6 +33,16 @@ Item {
 	property bool batteryCharging: false
 	property bool batteryLow: false
 	property bool leaving: false
+	property var media: ({ hasMedia: false, isPlaying: false })
+	property bool _mediaPlayed: false
+	readonly property bool mediaShown: root._mediaPlayed && root.media.hasMedia === true
+	onMediaChanged: {
+		if (!root.media.hasMedia) root._mediaPlayed = false;
+		else if (root.media.isPlaying) root._mediaPlayed = true;
+	}
+	signal mediaPreviousRequested()
+	signal mediaToggleRequested()
+	signal mediaNextRequested()
 
 	signal textEdited(string text)
 	signal submitted(string response)
@@ -69,13 +79,36 @@ Item {
 	}
 
 	LockClock {
+		id: lockClock
 		objectName: "clock"
 		x: (root.width - width) / 2
-		y: root.height * Tokens.lock.clock.top
+		y: root.height * (root.mediaShown && root.height < 700 ? 0.1 : Tokens.lock.clock.top)
+		scale: root.mediaShown ? Math.min(1, Math.max(0.45, (root.height - 300) / 400)) : 1
+		transformOrigin: Item.Top
 		theme: root.theme
 		accent: root.accent
 		time: root.time
 		turning: root.clockTurning
+	}
+
+	OpeningMotion { id: mediaEntrance; initial: 0; target: root.mediaShown && !root.leaving ? 1 : 0 }
+	LockMediaCard {
+		id: mediaCard
+		objectName: "lockMedia"
+		width: Math.min(Tokens.lock.media.width, root.width - 32)
+		x: (root.width - width) / 2
+		y: Math.min(lockClock.y + lockClock.height * lockClock.scale + 24,
+			main.y - height - 40) + mediaEntrance.rise
+		compact: root.height < 550
+		theme: root.theme
+		media: root.media
+		visible: mediaEntrance.progress > 0
+		enabled: root.mediaShown && !root.leaving
+		opacity: mediaEntrance.progress
+		scale: mediaEntrance.zoom
+		onPreviousRequested: { root.mediaPreviousRequested(); root.focusField(); }
+		onToggleRequested: { root.mediaToggleRequested(); root.focusField(); }
+		onNextRequested: { root.mediaNextRequested(); root.focusField(); }
 	}
 
 	Spring {

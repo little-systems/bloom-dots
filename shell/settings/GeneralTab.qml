@@ -56,6 +56,15 @@ Column {
 		}
 	}
 
+	SGroupLabel { theme: root.theme; text: "Lock Screen" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "music"; label: "Media Player"; desc: "Artwork and playback controls while locked"; divider: false
+			SToggle { objectName: "lockMedia"; accessibleName: "Lock Screen Media Player"; theme: root.theme; checked: root.store.values["bloom-lock-media-enabled"]; onToggled: value => root.store.set("bloom-lock-media-enabled", value) }
+		}
+	}
+
 	SGroupLabel { theme: root.theme; text: "Translation" }
 	SGroup {
 		theme: root.theme

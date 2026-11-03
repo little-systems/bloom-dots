@@ -33,6 +33,10 @@ var ROWS = [
 		"tab": "general"
 	},
 	{
+		"label": "Media Player",
+		"tab": "general"
+	},
+	{
 		"label": "Translate To",
 		"tab": "general"
 	},

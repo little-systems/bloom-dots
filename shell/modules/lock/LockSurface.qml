@@ -20,6 +20,19 @@ Scope {
 	// Off in tests: a software renderer can't keep up with it.
 	property bool clockTurning: true
 	property var monitors: HyprState.monitors
+	// Injectable backend for isolated tests; only transport methods are exposed.
+	property var mediaSource: Settings.values["bloom-lock-media-enabled"] ? Media : null
+	readonly property var lockMedia: session.locked && Settings.values["bloom-lock-media-enabled"] && root.mediaSource
+		? { hasMedia: root.mediaSource.hasMedia, isPlaying: root.mediaSource.isPlaying,
+			title: root.mediaSource.title, artist: root.mediaSource.artist, artUrl: root.mediaSource.artUrl,
+			canPrevious: root.mediaSource.canPrevious, canNext: root.mediaSource.canNext, canToggle: root.mediaSource.canToggle }
+		: { hasMedia: false, isPlaying: false }
+	function mediaAction(action) {
+		if (!session.secure || !session.locked || root._leaving || !Settings.values["bloom-lock-media-enabled"] || !root.mediaSource) return;
+		if (action === "previous" && root.mediaSource.canPrevious) root.mediaSource.previous();
+		if (action === "next" && root.mediaSource.canNext) root.mediaSource.next();
+		if (action === "toggle" && root.mediaSource.canToggle) root.mediaSource.togglePlaying();
+	}
 
 	readonly property bool locked: session.locked
 	property bool preparing: false
@@ -244,6 +257,10 @@ Scope {
 				batteryLevel: Battery.level
 				batteryCharging: Battery.charging
 				batteryLow: Battery.level <= Battery.threshold
+				media: root.lockMedia
+				onMediaPreviousRequested: root.mediaAction("previous")
+				onMediaNextRequested: root.mediaAction("next")
+				onMediaToggleRequested: root.mediaAction("toggle")
 				onTextEdited: text => {
 					root._text = text;
 					root._setMessage("", false);

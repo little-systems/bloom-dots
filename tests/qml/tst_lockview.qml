@@ -47,6 +47,49 @@ Item {
 			verify(findChild(v, "lockedTag"));
 		}
 
+		function song(playing, more) {
+			return Object.assign({ hasMedia: true, isPlaying: playing, title: "Track", artist: "Artist",
+				artUrl: "", canToggle: true, canNext: true, canPrevious: true }, more || {});
+		}
+		function test_mediaAppearsForPlaybackAndStaysPaused() {
+			const v = make();
+			const card = part(v, "lockMedia");
+			verify(!v.mediaShown);
+			v.media = song(false);
+			verify(!v.mediaShown, "an old paused player does not appear on lock");
+			v.media = song(true);
+			verify(v.mediaShown);
+			tryVerify(() => card.visible && card.opacity > 0.9);
+			compare(part(v, "mediaTitle").text, "Track");
+			v.media = song(false);
+			verify(v.mediaShown, "pausing leaves a way to resume");
+			v.media = { hasMedia: false, isPlaying: false };
+			verify(!v.mediaShown);
+			tryCompare(card, "visible", false);
+		}
+		function test_mediaButtonsDoNotSubmitOrStealPassword() {
+			const v = make({ media: song(true) });
+			const next = spy(v, "mediaNextRequested");
+			const submitted = spy(v, "submitted");
+			tryVerify(() => part(v, "lockMedia").opacity > 0.9);
+			mouseClick(part(v, "mediaNext"), 18, 18);
+			tryCompare(next, "count", 1);
+			compare(submitted.count, 0);
+			verify(part(v, "field").activeFocus);
+			v.media = song(true, { canNext: false });
+			verify(!part(v, "mediaNext").enabled);
+			mouseClick(part(v, "mediaNext"), 18, 18);
+			compare(next.count, 1);
+		}
+		function test_mediaFitsAbovePasswordOnSmallScreen() {
+			const v = make({ media: song(true) });
+			v.anchors.fill = undefined;
+			v.width = 480; v.height = 500;
+			const card = part(v, "lockMedia");
+			verify(card.y >= 0);
+			verify(card.y + card.height < part(v, "field").mapToItem(v, 0, 0).y);
+		}
+
 		function test_islands() {
 			const v = make();
 			compare(part(v, "user").text, "dhanush");

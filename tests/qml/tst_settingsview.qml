@@ -20,6 +20,7 @@ Item {
 		}
 	}
 	readonly property var defaults: ({
+		"bloom-lock-media-enabled": true,
 		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 2500, "bloom-notifications-history-limit": 200,
@@ -244,6 +245,13 @@ Item {
 			click(v, "time24");
 			compare(fakeStore.sets, [["bloom-time-format-24h", true]]);
 			verify(part(v, "time24").checked);
+		}
+		function test_lockMediaPrivacyToggle() {
+			const v = make();
+			reveal(v, "lockMedia");
+			click(v, "lockMedia");
+			compare(fakeStore.sets, [["bloom-lock-media-enabled", false]]);
+			verify(!part(v, "lockMedia").checked);
 		}
 
 		function test_sliderSnapsToSteps() {

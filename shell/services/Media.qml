@@ -36,6 +36,9 @@ Singleton {
 	readonly property string artUrl: root.player?.trackArtUrl ?? ""
 	readonly property real lengthMs: root.player && root.player.lengthSupported ? root.player.length * 1000 : 0
 	readonly property bool canSeek: root.player?.canSeek ?? false
+	readonly property bool canPrevious: root.player?.canGoPrevious ?? false
+	readonly property bool canNext: root.player?.canGoNext ?? false
+	readonly property bool canToggle: root.player?.canTogglePlaying ?? false
 	property real positionMs: 0
 
 	function hold(key, on) {
