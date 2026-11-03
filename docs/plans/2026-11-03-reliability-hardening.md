@@ -1,7 +1,9 @@
 # Bloom reliability hardening program
 
-Status: researched and audited; implementation work packages below are **not
-yet implemented**. Baseline `86fb0c4`. The owner requested this audit on
+Status: H1 core recovery and H2 persistence acknowledgment implemented in the
+first batch; complete work-package acceptance remains open. See the
+[implementation ledger](../audits/2026-11-03-hardening-progress.md). Baseline
+`86fb0c4`. The owner requested this audit on
 2026-11-03 and selected desktop services, hardware controls and diagnostics as
 the scope of Arch control. Existing logout/startup fixes are committed locally;
 their final owner relogin check remains open. No new merge/push is implied.
@@ -268,5 +270,6 @@ evidence at the real interface; source edits alone do not close them. Preserve
 the baseline and owner-local rollback data until their dependents are retired.
 
 Current state: H0 audit/research recorded; owner relogin acceptance still open.
-H1–H6 are pending. This document is not approval to run a full suite or mutate
+H1 core and part of H2 have focused-check evidence; remaining H1/H2 acceptance
+and H3–H6 are pending. This document is not approval to run a full suite or mutate
 unrelated services/packages. Start with the reproduced data-loss defects.

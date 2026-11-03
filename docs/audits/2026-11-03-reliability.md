@@ -22,6 +22,9 @@ Personal ii migration remains outside this public repository.
 
 Research comparison: [established dotfiles](../research/2026-11-03-dotfiles-reliability.md).
 Execution plan: [reliability hardening](../plans/2026-11-03-reliability-hardening.md).
+Current implementation: [hardening progress](2026-11-03-hardening-progress.md).
+Findings below describe the baseline; consult that ledger for repairs and
+remaining acceptance limits.
 
 ## Evidence and limits
 
