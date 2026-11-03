@@ -6,6 +6,9 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import signal
+import fcntl
+import hashlib
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -43,6 +46,7 @@ class Lifecycle(unittest.TestCase):
                         BLOOM_THEME_NO_RELOAD="1",
                         BLOOM_OS_RELEASE=str(self.base / "os-release"),
                         BLOOM_TEST_DIR=str(self.base), PATH=str(self.bin) + ":" + os.environ["PATH"])
+        self.env["TMPDIR"] = str(self.base)
         self.state = self.home / ".local/state/bloom"
         stub = '''#!/usr/bin/env python3
 import json, os, sys
@@ -81,7 +85,7 @@ elif name == 'systemctl':
 
     def bloom(self, *args, success=True, **variables):
         env = dict(self.env, **variables)
-        result = subprocess.run([str(self.root / "bin/bloom"), *args], env=env, text=True, capture_output=True)
+        result = subprocess.run([str(self.root / "bin/bloom"), *args], env=env, text=True, capture_output=True, timeout=30)
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         else:
@@ -156,7 +160,7 @@ elif name == 'systemctl':
         link.symlink_to(original)
         before = self.snapshot()
         self.bloom("install")
-        self.bloom("install", success=False, STUB_FAIL_START="1")
+        self.bloom("install", "--restart", success=False, STUB_FAIL_START="1")
         self.bloom("uninstall")
         self.assertEqual(before, self.snapshot())
 
@@ -189,6 +193,158 @@ elif name == 'systemctl':
         self.bloom("uninstall", success=False)
         self.assertEqual(path.read_text(), "[Service]\nExecStart=my-custom-shell\n")
         self.assertTrue(json.loads((self.base / "service").read_text())["active"])
+
+    def test_missing_original_blocks_uninstall_before_any_effect(self):
+        launcher = self.home / ".local/bin/bloom"
+        launcher.parent.mkdir(parents=True)
+        launcher.write_text("original launcher\n")
+        self.bloom("install")
+        manifest = json.loads((self.state / "install-manifest.json").read_text())
+        original = next(e for e in manifest["entries"] if e["path"] == str(launcher))
+        Path(original["backup"]).unlink()
+        before = self.snapshot()
+        self.bloom("uninstall", success=False)
+        self.assertEqual(before, self.snapshot())
+        self.assertTrue(json.loads((self.base / "service").read_text())["active"])
+
+    def test_corrupt_original_blocks_uninstall_before_any_effect(self):
+        launcher = self.home / ".local/bin/bloom"
+        launcher.parent.mkdir(parents=True)
+        launcher.write_text("original launcher\n")
+        self.bloom("install")
+        manifest = json.loads((self.state / "install-manifest.json").read_text())
+        original = next(e for e in manifest["entries"] if e["path"] == str(launcher))
+        Path(original["backup"]).write_text("damaged original\n")
+        before = self.snapshot()
+        self.bloom("uninstall", success=False)
+        self.assertEqual(before, self.snapshot())
+        self.assertTrue(json.loads((self.base / "service").read_text())["active"])
+
+    def test_manifest_traversal_and_malformed_entries_refused_before_effects(self):
+        self.bloom("install")
+        path = self.state / "install-manifest.json"
+        original = json.loads(path.read_text())
+        variants = [
+            {"path": str(self.config / ".." / "outside"), "kind": "file", "installed": "file:" + "a" * 64, "backup": None},
+            {"path": str(self.config / "bloom/settings.json"), "kind": "file", "installed": "file:" + "a" * 64,
+             "backup": str(self.state / "backups/../../outside")},
+            "not an entry",
+        ]
+        for entry in variants:
+            with self.subTest(entry=entry):
+                broken = dict(original, entries=[entry])
+                path.write_text(json.dumps(broken))
+                before = self.snapshot()
+                self.bloom("uninstall", success=False)
+                self.assertEqual(before, self.snapshot())
+                self.assertTrue(json.loads((self.base / "service").read_text())["active"])
+
+    def test_uninstall_missing_loader_is_safe(self):
+        self.bloom("install")
+        (self.config / "hypr/hyprland.lua").unlink()
+        self.bloom("uninstall")
+        self.assertEqual((self.config / "hypr/hyprland.lua").read_text(), "-- personal configuration\n")
+
+    def test_reinstall_does_not_restart_converged_service(self):
+        self.bloom("install")
+        (self.base / "calls").write_text("")
+        self.bloom("install")
+        calls = [json.loads(line) for line in (self.base / "calls").read_text().splitlines()]
+        self.assertFalse(any(c[0] == 'systemctl' and c[2] in ('start', 'restart', 'enable', 'daemon-reload') for c in calls))
+
+    def test_parent_symlink_cannot_redirect_removal(self):
+        self.bloom("install")
+        original = self.config / "systemd/user"
+        moved = self.base / "foreign-user-units"
+        original.rename(moved)
+        original.symlink_to(moved)
+        before = self.snapshot()
+        self.bloom("uninstall", success=False)
+        self.assertEqual(before, self.snapshot())
+        self.assertTrue((moved / "bloom-shell.service").is_symlink())
+
+    def test_lifecycle_lock_refuses_concurrent_writer_without_changes(self):
+        key = hashlib.sha256(str(self.config.resolve()).encode()).hexdigest()[:16]
+        directory = self.base / f"bloom-lifecycle-{os.getuid()}-{key}"
+        directory.mkdir(mode=0o700)
+        with (directory / "lock").open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            before = self.snapshot()
+            result = self.bloom("install", success=False)
+            self.assertIn("another Bloom lifecycle operation", result.stderr)
+            self.assertEqual(before, self.snapshot())
+
+    def test_recovery_inspection_is_read_only_and_originals_can_be_restored(self):
+        self.cut("install", "place", 4)
+        before = self.snapshot()
+        self.bloom("recover")
+        self.assertEqual(before, self.snapshot())
+        self.bloom("recover", "--restore-originals")
+        self.assertFalse((self.state / "install-manifest.json").exists())
+        self.assertEqual((self.config / "hypr/hyprland.lua").read_text(), "-- personal configuration\n")
+
+    def cut(self, command, seam, count=1, after=False):
+        # Kill the actual CLI at its filesystem seam. Only this disposable
+        # module instance is instrumented; production has no failure switches.
+        script = '''import importlib.util, os, signal, sys, tempfile
+tempfile.tempdir = os.environ['BLOOM_TEST_DIR']
+spec = importlib.util.spec_from_file_location('lifecycle', sys.argv[1])
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+name, remaining, after = sys.argv[3], int(sys.argv[4]), sys.argv[5] == '1'
+original = getattr(m, name)
+def cut(*args, **kwargs):
+    global remaining
+    remaining -= 1
+    if remaining == 0 and not after: os.kill(os.getpid(), signal.SIGKILL)
+    result = original(*args, **kwargs)
+    if remaining == 0 and after: os.kill(os.getpid(), signal.SIGKILL)
+    return result
+setattr(m, name, cut)
+sys.argv = [sys.argv[1], sys.argv[2]]
+m.main()
+'''
+        p = subprocess.run(["python3", "-c", script, str(self.root / "tools/bloom-lifecycle.py"),
+                            command, seam, str(count), str(int(after))], env=self.env,
+                           capture_output=True, text=True)
+        self.assertEqual(p.returncode, -signal.SIGKILL, p.stdout + p.stderr)
+
+    def test_killed_install_resumes_before_and_after_replacement(self):
+        self.bloom("install")
+        total = len(json.loads((self.state / "install-manifest.json").read_text())["entries"])
+        self.bloom("uninstall")
+        for count, after in ((n, side) for n in range(1, total + 1) for side in (False, True)):
+            with self.subTest(count=count, after=after):
+                self.cut("install", "place", count, after)
+                result = self.bloom("recover")
+                self.assertIn("installing", result.stdout)
+                self.bloom("recover", "--resume")
+                self.assertTrue(json.loads((self.base / "service").read_text())["active"])
+                self.bloom("uninstall")
+
+    def test_killed_uninstall_keeps_originals_and_resumes(self):
+        launcher = self.home / ".local/bin/bloom"
+        launcher.parent.mkdir(parents=True)
+        launcher.write_text("original launcher\n")
+        for after in (False, True):
+            with self.subTest(after=after):
+                self.bloom("install")
+                self.cut("uninstall", "restore", 3, after)
+                manifest = json.loads((self.state / "install-manifest.json").read_text())
+                self.assertEqual(manifest['status'], 'uninstalling')
+                self.assertTrue(all(Path(e['backup']).exists() for e in manifest['entries'] if e['backup']))
+                self.bloom("recover", "--resume")
+                self.assertEqual(launcher.read_text(), "original launcher\n")
+                self.bloom("uninstall")  # removing twice is a no-op
+
+    def test_changed_file_during_removal_refuses_resume(self):
+        self.bloom("install")
+        self.cut("uninstall", "restore", 1)
+        unit = self.config / "systemd/user/bloom-shell.service"
+        unit.unlink()
+        unit.write_text("owner edit after interruption\n")
+        before = self.snapshot()
+        self.bloom("recover", "--resume", success=False)
+        self.assertEqual(before, self.snapshot())
 
 
 

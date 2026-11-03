@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -73,10 +74,56 @@ def atomic(path, text):
     try:
         with os.fdopen(fd, "w") as stream:
             stream.write(text)
+            stream.flush()
+            os.fsync(stream.fileno())
         os.replace(temporary, path)
+        sync_directory(path.parent)
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
+
+
+def sync_directory(path):
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def place(path, kind, payload):
+    """Replace a file or link without first removing the previous destination."""
+    fd, staging = tempfile.mkstemp(prefix=".bloom-", dir=path.parent)
+    os.close(fd)
+    staging = Path(staging)
+    try:
+        if kind == "link":
+            staging.unlink()
+            staging.symlink_to(payload)
+        elif kind in ("copy", "template"):
+            shutil.copy2(payload, staging)
+            with staging.open("rb") as stream:
+                os.fsync(stream.fileno())
+        else:
+            with staging.open("w") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+        os.replace(staging, path)
+        sync_directory(path.parent)
+    finally:
+        staging.unlink(missing_ok=True)
+
+
+def restore(path, backup):
+    if backup is None:
+        path.unlink(missing_ok=True)
+        if path.parent.exists():
+            sync_directory(path.parent)
+    elif backup.is_symlink():
+        place(path, "link", os.readlink(backup))
+    else:
+        place(path, "copy", backup)
 
 
 def read_json(path, default=None):
@@ -101,21 +148,112 @@ class Context:
             raise Failure("XDG directory paths must be absolute")
         self.manifest_path = self.state / "install-manifest.json"
         self.manifest = read_json(self.manifest_path)
-        if self.manifest and self.manifest.get("root") != str(ROOT):
+        if self.manifest is not None and self.manifest.get("root") != str(ROOT):
             raise Failure(f"Bloom is managed from {self.manifest.get('root')}; use that checkout first")
-        if self.manifest:
-            self.validate_manifest(self.manifest)
+        if self.manifest is not None:
+            self.validate_manifest(self.manifest, managed=True)
 
-    def validate_manifest(self, doc):
-        if doc.get("version") != 1 or not isinstance(doc.get("entries"), list):
+    def validate_manifest(self, doc, managed=False):
+        if type(doc.get("version")) is not int or doc["version"] != 1 or not isinstance(doc.get("entries"), list):
             raise Failure("unrecognized install manifest; no files were changed")
+        if doc.get("status") not in (None, "installing", "complete", "uninstalling", "uninstalled"):
+            raise Failure("invalid lifecycle status")
+
+        def fingerprint(value):
+            return value is None or (isinstance(value, str) and re.fullmatch(r"(?:file:[0-9a-f]{64}|link:.+)", value))
+        def within(path, roots):
+            return (path.is_absolute() and ".." not in path.parts and any(
+                path.is_relative_to(root) and path.parent.resolve().is_relative_to(root.resolve())
+                for root in roots))
+
+        allowed = {
+            str(self.config / "quickshell/bloom"): {"link"},
+            str(self.home / ".local/bin/bloom"): {"link"},
+            str(self.data / "applications/bloom-settings.desktop"): {"file"},
+            str(self.config / "hypr/hyprland.lua"): {"loader"},
+            str(self.config / "bloom/settings.json"): {"config"},
+        }
+        for source in (ROOT / "systemd").glob("*.service"):
+            allowed[str(self.config / "systemd/user" / source.name)] = {"link"}
+        for source in (ROOT / "share/icons").rglob("*.png"):
+            allowed[str(self.data / "icons" / source.relative_to(ROOT / "share/icons"))] = {"copy"}
+        for source in (ROOT / "hypr/custom").glob("*.lua"):
+            path = self.config / "hypr/custom" / source.name
+            allowed[str(path)] = {"template"}
+            allowed[str(path) + ".new"] = {"copy"}
+        seen = set()
         for item in doc["entries"]:
-            path = Path(item.get("path", ""))
-            if not path.is_absolute() or not (path == self.home / ".local/bin/bloom" or any(
-                    path.is_relative_to(directory) for directory in (self.config, self.data, self.state))):
+            if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+                raise Failure("invalid manifest entry")
+            path = Path(item["path"])
+            roots = (self.config, self.data, self.state, self.home / ".local/bin")
+            if not within(path, roots):
                 raise Failure(f"manifest destination is outside Bloom's managed directories: {path}")
-            if item.get("backup") and not Path(item["backup"]).is_relative_to(self.state / "backups"):
+            if str(path) in seen:
+                raise Failure(f"duplicate manifest destination: {path}")
+            seen.add(str(path))
+            if item.get("kind") not in {"link", "copy", "template", "loader", "config", "file"}:
+                raise Failure("invalid manifest operation kind")
+            if managed and item["kind"] not in allowed.get(str(path), set()):
+                raise Failure(f"manifest destination is not an owned Bloom resource: {path}")
+            installed = item.get("installed")
+            if installed is None or not fingerprint(installed):
+                raise Failure("invalid manifest fingerprint")
+            if not fingerprint(item.get("original")):
+                raise Failure("invalid original fingerprint")
+            backup = item.get("backup")
+            if backup is not None and (not isinstance(backup, str) or not within(Path(backup), (self.state / "backups",))):
                 raise Failure("manifest backup is outside Bloom's backup directory")
+            if "pending" in item and (not isinstance(item["pending"], dict) or "before" not in item["pending"]
+                                      or not fingerprint(item["pending"]["before"]) or doc.get("status") != "installing"):
+                raise Failure("invalid pending manifest step")
+        if not isinstance(doc.get("service"), dict) or any(type(doc["service"].get(k)) is not bool for k in ("enabled", "active")):
+            raise Failure("invalid original service state")
+        dirs = doc.get("created_dirs")
+        if not isinstance(dirs, list):
+            raise Failure("invalid created-directory ledger")
+        parents = {str(parent) for raw in seen for parent in Path(raw).parents if parent not in (self.home, Path('/'))}
+        for item in doc["entries"]:
+            if item.get("backup"):
+                parents.update(str(p) for p in Path(item["backup"]).parents if p not in (self.home, Path('/')))
+        parents.update(str(p) for p in self.manifest_path.parents if p not in (self.home, Path('/')))
+        if any(not isinstance(p, str) or ".." in Path(p).parts or (
+                p not in parents and not (not managed and within(Path(p), (self.state / "backups",)))) for p in dirs):
+            raise Failure("invalid created-directory destination")
+        removal = doc.get("removal")
+        if (removal is not None) != (doc.get("status") in ("uninstalling", "uninstalled")):
+            raise Failure("inconsistent removal journal status")
+        if removal is not None:
+            if not isinstance(removal, list) or len(removal) != len(doc["entries"]):
+                raise Failure("invalid removal journal")
+            if {s.get("path") for s in removal if isinstance(s, dict)} != seen:
+                raise Failure("invalid removal destinations")
+            for step in removal:
+                if not isinstance(step, dict) or step.get("mode") not in ("keep", "restore", "loader"):
+                    raise Failure("invalid removal step")
+                for key in ("before", "after"):
+                    value = step.get(key)
+                    if not fingerprint(value):
+                        raise Failure("invalid removal fingerprint")
+                if step["mode"] == "loader" and not isinstance(step.get("text"), str):
+                    raise Failure("invalid loader removal step")
+                entry = next(e for e in doc["entries"] if e["path"] == step["path"])
+                if step["mode"] == "loader":
+                    if entry["kind"] != "loader" or step["after"] != "file:" + hashlib.sha256(step["text"].encode()).hexdigest():
+                        raise Failure("invalid loader removal contents")
+                if step["mode"] == "keep" and entry["kind"] not in ("template", "config"):
+                    raise Failure("invalid retained resource")
+
+    def verify_backups(self, doc):
+        for item in doc["entries"]:
+            if not item.get("backup"):
+                continue
+            backup = Path(item["backup"])
+            actual = signature(backup)
+            if actual is None or actual == "directory":
+                raise Failure(f"original backup unavailable: {backup}; no files were changed")
+            if item.get("original") and actual != item["original"]:
+                raise Failure(f"original backup failed verification: {backup}; no files were changed")
 
     def service_state(self, unit=UNIT):
         return {"enabled": run("systemctl", "--user", "is-enabled", unit, check=False).stdout.strip() == "enabled",
@@ -125,6 +263,8 @@ class Context:
         run("systemctl", "--user", "daemon-reload")
         run("systemctl", "--user", "enable" if state["enabled"] else "disable", unit, check=False)
         run("systemctl", "--user", "restart" if state["active"] else "stop", unit, check=False)
+        if self.service_state(unit) != state:
+            raise Failure(f"could not restore {unit}; recovery data was retained")
 
     def preflight(self, no_deps=False):
         release = Path(os.environ.get("BLOOM_OS_RELEASE", "/etc/os-release")).read_text()
@@ -214,14 +354,20 @@ class Transaction:
                 self.change(path.with_name(path.name + ".new"), "copy", payload)
                 print(f"kept customized {path}; upstream template: {path}.new")
                 return
-        recovering_original = (self.doc.get("status") == "installing" and existing and existing.get("backup")
-                               and current == signature(Path(existing["backup"])))
+        pending = existing.get("pending") if existing else None
+        recovering_original = (self.doc.get("status") == "installing" and existing and (
+            (pending is not None and current == pending["before"]) or
+            (existing.get("backup") and current == signature(Path(existing["backup"]))) or
+            (pending is None and current is None)))
         if existing and current != existing["installed"] and kind != "loader" and not recovering_original:
             raise Failure(f"{path} changed since installation; kept it untouched")
         desired = "link:" + str(payload) if kind == "link" else (
             "file:" + digest(payload) if kind in ("copy", "template") else
             "file:" + hashlib.sha256(payload.encode()).hexdigest())
         if current == desired:
+            if existing and "pending" in existing:
+                existing.pop("pending")
+                self.save()
             return
         if path.is_dir() and not path.is_symlink():
             raise Failure(f"refusing to replace directory {path}; move it aside first")
@@ -236,21 +382,22 @@ class Transaction:
                 backup = self.ctx.state / "backups" / str(self.doc["started"]) / str(len(self.entries))
                 self.mkdir(backup.parent)
                 duplicate(path, backup)
-            existing = {"path": str(path), "backup": str(backup) if backup else None, "kind": kind}
+                if not backup.is_symlink():
+                    with backup.open("rb") as stream:
+                        os.fsync(stream.fileno())
+                sync_directory(backup.parent)
+            existing = {"path": str(path), "backup": str(backup) if backup else None,
+                        "original": current, "kind": kind}
             self.entries[str(path)] = existing
         # Write intent before changing the destination so a killed installer
         # still leaves ownership and its original backup on disk.
         existing["installed"] = desired
+        existing["pending"] = {"before": current}
         self.doc["status"] = "installing"
         self.save()
-        remove(path)
-        if kind == "link":
-            path.symlink_to(payload)
-        elif kind in ("copy", "template"):
-            shutil.copy2(payload, path)
-        else:
-            atomic(path, payload)
+        place(path, kind, payload)
         existing["installed"] = signature(path)
+        existing.pop("pending", None)
         print(f"installed {path}")
 
     def save(self):
@@ -260,9 +407,7 @@ class Transaction:
 
     def rollback(self):
         for path, backup in reversed(self.changed):
-            remove(path)
-            if backup:
-                duplicate(backup, path)
+            restore(path, backup)
         old_paths = {item["path"] for item in (self.previous or {}).get("entries", [])}
         for item in self.entries.values():
             if item.get("backup") and item["path"] not in old_paths:
@@ -284,6 +429,10 @@ class Transaction:
 
 
 def install(ctx, dry_run=False, no_deps=False, restart=False):
+    if ctx.manifest and ctx.manifest.get("status") in ("uninstalling", "uninstalled"):
+        raise Failure("removal is incomplete; run `bloom recover --resume` first")
+    if ctx.manifest:
+        ctx.verify_backups(ctx.manifest)
     ctx.preflight(no_deps)
     operations = ctx.plan()
     for path, kind, _ in operations:
@@ -303,10 +452,24 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
             ctx.dependencies()
         for path, kind, payload in operations:
             transaction.change(path, kind, payload)
-        run("systemctl", "--user", "daemon-reload")
-        run("systemctl", "--user", "enable", UNIT)
+        # A resumed step can disappear from the fresh plan (for example the
+        # first-run settings file now exists), or a template can already match.
+        # Settle every persisted intent, not only paths visited by this plan.
+        for item in transaction.entries.values():
+            if "pending" in item:
+                if signature(Path(item["path"])) != item["installed"]:
+                    raise Failure(f"unfinished step for {item['path']}; inspect recovery state before proceeding")
+                item.pop("pending")
+        changed = bool(transaction.changed)
+        if changed:
+            run("systemctl", "--user", "daemon-reload")
+        if not service["enabled"]:
+            run("systemctl", "--user", "enable", UNIT)
         # Exclusive services remain opt-in until migration. Existing settings survive.
-        run("systemctl", "--user", "restart" if restart or service["active"] else "start", UNIT)
+        if restart or (service["active"] and changed):
+            run("systemctl", "--user", "restart", UNIT)
+        elif not service["active"]:
+            run("systemctl", "--user", "start", UNIT)
         for _ in range(50):
             if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.strip() == "pong":
                 break
@@ -315,7 +478,8 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
             raise Failure("Bloom did not answer after starting; restoring the previous installation")
         transaction.doc["pkgbuild_hash"] = pkg_hash if not no_deps else transaction.doc.get("pkgbuild_hash")
         transaction.doc["status"] = "complete"
-        transaction.save()
+        if transaction.doc != transaction.previous:
+            transaction.save()
         print("Bloom installed. Configure enabled surfaces in Bloom Settings.")
     except BaseException:
         transaction.rollback()
@@ -327,30 +491,73 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
 
 def uninstall(ctx, remove_deps=False):
     if not ctx.manifest:
-        raise Failure("no install manifest; for a development install use `bloom dev uninstall`")
-    # Refuse all destructive work before stopping anything if a managed file was edited.
-    for item in ctx.manifest["entries"]:
-        path = Path(item["path"])
-        current = signature(path)
-        if current and current != item["installed"] and item["kind"] not in ("loader", "template", "config"):
-            raise Failure(f"{path} was edited; back it up and remove it before uninstalling")
-    run("systemctl", "--user", "disable", "--now", UNIT)
-    if (ctx.state / "app-themes/manifest").exists():
-        run("bash", str(ROOT / "shell/scripts/adaptive-theme.sh"), "restore", capture=False)
-    for item in reversed(ctx.manifest["entries"]):
-        path = Path(item["path"])
-        if item["kind"] in ("template", "config") and signature(path) not in (None, item["installed"]):
-            print(f"kept personal file {path}")
-            continue
-        if item["kind"] == "loader" and signature(path) != item["installed"]:
-            atomic(path, "\n".join(line for line in path.read_text().splitlines() if not line.endswith(MARKER)) + "\n")
-        else:
-            remove(path)
-            if item["backup"]:
-                duplicate(Path(item["backup"]), path)
-        if item["backup"]:
+        print("No managed installation to remove; development links were left untouched.")
+        return
+    doc = ctx.manifest
+    entries = {item["path"]: item for item in doc["entries"]}
+    if doc.get("status") != "uninstalled":
+        ctx.verify_backups(doc)
+        if "removal" not in doc:
+            steps = []
+            for item in reversed(doc["entries"]):
+                path = Path(item["path"])
+                current = signature(path)
+                mode, text = "restore", None
+                after = signature(Path(item["backup"])) if item["backup"] else None
+                if item["kind"] in ("template", "config") and current not in (None, item["installed"]):
+                    mode, after = "keep", current
+                elif item["kind"] == "loader" and current not in (None, item["installed"]):
+                    if path.is_symlink():
+                        raise Failure(f"{path} became a symlink; resolve it before removal")
+                    mode = "loader"
+                    text = "\n".join(line for line in path.read_text().splitlines() if not line.endswith(MARKER)) + "\n"
+                    after = "file:" + hashlib.sha256(text.encode()).hexdigest()
+                elif current and current != item["installed"]:
+                    pending = item.get("pending")
+                    if not (doc.get("status") == "installing" and pending and current == pending["before"]):
+                        raise Failure(f"{path} was edited; resolve it before uninstalling")
+                step = {"path": str(path), "before": current, "after": after, "mode": mode}
+                if text is not None:
+                    step["text"] = text
+                steps.append(step)
+            doc["removal"] = steps
+        # Inspect every step before stopping anything. Both sides are accepted
+        # so a killed removal can resume without confusing originals with edits.
+        for step in doc["removal"]:
+            if step["mode"] != "keep" and signature(Path(step["path"])) not in (step["before"], step["after"]):
+                raise Failure(f"{step['path']} changed during removal; recovery data retained")
+        doc["status"] = "uninstalling"
+        for item in doc["entries"]:
+            item.pop("pending", None)
+        atomic(ctx.manifest_path, json.dumps(doc, indent=2) + "\n")
+        run("systemctl", "--user", "disable", "--now", UNIT)
+        if (ctx.state / "app-themes/manifest").exists():
+            run("bash", str(ROOT / "shell/scripts/adaptive-theme.sh"), "restore", capture=False)
+        for step in doc["removal"]:
+            path = Path(step["path"])
+            if step["mode"] == "keep":
+                print(f"kept personal file {path}")
+                continue
+            current = signature(path)
+            if current == step["after"]:
+                continue
+            if current != step["before"]:
+                raise Failure(f"{path} changed during removal; recovery data retained")
+            if step["mode"] == "loader":
+                atomic(path, step["text"])
+            else:
+                item = entries[str(path)]
+                restore(path, Path(item["backup"]) if item["backup"] else None)
+            if signature(path) != step["after"]:
+                raise Failure(f"{path}: restoration verification failed")
+        ctx.restore_service(doc["service"])
+        doc["status"] = "uninstalled"
+        atomic(ctx.manifest_path, json.dumps(doc, indent=2) + "\n")
+    # Recovery data is retained until all destinations and service restoration
+    # have completed, rather than consumed halfway through the operation.
+    for item in doc["entries"]:
+        if item.get("backup"):
             remove(Path(item["backup"]))
-    ctx.restore_service(ctx.manifest["service"])
     ctx.manifest_path.unlink()
     (ctx.state / "update.json").unlink(missing_ok=True)
     for directory in reversed(ctx.manifest["created_dirs"]):
@@ -363,6 +570,23 @@ def uninstall(ctx, remove_deps=False):
     else:
         print("Dependencies kept. Optional removal: sudo pacman -Rns bloom-shell-deps")
     print("Bloom uninstalled; user settings and edited files are never silently deleted.")
+
+
+def recover(ctx, resume=False, restore_originals=False):
+    doc = ctx.manifest
+    status = doc.get("status", "complete") if doc else "absent"
+    print(f"Installation state: {status}")
+    if not resume and not restore_originals:
+        print("Recovery is read-only unless --resume or --restore-originals is selected.")
+        return
+    if restore_originals or status in ("uninstalling", "uninstalled"):
+        uninstall(ctx)
+    elif status == "installing":
+        # Recovery never performs a package transaction without a new explicit
+        # install request. Existing prerequisites are still validated.
+        install(ctx, no_deps=True, restart=True)
+    else:
+        print("No interrupted operation to resume.")
 
 
 def update(ctx, rollback=False, no_deps=False):
@@ -413,27 +637,44 @@ def main():
     installer = commands.add_parser("install")
     installer.add_argument("--dry-run", action="store_true")
     installer.add_argument("--no-deps", action="store_true", help="dependencies are already installed")
+    installer.add_argument("--restart", action="store_true", help="restart even if managed files already match")
     updater = commands.add_parser("update")
     updater.add_argument("--rollback", action="store_true")
     updater.add_argument("--no-deps", action="store_true")
     remover = commands.add_parser("uninstall")
     remover.add_argument("--remove-deps", action="store_true")
+    recovery = commands.add_parser("recover")
+    selection = recovery.add_mutually_exclusive_group()
+    selection.add_argument("--resume", action="store_true")
+    selection.add_argument("--restore-originals", action="store_true")
     args = parser.parse_args()
     # One lifecycle transaction per user/configuration, with no lock file left
     # in the user's configuration or installation manifest.
     config = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
-    key = hashlib.sha256(config.encode()).hexdigest()[:16]
+    key = hashlib.sha256(str(Path(config).resolve()).encode()).hexdigest()[:16]
     lock_dir = Path(tempfile.gettempdir()) / f"bloom-lifecycle-{os.getuid()}-{key}"
     lock_dir.mkdir(mode=0o700, exist_ok=True)
-    with (lock_dir / "lock").open("a") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    info = lock_dir.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        raise Failure("unsafe lifecycle lock directory; no installation changes were made")
+    fd = os.open(lock_dir / "lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    with os.fdopen(fd, "a") as lock:
+        info = os.fstat(lock.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid():
+            raise Failure("unsafe lifecycle lock file")
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise Failure("another Bloom lifecycle operation is running; try again when it finishes") from exc
         ctx = Context()
         if args.command == "install":
-            install(ctx, args.dry_run, args.no_deps)
+            install(ctx, args.dry_run, args.no_deps, args.restart)
         elif args.command == "update":
             update(ctx, args.rollback, args.no_deps)
         elif args.command == "uninstall":
             uninstall(ctx, args.remove_deps)
+        elif args.command == "recover":
+            recover(ctx, args.resume, args.restore_originals)
 
 
 if __name__ == "__main__":

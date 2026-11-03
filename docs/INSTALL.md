@@ -42,9 +42,45 @@ original service state, and original-file backups under:
 ```
 
 XDG_CONFIG_HOME, XDG_DATA_HOME and XDG_STATE_HOME are respected. All XDG paths
-must be absolute. A second install is safe. A failing install restores its
-file changes and previous service state. An interrupted transaction keeps its
-manifest and original backups for recovery; do not delete them blindly.
+must be absolute. A second install does not restart an already-running service
+when its managed files match. Use `bloom install --restart` when deliberately
+reloading code edited inside the linked checkout. The update command explicitly
+restarts after activating a revision.
+
+A failing install attempts to restore its file changes and previous service
+state; a failed service restoration is reported. Replacements are staged beside
+their destinations and renamed, with file/directory syncs. An interrupted
+transaction keeps its manifest and original backups; do not delete them blindly.
+Backups created by the hardened installer have recorded fingerprints and are
+checked before reinstall/removal. Legacy manifests without fingerprints can
+only establish that their backups exist and are readable, not their historical
+integrity. Recovery is not a filesystem snapshot or an OS/package rollback.
+
+## Interrupted operations
+
+```sh
+bloom recover                     # inspect; no desktop changes
+bloom recover --resume            # finish the recorded install/removal
+bloom recover --restore-originals # remove Bloom and restore pre-install files
+```
+
+Recovery validates the journal and refuses ambiguous owner edits. Resume of an
+installation uses the current checkout and installed prerequisites; it never
+runs a package transaction. `--restore-originals` restores the installation's
+original files, not the immediately preceding code/configuration generation.
+Keep the checkout and recovery backups until restoration finishes.
+
+Uninstall records the complete removal plan before stopping Bloom, checks all
+required originals before any file/service changes, and keeps originals until
+restoration completes. An interrupted removal can resume without treating an
+already-restored original as an owner edit. Repeating a completed uninstall is
+a no-op and does not remove untracked development links.
+
+Malformed/traversing/duplicate manifest entries and redirected parent directories
+are refused. A symlink used as an XDG root is supported; redirecting a managed
+subdirectory outside its XDG root is a conflict that must be resolved explicitly.
+Only one lifecycle writer may run for a configuration; a concurrent request
+returns a busy error instead of waiting indefinitely.
 
 ## Update and rollback
 
