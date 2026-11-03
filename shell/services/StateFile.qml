@@ -17,6 +17,7 @@ Scope {
 	property bool loaded: false
 	property string error: ""
 	property var _committedValue: root.defaultValue
+	property bool _committedOnDisk: false
 	property var _writingValue
 	property bool _writing: false
 	property bool _quarantineNeeded: false
@@ -61,6 +62,12 @@ Scope {
 		if (!root._hasPending || !root.loaded || backup.running || root._writing || root._quarantineNeeded || root._readBlocked)
 			return;
 		root._writingValue = JSON.parse(Logic.serialize(root._pendingValue));
+		if (root._committedOnDisk && Logic.serialize(root._writingValue) === Logic.serialize(root._committedValue)) {
+			root._hasPending = false;
+			root.error = "";
+			root.value = root._committedValue;
+			return;
+		}
 		root._writing = true;
 		root._hasPending = false;
 		file.setText(Logic.serialize(root._writingValue));
@@ -73,6 +80,7 @@ Scope {
 		printErrors: false
 		onSaved: {
 			root._committedValue = root._writingValue;
+			root._committedOnDisk = true;
 			if (!root._hasPending) root.value = root._committedValue;
 			root._writing = false;
 			root.error = "";
@@ -92,6 +100,7 @@ Scope {
 			root.error = "";
 			const r = Logic.parse(text());
 			root._committedValue = r.ok ? r.value : root.defaultValue;
+			root._committedOnDisk = r.ok;
 			if (!r.ok) {
 				root._quarantineNeeded = true;
 				console.warn("bloom state: " + root.name + " is corrupt; preserving it before any writes");
@@ -104,6 +113,7 @@ Scope {
 		}
 
 		onLoadFailed: error => {
+			root._committedOnDisk = false;
 			root._readBlocked = error !== FileViewError.FileNotFound;
 			if (root._readBlocked) {
 				console.warn(`bloom state: cannot read ${root.path} (error ${error}); using the default`);

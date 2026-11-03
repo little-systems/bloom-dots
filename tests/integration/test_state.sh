@@ -37,3 +37,11 @@ pass "a save right after a corrupt load is kept, and the corrupt file is still b
 
 assert_eq "$(jq -c . "$XDG_STATE_HOME/bloom/early.json")" '{"fresh":1}' "save before load"
 pass "a save before the file has loaded wins over the old file"
+
+# FileView does not emit saved() when identical text is submitted. A no-op
+# must not leave the store waiting forever and block the next real write.
+printf '{\n\t"entries": [\n\t\t1\n\t]\n}\n' > "$XDG_STATE_HOME/bloom/noop.json"
+cp "$ROOT/tests/integration/state-noop-harness.qml" "$HARNESS/shell.qml"
+timeout 12 qs --no-color -p "$HARNESS" > "$TEST_TMP/shell.log" 2>&1
+assert_eq "$(jq -c . "$XDG_STATE_HOME/bloom/noop.json")" '{"entries":[]}' 'save after an unchanged state'
+pass "an unchanged save does not block the next real write"
