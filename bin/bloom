@@ -19,9 +19,14 @@ Usage: bloom <command> [args]
 
   ipc <target> <function> [args...]  Call a shell IPC function; fails if the shell isn't running
   doctor                             Print a diagnostic report
+  settings                           Open Bloom Settings
+  install [--dry-run] [--no-deps]      Install Bloom with backups and a manifest
+  update [--rollback] [--no-deps]      Update a clean checkout or restore the previous revision
+  uninstall [--remove-deps]           Restore files recorded by the installer
   dev install                        Link this checkout into ~/.config (shell config + systemd units)
   dev uninstall                      Remove the links made by dev install
   dev status                         Show what dev install linked
+  dev soak <surface>                 Cycle a visual surface and check restarts, logs and memory
   version                            Print the Bloom version
   help                               Show this help
 EOF
@@ -121,7 +126,8 @@ cmd_dev() {
 	install) dev_install ;;
 	uninstall) dev_uninstall ;;
 	status) dev_status ;;
-	*) die "usage: bloom dev install|uninstall|status" ;;
+	soak) shift; exec python3 "$BLOOM_ROOT/tools/bloom-soak.py" "$@" ;;
+	*) die "usage: bloom dev install|uninstall|status|soak <surface>" ;;
 	esac
 }
 
@@ -171,6 +177,8 @@ main() {
 	case "$cmd" in
 	ipc) cmd_ipc "$@" ;;
 	doctor) cmd_doctor ;;
+	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
+	install | update | uninstall) exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
 	dev) cmd_dev "$@" ;;
 	version) cmd_version ;;
 	help | -h | --help) usage ;;

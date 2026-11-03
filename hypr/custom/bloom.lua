@@ -1,0 +1,2 @@
+-- User-owned Bloom desktop overrides. See bloom-settings.lua for Settings UI changes.
+-- Put personal Hyprland options here; upstream updates are offered as .new files.

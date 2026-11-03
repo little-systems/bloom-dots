@@ -1,0 +1,29 @@
+# Maintainer: Dhanush Santosh
+# shellcheck shell=bash disable=SC2034,SC2154
+# makepkg reads the package metadata and supplies pkgdir.
+pkgname=bloom-shell-deps
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Runtime dependencies for the Bloom Hyprland shell'
+arch=('any')
+url='https://github.com/DhanushSantosh/bloom-dots'
+license=('GPL-3.0-only')
+# Check runtime versions in preflight: custom builds may provide unversioned
+# quickshell/hyprland names while shipping a sufficiently recent binary.
+depends=('quickshell' 'hyprland' 'python' 'python-gobject' 'jq' 'qt6-svg' 'qt6-imageformats'
+         'matugen' 'cava' 'cliphist' 'wl-clipboard' 'grim' 'slurp' 'wf-recorder'
+         'tesseract' 'tesseract-data-eng' 'hypridle' 'hyprsunset' 'hyprlock'
+         'brightnessctl' 'playerctl' 'libqalculate' 'inter-font' 'pipewire'
+         'wireplumber' 'libpulse' 'networkmanager' 'bluez-utils' 'libnotify' 'xdg-utils'
+         'upower' 'power-profiles-daemon' 'polkit' 'adwaita-icon-theme'
+         'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk')
+optdepends=('mpvpaper: video wallpapers' 'satty: screenshot annotation'
+            'swappy: screenshot annotation alternative' 'songrec: music recognition'
+            'translate-shell: translation' 'pacman-contrib: pending package updates'
+            'gnome-keyring: secret service for AI API keys' 'libsecret: AI API key storage client'
+            'qt6ct: Qt theme integration when no desktop theme provider is configured'
+            'qt6-multimedia: wallpaper previews')
+package() {
+    install -dm755 "$pkgdir/usr/share/doc/$pkgname"
+    printf '%s\n' 'Dependency metapackage for Bloom. No desktop files are modified.' > "$pkgdir/usr/share/doc/$pkgname/README"
+}

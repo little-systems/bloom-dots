@@ -82,7 +82,7 @@ A setting, `bloom-enabled-modules`, lists which Bloom surfaces run. ii keeps eve
 shell/        shell.qml, modules/, services/, common/, settings/ (settings app)
 hypr/         bloom.lua (defaults), binds.lua, rules.lua, custom/ (templates copied once)
 theming/      matugen templates: shell, GTK3/4, Qt, kitty, fuzzel, Hyprland borders
-bin/bloom     CLI: install, update, uninstall, migrate-from-ii, ipc, doctor, dev soak
+bin/bloom     CLI: install, update, uninstall, ipc, doctor, dev soak
 systemd/      bloom-shell.service
 packaging/    PKGBUILD for bloom-shell-deps (meta-package)
 tests/        qml unit tests, spring parity, installer round-trip, headless load
@@ -235,18 +235,12 @@ git clone https://github.com/DhanushSantosh/bloom-dots ~/.local/share/bloom
 
 Removes everything in the manifest and restores the backups. Removes the Hyprland line and disables the unit. Then offers to remove `bloom-shell-deps`.
 
-### 7.4 Migration from ii: `bloom migrate-from-ii [--undo]`
+### 7.4 Local desktop handovers
 
-This runs once, at the final switch. During development, coexistence goes through `bloom-enabled-modules` instead.
-
-1. Back up `~/.config/hypr`, `~/.config/quickshell/ii` and `~/.config/illogical-impulse`.
-2. Disable ii's autostart, including restart loops in `custom/*.lua` (e.g. the owner's 5-second `qs -c ii` loop).
-3. Keep the user's `custom/*.lua` unchanged; Bloom uses the same override layer. Personal binds and execs (wield-app, chatgpt.service, easyeffects, mpvpaper) carry over.
-4. Import ii's dock pins and transparency settings into `settings.json`.
-5. Hand the exclusive services over to Bloom.
-6. `--undo` restores everything from the backup.
-
-Nothing under `~/.config` or `~/dots-hyprland` changes until the user runs one of these commands.
+Owner-specific desktop migration is a local maintenance operation, outside the
+public CLI and distribution. The public installer provides install, update,
+rollback and uninstall; it does not import another desktop's configuration or
+disable its processes. Live service ownership changes are explicit user actions.
 
 ## 8. Delivery phases
 
@@ -266,7 +260,7 @@ The project is too large for one implementation plan. Each phase gets its own pl
 5. **Notch panels:** Command Center, Calendar/Pomodoro/Todo, Shelf, Wi-Fi/BT/Devices, device alerts, privacy dots.
 6. **System surfaces:** launcher, overview, session menu, lock screen, polkit agent. Handover of polkit and the tray.
 7. **Theming + extras:** Adaptive (matugen pipeline), wallpaper picker, region tools, cheatsheet, low-power mode, settings app.
-8. **Ship:** full installer, update, uninstall, `migrate-from-ii`, `bloom-shell-deps`, docs; the final switch on the owner's machine.
+8. **Ship:** full installer, update, uninstall, `bloom-shell-deps`, docs; the final switch on the owner's machine.
 
 ## 9. Testing
 
@@ -277,7 +271,6 @@ The project is too large for one implementation plan. Each phase gets its own pl
 - **Headless load:** start the shell in a headless wlroots compositor (sway with `WLR_BACKENDS=headless`, to be confirmed in phase 1). Any QML warning or error fails the build.
 - **Installer round-trip** in a throwaway HOME:
   - `install --dry-run`, then `install`, then `uninstall`, then a diff of HOME (any leftovers fail);
-  - `migrate-from-ii` then `--undo` against a fixture ii setup.
 
 **Release gates** (owner's machine):
 - **Soak:** `bloom dev soak <surface>` cycles each surface's states every 250 ms for 10 minutes. Pass = 0 restarts, 0 warnings, memory flat after the first minute.
