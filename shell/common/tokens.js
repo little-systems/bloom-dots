@@ -242,7 +242,8 @@ var picker = { columns: 3, rows: 3, cellWidth: 240, cellHeight: 150, gap: 8, pad
 
 // The settings app (Bloom Settings.css).
 var settings = {
-	window: { width: 776, height: 560, minWidth: 640, minHeight: 440, radius: 12 },
+	// Owner-selected Settings window size; content scaling does not resize it.
+	window: { width: 1189, height: 781, minWidth: 640, minHeight: 440, radius: 12 },
 	control: 28,
 	controlRadius: 6,
 	controlText: 14,

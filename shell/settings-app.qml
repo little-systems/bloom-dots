@@ -99,9 +99,14 @@ ShellRoot {
 		readonly property real uiScale: Settings.values["bloom-scale"]
 		title: "Bloom Settings"
 		color: "transparent"
-		implicitWidth: Tokens.settings.window.width * win.uiScale
-		implicitHeight: Tokens.settings.window.height * win.uiScale
-		minimumSize: Qt.size(Tokens.settings.window.minWidth * win.uiScale, Tokens.settings.window.minHeight * win.uiScale)
+		// Match the owner's chosen window independently of font/UI scale, while
+		// keeping it reachable when moved onto a smaller logical screen.
+		readonly property int fixedWidth: Math.min(Tokens.settings.window.width, Math.max(320, (win.screen?.width || 1920) - 32))
+		readonly property int fixedHeight: Math.min(Tokens.settings.window.height, Math.max(240, (win.screen?.height || 1080) - 32))
+		implicitWidth: win.fixedWidth
+		implicitHeight: win.fixedHeight
+		minimumSize: Qt.size(win.fixedWidth, win.fixedHeight)
+		maximumSize: minimumSize
 		onClosed: Qt.quit()
 
 		SettingsView {
@@ -208,7 +213,8 @@ ShellRoot {
 	IpcHandler {
 		target: "settingsapp"
 		function state(): string {
-			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version, width: win.implicitWidth });
+			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version,
+				width: win.width, height: win.height, fixedWidth: win.fixedWidth, fixedHeight: win.fixedHeight });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
 	}
