@@ -9,10 +9,17 @@ jobs:
     steps:
       - name: Install tools
         run: |
-          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg qt6-imageformats nodejs npm jq shellcheck systemd sway python-gobject dbus matugen grim kitty wtype
+          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg qt6-imageformats nodejs npm jq shellcheck systemd sway python-gobject dbus matugen grim kitty wtype upower power-profiles-daemon
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
+          # Quickshell's power services use the system bus even with a headless
+          # compositor. Containers do not start these services automatically.
+          mkdir -p /run/dbus
+          dbus-uuidgen --ensure
+          dbus-daemon --system --fork
+          /usr/lib/upowerd > /tmp/upower.log 2>&1 &
+          /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
       - uses: actions/checkout@v4
       - name: Run all checks
         run: |
