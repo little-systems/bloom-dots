@@ -23,6 +23,7 @@ Singleton {
 	property bool _fileValid: true
 	// FileView only watches a file that existed when it was first read.
 	property bool _seenFile: false
+	property string saveError: ""
 
 	signal settingChanged(string key)
 
@@ -36,6 +37,12 @@ Singleton {
 
 	// Validates and saves one setting. Returns "" on success, else the error.
 	function set(key, value) {
+		if (root.saveError !== "") {
+			// A failed FileView write may still have updated its text cache.
+			// Re-read before a retry so identical text isn't silently skipped.
+			file.reload();
+			if (!file.waitForJob()) return "Couldn't recheck settings before retrying";
+		}
 		if (!root._fileValid)
 			return "settings.json is invalid; fix it before changing settings";
 		const r = Logic.validateOne(key, value);
@@ -43,7 +50,9 @@ Singleton {
 			return `${key}: ${r.error}`;
 		const next = Object.assign({}, root._raw);
 		next[key] = r.value;
+		root.saveError = "";
 		file.setText(Logic.serialize(next));
+		if (root.saveError !== "") return root.saveError;
 		root._apply(next);
 		return "";
 	}
@@ -71,6 +80,11 @@ Singleton {
 		// rare and tiny, so a blocking write costs nothing noticeable.
 		blockWrites: true
 		printErrors: false
+		onSaveFailed: error => {
+			root.saveError = "Couldn't save settings (error " + error + "); the last saved settings are still in use";
+			console.warn("bloom settings: save failed (error " + error + ")");
+		}
+		onSaved: root.saveError = ""
 
 		onFileChanged: reload()
 
