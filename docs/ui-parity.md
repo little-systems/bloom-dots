@@ -73,6 +73,8 @@ Owner updates, 2026-11-01:
   Wheel and trackpad input over that gutter scrolls the same list as input
   over the cards. Leave native `ListView` snapping off: it fights `ScrollGlide`
   when neighboring cards have equal heights and can stop wheel scrolling.
+  Once a scroll gesture settles, align the nearest full card. Keep the
+  expanded viewport from shrinking as taller middle cards are encountered.
   A floating round button clears live cards and history.
   There is no separate sheet, bell, or notch badge. App-requested persistent
   alerts stay in history until dismissed.

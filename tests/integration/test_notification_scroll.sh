@@ -15,7 +15,11 @@ printf '{"bloom-enabled-modules":["notifications"],"bloom-scale":1.15}' >"$XDG_C
 start_shell
 wait_for 'notification bus' busctl --user status org.freedesktop.Notifications
 for i in $(seq 1 10); do
-	notify-send -a 'Scroll Test' "Long $i" 'A notification body that wraps across several lines to exercise the changing card heights while scrolling through older history.'
+	if [[ "${BLOOM_SCROLL_PATTERN:-long}" == mixed ]] && (( i <= 2 || i >= 9 )); then
+		notify-send -a 'Scroll Test' "Short $i" 'Brief body'
+	else
+		notify-send -a 'Scroll Test' "Long $i" 'A notification body that wraps across several lines to exercise the changing card heights while scrolling through older history.'
+	fi
 done
 have_history() { ipc notifications state | jq -e '.history | length == 10' >/dev/null; }
 wait_for 'ten history entries' have_history
@@ -27,8 +31,16 @@ scrolled() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" an
 at_bottom() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .contentY >= .maxY - 5 and .lastCardVisible)' >/dev/null; }
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1700 120 wheel 8
 wait_for 'wheel over cards moves equal-height notifications' scrolled
+aligned_mid_card() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and .topIndex>0 and .contentY < .maxY - 200 and .topOffset != null and (.topOffset | abs) < 2 and .secondCardFullyVisible)' >/dev/null; }
+wait_for 'middle of the list settles on a full card' aligned_mid_card
+mid_height="$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .viewportHeight')"
+if [[ -n "${BLOOM_NOTIFICATION_MID_SCREENSHOT:-}" ]]; then
+	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_MID_SCREENSHOT"
+fi
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1700 120 wheel 55
 wait_for 'card wheel reaches the oldest notification' at_bottom
+end_height="$(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | .viewportHeight')"
+awk -v mid="$mid_height" -v end="$end_height" 'BEGIN { exit (end + 1 < mid) }' || fail 'the two-card viewport shrank at the end'
 
 read -r scroll_x scroll_top < <(ipc notifications state | jq -r '.surfaces[] | select(.kind=="stack") | "\(.scrollX | round) \(.scrollTopY | round)"')
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$scroll_x" "$scroll_top" click 1
@@ -36,9 +48,11 @@ at_top() { ipc notifications state | jq -e 'any(.surfaces[]; .kind=="stack" and 
 wait_for 'scrollbar returns to newest notification' at_top
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$scroll_x" 120 wheel 8
 wait_for 'wheel over scrollbar gutter moves notifications' scrolled
+wait_for 'gutter scrolling settles on a full card' aligned_mid_card
 python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$scroll_x" 120 wheel 55
 wait_for 'gutter wheel reaches the oldest notification' at_bottom
 if [[ -n "${BLOOM_NOTIFICATION_SCROLL_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_NOTIFICATION_SCROLL_SCREENSHOT"
 fi
+if grep -qE 'Binding loop|WARN scene' "$TEST_TMP/shell.log"; then fail 'notification scroll produced QML warnings'; fi
 pass 'card and gutter wheel input reach the oldest notification'

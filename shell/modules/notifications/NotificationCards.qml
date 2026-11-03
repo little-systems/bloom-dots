@@ -23,6 +23,8 @@ PanelWindow {
 	property real secondCardHeight: 108 * uiScale
 	property real penultimateCardHeight: 108 * uiScale
 	property real lastCardHeight: 108 * uiScale
+	property real expandedFloor: 0
+	property var measuredHeights: ({})
 	readonly property real uiScale: Settings.values["bloom-scale"]
 	readonly property bool targetScreen: Screens.isTarget(modelData, HyprState.monitors, Quickshell.screens)
 	readonly property bool showHistory: (hoverOpen || expanded || hub.historyOpen) && hub.history.length > 0
@@ -34,6 +36,9 @@ PanelWindow {
 	readonly property bool stackShown: ((previewOpen || hoverOpen) && hub.cards.length > 0) || showHistory || (expanded && itemCount > 0)
 	function stateObject() {
 		const lastCard = stack.itemAtIndex(itemCount - 1);
+		const topIndex = stack.indexAt(1, stack.contentY + 1);
+		const topCard = stack.itemAtIndex(topIndex);
+		const nextCard = stack.itemAtIndex(topIndex + 1);
 		return { kind: "stack", screen: modelData.name, visible: stackShown && targetScreen,
 			mode: showHistory ? "history" : "arrival", expanded: expanded, shown: itemCount,
 			expansionProgress: Math.max(0, Math.min(1, expansion.value)),
@@ -53,6 +58,8 @@ PanelWindow {
 			scrollBottomY: scrollHit.y + scrollHit.height - 12 * uiScale,
 			contentY: stack.contentY, contentHeight: stack.contentHeight, originY: stack.originY,
 			maxY: stack.originY + stack.contentHeight - stack.height,
+			topIndex: topIndex, topOffset: topCard ? topCard.y - stack.contentY : null,
+			secondCardFullyVisible: !!nextCard && nextCard.y + nextCard.height - stack.contentY <= stack.height + 2,
 			lastCardVisible: !!lastCard && lastCard.y + lastCard.height - stack.contentY <= stack.height + 2
 				&& lastCard.y + lastCard.height - stack.contentY > 0,
 			progress: Math.max(0, Math.min(1, slide.value)) };
@@ -62,8 +69,45 @@ PanelWindow {
 		win.previewOpen = true;
 		hideTimer.restart();
 	}
+	function scheduleCardAlignment() {
+		if (win.expanded && win.itemCount > 2) cardAlign.restart();
+	}
+	function alignToCard() {
+		if (!win.expanded || stack.moving || glide._driving || glide._coasting) {
+			if (win.expanded) cardAlign.restart();
+			return;
+		}
+		let index = stack.indexAt(1, stack.contentY + 1);
+		if (index < 0) index = stack.indexAt(1, stack.contentY + stack.spacing + 2);
+		if (index < 0) return;
+		const current = stack.itemAtIndex(index);
+		const next = stack.itemAtIndex(index + 1);
+		if (!current) return;
+		const closest = next && Math.abs(next.y - stack.contentY) < Math.abs(current.y - stack.contentY) ? next : current;
+		const target = Math.max(stack.originY, Math.min(stack.originY + stack.contentHeight - stack.height, closest.y));
+		if (Math.abs(target - stack.contentY) > 0.5) stack.contentY = target;
+	}
+	function reportCardHeight(index, height) {
+		if (index < 0 || index >= itemCount) return;
+		if (index === 0) firstCardHeight = height;
+		else if (index === 1) secondCardHeight = height;
+		if (index === itemCount - 2) penultimateCardHeight = height;
+		if (index === itemCount - 1) lastCardHeight = height;
+		const known = measuredHeights;
+		known[index] = height;
+		if (expanded) {
+			const before = known[index - 1];
+			const after = known[index + 1];
+			if (before !== undefined) expandedFloor = Math.max(expandedFloor, before + stack.spacing + height);
+			if (after !== undefined) expandedFloor = Math.max(expandedFloor, height + stack.spacing + after);
+		}
+	}
 	onShowHistoryChanged: if (showHistory) visualItems = hub.history
-	onExpandedChanged: if (!expanded) stack.contentY = 0
+	onExpandedChanged: {
+		if (expanded) expandedFloor = Math.max(firstCardHeight + stack.spacing + secondCardHeight,
+			penultimateCardHeight + stack.spacing + lastCardHeight);
+		else { cardAlign.stop(); stack.contentY = 0; measuredHeights = ({}); }
+	}
 	Component.onCompleted: {
 		if (hub.cards.length > 0) {
 			visualItems = hub.cards;
@@ -111,6 +155,7 @@ PanelWindow {
 		interval: Settings.values["bloom-notifications-timeout"]
 		onTriggered: win.previewOpen = false
 	}
+	Timer { id: cardAlign; interval: 450; onTriggered: win.alignToCard() }
 	Timer {
 		id: hoverClose
 		interval: win.expanded ? 3000 : 350
@@ -165,9 +210,8 @@ PanelWindow {
 		x: 12 * win.uiScale + (1 - Math.max(0, Math.min(1, slide.value))) * win.width
 		y: 12 * win.uiScale
 		width: win.width - 42 * win.uiScale
-		readonly property real expandedHeight: Math.max(win.compactHeight, Math.min(
-			Math.max(win.firstCardHeight + spacing + win.secondCardHeight,
-				win.penultimateCardHeight + spacing + win.lastCardHeight), win.height - 90 * win.uiScale))
+		readonly property real expandedHeight: Math.max(win.compactHeight,
+			Math.min(win.expandedFloor, win.height - 90 * win.uiScale))
 		height: win.compactHeight + (expandedHeight - win.compactHeight) * Math.max(0, Math.min(1, expansion.value))
 		model: win.displayed
 		spacing: 8 * win.uiScale
@@ -175,6 +219,7 @@ PanelWindow {
 		opacity: 1
 		interactive: win.expanded && contentHeight > height
 		boundsBehavior: Flickable.StopAtBounds
+		onMovementEnded: win.scheduleCardAlignment()
 		remove: Transition { NumberAnimation { properties: "x"; to: stack.width; duration: 150; easing.type: Easing.OutCubic } }
 		displaced: Transition { NumberAnimation { properties: "y"; duration: 190; easing.type: Easing.OutCubic } }
 		footer: Item {
@@ -183,7 +228,7 @@ PanelWindow {
 		}
 		// Native snap repositions contentY during ScrollGlide's spring and can
 		// cancel every wheel step when adjacent cards have the same height.
-		ScrollGlide { id: glide; flickable: stack }
+		ScrollGlide { id: glide; flickable: stack; clampOnRangeChange: false; onUserScrolled: win.scheduleCardAlignment() }
 		HoverHandler {
 			id: stackHover
 			onHoveredChanged: {
@@ -222,10 +267,7 @@ PanelWindow {
 			width: stack.width
 			height: Math.ceil(contentBottom + (actions.length > 0 ? 42 : 14) * win.uiScale)
 			function reportHeight() {
-				if (index === 0) win.firstCardHeight = height;
-				else if (index === 1) win.secondCardHeight = height;
-				if (index === win.itemCount - 2) win.penultimateCardHeight = height;
-				if (index === win.itemCount - 1) win.lastCardHeight = height;
+				win.reportCardHeight(index, height);
 			}
 			onHeightChanged: reportHeight()
 			onIndexChanged: reportHeight()
@@ -402,8 +444,11 @@ PanelWindow {
 			function moveThumb(y) {
 				const travel = scrollHit.height - scrollThumb.height;
 				if (travel <= 0) return;
-				stack.contentY = Math.max(0, Math.min(stack.contentHeight - stack.height,
-					(y - grab) / travel * (stack.contentHeight - stack.height)));
+				const fraction = (y - grab) / travel;
+				glide.stop();
+				if (fraction <= 0) { stack.positionViewAtBeginning(); return; }
+				if (fraction >= 1) { stack.positionViewAtEnd(); return; }
+				stack.contentY = stack.originY + fraction * (stack.contentHeight - stack.height);
 			}
 			onPressed: mouse => {
 				grab = mouse.y >= scrollThumb.y && mouse.y <= scrollThumb.y + scrollThumb.height
@@ -411,6 +456,7 @@ PanelWindow {
 				moveThumb(mouse.y);
 			}
 			onPositionChanged: mouse => { if (pressed) moveThumb(mouse.y); }
+			onReleased: win.scheduleCardAlignment()
 		}
 		WheelHandler {
 			target: null
@@ -419,6 +465,7 @@ PanelWindow {
 				const pixels = event.pixelDelta.y !== 0 || event.phase !== Qt.NoScrollPhase;
 				const delta = pixels ? -event.pixelDelta.y : -event.angleDelta.y / 120 * Tokens.scroll.wheelStep;
 				glide.scroll(delta, pixels, Date.now(), event.phase);
+				win.scheduleCardAlignment();
 				event.accepted = true;
 			}
 		}

@@ -9,6 +9,7 @@ WheelHandler {
 	id: root
 	required property Flickable flickable
 	property bool horizontal: false
+	property bool clampOnRangeChange: true
 	signal userScrolled()
 	parent: flickable
 	target: null
@@ -90,8 +91,8 @@ WheelHandler {
 		scroll(pixels ? -pixel : -angle / 120 * Tokens.scroll.wheelStep, pixels, Date.now(), event.phase);
 	}
 	onEnabledChanged: if (!enabled) { stop(); _write(_clamp(position)); }
-	onMaximumChanged: { stop(); _write(_clamp(position)); }
-	onMinimumChanged: { stop(); _write(_clamp(position)); }
+	onMaximumChanged: if (clampOnRangeChange) { stop(); _write(_clamp(position)); }
+	onMinimumChanged: if (clampOnRangeChange) { stop(); _write(_clamp(position)); }
 	// A passive press observer brakes momentum without taking a row's click.
 	readonly property TapHandler _pressBrake: TapHandler { // cursor: default — passive momentum brake; child controls own their cursors
 		parent: root.flickable
