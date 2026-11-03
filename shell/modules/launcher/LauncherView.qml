@@ -26,6 +26,8 @@ Item {
 	property bool chatting: false
 	property var messages: []
 	property bool busy: false
+	// The window supplies compositor activation; standalone views may focus directly.
+	property bool inputAllowed: true
 	property string chatError: ""
 	signal chatSubmitted(string text)
 	signal chatSettingsRequested()
@@ -53,23 +55,32 @@ Item {
 	}
 
 	property bool _open: false
+	function focusInput() {
+		if (!root._open || !root.inputAllowed) return;
+		if (root.chatting) chatSurface.focusInput(); else field.forceActiveFocus();
+	}
+	function clearInputFocus() { field.focus = false; chatSurface.clearInputFocus(); }
+	onInputAllowedChanged: {
+		if (root.inputAllowed) root.focusInput(); else root.clearInputFocus();
+	}
 
 	function open() {
 		field.text = "";
 		root.selectedIndex = 0;
 		root._open = true;
 		enter.jump(0);
-		if (root.chatting) chatSurface.focusInput(); else field.forceActiveFocus();
+		root.focusInput();
 	}
 	// Opens, or if open moves, with this text already typed.
 	function openWith(text) {
 		if (!root._open) root.open();
 		field.text = text;
 		field.cursorPosition = text.length;
-		if (root.chatting) { chatSurface.draft = text.replace(/^@\s*/, ""); chatSurface.focusInput(); }
+		if (root.chatting) { chatSurface.draft = text.replace(/^@\s*/, ""); root.focusInput(); }
 	}
 	function close() {
 		root._open = false;
+		root.clearInputFocus();
 	}
 	function _move(step) {
 		const n = root.results.length;
@@ -93,7 +104,7 @@ Item {
 		event.accepted = true;
 	}
 	onResultsChanged: root.selectedIndex = 0
-	onChattingChanged: if (root.chatting) { chatSurface.draft = field.text.replace(/^@\s*/, ""); chatSurface.focusInput(); }
+	onChattingChanged: if (root.chatting) { chatSurface.draft = field.text.replace(/^@\s*/, ""); root.focusInput(); }
 
 	// cursor: default — a click on the screen around the bar dismisses it
 	MouseArea {

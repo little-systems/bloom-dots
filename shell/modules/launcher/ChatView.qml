@@ -26,6 +26,7 @@ Item {
 	signal linkRequested(string url)
 
 	function focusInput() { editor.forceActiveFocus(); }
+	function clearInputFocus() { editor.focus = false; }
 	function send() {
 		const text = root.draft.trim();
 		if (!text || root.busy) return;

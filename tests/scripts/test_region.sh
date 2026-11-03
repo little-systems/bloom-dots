@@ -68,6 +68,26 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(bash "$SCRIPT" status)" == idle ]] && br
 [[ "$(bash "$SCRIPT" status)" == idle ]] || fail "the second press didn't stop it"
 echo "ok - record toggles"
 
+# Full display recording uses the focused output, never a region selector.
+fake hyprctl 'echo "[{\"name\":\"DP-2\",\"focused\":false},{\"name\":\"eDP-1\",\"focused\":true}]"'
+for action in record-screen record-screen-audio; do
+	: > "$T/calls"
+	bash "$SCRIPT" "$action"
+	for _ in {1..20}; do called 'wf-recorder -o eDP-1 -f' && break; sleep 0.1; done
+	called 'wf-recorder -o eDP-1 -f' || fail "fullscreen didn't use the focused display"
+	if called slurp; then fail "fullscreen asked for a region"; fi
+	if [[ "$action" == record-screen-audio ]]; then
+		called 'wf-recorder.*-a' || fail "audio wasn't requested"
+	elif called 'wf-recorder.*-a'; then fail "silent fullscreen requested audio"; fi
+	bash "$SCRIPT" "$action"
+	[[ "$(bash "$SCRIPT" status)" == idle ]] || fail "fullscreen didn't stop"
+done
+fake hyprctl 'echo "[]"'
+: > "$T/calls"
+if bash "$SCRIPT" record-screen; then fail "recording without a focused output was accepted"; fi
+if called wf-recorder; then fail "recorded every screen after missing focused output"; fi
+echo "ok - fullscreen recording selects the focused output, handles audio, and refuses a missing output"
+
 # A cancelled selection does nothing, quietly.
 : > "$T/calls"
 fake slurp 'exit 1'

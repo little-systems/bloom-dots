@@ -512,7 +512,7 @@ ShellRoot {
 				return "ok";
 			}
 			if (_modules.indexOf("regiontools") < 0) return "off";
-			if (["screenshot", "annotate", "ocr", "translate", "record", "record-audio"].indexOf(action) < 0) return "unknown action";
+			if (["screenshot", "annotate", "ocr", "translate", "record", "record-audio", "record-screen", "record-screen-audio"].indexOf(action) < 0) return "unknown action";
 			Quickshell.execDetached(["env", "BLOOM_TRANSLATE_TO=" + Settings.values["bloom-translate-to"], "bash", Quickshell.shellPath("scripts/region.sh"), action]);
 			return "ok";
 		}
@@ -633,6 +633,13 @@ ShellRoot {
 
 		function setVisible(visible: bool): string {
 			_windows().forEach(w => w.view.userVisible = visible);
+			return "ok";
+		}
+		function toggleVisible(): string {
+			const windows = _windows();
+			if (!windows.length) return "dock disabled";
+			const visible = !windows.some(w => w.view.userVisible);
+			windows.forEach(w => w.view.userVisible = visible);
 			return "ok";
 		}
 	}

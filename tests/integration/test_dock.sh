@@ -85,6 +85,10 @@ pass "no workspace segment outside Hyprland"
 assert_eq "$(ipc dock setVisible false)" "ok" "setVisible"
 wait_for "hiding by the user" state_is "visible,y" '{"visible":false,"y":150}'
 ipc dock setVisible true >/dev/null
+assert_eq "$(ipc dock toggleVisible)" "ok" "toggle visible dock"
+wait_for "toggle hides the dock" state_is "visible,y" '{"visible":false,"y":150}'
+assert_eq "$(ipc dock toggleVisible)" "ok" "toggle hidden dock"
+wait_for "toggle restores the dock" state_is "visible,y" '{"visible":true,"y":0}'
 
 icons_dir="$XDG_STATE_HOME/bloom/dock-icons"
 icon_path() { ipc dock state | jq -r '.[0].icons["bloom-test-app"] // ""'; }

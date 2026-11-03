@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Region tools (spec §3.4): pick a region or a window, then screenshot, annotate,
 # read its text, translate it or record it.
-# Usage: region.sh screenshot|annotate|ocr|translate|record|record-audio|status
+# Usage: region.sh screenshot|annotate|ocr|translate|record|record-audio|record-screen|record-screen-audio|status
 set -euo pipefail
 
 action="${1:-}"
@@ -77,7 +77,7 @@ case "$action" in
 		printf '%s' "$out" | wl-copy
 		tell "Translation copied" "$out"
 		;;
-	record | record-audio)
+	record | record-audio | record-screen | record-screen-audio)
 		if recording; then
 			kill -INT "$(cat "$pidfile")"
 			rm -f "$pidfile"
@@ -85,10 +85,21 @@ case "$action" in
 			exit 0
 		fi
 		need wf-recorder
-		region="$(select_region)" || exit 0
 		mkdir -p "$videos"
-		args=(-g "$region" -f "$videos/Recording_$(date +%Y-%m-%d_%H.%M.%S).mp4")
-		[[ "$action" == record-audio ]] && args+=(-a)
+		args=()
+		if [[ "$action" == record-screen* ]]; then
+			need hyprctl jq
+			output="$(hyprctl monitors -j | jq -er '.[] | select(.focused) | .name' | head -n 1)" || {
+				tell "Recording" "Couldn't find the focused display."
+				exit 1
+			}
+			args+=(-o "$output")
+		else
+			region="$(select_region)" || exit 0
+			args+=(-g "$region")
+		fi
+		args+=(-f "$videos/Recording_$(date +%Y-%m-%d_%H.%M.%S).mp4")
+		[[ "$action" == *-audio ]] && args+=(-a)
 		setsid wf-recorder "${args[@]}" >/dev/null 2>&1 &
 		echo $! > "$pidfile"
 		tell "Recording" "Run this again to stop."
@@ -97,7 +108,7 @@ case "$action" in
 		if recording; then echo recording; else echo idle; fi
 		;;
 	*)
-		printf 'usage: %s screenshot|annotate|ocr|record|record-audio|status\n' "$0" >&2
+		printf 'usage: %s screenshot|annotate|ocr|translate|record|record-audio|record-screen|record-screen-audio|status\n' "$0" >&2
 		exit 2
 		;;
 esac

@@ -37,6 +37,7 @@ PanelWindow {
 		chatting: Launcher.chatting
 		messages: Assistant.messages
 		busy: Assistant.busy
+		inputAllowed: Window.active && Launcher.opened
 		chatError: Assistant.error
 		onChatSubmitted: text => Assistant.ask(text)
 		onChatSettingsRequested: Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/open-settings.sh"), Quickshell.shellPath("settings-app.qml"), "ai"])

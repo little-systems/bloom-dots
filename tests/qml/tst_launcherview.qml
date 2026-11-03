@@ -105,6 +105,19 @@ Item {
 			compare(chosen.signalArguments[0][0].id, "a0");
 		}
 
+		function test_focusWaitsForWindowActivation() {
+			const v = make({ inputAllowed: false });
+			v.open();
+			verify(!part(v, "field").activeFocus);
+			v.inputAllowed = true;
+			tryVerify(() => part(v, "field").activeFocus);
+			v.close();
+			verify(!part(v, "field").activeFocus);
+			v.inputAllowed = false;
+			v.openWith("@ ");
+			verify(!part(v, "field").activeFocus);
+		}
+
 		function test_escapeAndOutsideDismiss() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
