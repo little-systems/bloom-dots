@@ -23,6 +23,17 @@ jobs:
         run: |
           # Keep daemon parents in the same step as their consumers and check
           # bus ownership before spending several minutes on the QML suite.
+          # The container denies D-Bus setuid-helper activation; UPower needs
+          # PolicyKit already running when it initializes its authority.
+          /usr/lib/polkit-1/polkitd --no-debug > /tmp/polkit.log 2>&1 &
+          for attempt in $(seq 1 50); do
+            if busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then break; fi
+            sleep 0.1
+          done
+          if ! busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then
+            cat /tmp/polkit.log
+            exit 1
+          fi
           /usr/lib/upowerd > /tmp/upower.log 2>&1 &
           /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
           for service in org.freedesktop.UPower org.freedesktop.UPower.PowerProfiles; do
