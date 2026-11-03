@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Install tools
         run: |
-          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg qt6-imageformats nodejs npm jq shellcheck systemd sway python-gobject dbus matugen grim kitty wtype upower power-profiles-daemon
+          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg qt6-imageformats nodejs npm jq shellcheck systemd sway python-gobject dbus matugen grim kitty wtype upower power-profiles-daemon hyprland libpulse pipewire wireplumber
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
@@ -49,4 +49,4 @@ jobs:
           done
           useradd -m -s /bin/bash ci
           chown -R ci:ci "$GITHUB_WORKSPACE"
-          runuser -u ci -- env CI=true GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
+          runuser -u ci -- env CI=true LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
