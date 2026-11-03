@@ -52,6 +52,7 @@ TestCase {
 		verify(Notch.isHidden("smart", true, "none", false, false));
 		verify(!Notch.isHidden("smart", true, "grace", false, false), "grace keeps it shown");
 		verify(!Notch.isHidden("smart", false, "none", false, false));
+		verify(Notch.isHidden("smart", true, "none", false, true), "startup must not reveal over an overlapping app");
 		verify(Notch.isHidden("peek", false, "none", false, false));
 		verify(!Notch.isHidden("peek", false, "active", false, false));
 		verify(!Notch.isHidden("peek", false, "none", true, false), "event peek shows it");

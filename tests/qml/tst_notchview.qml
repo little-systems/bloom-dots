@@ -271,6 +271,17 @@ Item {
 			verify(!v.bandActive);
 		}
 
+		function test_fullscreenSuppressesStaleInteraction() {
+			const v = make({ mode: "smart", overlapped: true });
+			settle(v);
+			v.interaction = "active";
+			verify(!v.hidden);
+			v.suppressed = true;
+			verify(v.hidden, "fullscreen must win over hover/grace");
+			compare(v.interaction, "none");
+			verify(!v.bandActive);
+		}
+
 		function test_stateObject() {
 			const v = make({ mode: "smart" });
 			settle(v);

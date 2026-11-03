@@ -32,12 +32,12 @@ function geometry(s, content) {
 }
 
 // Bloom isHidden: smart hides while overlapped, peek hides unless something
-// shows it, and nothing hides during the startup animation.
+// shows it. Startup must respect smart overlap instead of flashing over an app.
 function isHidden(mode, overlapped, interaction, eventPeek, startupAnimating) {
-	if (startupAnimating)
-		return false;
 	if (mode === "smart")
 		return overlapped && interaction === "none";
+	if (startupAnimating)
+		return false;
 	if (mode === "peek")
 		return interaction === "none" && !eventPeek;
 	return false;

@@ -172,7 +172,8 @@ Item {
 	property real fitWidth: 0
 
 	readonly property bool pillHovered: pillHover.hovered
-	readonly property bool hidden: Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating)
+	readonly property bool hidden: (root.mode === "smart" && root.suppressed)
+		|| Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating)
 	// Bloom isHovered: the strip opens on the shown, expanded pill.
 	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.surfaceVisible
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
@@ -342,6 +343,7 @@ Item {
 	function stateObject() {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
+			startupAnimating: root.startupAnimating, suppressed: root.suppressed,
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
@@ -392,7 +394,9 @@ Item {
 
 	// Bloom interactionState: active while hovered, then an 800 ms grace.
 	// An open player counts too, so a hidden notch shows while it is open.
-	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked && (root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
+	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked
+		&& !(root.mode === "smart" && root.suppressed)
+		&& (root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
 	function closeForLock() {
 		root.closePanel();
 		root.open = false;
@@ -403,6 +407,7 @@ Item {
 	}
 	onLockPreparingChanged: if (root.lockPreparing) root.closeForLock()
 	onSessionLockedChanged: if (root.sessionLocked) root.closeForLock()
+	onSuppressedChanged: if (root.suppressed && root.mode === "smart") root.closeForLock()
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();
