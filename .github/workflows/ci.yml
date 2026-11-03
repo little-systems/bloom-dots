@@ -9,7 +9,12 @@ jobs:
     steps:
       - name: Install tools
         run: |
-          pacman -Syu --noconfirm --needed git quickshell qt6-declarative qt6-svg qt6-imageformats nodejs npm jq shellcheck systemd sway python-gobject dbus matugen grim kitty wtype upower power-profiles-daemon hyprland libpulse pipewire wireplumber
+          pacman -Syu --noconfirm --needed \
+            git patch quickshell qt6-declarative qt6-svg qt6-imageformats \
+            nodejs npm jq shellcheck systemd sway python-gobject dbus \
+            matugen grim kitty wtype upower power-profiles-daemon hyprland \
+            libpulse pipewire wireplumber libnotify brightnessctl networkmanager \
+            cava playerctl wl-clipboard cliphist libqalculate bluez-utils libsecret
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
@@ -21,6 +26,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run all checks
         run: |
+          for tool in qs patch hyprctl pactl wpctl notify-send brightnessctl nmcli cava grim wtype kitty matugen; do
+            command -v "$tool" >/dev/null || exit 1
+          done
           # Keep daemon parents in the same step as their consumers and check
           # bus ownership before spending several minutes on the QML suite.
           # The container denies D-Bus setuid-helper activation; UPower needs
