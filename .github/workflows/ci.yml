@@ -18,11 +18,24 @@ jobs:
           mkdir -p /run/dbus
           dbus-uuidgen --ensure
           dbus-daemon --system --fork
-          /usr/lib/upowerd > /tmp/upower.log 2>&1 &
-          /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
       - uses: actions/checkout@v4
       - name: Run all checks
         run: |
+          # Keep daemon parents in the same step as their consumers and check
+          # bus ownership before spending several minutes on the QML suite.
+          /usr/lib/upowerd > /tmp/upower.log 2>&1 &
+          /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
+          for service in org.freedesktop.UPower org.freedesktop.UPower.PowerProfiles; do
+            ready=false
+            for attempt in $(seq 1 50); do
+              if busctl --system status "$service" >/dev/null 2>&1; then ready=true; break; fi
+              sleep 0.1
+            done
+            if [ "$ready" != true ]; then
+              cat /tmp/upower.log /tmp/power-profiles.log
+              exit 1
+            fi
+          done
           useradd -m -s /bin/bash ci
           chown -R ci:ci "$GITHUB_WORKSPACE"
           runuser -u ci -- env CI=true GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
