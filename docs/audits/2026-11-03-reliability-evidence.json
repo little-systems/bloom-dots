@@ -1,0 +1,44 @@
+{
+  "baseline": "86fb0c4",
+  "date": "2026-11-03",
+  "scope": "temporary homes and an offscreen copied Settings harness; no live configuration",
+  "results": [
+    {
+      "finding": "R01",
+      "probe": "uninstall with missing original backup and stubbed service commands",
+      "observed": {
+        "exception": "FileNotFoundError",
+        "managed_file_exists": false,
+        "service_mutated": true
+      },
+      "status": "reproduced"
+    },
+    {
+      "finding": "R02",
+      "probe": "Settings.set in offscreen qs with settings directory mode 0500",
+      "observed": {
+        "returned_error": "",
+        "memory": "light",
+        "disk": "dark"
+      },
+      "status": "reproduced"
+    },
+    {
+      "finding": "R03",
+      "probe": "Context.validate_manifest with config/../outside path",
+      "observed": "accepted",
+      "status": "reproduced"
+    },
+    {
+      "finding": "R04",
+      "probe": "Transaction.change with status installing, valid original backup and absent destination",
+      "observed": "refused: changed since installation",
+      "status": "reproduced"
+    }
+  ],
+  "limitations": [
+    "No complete suite run",
+    "No power-loss or real disk-full test",
+    "These findings are open, not repaired by the documentation commit"
+  ]
+}
