@@ -59,3 +59,15 @@ selection, stop behavior, cancellation and a missing output. Headless dock
 integration checks visibility toggling along with existing pin/reorder behavior.
 The owner confirmed the live lock/unlock check. Final suite and live-soak results
 are recorded separately; code existence alone does not validate next-login startup.
+
+The live dock/notch soak completed 1,200 cycles each over ten minutes with no
+restarts or warnings and 0.19 MiB RSS growth after warmup. The live launcher
+check still reports Qt Wayland text-input focus warnings that do not reproduce
+in the isolated integration test. Deferring initial focus alone did not remove
+them. Experimental surface-lifetime changes were reverted. Warning-free live
+launcher acceptance remains open; it must not be presented as passed.
+
+The device-art CI timing expectation was also wrong: the WebP lasts 2,110 ms,
+including its final 390 ms frame, whereas DeviceArt stops when that frame first
+appears and holds it indefinitely. The corrected test expects arrival at about
+1,720 ms and separately verifies the preceding 530 ms and 110 ms holds.

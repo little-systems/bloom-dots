@@ -53,16 +53,27 @@ Item {
 			compare(anim.currentFrame, anim.frameCount - 1, "holds the last frame");
 		}
 
-		// The recording's own timing (10 ms frames): a run lasts as long as
-		// Bloom's (stem-buds: 2.11 s), not one frame per screen refresh.
+		// The WebP runs for 2.11 s including its last frame's 390 ms.
+		// DeviceArt stops upon reaching that frame and holds it indefinitely,
+		// so playing ends after 1.72 s. Allow timer scheduling overhead.
 		function test_playsInRealTime() {
 			const anim = part(playing, "animation");
 			tryVerify(() => !anim.playing, 4000);
-			playing.runId++;
-			const t0 = Date.now();
-			tryVerify(() => !anim.playing, 5000);
-			const ms = Date.now() - t0;
-			verify(ms > 1900 && ms < 2400, `took ${ms} ms`);
+			const frames = {};
+			const record = () => frames[anim.currentFrame] = Date.now();
+			anim.currentFrameChanged.connect(record);
+			try {
+				const t0 = Date.now();
+				playing.runId++;
+				tryVerify(() => !anim.playing, 5000);
+				const ms = Date.now() - t0;
+				verify(ms > 1550 && ms < 2400, `took ${ms} ms; final frame arrives at 1720 ms`);
+				// The two preceding frames hold for 530 and 110 ms. Checking
+				// these catches playback advancing once per display refresh.
+				const last = anim.frameCount - 1;
+				verify(frames[last - 1] - frames[last - 2] >= 450, "recorded 530 ms hold");
+				verify(frames[last] - frames[last - 1] >= 70, "recorded 110 ms hold");
+			} finally { anim.currentFrameChanged.disconnect(record); }
 		}
 
 		function test_leavePlaysTheDisconnect() {
