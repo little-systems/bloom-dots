@@ -21,10 +21,13 @@ Singleton {
 	property bool opened: false
 	property var items: []
 	property bool _pickRandom: false
+	property string error: ""
 
 	function set(path) {
-		Settings.set("bloom-wallpaper", path);
+		root.error = Settings.set("bloom-wallpaper", path);
+		if (root.error !== "") return root.error;
 		root.opened = false;
+		return "ok";
 	}
 	function show() {
 		root.opened = true;

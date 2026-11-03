@@ -37,6 +37,11 @@ Singleton {
 
 	// Validates and saves one setting. Returns "" on success, else the error.
 	function set(key, value) {
+		return root.setMany({ [key]: value });
+	}
+
+	// Import/reset are one validated write, never a sequence of partial saves.
+	function setMany(changes) {
 		if (root.saveError !== "") {
 			// A failed FileView write may still have updated its text cache.
 			// Re-read before a retry so identical text isn't silently skipped.
@@ -45,11 +50,14 @@ Singleton {
 		}
 		if (!root._fileValid)
 			return "settings.json is invalid; fix it before changing settings";
-		const r = Logic.validateOne(key, value);
-		if (!r.ok)
-			return `${key}: ${r.error}`;
+		if (changes === null || typeof changes !== "object" || Array.isArray(changes))
+			return "settings changes must be an object";
 		const next = Object.assign({}, root._raw);
-		next[key] = r.value;
+		for (const key of Object.keys(changes)) {
+			const r = Logic.validateOne(key, changes[key]);
+			if (!r.ok) return `${key}: ${r.error}`;
+			next[key] = r.value;
+		}
 		root.saveError = "";
 		file.setText(Logic.serialize(next));
 		if (root.saveError !== "") return root.saveError;

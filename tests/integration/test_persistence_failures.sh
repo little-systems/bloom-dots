@@ -18,6 +18,7 @@ chmod 500 "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME/bloom"
 if ! timeout 12 qs --no-color -p "$HARNESS" > "$TEST_TMP/shell.log" 2>&1; then fail 'failure harness failed'; fi
 chmod 700 "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME/bloom"
 log_has 'RESULT settings-refused=true settings-kept=true' || fail 'settings falsely acknowledged a failed write'
+log_has 'RESULT batch-atomic=true' || fail 'invalid batch applied only some settings'
 log_has 'RESULT state-error=true pending=true' || fail 'state lost a failed pending write'
 assert_eq "$(jq -r '."bloom-theme-mode"' "$XDG_CONFIG_HOME/bloom/settings.json")" dark 'settings file retained'
 assert_eq "$(jq -c . "$XDG_STATE_HOME/bloom/failure.json")" '{"initial":true}' 'state file retained'
@@ -26,6 +27,7 @@ chmod 500 "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME/bloom"
 if ! BLOOM_TEST_RETRY=1 timeout 12 qs --no-color -p "$HARNESS" > "$TEST_TMP/shell.log" 2>&1; then fail 'retry harness failed'; fi
 log_has 'RESULT retry=true' || fail 'pending state did not recover after storage repair'
 assert_eq "$(jq -r '."bloom-theme-mode"' "$XDG_CONFIG_HOME/bloom/settings.json")" light 'settings retry'
+assert_eq "$(jq -r '."bloom-theme-opacity"' "$XDG_CONFIG_HOME/bloom/settings.json")" 0.7 'settings batch committed'
 assert_eq "$(jq -c . "$XDG_STATE_HOME/bloom/failure.json")" '{"changed":true}' 'state retry'
 pass 'explicit retry persists held data after storage becomes writable'
 

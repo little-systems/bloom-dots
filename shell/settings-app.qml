@@ -67,8 +67,10 @@ ShellRoot {
 	function run(argv) { Quickshell.execDetached(argv); }
 	function reset() {
 		const defaults = Logic.defaults();
-		Logic.keys().filter(key => app._keep.indexOf(key) < 0).forEach(key => Settings.set(key, defaults[key]));
-		app.run(["systemctl", "--user", "restart", "bloom-shell"]);
+		const changes = {};
+		Logic.keys().filter(key => app._keep.indexOf(key) < 0).forEach(key => changes[key] = defaults[key]);
+		app.saveError = Settings.setMany(changes);
+		if (app.saveError === "") app.run(["systemctl", "--user", "restart", "bloom-shell"]);
 	}
 	function importFrom(text) {
 		let parsed;
@@ -78,8 +80,15 @@ ShellRoot {
 			app.importLabel = "Import Failed";
 			return;
 		}
-		Logic.keys().filter(key => key in parsed && key !== "bloom-enabled-modules").forEach(key => Settings.set(key, parsed[key]));
-		app.importLabel = "Settings Imported";
+		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+			app.importLabel = "Import Failed";
+			app.saveError = "Import must contain a settings object";
+			return;
+		}
+		const changes = {};
+		Logic.keys().filter(key => key in parsed && key !== "bloom-enabled-modules").forEach(key => changes[key] = parsed[key]);
+		app.saveError = Settings.setMany(changes);
+		app.importLabel = app.saveError === "" ? "Settings Imported" : "Import Failed";
 	}
 
 	SystemStore { id: store }
@@ -201,7 +210,7 @@ ShellRoot {
 	ColorDialog {
 		id: colorDialog
 		selectedColor: Settings.values["bloom-theme-color"]
-		onAccepted: Settings.set("bloom-theme-color", String(selectedColor))
+		onAccepted: checkedStore.set("bloom-theme-color", String(selectedColor))
 	}
 
 	Process {

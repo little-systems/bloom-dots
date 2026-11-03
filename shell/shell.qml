@@ -276,8 +276,7 @@ ShellRoot {
 		target: "settings"
 
 		function toggleTheme(): string {
-			Settings.set("bloom-theme-mode", Theme.isLight ? "dark" : "light");
-			return "ok";
+			return Settings.set("bloom-theme-mode", Theme.isLight ? "dark" : "light") || "ok";
 		}
 
 		// The settings app, its own process so a crash there leaves the shell up.
@@ -521,7 +520,7 @@ ShellRoot {
 	IpcHandler {
 		target: "wallpaper"
 
-		function set(path: string): string { Wallpaper.set(path); return "ok"; }
+		function set(path: string): string { return Wallpaper.set(path); }
 		function toggle(): string { Wallpaper.toggle(); return "ok"; }
 		function random(): string { Wallpaper.random(); return "ok"; }
 		function close(): string { Wallpaper.hide(); return "ok"; }

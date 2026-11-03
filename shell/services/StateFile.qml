@@ -41,11 +41,20 @@ Scope {
 	}
 
 	function save(v) {
-		root.value = v;
-		root._pendingValue = v;
+		let snapshot;
+		try {
+			snapshot = JSON.parse(Logic.serialize(v));
+		} catch (e) {
+			root.error = "State is not serializable; the last saved value was retained";
+			console.warn("bloom state: invalid save request for " + root.name);
+			return false;
+		}
+		root.value = snapshot;
+		root._pendingValue = snapshot;
 		root._hasPending = true;
 		if (root.error !== "") root.retry();
 		else root._flush();
+		return true;
 	}
 
 	function _flush() {
