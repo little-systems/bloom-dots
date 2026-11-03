@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The session menu through the real shell with fake systemctl and loginctl on
+# The session menu through the real shell with fake systemctl, loginctl and hyprctl on
 # PATH: nothing here can suspend, reboot or log out the real session.
 set -euo pipefail
 # shellcheck source=lib.sh
@@ -15,7 +15,7 @@ mkdir -p "$XDG_CONFIG_HOME/bloom" "$TEST_TMP/bin" "$TEST_TMP/Downloads"
 printf '{"bloom-enabled-modules":["session"],"bloom-weather-enabled":false}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
 export FAKE="$TEST_TMP/fake" BLOOM_PACMAN_LOCK="$TEST_TMP/db.lck" BLOOM_DOWNLOADS="$TEST_TMP/Downloads"
 mkdir -p "$FAKE"
-for tool in systemctl loginctl; do
+for tool in systemctl loginctl hyprctl; do
 	printf '#!/bin/sh\necho "%s $*" >> "%s/calls"\n' "$tool" "$FAKE" > "$TEST_TMP/bin/$tool"
 done
 chmod +x "$TEST_TMP/bin/"*
@@ -30,7 +30,7 @@ if [[ -n "${BLOOM_SESSION_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_SESSION_SCREENSHOT"
 fi
 pass "opening checks what's running"
-for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:systemctl reboot --firmware-setup" "lock:loginctl lock-session"; do
+for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:systemctl reboot --firmware-setup" "lock:loginctl lock-session" "logout:hyprctl dispatch hl.dsp.exit()"; do
 	assert_eq "$(ipc session run "${pair%%:*}")" "ok" "run ${pair%%:*}"
 	wait_for "${pair#*:}" grep -qx "${pair#*:}" "$FAKE/calls"
 done

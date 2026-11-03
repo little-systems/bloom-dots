@@ -17,7 +17,7 @@ TestCase {
 		compare(Session.command("reboot"), ["systemctl", "reboot"]);
 		compare(Session.command("shutdown"), ["systemctl", "poweroff"]);
 		compare(Session.command("firmware"), ["systemctl", "reboot", "--firmware-setup"]);
-		compare(Session.command("logout"), ["loginctl", "terminate-user", ""]);
+		compare(Session.command("logout"), ["hyprctl", "dispatch", "hl.dsp.exit()"]);
 		compare(Session.command("nonsense"), null);
 	}
 

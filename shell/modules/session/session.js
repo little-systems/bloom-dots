@@ -10,9 +10,11 @@ var ACTIONS = [
 	{ id: "firmware", label: "Firmware setup", icon: "cpu" }
 ];
 
-function command(id, user) {
+function command(id) {
 	return ({
-		logout: ["loginctl", "terminate-user", user || ""],
+		// Ask the compositor to exit normally. Terminating the whole user
+		// also signals start-hyprland and can abort its watchdog during teardown.
+		logout: ["hyprctl", "dispatch", "hl.dsp.exit()"],
 		suspend: ["systemctl", "suspend"],
 		hibernate: ["systemctl", "hibernate"],
 		reboot: ["systemctl", "reboot"],

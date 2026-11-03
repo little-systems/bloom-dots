@@ -5,7 +5,7 @@ import Quickshell.Io
 import "../modules/session/session.js" as Logic
 
 // The session menu: what's running (checked each time it opens) and the
-// actions. Commands are argv only, with systemctl and loginctl on PATH.
+// actions. Commands are argv only, with systemctl, loginctl and hyprctl on PATH.
 Singleton {
 	id: root
 
@@ -22,7 +22,7 @@ Singleton {
 	function run(id) {
 		root.hide();
 		// Lock through logind: whatever the session's idle daemon runs.
-		const argv = id === "lock" ? ["loginctl", "lock-session"] : Logic.command(id, Quickshell.env("USER"));
+		const argv = id === "lock" ? ["loginctl", "lock-session"] : Logic.command(id);
 		if (!argv) return "unknown action";
 		Quickshell.execDetached(argv);
 		return "ok";
