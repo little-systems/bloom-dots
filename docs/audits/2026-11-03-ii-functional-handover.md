@@ -1,5 +1,21 @@
 # ii functional handover
 
+## Logout and subsequent login recovery
+
+The owner confirmed that logout returned to SDDM after replacing whole-user
+termination with Hyprland's normal exit dispatcher. The subsequent login exposed
+a separate failure: Bloom retried against the departed display, exhausted its
+restart limit, and could not start when the new session requested it.
+
+The service now skips launch while its Wayland socket is absent. On each
+Hyprland start, the hook imports the new environment, resets only Bloom's failed
+state, and restarts Bloom to replace any process retaining the previous display.
+A failed environment import does not start the service. Focused tests execute
+the real Lua hook with stub services and exercise the unit's socket guard. Real
+systemd unit probes also confirmed missing-display skips and live-display starts.
+These checks do not end the owner's session. A further owner logout/login is
+still required to validate the complete corrected handoff.
+
 ## Agreed scope
 
 The owner confirmed on 2026-11-03 that Bloom keeps its notch, dock and integrated

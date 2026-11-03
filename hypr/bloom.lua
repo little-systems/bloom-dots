@@ -17,6 +17,10 @@ hl.on("hyprland.start", function()
         "QT_STYLE_OVERRIDE", "QS_ICON_THEME"}) do
         if os.getenv(name) then table.insert(present, name) end
     end
+    -- A plain Hyprland logout can leave the user manager alive. Import this
+    -- session first, clear its predecessor's crash limit, then replace any
+    -- surviving process so it cannot retain the old display environment.
     hl.exec_cmd("systemctl --user import-environment " .. table.concat(present, " ")
-        .. "; systemctl --user start bloom-shell.service")
+        .. " && systemctl --user reset-failed bloom-shell.service"
+        .. " && systemctl --user restart bloom-shell.service")
 end)

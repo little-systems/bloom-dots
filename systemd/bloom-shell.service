@@ -11,6 +11,9 @@ OnFailure=bloom-shell-failed.service
 
 [Service]
 Type=simple
+# Without a compositor there is nothing to restart. A skipped condition is
+# not a crash: preserve retries for real failures and wait for the next login.
+ExecCondition=/bin/sh -c 'case "$$WAYLAND_DISPLAY" in "") exit 1;; /*) test -S "$$WAYLAND_DISPLAY";; *) test -S "%t/$$WAYLAND_DISPLAY";; esac'
 ExecStart=/usr/bin/qs --no-color -c bloom
 Restart=on-failure
 RestartSec=1
