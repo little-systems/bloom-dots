@@ -17,10 +17,25 @@ their historical evidence or declare the whole program complete.
 | R07 state/quarantine | Keep pending data on failed writes; explicit retry; restore committed value; block writes when read/quarantine fails; quarantine success logged after completion | Actual failed writes/retry/failed `mv` plus existing corruption/early-save races pass. Schema versions, document byte budgets and retention remain pending. |
 
 No runtime package operation, live uninstall/reinstall, real logout or full
-suite was used for this batch. The existing owner installation manifest and
+suite was used for the initial focused batch. The existing owner installation manifest and
 available backup paths were validated read-only. Owner-local migration fixtures
 were checked; their test expectation was adjusted locally for explicit reinstall
 restart, without publishing migration code or changing the real migration.
+
+## Approved complete-gate result and correction
+
+The owner approved one complete local gate at `caff4e4`. That run passed all
+978 QML cases and earlier checks, then failed notification integration waiting
+for cleared history on disk. It did not finish the later integration/CLI/unit
+steps. The private raw result is `hardening-ci-caff4e4.log`; exit status 1.
+
+An isolated regression reproduced the cause: FileView emits no `saved()` event
+for an identical-text write, leaving `_writing` set and preventing subsequent
+state writes. `88b6819` makes a confirmed unchanged save an explicit no-op.
+The new state regression, storage-failure/retry/quarantine checks and complete
+focused notification integration (including clear-all) pass. This is a verified
+focused correction, **not a second green full gate**. Another full run requires
+new owner approval.
 
 ## Scoped owner additions
 
@@ -34,6 +49,15 @@ restart, without publishing migration code or changing the real migration.
   the covering window leaves. This verifies those routes, not every possible
   cause of the owner's intermittent screenshot; recurrences should retain safe
   `startupAnimating`/`suppressed`/overlap/interaction diagnostics.
+- `55877f7`: compact media card inside the secure lock surface, with artwork,
+  title/artist and capability-guarded previous/play-pause/next. Shows after
+  playback and remains after pause for resume; no desktop app-launch action.
+  Settings → General has a privacy toggle (`bloom-lock-media-enabled`). Added
+  transport guards outside secure lock / during unlock / when disabled. All 21
+  lock-view cases, focused Settings toggle checks, a real isolated secure-lock
+  media test and existing PAM/crash-recovery integration pass. Screenshot was
+  inspected before bringing it into the live checkout. No real owner lock was
+  triggered. Temporary feature worktree/branch was removed after reconciliation.
 
 ## Remaining program
 
