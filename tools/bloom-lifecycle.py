@@ -20,6 +20,7 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 UNIT = "bloom-shell.service"
 MARKER = "-- bloom managed loader"
+MANIFEST_VERSION = 2
 
 
 
@@ -105,6 +106,8 @@ def place(path, kind, payload):
             with staging.open("rb") as stream:
                 os.fsync(stream.fileno())
         else:
+            if path.is_file() and not path.is_symlink():
+                staging.chmod(stat.S_IMODE(path.stat().st_mode))
             with staging.open("w") as stream:
                 stream.write(payload)
                 stream.flush()
@@ -121,8 +124,10 @@ def restore(path, backup):
         if path.parent.exists():
             sync_directory(path.parent)
     elif backup.is_symlink():
+        path.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
         place(path, "link", os.readlink(backup))
     else:
+        path.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
         place(path, "copy", backup)
 
 
@@ -154,7 +159,7 @@ class Context:
             self.validate_manifest(self.manifest, managed=True)
 
     def validate_manifest(self, doc, managed=False):
-        if type(doc.get("version")) is not int or doc["version"] != 1 or not isinstance(doc.get("entries"), list):
+        if type(doc.get("version")) is not int or doc["version"] not in (1, MANIFEST_VERSION) or not isinstance(doc.get("entries"), list):
             raise Failure("unrecognized install manifest; no files were changed")
         if doc.get("status") not in (None, "installing", "complete", "uninstalling", "uninstalled"):
             raise Failure("invalid lifecycle status")
@@ -264,7 +269,7 @@ class Context:
         run("systemctl", "--user", "enable" if state["enabled"] else "disable", unit, check=False)
         run("systemctl", "--user", "restart" if state["active"] else "stop", unit, check=False)
         if self.service_state(unit) != state:
-            raise Failure(f"could not restore {unit}; recovery data was retained")
+            raise Failure(f"could not restore {unit}; inspect the service state before continuing")
 
     def preflight(self, no_deps=False):
         release = Path(os.environ.get("BLOOM_OS_RELEASE", "/etc/os-release")).read_text()
@@ -326,7 +331,7 @@ class Transaction:
         self.filename = filename or context.manifest_path
         self.previous = read_json(self.filename)
         self.doc = copy.deepcopy(self.previous) if self.previous else {
-            "version": 1, "root": str(ROOT), "entries": [], "created_dirs": [],
+            "version": MANIFEST_VERSION, "root": str(ROOT), "entries": [], "created_dirs": [],
             "service": context.service_state(), "started": time.time_ns()}
         self.entries = {item["path"]: item for item in self.doc["entries"]}
         self.changed = []
@@ -339,6 +344,7 @@ class Transaction:
             path = path.parent
         for directory in reversed(missing):
             directory.mkdir(mode=0o700)
+            sync_directory(directory.parent)
             self.doc["created_dirs"].append(str(directory))
 
     def change(self, path, kind, payload):
@@ -394,6 +400,7 @@ class Transaction:
         existing["installed"] = desired
         existing["pending"] = {"before": current}
         self.doc["status"] = "installing"
+        self.doc["version"] = MANIFEST_VERSION
         self.save()
         place(path, kind, payload)
         existing["installed"] = signature(path)
@@ -527,6 +534,7 @@ def uninstall(ctx, remove_deps=False):
             if step["mode"] != "keep" and signature(Path(step["path"])) not in (step["before"], step["after"]):
                 raise Failure(f"{step['path']} changed during removal; recovery data retained")
         doc["status"] = "uninstalling"
+        doc["version"] = MANIFEST_VERSION
         for item in doc["entries"]:
             item.pop("pending", None)
         atomic(ctx.manifest_path, json.dumps(doc, indent=2) + "\n")
@@ -544,7 +552,7 @@ def uninstall(ctx, remove_deps=False):
             if current != step["before"]:
                 raise Failure(f"{path} changed during removal; recovery data retained")
             if step["mode"] == "loader":
-                atomic(path, step["text"])
+                place(path, "file", step["text"])
             else:
                 item = entries[str(path)]
                 restore(path, Path(item["backup"]) if item["backup"] else None)

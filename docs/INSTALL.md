@@ -69,6 +69,11 @@ installation uses the current checkout and installed prerequisites; it never
 runs a package transaction. `--restore-originals` restores the installation's
 original files, not the immediately preceding code/configuration generation.
 Keep the checkout and recovery backups until restoration finishes.
+New mutation journals use manifest version 2; this reader also accepts legacy
+version 1. Older Bloom lifecycle tools reject version 2 instead of incorrectly
+replaying a removal they do not understand. Keep a checkout supporting version 2
+available for recovery; rolling code back to an older lifecycle reader does not
+downgrade the journal or make that older tool safe to use on it.
 
 Uninstall records the complete removal plan before stopping Bloom, checks all
 required originals before any file/service changes, and keeps originals until

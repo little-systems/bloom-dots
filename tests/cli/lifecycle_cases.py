@@ -245,6 +245,16 @@ elif name == 'systemctl':
         self.bloom("uninstall")
         self.assertEqual((self.config / "hypr/hyprland.lua").read_text(), "-- personal configuration\n")
 
+    def test_loader_permissions_survive_apply_and_owner_edits(self):
+        loader = self.config / "hypr/hyprland.lua"
+        loader.chmod(0o640)
+        self.bloom("install")
+        self.assertEqual(loader.stat().st_mode & 0o777, 0o640)
+        loader.write_text(loader.read_text() + "-- owner addition\n")
+        self.bloom("uninstall")
+        self.assertEqual(loader.stat().st_mode & 0o777, 0o640)
+        self.assertIn("-- owner addition", loader.read_text())
+
     def test_reinstall_does_not_restart_converged_service(self):
         self.bloom("install")
         (self.base / "calls").write_text("")
