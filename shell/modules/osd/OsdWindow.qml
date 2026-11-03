@@ -102,6 +102,7 @@ PanelWindow {
 			id: edgeArea
 			enabled: win.edgeEnabled
 			anchors.fill: parent
+			acceptedButtons: Qt.NoButton
 			hoverEnabled: true
 			onEntered: win.keepOpen()
 			onExited: win.leaveCard()

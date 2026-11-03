@@ -53,7 +53,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-volume-max-jump` | number | `10` | 1 to 100 | Largest allowed output-volume increase in percentage points at once when protection is enabled. |
 | `bloom-volume-max-level` | number | `99` | 0 to 200 | Maximum output volume in percent when protection is enabled. |
 | `bloom-notifications-dnd` | bool | `false` | `true`, `false` | Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear. |
-| `bloom-notifications-timeout` | number | `7000` | 1000 to 60000 | Default notification card timeout in milliseconds when the sender does not specify one. |
+| `bloom-notifications-timeout` | number | `2500` | 1000 to 60000 | Maximum time for an ordinary notification banner in milliseconds; senders may request less or a persistent alert. |
 | `bloom-notifications-history-limit` | number | `200` | 0 to 500 | Maximum number of non-transient notifications retained in local history. |
 | `bloom-font-scale` | number | `1.15` | 0.8 to 1.6 | Bloom text size, independent of UI geometry scale. |
 | `bloom-scale` | number | `1.15` | 0.8 to 1.3 | Size of Bloom's surfaces. |

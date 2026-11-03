@@ -246,7 +246,7 @@ Item {
 
 			Glyph {
 				visible: root.batteryAvailable
-				name: root.batteryCharging ? "zap" : "battery-full"
+				name: root.batteryCharging ? "zap-filled" : "battery-full"
 				color: root.batteryLow && !root.batteryCharging ? "#ff8a80" : root.theme.textMuted
 			}
 			Label {
