@@ -14,7 +14,8 @@ jobs:
             nodejs npm jq shellcheck systemd sway python-gobject dbus \
             matugen grim kitty wtype upower power-profiles-daemon hyprland \
             libpulse pipewire wireplumber libnotify brightnessctl networkmanager \
-            cava playerctl wl-clipboard cliphist libqalculate bluez-utils libsecret
+            cava playerctl wl-clipboard cliphist libqalculate bluez-utils libsecret \
+            qt6ct adwaita-icon-theme
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
@@ -57,4 +58,6 @@ jobs:
           done
           useradd -m -s /bin/bash ci
           chown -R ci:ci "$GITHUB_WORKSPACE"
-          runuser -u ci -- env CI=true LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
+          # Qt's generic headless platform theme has no filesystem icon search
+          # paths. Give themed-icon tests an explicit provider and icon set.
+          runuser -u ci -- env CI=true LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Adwaita GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
