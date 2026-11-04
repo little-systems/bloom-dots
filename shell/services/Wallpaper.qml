@@ -54,10 +54,8 @@ Singleton {
 
 	function set(path) {
 		if (!Logic.PICTURES.test(path) && !Logic.isVideo(path)) { root.error = "Choose a supported image or video file."; return root.error; }
-		root.error = Settings.set("bloom-wallpaper", path);
-		if (root.error !== "") return root.error;
-		root.opened = false;
-		return "ok";
+		root.error = "";
+		return Settings.set("bloom-wallpaper", path, error => { root.error = error; if (error === "") root.opened = false; });
 	}
 	function show() {
 		root.opened = true;
@@ -107,8 +105,7 @@ Singleton {
 		command: ["test", "-d", validateFolder.candidate]
 		onExited: code => {
 			if (code !== 0) { root.error = "Folder not found. Choose an existing folder."; return; }
-			root.error = Settings.set("bloom-wallpaper-dir", validateFolder.candidate);
-			if (root.error === "") root.refresh();
+			Settings.set("bloom-wallpaper-dir", validateFolder.candidate, error => { root.error = error; if (error === "") root.refresh(); });
 		}
 	}
 	Process {

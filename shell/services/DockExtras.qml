@@ -98,23 +98,23 @@ Singleton {
 		const item = root.items.find(x => x.key === key);
 		return item ? { kind: item.kind, removable: !!item.removable } : { kind: "background" };
 	}
-	function hide(key) {
+	function hide(key, completed) {
 		const item = root.drives.find(x => x.key === key);
 		if (!item) return "drive unavailable";
 		const id = item.uuid || "path:" + item.device;
 		const old = Logic.jsonArray(Settings.values["bloom-dock-extras-hidden-drives"]);
-		return Settings.set("bloom-dock-extras-hidden-drives", JSON.stringify(old.concat([id])));
+		return Settings.set("bloom-dock-extras-hidden-drives", JSON.stringify(old.concat([id])), completed);
 	}
-	function remove(key) {
+	function remove(key, completed) {
 		const item = root.folders.find(x => x.key === key);
 		if (!item) return "folder unavailable";
 		if (item.kind === "folder") {
 			const id = key.slice(7);
 			const rest = Settings.values["bloom-dock-extras-folders"].split(",").filter(x => x.trim() !== id);
-			return Settings.set("bloom-dock-extras-folders", rest.length ? rest.join(",") : "none");
+			return Settings.set("bloom-dock-extras-folders", rest.length ? rest.join(",") : "none", completed);
 		}
 		const old = Logic.jsonArray(Settings.values["bloom-dock-extras-custom-folders"]);
-		return Settings.set("bloom-dock-extras-custom-folders", JSON.stringify(old.filter(x => x.path !== item.path)));
+		return Settings.set("bloom-dock-extras-custom-folders", JSON.stringify(old.filter(x => x.path !== item.path)), completed);
 	}
 	function emptyTrash(confirmed) {
 		if (!confirmed || !root.active || !Settings.values["bloom-dock-extras-recycle-bin"]) return "confirmation required";

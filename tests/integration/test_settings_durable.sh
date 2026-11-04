@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# "ok" from Settings.set (and so from `bloom ipc settings set`) must mean the
-# value is on disk: a shell stopped right after the reply must not lose it.
+# The Settings completion callback and `bloom ipc settings set` success mean
+# the value is on disk: stopping right after completion must not lose it.
 set -euo pipefail
 # shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -16,4 +16,4 @@ if ! QML_XHR_ALLOW_FILE_READ=1 timeout 15 qs --no-color -p "$HARNESS" >"$TEST_TM
 	fail "a setting was not on disk when set returned"
 fi
 log_has "RESULT durable=5/5" || fail "unexpected harness result"
-pass "a setting is on disk the moment set returns"
+pass "a setting is on disk the moment its completion callback runs"

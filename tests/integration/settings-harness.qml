@@ -1,39 +1,19 @@
 import QtQuick
 import Quickshell
 import qs.services
-
-// Test harness for Settings, run by tests/integration/test_settings_durable.sh.
-// Reads settings.json in the same instant Settings.set returns: "ok" must mean
-// the value is already on disk. Exits 0 when every write was durable.
+// Completion, rather than a queued receipt, is the durable acknowledgment.
 ShellRoot {
-	function readNow(path) {
-		const xhr = new XMLHttpRequest();
-		xhr.open("GET", "file://" + path, false);
-		xhr.send();
-		return xhr.responseText;
-	}
-
-	Timer {
-		interval: 300
-		running: true
-		onTriggered: {
-			let durable = 0;
-			const modes = ["light", "dark", "custom", "light", "dark"];
-			for (const m of modes) {
-				const err = Settings.set("bloom-theme-mode", m);
-				let onDisk = "";
-				try {
-					onDisk = JSON.parse(readNow(Settings.path))["bloom-theme-mode"];
-				} catch (e) {
-					onDisk = "unreadable";
-				}
-				if (err === "" && onDisk === m)
-					durable++;
-				else
-					console.log(`RESULT not durable: set ${m} (${err || "ok"}), disk has ${onDisk}`);
-			}
-			console.log(`RESULT durable=${durable}/${modes.length}`);
-			Qt.exit(durable === modes.length ? 0 : 1);
-		}
-	}
+    property int durable: 0
+    property var modes: ["light", "dark", "custom", "light", "dark"]
+    function next() {
+        if (durable === modes.length) { console.log("RESULT durable=5/5"); Qt.exit(0); return; }
+        const mode = modes[durable];
+        Settings.set("bloom-theme-mode", mode, error => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", "file://" + Settings.path, false); xhr.send();
+            if (error !== "" || JSON.parse(xhr.responseText)["bloom-theme-mode"] !== mode) { Qt.exit(1); return; }
+            durable++; Qt.callLater(next);
+        });
+    }
+    Timer { interval: 300; running: true; onTriggered: next() }
 }

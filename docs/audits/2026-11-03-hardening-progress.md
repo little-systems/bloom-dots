@@ -13,7 +13,7 @@ their historical evidence or declare the whole program complete.
 | R04 install interruption | Write-ahead pending steps; adjacent staged replace, file and directory syncs; inspect/resume/restore-originals CLI; settle intents no longer present in a regenerated plan | SIGKILL before/after every install replacement in the fixture passes; selected removal cut points and edit-after-cut refusal pass. Real power loss/ENOSPC, every uninstall syscall and immutable deployment rollback remain unverified. |
 | Reconciliation | Matching install avoids service restart; explicit `--restart`; repeated removal is a no-op | Reinstall/no-op/roundtrip tests pass. Source edits inside live symlink targets need explicit restart or `update`; immutable deployments remain H5. |
 | Journal compatibility | New mutations write manifest v2; reader accepts v1/v2 | Old v1-only lifecycle tools refuse v2. A rollback to old code does not downgrade the journal; retain a compatible recovery checkout. |
-| R02 settings acknowledgment | Handle save failure; retain committed values; reload FileView cache before retry; validate import/reset as one batch; propagate errors through theme/wallpaper IPC | Actual offscreen read-only-directory failure, retry, batch rejection, durable-save and Settings-app integration checks pass. A shared cross-process revision/serialization mechanism is still pending. |
+| R02 settings acknowledgment | Handle save failure; retain committed values; reload FileView cache before retry; validate import/reset as one batch; propagate errors through theme/wallpaper IPC | Actual offscreen read-only-directory failure, retry, batch rejection, durable-save and Settings-app integration checks pass. Settings patches now share the transaction writer described below; StateFile cross-process semantics remain pending. |
 | R07 state/quarantine | Keep pending data on failed writes; explicit retry; restore committed value; block writes when read/quarantine fails; quarantine success logged after completion | Actual failed writes/retry/failed `mv` plus existing corruption/early-save races pass. Schema versions, document byte budgets and retention remain pending. |
 
 No runtime package operation, live uninstall/reinstall, real logout or full
@@ -64,8 +64,8 @@ changes require their own validation and fresh approval for another full run.
 ## Remaining program
 
 The complete corrected logout/login handoff still needs owner acceptance.
-H1's remaining fault matrix/VM evidence and H2's cross-writer store, independent
-display rollback and ownership-aware themes are open. H3 operational logging /
+H1's remaining fault matrix/VM evidence and H2's remaining state-store semantics,
+independent display rollback and ownership-aware themes are open. H3 operational logging /
 doctor, H4 device/daemon recovery, H5 staged activation / request budgets and H6
 real Arch lifecycle acceptance are not implemented by this batch.
 
@@ -102,3 +102,19 @@ focus cancellation and visibility recovery. The owner's exact intermittent
 screenshot was not captured live before its state changed; these are verified
 failure routes, not proof of every possible cause. Safe IPC diagnostics now
 include pointer/reveal sources, monitor/workspace, polling and client count.
+
+## H2 settings concurrency batch
+
+The old cached-snapshot save failed a deterministic editor-interference regression.
+Settings now uses asynchronous validated patches with explicit pending receipts
+and durable completion, a shared lock/fresh read/merge/atomic replacement writer,
+per-key conflicts and content revisions. Callers wait for commit before reporting
+success or performing dependent actions; CLI success still means committed data.
+The prior synchronous `Settings.set` return contract is intentionally replaced:
+raw IPC consumers must handle pending receipts. See
+[settings transactions](../handover/settings-transactions.md) for the exact
+contract, evidence, non-cooperating-editor interval and remaining limits.
+
+No full suite, live settings mutation, package change, push or merge is included.
+The next H2 priority is display rollback independent of the Settings window,
+followed by generated configuration transactions and theme ownership restoration.

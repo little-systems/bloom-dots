@@ -43,6 +43,26 @@ cmd_version() {
 	fi
 }
 
+# Pending is an explicit receipt; CLI success waits for the disk commit.
+settings_reply() {
+	local out="$1" ticket result state
+	if [[ "$out" == pending:* ]]; then
+		ticket="${out#pending:}"
+		for _ in {1..150}; do
+			result="$(timeout 2 qs -c bloom ipc call settings result "$ticket")" || { printf 'Settings status unavailable; reload before retrying\n' >&2; return 1; }
+			state="$(jq -r '.state' <<<"$result")"
+			case "$state" in
+				succeeded) printf 'ok\n'; return 0 ;;
+				failed|unknown) jq -r '.error' <<<"$result"; return 1 ;;
+			esac
+			sleep 0.02
+		done
+		printf 'Settings commit not confirmed; reload before retrying\n' >&2
+		return 1
+	fi
+	printf '%s\n' "$out"
+}
+
 cmd_ipc() {
 	[[ $# -ge 2 ]] || die "usage: bloom ipc <target> <function> [args...]"
 	if [[ "$1" == dock && "$2" == reorder && $# -eq 3 && "$3" == \[* ]]; then
@@ -59,11 +79,14 @@ cmd_ipc() {
 			set -- "$1" "$2" "$3" "$(jq -n --arg value "$4" '$value')"
 		fi
 		out="$(qs -c bloom ipc call "$@")" || exit $?
+		if [[ "$out" == pending:* ]]; then settings_reply "$out"; return $?; fi
 		printf '%s\n' "$out"
 		[[ "$out" == ok ]] || exit 1
 		return 0
 	fi
-	exec qs -c bloom ipc call "$@"
+	local result
+	result="$(qs -c bloom ipc call "$@")" || return $?
+	settings_reply "$result"
 }
 
 # Pairs of "target link" that dev install manages.

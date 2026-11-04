@@ -18,7 +18,7 @@ PanelWindow {
 	property bool lockPreparing: false
 	readonly property alias view: view
 	readonly property string _key: "dock-" + win.modelData.name
-	function _reportExtra(result) { if (result && result !== "ok") Dock.notify(result); }
+	function _reportExtra(result) { if (result && result !== "ok" && !result.startsWith("pending:")) Dock.notify(result); }
 
 	screen: win.modelData
 	anchors.bottom: true
@@ -156,8 +156,8 @@ PanelWindow {
 			if (!id.startsWith("extra:")) { Dock.runMenu(id, key); return; }
 			const extraKey = id.slice(6);
 			if (key === "empty-trash") view.confirmEmptyTrash();
-			else if (key === "hide") win._reportExtra(DockExtras.hide(extraKey));
-			else if (key === "remove") win._reportExtra(DockExtras.remove(extraKey));
+			else if (key === "hide") win._reportExtra(DockExtras.hide(extraKey, error => win._reportExtra(error)));
+			else if (key === "remove") win._reportExtra(DockExtras.remove(extraKey, error => win._reportExtra(error)));
 			else win._reportExtra(DockExtras.action(extraKey, key));
 		}
 		onPinRequested: id => Dock.pin(id)

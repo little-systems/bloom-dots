@@ -21,6 +21,7 @@ Singleton {
 	// keys this version doesn't know.
 	property var _raw: ({})
 	property bool _fileValid: true
+	property bool _loaded: false
 	// FileView only watches a file that existed when it was first read.
 	property bool _seenFile: false
 	property string saveError: ""
@@ -35,34 +36,91 @@ Singleton {
 		return Logic.SCHEMA[key]?.type ?? "";
 	}
 
-	// Validates and saves one setting. Returns "" on success, else the error.
-	function set(key, value) {
-		return root.setMany({ [key]: value });
+	// Accepted requests return a pending ticket, never a durability claim.
+	readonly property string _writerId: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2)
+	property int _sequence: 0
+	property var _queue: []
+	property var _results: ({})
+	property var _current: null
+	property string _reply: ""
+	property string revision: ""
+	signal writeFinished(string ticket, string error)
+	function set(key, value, completed) { return root.setMany({ [key]: value }, completed); }
+	function _complete(callback, error) {
+		if (typeof callback !== "function") return;
+		try { callback(error); } catch (e) { console.warn("bloom settings: completion listener unavailable"); }
 	}
-
-	// Import/reset are one validated write, never a sequence of partial saves.
-	function setMany(changes) {
-		if (root.saveError !== "") {
-			// A failed FileView write may still have updated its text cache.
-			// Re-read before a retry so identical text isn't silently skipped.
-			file.reload();
-			if (!file.waitForJob()) return "Couldn't recheck settings before retrying";
+	function result(ticket) { return root._results[ticket] || { state: "unknown", error: "unknown settings operation" }; }
+	function setMany(changes, completed) {
+		if (!root._loaded) file.waitForJob();
+		let error = root._loaded ? "" : "Settings are still loading; retry";
+		const patch = {};
+		if (error === "" && (changes === null || typeof changes !== "object" || Array.isArray(changes))) error = "settings changes must be an object";
+		else if (error === "") for (const key of Object.keys(changes)) {
+			const checked = Logic.validateOne(key, changes[key]);
+			if (!checked.ok) { error = key + ": " + checked.error; break; }
+			patch[key] = checked.value;
 		}
-		if (!root._fileValid)
-			return "settings.json is invalid; fix it before changing settings";
-		if (changes === null || typeof changes !== "object" || Array.isArray(changes))
-			return "settings changes must be an object";
-		const next = Object.assign({}, root._raw);
-		for (const key of Object.keys(changes)) {
-			const r = Logic.validateOne(key, changes[key]);
-			if (!r.ok) return `${key}: ${r.error}`;
-			next[key] = r.value;
+		if (error !== "") { root.saveError = error; root._complete(completed, error); return error; }
+		if (root._queue.length >= 32) {
+			error = "Settings writer is busy; wait for pending saves before retrying";
+			root.saveError = error; root._complete(completed, error); return error;
 		}
-		root.saveError = "";
-		file.setText(Logic.serialize(next));
-		if (root.saveError !== "") return root.saveError;
-		root._apply(next);
-		return "";
+		const base = JSON.parse(JSON.stringify(root._raw));
+		// Scalar controls express a new absolute value, so later local intents
+		// can follow earlier queued values. Composite read/modify/write values
+		// keep their original base and must conflict instead of losing edits.
+		for (const pending of [root._current].concat(root._queue)) {
+			if (!pending) continue;
+			for (const key of Object.keys(patch)) {
+				if (["number", "bool", "enum", "color"].indexOf(root.inputType(key)) >= 0 && key in pending.changes)
+					base[key] = pending.changes[key];
+			}
+		}
+		const ticket = "settings-" + root._writerId + "-" + (++root._sequence);
+		root._results[ticket] = { state: "pending", error: "" };
+		root._queue = root._queue.concat([{ ticket: ticket, changes: patch, base: base, completed: completed }]);
+		root._startNext();
+		return "pending:" + ticket;
+	}
+	function _startNext() {
+		if (root._current || writer.running || root._queue.length === 0) return;
+		root._current = root._queue[0]; root._queue = root._queue.slice(1);
+		root._reply = ""; root.saveError = "";
+		writer.stdinEnabled = true; writer.running = true; writeDeadline.restart();
+	}
+	function _finish(error, reply) {
+		const operation = root._current;
+		if (!operation) return;
+		writeDeadline.stop(); root.saveError = error;
+		if (error !== "") console.warn("bloom settings: commit not confirmed; reloading storage");
+		if (reply && reply.ok) { root.revision = reply.revision; root._apply(reply.value); }
+		root._results[operation.ticket] = { state: error === "" ? "succeeded" : "failed", error: error, revision: root.revision };
+		const keys = Object.keys(root._results);
+		keys.slice(0, Math.max(0, keys.length - 64)).forEach(key => delete root._results[key]);
+		root._current = null;
+		file.reload();
+		Qt.callLater(root._startNext);
+		root.writeFinished(operation.ticket, error);
+		root._complete(operation.completed, error);
+	}
+	Process {
+		id: writer
+		command: ["python3", decodeURIComponent(Qt.resolvedUrl("settings-store.py").toString().replace("file://", "")), root.path]
+		stdinEnabled: true
+		onStarted: { if (!root._current) { writer.kill(); return; } writer.write(JSON.stringify({ changes: root._current.changes, base: root._current.base }) + "\n"); writer.stdinEnabled = false; }
+		stdout: StdioCollector { onStreamFinished: root._reply = text }
+		onExited: code => Qt.callLater(() => {
+			let reply;
+			try { reply = JSON.parse(root._reply); } catch (e) {}
+			root._finish(reply?.ok === true && code === 0 ? "" : (reply?.error || "Settings write was not confirmed; reload before retrying"), reply?.ok === true && code === 0 ? reply : null);
+			Qt.callLater(root._startNext);
+		})
+	}
+	Timer {
+		id: writeDeadline
+		interval: 3000
+		onTriggered: { writer.kill(); root._finish("Settings write timed out; reload before retrying", null); }
 	}
 
 	function nonDefaults() {
@@ -83,20 +141,12 @@ Singleton {
 		id: file
 		path: root.path
 		watchChanges: true
-		atomicWrites: true
-		// "ok" from set() must mean the value is on disk; settings writes are
-		// rare and tiny, so a blocking write costs nothing noticeable.
-		blockWrites: true
 		printErrors: false
-		onSaveFailed: error => {
-			root.saveError = "Couldn't save settings (error " + error + "); the last saved settings are still in use";
-			console.warn("bloom settings: save failed (error " + error + ")");
-		}
-		onSaved: root.saveError = ""
 
 		onFileChanged: reload()
 
 		onLoaded: {
+			root._loaded = true;
 			root._seenFile = true;
 			const r = Logic.parse(text());
 			// Valid JSON that isn't an object (a string, a list) is treated like a
@@ -112,7 +162,9 @@ Singleton {
 		}
 
 		onLoadFailed: error => {
+			root._loaded = true;
 			if (error !== FileViewError.FileNotFound) {
+				root._fileValid = false;
 				console.warn(`bloom settings: cannot read ${root.path} (error ${error}); keeping the last good settings`);
 				return;
 			}

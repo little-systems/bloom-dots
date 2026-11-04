@@ -9,13 +9,13 @@ ShellRoot {
         interval: 500
         running: true
         onTriggered: {
-            const err = Settings.set("bloom-theme-mode", "light");
+            Settings.set("bloom-theme-mode", "light", error => {
+                console.log("RESULT settings-refused=" + (error !== "") + " settings-kept=" + (Settings.values["bloom-theme-mode"] === "dark"));
+                finish.start();
+            });
             state.save({ changed: true });
-            console.log("RESULT settings-refused=" + (err !== "")
-                + " settings-kept=" + (Settings.values["bloom-theme-mode"] === "dark"));
             const invalidBatch = Settings.setMany({ "bloom-theme-mode": "custom", "bloom-theme-opacity": 9 });
             console.log("RESULT batch-atomic=" + (invalidBatch !== "" && Settings.values["bloom-theme-mode"] === "dark"));
-            finish.start();
         }
     }
     Timer {
@@ -33,9 +33,10 @@ ShellRoot {
         onExited: code => {
             if (code !== 0) { Qt.exit(1); return; }
             state.retry();
-            const err = Settings.setMany({ "bloom-theme-mode": "light", "bloom-theme-opacity": 0.7 });
-            if (err !== "") { Qt.exit(1); return; }
-            retried.start();
+            Settings.setMany({ "bloom-theme-mode": "light", "bloom-theme-opacity": 0.7 }, error => {
+                if (error !== "") { Qt.exit(1); return; }
+                retried.start();
+            });
         }
     }
     Timer {

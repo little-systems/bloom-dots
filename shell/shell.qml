@@ -309,6 +309,8 @@ ShellRoot {
 			return Settings.set(key, parsed) || "ok";
 		}
 
+		function result(ticket: string): string { return JSON.stringify(Settings.result(ticket)); }
+
 		function nonDefaults(): string {
 			return JSON.stringify(Settings.nonDefaults());
 		}

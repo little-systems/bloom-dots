@@ -13,7 +13,7 @@ stub() {
 	printf '#!/usr/bin/env bash\nprintf "%%s %%s\\n" "%s" "$*" >>"$STUB_LOG"\n%s\n' "$1" "$2" >"$TMP/stub/$1"
 	chmod +x "$TMP/stub/$1"
 }
-stub qs 'if [[ "$1" == --version ]]; then echo "Quickshell 0.3.2 (stub)"; exit 0; fi; if [[ -n "${STUB_QS_SLEEP:-}" ]]; then sleep "$STUB_QS_SLEEP"; fi; if [[ -n "${STUB_QS_OUT:-}" ]]; then echo "$STUB_QS_OUT"; elif [[ "$*" == *"ipc call settings"* ]]; then echo "{}"; fi; exit "${STUB_QS_EXIT:-0}"'
+stub qs 'if [[ "$*" == *"ipc call settings result "* && -n "${STUB_QS_RESULT:-}" ]]; then echo "$STUB_QS_RESULT"; exit 0; fi; if [[ "$1" == --version ]]; then echo "Quickshell 0.3.2 (stub)"; exit 0; fi; if [[ -n "${STUB_QS_SLEEP:-}" ]]; then sleep "$STUB_QS_SLEEP"; fi; if [[ -n "${STUB_QS_OUT:-}" ]]; then echo "$STUB_QS_OUT"; elif [[ "$*" == *"ipc call settings"* ]]; then echo "{}"; fi; exit "${STUB_QS_EXIT:-0}"'
 stub systemctl 'echo "bloom-shell.service (stub)"'
 stub journalctl 'echo "journal line (stub)"'
 stub hyprctl 'case "$1" in version) echo "{\"tag\":\"v0.56.2\"}";; getoption) echo "bool: true";; esac'
@@ -52,6 +52,15 @@ set -e
 grep -qF "expected a number from 0 to 1" <<<"$out" || fail "settings set error text missing: $out"
 STUB_QS_OUT=ok "$BLOOM" ipc settings set bloom-theme-opacity 0.5 >/dev/null || fail "settings set ok should exit 0"
 pass "settings set exits non-zero when the value is rejected"
+
+# A queued receipt is not success; terminal storage results determine exit.
+out="$(STUB_QS_OUT=pending:settings-1 STUB_QS_RESULT='{"state":"succeeded","error":""}' "$BLOOM" ipc settings set bloom-theme-opacity 0.5)"
+[[ "$out" == ok ]] || fail "pending success was not awaited"
+if STUB_QS_OUT=pending:settings-2 STUB_QS_RESULT='{"state":"failed","error":"fixture conflict"}' "$BLOOM" ipc settings set bloom-theme-opacity 0.6 > "$TMP/failed-result"; then
+    fail "queued conflict reported success"
+fi
+grep -q 'fixture conflict' "$TMP/failed-result" || fail "queued error missing"
+pass "CLI waits for commit and propagates asynchronous failure"
 
 # dev install / status / uninstall
 "$BLOOM" dev install >/dev/null

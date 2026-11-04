@@ -69,8 +69,8 @@ ShellRoot {
 		const defaults = Logic.defaults();
 		const changes = {};
 		Logic.keys().filter(key => app._keep.indexOf(key) < 0).forEach(key => changes[key] = defaults[key]);
-		app.saveError = Settings.setMany(changes);
-		if (app.saveError === "") app.run(["systemctl", "--user", "restart", "bloom-shell"]);
+		app.saveError = "";
+		Settings.setMany(changes, error => { app.saveError = error; if (error === "") app.run(["systemctl", "--user", "restart", "bloom-shell"]); });
 	}
 	function importFrom(text) {
 		let parsed;
@@ -87,8 +87,8 @@ ShellRoot {
 		}
 		const changes = {};
 		Logic.keys().filter(key => key in parsed && key !== "bloom-enabled-modules").forEach(key => changes[key] = parsed[key]);
-		app.saveError = Settings.setMany(changes);
-		app.importLabel = app.saveError === "" ? "Settings Imported" : "Import Failed";
+		app.importLabel = "Importing…";
+		Settings.setMany(changes, error => { app.saveError = error; app.importLabel = error === "" ? "Settings Imported" : "Import Failed"; });
 	}
 
 	SystemStore { id: store }
@@ -98,7 +98,7 @@ ShellRoot {
 	QtObject {
 		id: checkedStore
 		readonly property var values: Settings.values
-		function set(key, value) { app.saveError = Settings.set(key, value) || ""; }
+		function set(key, value) { app.saveError = ""; Settings.set(key, value, error => app.saveError = error); }
 	}
 
 	OpeningMotion { id: appEntrance; initial: Render.macMotion ? 0 : 1; target: 1 }
@@ -204,7 +204,7 @@ ShellRoot {
 				list = JSON.parse(Settings.values["bloom-dock-extras-custom-folders"]);
 			} catch (e) {}
 			if (list.some(f => f.path === path)) return;
-			Settings.set("bloom-dock-extras-custom-folders", JSON.stringify(list.concat([{ name: path.split("/").pop(), path: path }])));
+			checkedStore.set("bloom-dock-extras-custom-folders", JSON.stringify(list.concat([{ name: path.split("/").pop(), path: path }])));
 		}
 	}
 	ColorDialog {
