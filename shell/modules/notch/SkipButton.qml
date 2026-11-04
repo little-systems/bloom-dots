@@ -34,9 +34,10 @@ PressArea {
 	}
 
 	Item {
+		objectName: "skipGlyphViewport"
 		anchors.centerIn: parent
-		width: root.boxWidth
-		height: root.boxHeight
+		width: root.iconWidth
+		height: root.iconHeight
 		clip: true
 
 		// The incoming copy exists only mid-push, as in Bloom's AnimatePresence;
@@ -45,7 +46,7 @@ PressArea {
 			id: back
 			visible: slide.running
 			x: root.forward ? -root._d : root._d
-			y: (root.boxHeight - height) / 2
+			y: 0
 			name: root._icon
 			size: root.iconWidth
 			height: root.iconHeight
@@ -54,7 +55,7 @@ PressArea {
 
 		SvgIcon {
 			id: front
-			y: (root.boxHeight - height) / 2
+			y: 0
 			name: root._icon
 			size: root.iconWidth
 			height: root.iconHeight

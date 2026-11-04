@@ -20,18 +20,26 @@ Scope {
 	// Off in tests: a software renderer can't keep up with it.
 	property bool clockTurning: true
 	property var monitors: HyprState.monitors
-	// Injectable backend for isolated tests; only transport methods are exposed.
+	// Injectable media backend for isolated secure-control tests.
 	property var mediaSource: Settings.values["bloom-lock-media-enabled"] ? Media : null
 	readonly property var lockMedia: session.locked && Settings.values["bloom-lock-media-enabled"] && root.mediaSource
 		? { hasMedia: root.mediaSource.hasMedia, isPlaying: root.mediaSource.isPlaying,
 			title: root.mediaSource.title, artist: root.mediaSource.artist, artUrl: root.mediaSource.artUrl,
-			canPrevious: root.mediaSource.canPrevious, canNext: root.mediaSource.canNext, canToggle: root.mediaSource.canToggle }
+			canPrevious: root.mediaSource.canPrevious, canNext: root.mediaSource.canNext, canToggle: root.mediaSource.canToggle,
+			lengthMs: root.mediaSource.lengthMs || 0, positionMs: root.mediaSource.positionMs || 0, canSeek: root.mediaSource.canSeek === true,
+			volume: root.audioSource.muted ? 0 : root.audioSource.volume, canVolume: !!root.audioSource.sink }
 		: { hasMedia: false, isPlaying: false }
-	function mediaAction(action) {
+	property var audioSource: Audio
+	readonly property bool mediaPolling: session.secure && session.locked && !root._leaving && Settings.values["bloom-lock-media-enabled"] && root.mediaSource === Media
+	onMediaPollingChanged: Media.hold("lock-player", root.mediaPolling)
+	Component.onDestruction: Media.hold("lock-player", false)
+	function mediaAction(action, value) {
 		if (!session.secure || !session.locked || root._leaving || !Settings.values["bloom-lock-media-enabled"] || !root.mediaSource) return;
 		if (action === "previous" && root.mediaSource.canPrevious) root.mediaSource.previous();
 		if (action === "next" && root.mediaSource.canNext) root.mediaSource.next();
 		if (action === "toggle" && root.mediaSource.canToggle) root.mediaSource.togglePlaying();
+		if (action === "seek" && root.mediaSource.canSeek && Number.isFinite(value) && root.mediaSource.lengthMs > 0) root.mediaSource.seek(Math.max(0, Math.min(root.mediaSource.lengthMs, value)));
+		if (action === "volume" && !!root.audioSource.sink && Number.isFinite(value)) root.audioSource.setVolume(Math.max(0, Math.min(1, value)));
 	}
 
 	readonly property bool locked: session.locked
@@ -261,6 +269,8 @@ Scope {
 				onMediaPreviousRequested: root.mediaAction("previous")
 				onMediaNextRequested: root.mediaAction("next")
 				onMediaToggleRequested: root.mediaAction("toggle")
+				onMediaSeekRequested: ms => root.mediaAction("seek", ms)
+				onMediaVolumeRequested: value => root.mediaAction("volume", value)
 				onTextEdited: text => {
 					root._text = text;
 					root._setMessage("", false);

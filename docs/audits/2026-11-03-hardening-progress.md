@@ -74,9 +74,18 @@ CI at `f00bf13` does not validate these commits. No push or merge is included.
 
 ## Lock media design follow-up
 
-The owner replaced the earlier compact-card preference with a normal player
-card: 480 × 184 logical pixels, 128-pixel artwork, larger metadata and 44-pixel
-transport targets. Smaller screens use a 152-pixel-high adaptation. The secure
-lock surface, capability checks and privacy toggle are unchanged. All 21
-LockView cases and the isolated secure-media integration pass; its screenshot
-was inspected before restarting the live shell. No additional full gate ran.
+The owner rejected the enlarged `d3dd0e6` card and requested the previous
+360 × 134 footprint with complete playback controls. The revised layout has
+artwork/metadata, elapsed/duration with seeking, previous/play/next, and output
+volume. Seek and volume share the secure/locked/not-leaving/privacy guards;
+values are finite and clamped, unsupported seeking is disabled. Position polling
+is held only during secure lock media display and released on unlock/destruction.
+No mixer or desktop app can be opened from this card.
+
+The owner's circled controls exposed two problems: oversized pause relative to
+skip glyphs and skip glyphs positioned at the left of larger hit areas. The shared
+SkipButton now centers its glyph viewport; default-size notch controls retain
+their geometry. Lock controls use equal 36-pixel hit areas, balanced glyph sizes,
+and matching hover/press scales. All 23 LockView cases (including geometry and
+seek/focus), focused music-component cases, and isolated secure-media integration
+pass. Screenshot inspected before live update. No additional full gate ran.

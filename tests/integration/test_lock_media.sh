@@ -25,12 +25,18 @@ matches() { call state | jq -e "$1" >/dev/null; }
 wait_for 'fixture ready' matches '.locked == false'
 call transport next >/dev/null
 wait_for 'transport ignored outside the lock' matches '.skips == 0'
+call control seek 90000 >/dev/null
+call control volume 0.2 >/dev/null
+wait_for 'unlocked seek and volume refused' matches '.position == 45000 and .volume == 0.6'
 call lock >/dev/null
 wait_for 'secure surface with media' matches '.secure and .locked and .available'
 call transport next >/dev/null
 call transport toggle >/dev/null
 wait_for 'media controls leave the session locked' matches '.secure and .locked and (.playing | not) and .skips == 1'
-pass 'transport works only inside the secure locked session'
+call control seek 90000 >/dev/null
+call control volume 0.4 >/dev/null
+wait_for 'secure seek and volume applied' matches '.position == 90000 and .volume == 0.4 and .secure'
+pass 'transport, seeking and volume work only inside the secure locked session'
 call transport toggle >/dev/null
 if [[ -n "${BLOOM_LOCK_MEDIA_SCREENSHOT:-}" ]]; then
     sleep 0.7
@@ -40,5 +46,8 @@ call enabled false >/dev/null
 wait_for 'privacy switch hides lock media' matches '(.available | not) and .secure'
 call transport next >/dev/null
 wait_for 'disabled transport refuses actions' matches '.skips == 1'
-pass 'privacy switch removes media and blocks its transport'
+call control seek 120000 >/dev/null
+call control volume 0.1 >/dev/null
+wait_for 'disabled seek and volume refused' matches '.position == 90000 and .volume == 0.4'
+pass 'privacy switch removes media and blocks transport, seeking and volume'
 if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE 'textinput|pipewire|wl_keyboard.leave'; then fail 'lock media logged an unexpected warning'; fi

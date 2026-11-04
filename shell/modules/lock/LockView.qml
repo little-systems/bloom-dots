@@ -43,6 +43,8 @@ Item {
 	signal mediaPreviousRequested()
 	signal mediaToggleRequested()
 	signal mediaNextRequested()
+	signal mediaSeekRequested(real ms)
+	signal mediaVolumeRequested(real value)
 
 	signal textEdited(string text)
 	signal submitted(string response)
@@ -99,7 +101,6 @@ Item {
 		x: (root.width - width) / 2
 		y: Math.min(lockClock.y + lockClock.height * lockClock.scale + 24,
 			main.y - height - 40) + mediaEntrance.rise
-		compact: root.height < 550
 		theme: root.theme
 		media: root.media
 		visible: mediaEntrance.progress > 0
@@ -109,6 +110,8 @@ Item {
 		onPreviousRequested: { root.mediaPreviousRequested(); root.focusField(); }
 		onToggleRequested: { root.mediaToggleRequested(); root.focusField(); }
 		onNextRequested: { root.mediaNextRequested(); root.focusField(); }
+		onSeekRequested: ms => { root.mediaSeekRequested(ms); root.focusField(); }
+		onVolumeRequested: value => { root.mediaVolumeRequested(value); root.focusField(); }
 	}
 
 	Spring {

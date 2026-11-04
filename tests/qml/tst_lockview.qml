@@ -81,6 +81,35 @@ Item {
 			mouseClick(part(v, "mediaNext"), 18, 18);
 			compare(next.count, 1);
 		}
+		function test_mediaTransportGeometry() {
+			const v = make({ media: song(true) });
+			const previous = part(v, "mediaPrevious"), toggle = part(v, "mediaToggle"), next = part(v, "mediaNext");
+			for (const button of [previous, toggle, next]) {
+				compare(button.width, 36);
+				compare(button.height, 36);
+				compare(button.hoverScale, 1.12);
+				compare(button.tapScale, 0.92);
+			}
+			for (const skip of [previous, next]) {
+				const glyph = findChild(skip, "skipGlyphViewport");
+				compare(glyph.x + glyph.width / 2, skip.width / 2);
+				compare(glyph.y + glyph.height / 2, skip.height / 2);
+			}
+		}
+		function test_mediaSeekKeepsPasswordFocus() {
+			const v = make({ media: song(true, { lengthMs: 240000, positionMs: 60000, canSeek: true, canVolume: true, volume: 0.5 }) });
+			const seek = spy(v, "mediaSeekRequested");
+			const submitted = spy(v, "submitted");
+			tryVerify(() => part(v, "lockMedia").opacity > 0.9);
+			const bar = part(v, "mediaSeek");
+			mouseClick(bar, bar.width / 2, bar.height / 2);
+			compare(seek.count, 1);
+			compare(seek.signalArguments[0][0], 120000);
+			compare(submitted.count, 0);
+			verify(part(v, "field").activeFocus);
+			compare(part(v, "lockMedia").width, 360);
+			compare(part(v, "lockMedia").height, 134);
+		}
 		function test_mediaFitsAbovePasswordOnSmallScreen() {
 			const v = make({ media: song(true) });
 			v.anchors.fill = undefined;
