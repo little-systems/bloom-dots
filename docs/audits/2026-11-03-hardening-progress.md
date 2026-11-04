@@ -34,8 +34,10 @@ for an identical-text write, leaving `_writing` set and preventing subsequent
 state writes. `88b6819` makes a confirmed unchanged save an explicit no-op.
 The new state regression, storage-failure/retry/quarantine checks and complete
 focused notification integration (including clear-all) pass. This is a verified
-focused correction, **not a second green full gate**. Another full run requires
-new owner approval.
+focused correction. The owner then approved a second complete gate at
+`fc7b358`: every check passed, exit status 0 (private log
+`hardening-ci-fc7b358.log`). That green result covers that checkpoint; later
+changes require their own validation and fresh approval for another full run.
 
 ## Scoped owner additions
 
@@ -69,3 +71,12 @@ real Arch lifecycle acceptance are not implemented by this batch.
 
 Full-suite execution requires the owner's separate approval. Historical green
 CI at `f00bf13` does not validate these commits. No push or merge is included.
+
+## Lock media design follow-up
+
+The owner replaced the earlier compact-card preference with a normal player
+card: 480 × 184 logical pixels, 128-pixel artwork, larger metadata and 44-pixel
+transport targets. Smaller screens use a 152-pixel-high adaptation. The secure
+lock surface, capability checks and privacy toggle are unchanged. All 21
+LockView cases and the isolated secure-media integration pass; its screenshot
+was inspected before restarting the live shell. No additional full gate ran.

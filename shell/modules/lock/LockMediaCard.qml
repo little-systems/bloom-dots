@@ -10,6 +10,8 @@ Rectangle {
 	required property QtObject theme
 	property var media: ({})
 	property bool compact: false
+	readonly property real artworkSize: compact ? 96 : metrics.art
+	readonly property real contentX: art.x + art.width + metrics.gap
 	signal previousRequested()
 	signal toggleRequested()
 	signal nextRequested()
@@ -24,18 +26,18 @@ Rectangle {
 	AlbumArt {
 		id: art
 		x: root.metrics.padding
-		y: root.metrics.padding
-		width: root.metrics.art
+		y: (root.height - height) / 2
+		width: root.artworkSize
 		height: width
 		radius: root.metrics.artRadius
 		source: root.media.artUrl || ""
 		noteColor: root.theme.textMuted
 	}
 	Column {
-		x: art.x + art.width + root.metrics.gap
-		y: art.y + (art.height - height) / 2
+		x: root.contentX
+		y: root.compact ? 24 : 32
 		width: root.width - x - root.metrics.padding
-		spacing: 3
+		spacing: 6
 		Text {
 			objectName: "mediaTitle"
 			width: parent.width
@@ -44,7 +46,7 @@ Rectangle {
 			elide: Text.ElideRight
 			color: root.theme.text
 			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: Fonts.px(15)
+			font.pixelSize: Fonts.px(19)
 			font.weight: Font.DemiBold
 		}
 		Text {
@@ -55,13 +57,13 @@ Rectangle {
 			elide: Text.ElideRight
 			color: root.theme.textMuted
 			font.family: Fonts.family
-			font.pixelSize: Fonts.px(12)
+			font.pixelSize: Fonts.px(14)
 		}
 	}
 	Row {
-		anchors.horizontalCenter: parent.horizontalCenter
+		x: root.contentX + (root.width - root.contentX - root.metrics.padding - width) / 2
 		anchors.bottom: parent.bottom
-		anchors.bottomMargin: root.compact ? 6 : root.metrics.padding
+		anchors.bottomMargin: root.compact ? 20 : 28
 		spacing: root.metrics.gap
 		SkipButton {
 			objectName: "mediaPrevious"
@@ -72,8 +74,8 @@ Rectangle {
 			boxWidth: root.metrics.button
 			boxHeight: root.metrics.button
 			padding: 0
-			iconWidth: 22
-			iconHeight: 11
+			iconWidth: 26
+			iconHeight: 13
 			onActivated: root.previousRequested()
 			Accessible.name: "Previous track"
 			Accessible.role: Accessible.Button
@@ -86,7 +88,7 @@ Rectangle {
 			playing: root.media.isPlaying === true
 			color: root.theme.text
 			box: root.metrics.button
-			iconSize: 24
+			iconSize: 30
 			onClicked: root.toggleRequested()
 			Accessible.name: playing ? "Pause" : "Play"
 			Accessible.role: Accessible.Button
@@ -101,8 +103,8 @@ Rectangle {
 			boxWidth: root.metrics.button
 			boxHeight: root.metrics.button
 			padding: 0
-			iconWidth: 22
-			iconHeight: 11
+			iconWidth: 26
+			iconHeight: 13
 			onActivated: root.nextRequested()
 			Accessible.name: "Next track"
 			Accessible.role: Accessible.Button

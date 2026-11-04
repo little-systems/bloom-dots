@@ -329,7 +329,7 @@ var lock = {
 	leave: { viewMs: 200, ms: 400, returnMs: 150 },
 	capsPollMs: 500,
 	clearMs: 10000,
-	media: { width: 360, height: 134, smallHeight: 116, radius: 18, padding: 16, art: 50, artRadius: 10, gap: 12, button: 36 }
+	media: { width: 480, height: 184, smallHeight: 152, radius: 24, padding: 28, art: 128, artRadius: 16, gap: 22, button: 44 }
 };
 
 var polkit = {
