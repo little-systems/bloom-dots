@@ -81,6 +81,15 @@ TestCase {
 		compare(Notch.focusedWindow([], monitor()), null);
 	}
 
+	function test_anyVisibleCoveringWindow() {
+		const m = monitor(), rect = Notch.notchRect(m, 140, 1);
+		const covering = client({ focusHistoryID: 1 });
+		const floating = client({ focusHistoryID: 0, at: [2200, 300], size: [500, 400] });
+		verify(Notch.workspaceOverlaps([covering, floating], m, rect), "a smaller focused window cannot reveal over the covering app");
+		verify(!Notch.workspaceOverlaps([floating], m, rect));
+		verify(!Notch.workspaceOverlaps([client({ hidden: true }), client({ workspace: { id: 9 } }), client({ monitor: 1 })], m, rect));
+		verify(Notch.workspaceOverlaps([client({ pinned: true, workspace: { id: 9 } })], m, rect), "pinned windows remain visible on this workspace");
+	}
 	function test_notchRect() {
 		compare(Notch.notchRect(monitor(), 140, 1), { left: 1920 + 890, right: 1920 + 1030, top: 45, rowHeight: 36 });
 		const hidpi = monitor();

@@ -40,6 +40,18 @@ wait_for 'fullscreen clears the previous interaction' state_matches '.suppressed
 ipc notch peek 1000 >/dev/null
 wait_for 'fullscreen stays hidden during an event peek' state_matches '.suppressed and .hidden'
 pass 'fullscreen suppresses prior interaction and event reveal'
+# Focus a small floating window while a tiled app still covers the notch.
+cat > "$TEST_TMP/clients.new" <<'JSON'
+[{"address":"cover","mapped":true,"hidden":false,"monitor":0,"workspace":{"id":1},"at":[0,0],"size":[1280,720],"fullscreen":0,"focusHistoryID":1},{"address":"floating","mapped":true,"hidden":false,"monitor":0,"workspace":{"id":1},"at":[400,300],"size":[400,300],"fullscreen":0,"focusHistoryID":0}]
+JSON
+mv "$TEST_TMP/clients.new" "$TEST_TMP/clients.json"
+wait_for 'floating focus does not reveal over the covering tiled app' state_matches '(.suppressed | not) and .overlapped and .hidden'
+ipc notch openPanel calendar >/dev/null
+wait_for 'explicit panel reveal remains usable' state_matches '.panel == "calendar" and (.hidden | not)'
+sed 's/"floating"/"another-app"/' "$TEST_TMP/clients.json" > "$TEST_TMP/clients.new"
+mv "$TEST_TMP/clients.new" "$TEST_TMP/clients.json"
+wait_for 'new application focus clears stale revealed panel' state_matches '.hidden and .panel == "" and .interaction == "none"'
+pass 'covering windows and application focus prevent stale reveals'
 client 200 0
 wait_for 'visibility recovers when the app no longer covers the notch' state_matches '(.suppressed | not) and (.overlapped | not) and (.hidden | not)'
 pass 'smart notch returns after the covering app leaves'

@@ -43,8 +43,18 @@ PanelWindow {
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
 	readonly property bool _overlapped: view.mode === "smart" && win._monitor !== null
-		&& Logic.overlaps(Logic.focusedWindow(HyprState.clients, win._monitor),
+		&& Logic.workspaceOverlaps(HyprState.clients, win._monitor,
 			Logic.notchRect(win._monitor, Logic.statusWidth(false, view.widgetCount, 0, view.use24h), view.uiScale))
+
+	// A new desktop focus cancels an old edge/hover reveal. Layer-surface
+	// focus (typing into a notch panel) does not change this application key.
+	readonly property string _focusContext: {
+		if (!win._monitor) return "";
+		const focused = HyprState.clients.find(c => c.mapped && !c.hidden && c.monitor === win._monitor.id
+			&& c.workspace && c.workspace.id === win._monitor.activeWorkspace.id && c.focusHistoryID === 0);
+		return win._monitor.activeWorkspace.id + ":" + (focused?.address || "");
+	}
+	on_FocusContextChanged: if (view.mode === "smart" && win._overlapped) view.closeForLock()
 
 	readonly property bool _fullscreen: win._monitor !== null && Logic.fullscreenOn(HyprState.clients, win._monitor)
 

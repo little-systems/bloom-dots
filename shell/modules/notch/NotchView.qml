@@ -344,6 +344,7 @@ Item {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			startupAnimating: root.startupAnimating, suppressed: root.suppressed,
+			pillHovered: root.pillHovered, edgeArmed: root.edgeArmed,
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
@@ -408,6 +409,7 @@ Item {
 	onLockPreparingChanged: if (root.lockPreparing) root.closeForLock()
 	onSessionLockedChanged: if (root.sessionLocked) root.closeForLock()
 	onSuppressedChanged: if (root.suppressed && root.mode === "smart") root.closeForLock()
+	onOverlappedChanged: if (root.overlapped && root.mode === "smart") root.closeForLock()
 	on_AnyInteractionChanged: {
 		if (root._anyInteraction) {
 			graceTimer.stop();

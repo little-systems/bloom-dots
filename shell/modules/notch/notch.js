@@ -57,6 +57,13 @@ function focusedWindow(clients, monitor) {
 	return best ? { x: best.at[0], y: best.at[1], width: best.size[0], height: best.size[1], fullscreen: best.fullscreen } : null;
 }
 
+// Whether the visible workspace has a window covering the resting notch.
+function workspaceOverlaps(clients, monitor, rect) {
+	return clients.some(c => c.mapped && !c.hidden && c.monitor === monitor.id && c.workspace
+		&& (c.workspace.id === monitor.activeWorkspace.id || c.pinned === true)
+		&& overlaps({ x: c.at[0], y: c.at[1], width: c.size[0], height: c.size[1], fullscreen: c.fullscreen }, rect));
+}
+
 // True when the monitor's active workspace shows a fullscreen window
 // (Hyprland fullscreen state 2, or 3 = maximised and fullscreen). Maximised
 // alone leaves the top layer visible, so it doesn't count.
