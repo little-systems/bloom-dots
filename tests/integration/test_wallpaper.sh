@@ -51,6 +51,24 @@ pass "random picks a different wallpaper"
 assert_eq "$(ipc wallpaper toggle)" "ok" "open the picker"
 two() { ipc wallpaper state | jq -e '.opened and .items == 2' >/dev/null; }
 wait_for "the folder listing" two
+mkdir -p "$W/nested collection"
+cp "$W/a.png" "$W/nested collection/space # café.png"
+ipc wallpaper refresh >/dev/null
+three() { ipc wallpaper state | jq -e '.items == 3 and (.loading | not)' >/dev/null; }
+wait_for "nested wallpaper discovery" three
+ipc wallpaper folder "$W/nested collection" >/dev/null
+custom() { ipc wallpaper state | jq -e '.items == 1 and (.folder | endswith("nested collection")) and (.loading | not)' >/dev/null; }
+wait_for "custom folder saved and rescanned" custom
+ipc wallpaper folder "$W/missing" >/dev/null
+invalid() { ipc wallpaper state | jq -e '.error != "" and (.folder | endswith("nested collection"))' >/dev/null; }
+wait_for "invalid folder preserves library" invalid
+ipc wallpaper folder "$W" >/dev/null
+wait_for "original library restored" three
+if [[ -n "${BLOOM_PICKER_SCREENSHOT:-}" ]]; then
+    sleep 0.8
+    grim -o HEADLESS-1 "$BLOOM_PICKER_SCREENSHOT"
+fi
+pass "recursive discovery, custom folder, invalid-path recovery and refresh"
 assert_eq "$(ipc wallpaper close)" "ok" "close"
 pass "the picker lists the folder"
 

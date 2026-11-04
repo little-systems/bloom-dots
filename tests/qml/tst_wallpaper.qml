@@ -16,6 +16,12 @@ TestCase {
 		compare(Logic.parseList(""), []);
 	}
 
+	function test_recursiveListAndUrls() {
+		compare(Logic.parseList("/w/sub/a.svg\0/w/sub/b.avif\0/w/a\nb.jpg\0/w/sub/a.svg\0"), ["/w/a\nb.jpg", "/w/sub/a.svg", "/w/sub/b.avif"]);
+		const path = "/w/snow #1 & café.jpg";
+		compare(Logic.localPath(Logic.fileUrl(path)), path);
+		compare(Logic.search(["/w/Nature/green.jpg", "/w/blue.png"], "nature green"), ["/w/Nature/green.jpg"]);
+	}
 	function test_accentFromMatugen() {
 		compare(Logic.accentFrom('{"colors":{"primary":{"dark":{"color":"#abcdef"}}}}'), "#abcdef");
 		compare(Logic.accentFrom('{"colors":{"primary":{"default":{"color":"#123456"}}}}'), "#123456");

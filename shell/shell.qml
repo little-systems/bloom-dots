@@ -523,9 +523,11 @@ ShellRoot {
 		function set(path: string): string { return Wallpaper.set(path); }
 		function toggle(): string { Wallpaper.toggle(); return "ok"; }
 		function random(): string { Wallpaper.random(); return "ok"; }
+		function refresh(): string { Wallpaper.refresh(); return "ok"; }
+		function folder(path: string): string { Wallpaper.chooseFolder(path); return "ok"; }
 		function close(): string { Wallpaper.hide(); return "ok"; }
 		function state(): string {
-			return JSON.stringify({ path: Wallpaper.path, opened: Wallpaper.opened, items: Wallpaper.items.length, accent: Wallpaper.accent });
+			return JSON.stringify({ path: Wallpaper.path, opened: Wallpaper.opened, items: Wallpaper.items.length, accent: Wallpaper.accent, folder: Wallpaper.folder, loading: Wallpaper.loading, error: Wallpaper.error });
 		}
 	}
 

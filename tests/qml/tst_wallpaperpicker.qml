@@ -64,6 +64,21 @@ Item {
 			compare(Array.from(chosen.signalArguments[0]), ["/w/d.jpg"]);
 		}
 
+		function test_searchAndFolderActions() {
+			const v = make();
+			const browse = spy(v, "browseFolderRequested");
+			const file = spy(v, "browseFileRequested");
+			tryCompare(findChild(v, "card"), "opacity", 1, 2000);
+			const folderButton = findChild(v, "browseFolder");
+			mouseClick(folderButton, folderButton.width / 2, 16);
+			compare(browse.count, 1);
+			const fileButton = findChild(v, "openFile");
+			mouseClick(fileButton, fileButton.width / 2, 16);
+			compare(file.count, 1);
+			findChild(v, "search").text = "c.mp4";
+			compare(v.displayItems.length, 1);
+			compare(v.displayItems[0], "/w/c.mp4");
+		}
 		function test_escapeDismisses() {
 			const v = make();
 			const dismissed = spy(v, "dismissed");
