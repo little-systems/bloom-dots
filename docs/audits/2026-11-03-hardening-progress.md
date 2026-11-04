@@ -174,3 +174,16 @@ hardware, real Settings Keep-to-durable-store fixture, display UI controls,
 Settings app startup/navigation, qmllint, shellcheck, cursor and diff checks.
 This batch is not live, not pushed/merged, and has not run a new complete gate.
 H2 remains open; the broader hardening program is not finished.
+
+### Display batch complete-gate attempt
+
+The owner approved one complete run at `2b0e7e2`. It passed lint, 990 QML
+cases and parity/reference checks, then stopped at the generated Settings search
+index check (exit 1). Four metadata rows from the preceding About addition were
+missing from the index. The regenerated index passes its `--check`, and both
+focused Settings search interaction cases pass. No integration/CLI/lifecycle
+results are claimed from this incomplete full run; earlier focused results
+remain separate evidence. The private log is `hardening-ci-2b0e7e2.log`.
+
+The source correction is isolated; no live activation or push/main merge occurred.
+The approved full run is consumed. A further complete gate needs fresh approval.

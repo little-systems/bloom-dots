@@ -321,6 +321,22 @@ var ROWS = [
 		"tab": "overlays"
 	},
 	{
+		"label": "Distribution ID",
+		"tab": "about"
+	},
+	{
+		"label": "Edition",
+		"tab": "about"
+	},
+	{
+		"label": "Architecture",
+		"tab": "about"
+	},
+	{
+		"label": "Kernel",
+		"tab": "about"
+	},
+	{
 		"label": "Resolution",
 		"tab": "display"
 	},
