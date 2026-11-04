@@ -136,6 +136,10 @@ PanelWindow {
 		uiScale: Settings.values["bloom-scale"]
 		overlapped: win._overlapped
 		suppressed: win._fullscreen
+		visibilityDebug: ({ screen: win.modelData.name, monitor: win._monitor?.name || "",
+			available: HyprState.available, active: HyprState.active, polling: HyprState._polling,
+			monitors: HyprState.monitors.map(m => m.name), clients: HyprState.clients.length,
+			workspace: win._monitor?.activeWorkspace.id ?? -1, focus: win._focusContext })
 		bg: Theme.bg
 		bgExpanded: Theme.bgExpanded
 		textColor: Theme.text

@@ -197,6 +197,7 @@ Item {
 	// A fullscreen app on this monitor: the top edge is the app's (Bloom drops
 	// its edge input while a fullscreen window is in front).
 	property bool suppressed: false
+	property var visibilityDebug: ({})
 	readonly property bool bandActive: root.hidden && root.mode !== "fixed" && root.surfaceVisible && !root.suppressed
 
 	readonly property bool _statsShown: root.statusHover && ["cpu", "ram", "disk", "net"].some(w => root.widgets.left.indexOf(w) >= 0 || root.widgets.right.indexOf(w) >= 0)
@@ -344,7 +345,7 @@ Item {
 		return {
 			mode: root.mode, hidden: root.hidden, hovered: root.statusHover, interaction: root.interaction,
 			startupAnimating: root.startupAnimating, suppressed: root.suppressed,
-			pillHovered: root.pillHovered, edgeArmed: root.edgeArmed,
+			pillHovered: root.pillHovered, edgeArmed: root.edgeArmed, visibility: root.visibilityDebug,
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,

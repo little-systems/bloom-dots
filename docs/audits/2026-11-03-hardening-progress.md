@@ -89,3 +89,16 @@ their geometry. Lock controls use equal 36-pixel hit areas, balanced glyph sizes
 and matching hover/press scales. All 23 LockView cases (including geometry and
 seek/focus), focused music-component cases, and isolated secure-media integration
 pass. Screenshot inspected before live update. No additional full gate ran.
+
+## Smart notch recurrence
+
+`04dbefd` replaces foreground-only overlap with all visible windows on the
+active workspace (including pinned windows); a small focused floating window
+cannot reveal the notch over a covering tiled application. New application focus
+and newly arriving overlap cancel old reveal/panel state. The old decision fails
+the new regression; the revised rule passes 15 logic and 67 view cases plus an
+isolated compositor test of startup, fullscreen, floating focus, explicit reveal,
+focus cancellation and visibility recovery. The owner's exact intermittent
+screenshot was not captured live before its state changed; these are verified
+failure routes, not proof of every possible cause. Safe IPC diagnostics now
+include pointer/reveal sources, monitor/workspace, polling and client count.
