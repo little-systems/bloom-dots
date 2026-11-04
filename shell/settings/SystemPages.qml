@@ -73,7 +73,7 @@ Column {
 				objectName: "keepCountdown"
 				x: 14
 				y: 36
-				text: "Reverting in " + root.sys.pendingSeconds + " seconds"
+				text: root.sys.displayBusy ? "Applying display settings…" : "Reverting in " + root.sys.pendingSeconds + " seconds"
 				color: root.theme.textMuted
 				font.family: Fonts.ui
 				font.pixelSize: Fonts.px(14)
@@ -82,8 +82,8 @@ Column {
 				x: parent.width - width - 14
 				anchors.verticalCenter: parent.verticalCenter
 				spacing: 8
-				SChip { objectName: "displayRevert"; theme: root.theme; text: "Revert"; onClicked: root.sys.revertDisplay() }
-				SChip { objectName: "displayKeep"; theme: root.theme; text: "Keep Changes"; active: true; onClicked: root.sys.keepDisplay() }
+				SChip { objectName: "displayRevert"; enabled: !root.sys.displayBusy; theme: root.theme; text: "Revert"; onClicked: root.sys.revertDisplay() }
+				SChip { objectName: "displayKeep"; enabled: !root.sys.displayBusy; theme: root.theme; text: "Keep Changes"; active: true; onClicked: root.sys.keepDisplay() }
 			}
 		}
 		Repeater {

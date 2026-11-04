@@ -28,8 +28,19 @@ Scope {
 	property var hypr: ({})
 	property var hyprLive: ({})
 	property var pendingDisplay: null
+	property string _displayId: ""
+	property string _displayPhase: ""
+	property string _displayReply: ""
+	property var _displayRequest
+	readonly property bool displayBusy: displayBegin.running || displayAction.running || (root._displayPhase !== "" && root._displayPhase !== "pending")
 	// Only what was read back counts: false until the first read says otherwise.
-	property bool hyprLoaded: false
+	property bool _hyprBackendLoaded: false
+	property bool _configLoaded: false
+	readonly property bool hyprLoaded: root._hyprBackendLoaded && root._configLoaded
+	property string _hyprRevision: ""
+	property var _saveCompleted
+	property string _saveReply: ""
+	property var _saveState
 	property bool autostart: false
 	property bool autostartLoaded: false
 	property string lastError: ""
@@ -63,8 +74,6 @@ Scope {
 	readonly property bool batteryAvailable: Battery.available
 	readonly property int batteryLevel: Battery.level
 
-	readonly property string _hyprPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/hypr/custom/bloom-settings.lua"
-	readonly property string _hyprState: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/bloom/hypr-settings.json"
 
 	function refresh() {
 		for (const p of [monitorsProc, disksProc, infoProc, timeProc, updatesProc, optionsProc, startupProc, vpnProc, zonesProc, layoutsProc, choicesProc]) p.running = true;
@@ -140,6 +149,7 @@ Scope {
 	function runUpdates() { Quickshell.execDetached(["kitty", "-e", "sudo", "pacman", "-Syu"]); }
 	// Shown at once for the slider's sake, kept only if Hyprland reads it back.
 	function setHypr(path, value) {
+		if (!root._configLoaded) { root.lastError = "Resolve the compositor preference error before changing settings"; return; }
 		root.hypr = Sys.withOption(root.hypr, path, value);
 		root._checks = root._checks.filter(c => c.path !== path).concat([{ path: path, value: value }]);
 		Quickshell.execDetached(["hyprctl", "eval", Sys.hyprConfig(Sys.withOption({}, path, value))]);
@@ -154,37 +164,141 @@ Scope {
 		}
 		root._save();
 	}
-	// Tried first, saved only on Keep: an unusable mode reverts by itself.
+	// The independent watchdog owns both the deadline and persistence.
 	function setMonitor(monitor, mode, scale) {
-		if (root.pendingDisplay === null) {
-			root.pendingDisplay = { name: monitor.name, line: Sys.monitorLine(monitor, Sys.currentMode(monitor), monitor.scale) };
+		if (!root._configLoaded) { root.lastError = "Resolve the compositor preference error before changing display settings"; return; }
+		if (root._displayId !== "" || root.displayBusy) { root.lastError = "Keep or revert the current display trial first"; return; }
+		root._displayRequest = { output: monitor.name, mode: mode, scale: Number(scale) };
+		root._displayPhase = "starting";
+		root._displayReply = "";
+		displayBegin.stdinEnabled = true;
+		displayBegin.running = true;
+		displayBeginDeadline.restart();
+	}
+	function keepDisplay() { root._displayCommand("keep"); }
+	function revertDisplay() { root._displayCommand("revert"); }
+	function _displayCommand(action) {
+		if (root._displayId === "" || root._displayPhase !== "pending" || root.displayBusy) return;
+		root._displayPhase = action === "keep" ? "confirming" : "reverting";
+		displayAction.command = ["python3", Quickshell.shellPath("services/display-trial.py"), action, root._displayId];
+		displayAction.running = true;
+		displayActionDeadline.restart();
+	}
+	function _displayStatus(text) {
+		let status;
+		try { status = JSON.parse(text); } catch (e) { return; }
+		if (status.id !== root._displayId) return;
+		root._displayPhase = status.phase;
+		if (["kept", "reverted", "failed", "conflict", "disconnected"].includes(status.phase)) {
+			displayPoll.stop();
+			displayObservationDeadline.stop();
+			root.pendingDisplay = null;
+			root.pendingSeconds = 0;
+			root._displayId = "";
+			root._displayPhase = "";
+			if (status.error) root.lastError = status.error;
+			stateProc.running = true;
+			monitorsProc.running = true;
+		} else if (status.previous) {
+			root.pendingDisplay = { name: status.previous.name };
+			root.pendingSeconds = status.remaining || 0;
+			monitorsProc.running = true;
 		}
-		const line = Sys.monitorLine(monitor, mode, scale);
-		root.pendingDisplay = Object.assign({}, root.pendingDisplay, { next: line, mode: mode, scale: Number(scale) });
-		root.pendingSeconds = 15;
-		pendingTimer.restart();
-		Quickshell.execDetached(["hyprctl", "eval", line]);
-		displayCheck.restart();
 	}
-	function keepDisplay() {
-		const pending = root.pendingDisplay;
-		pendingTimer.stop();
-		root.pendingDisplay = null;
-		root._monitorLines = root._monitorLines.filter(l => l.indexOf('"' + pending.name + '"') < 0).concat([pending.next]);
-		root._save();
+	Process {
+		id: displayBegin
+		command: ["python3", Quickshell.shellPath("services/display-trial.py"), "begin"]
+		stdinEnabled: true
+		onStarted: { displayBegin.write(JSON.stringify(root._displayRequest) + "\n"); displayBegin.stdinEnabled = false; }
+		stdout: StdioCollector { onStreamFinished: root._displayReply = text }
+		onExited: code => Qt.callLater(() => {
+			displayBeginDeadline.stop();
+			let reply;
+			try { reply = JSON.parse(root._displayReply); } catch (e) {}
+			if (reply?.id && reply?.path) {
+				root._displayId = reply.id;
+				displayStatus.path = reply.path;
+			displayObservationDeadline.restart();
+				displayPoll.start();
+				displayStatus.reload();
+			} else root._displayPhase = "";
+			if (!reply?.ok || code !== 0) root.lastError = reply?.error || "Display watchdog start was not confirmed; any started trial will revert automatically";
+		})
 	}
-	function revertDisplay() {
-		const pending = root.pendingDisplay;
-		pendingTimer.stop();
-		root.pendingDisplay = null;
-		Quickshell.execDetached(["hyprctl", "eval", pending.line]);
-		monitorsProc.running = true;
+	Timer { id: displayBeginDeadline; interval: 6500; onTriggered: displayBegin.kill() }
+	Process {
+		id: displayAction
+		stdout: StdioCollector {
+			onStreamFinished: {
+				let reply;
+				try { reply = JSON.parse(text); } catch (e) {}
+				if (!reply?.ok) root.lastError = reply?.error || "Display request was not confirmed; the watchdog remains responsible for recovery";
+			}
+		}
+		onExited: { displayActionDeadline.stop(); displayStatus.reload(); }
 	}
-	function _save() {
-		const state = JSON.stringify({ hypr: root.hypr, monitors: root._monitorLines, rules: root._rules });
-		Quickshell.execDetached(["sh", "-c", 'mkdir -p "$(dirname "$1")" "$(dirname "$3")" && printf %s "$2" > "$1" && printf %s "$4" > "$3"', "sh",
-			root._hyprPath, Sys.hyprFile(root.hypr, root._monitorLines.concat(root._rules)), root._hyprState, state]);
+	Timer { id: displayActionDeadline; interval: 3000; onTriggered: displayAction.kill() }
+	FileView {
+		id: displayStatus
+		printErrors: false
+		onLoaded: root._displayStatus(text())
 	}
+	Timer { id: displayPoll; interval: 150; repeat: true; onTriggered: displayStatus.reload() }
+	Timer {
+		id: displayObservationDeadline
+		interval: 50000
+		onTriggered: {
+			displayPoll.stop();
+			root.pendingDisplay = null;
+			root._displayId = "";
+			root._displayPhase = "";
+			root.lastError = "Display recovery could not be observed; inspect the retained trial record before retrying";
+			stateProc.running = true;
+			monitorsProc.running = true;
+		}
+	}
+
+	function _save(completed) {
+		if (!root._configLoaded || configSave.running) {
+			root.lastError = "Compositor preferences are unavailable or still saving";
+			if (completed) { try { completed(root.lastError); } catch (e) { console.warn("Compositor save callback failed"); } }
+			return;
+		}
+		root._saveCompleted = completed;
+		root._saveState = { hypr: root.hypr, rules: root._rules };
+		root._saveReply = "";
+		configSave.stdinEnabled = true;
+		configSave.running = true;
+		configSaveDeadline.restart();
+	}
+	Process {
+		id: configSave
+		command: ["python3", Quickshell.shellPath("services/compositor-store.py"), "commit"]
+		stdinEnabled: true
+		onStarted: { configSave.write(JSON.stringify({ expected: root._hyprRevision, changes: root._saveState }) + "\n"); configSave.stdinEnabled = false; }
+		stdout: StdioCollector { onStreamFinished: root._saveReply = text }
+		onExited: code => Qt.callLater(() => {
+			configSaveDeadline.stop();
+			let reply;
+			try { reply = JSON.parse(root._saveReply); } catch (e) {}
+			const error = reply?.ok && code === 0 ? "" : (reply?.error || "Compositor configuration save was not confirmed");
+			if (error === "") root._hyprRevision = reply.revision;
+			else { root.lastError = error; root._configLoaded = false; stateProc.running = true; }
+			const completed = root._saveCompleted; root._saveCompleted = null;
+			if (completed) { try { completed(error); } catch (e) { console.warn("Compositor save callback failed"); } }
+		})
+	}
+	Timer {
+		id: configSaveDeadline
+		interval: 3000
+		onTriggered: {
+			configSave.kill();
+			root.lastError = "Compositor save timed out; reload before retrying";
+			const completed = root._saveCompleted; root._saveCompleted = null;
+			if (completed) { try { completed(root.lastError); } catch (e) { console.warn("Compositor save callback failed"); } }
+		}
+	}
+
 	function _loadDefaults() {
 		defaultsProc.command = ["sh", "-c", "for m in " + Sys.DEFAULTS.map(d => d.mime).join(" ") + "; do xdg-mime query default \"$m\"; done"];
 		defaultsProc.running = true;
@@ -324,57 +438,41 @@ Scope {
 		interval: 300
 		onTriggered: optionsProc.running = true
 	}
-	Timer {
-		id: displayCheck
-		interval: 500
-		onTriggered: monitorsProc.running = true
-	}
-	Timer {
-		id: pendingTimer
-		interval: 1000
-		repeat: true
-		onTriggered: {
-			root.pendingSeconds--;
-			if (root.pendingSeconds <= 0) root.revertDisplay();
-		}
-	}
 	Process {
 		id: optionsProc
 		command: ["sh", "-c", "for o in " + Sys.OPTIONS.join(" ") + "; do printf '%s|' \"$o\"; hyprctl getoption \"$(printf %s \"$o\" | tr . :)\" | head -1; done"]
 		stdout: StdioCollector {
 			onStreamFinished: {
 				root.hyprLive = Sys.parseOptions(text);
-				root.hyprLoaded = Object.keys(root.hyprLive).length > 0;
+				root._hyprBackendLoaded = Object.keys(root.hyprLive).length > 0;
 				if (root._checks.length) root._settle();
 			}
 		}
 	}
 	Process {
 		id: stateProc
-		command: ["cat", root._hyprState]
+		command: ["python3", Quickshell.shellPath("services/compositor-store.py"), "read"]
 		stdout: StdioCollector {
 			onStreamFinished: {
-				try {
-					const state = JSON.parse(text);
-					root.hypr = state.hypr || {};
-					root._monitorLines = state.monitors || [];
-					root._rules = (state.rules || Sys.layerRules()).filter(rule => rule.indexOf("no_blur = false") < 0);
-				} catch (e) {}
+				let reply;
+				try { reply = JSON.parse(text); } catch (e) {}
+				root._configLoaded = reply?.ok === true;
+				if (!root._configLoaded) { root.lastError = reply?.error || "Couldn't read compositor preferences"; return; }
+				const state = reply.state;
+				root._hyprRevision = reply.revision;
+				root.hypr = state.hypr;
+				root._monitorLines = state.monitors;
+				root._rules = state.rules;
 			}
 		}
 	}
+
 	Process {
 		id: monitorsProc
 		command: ["hyprctl", "monitors", "-j"]
 		stdout: StdioCollector {
 			onStreamFinished: {
 				try { root.monitors = JSON.parse(text); } catch (e) { root.monitors = []; }
-				const p = root.pendingDisplay;
-				const m = p && p.mode ? root.monitors.find(x => x.name === p.name) : null;
-				if (m && (Sys.currentMode(m) !== p.mode || Math.abs(m.scale - p.scale) > 0.01)) {
-					root.lastError = "That display mode didn't apply, so it was put back";
-					root.revertDisplay();
-				}
 			}
 		}
 	}

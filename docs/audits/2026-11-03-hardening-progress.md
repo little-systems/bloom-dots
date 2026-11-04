@@ -150,3 +150,27 @@ Fourteen system-rule cases, focused About row/metadata checks, export failures,
 qmllint, cursor and shell checks pass; screenshot inspected. No additional full
 suite ran: the complete gate recorded above covers the earlier settings batch.
 Main hardening remains at the independent display-watchdog/config-commit work.
+
+## H2 independent display trials and atomic compositor document
+
+An isolated batch replaces dual generated-Lua/JSON redirections with one owned,
+versioned Lua document containing its state. Fresh revision checks, a private
+lock, immutable prior snapshot and synced atomic replacement protect cooperating
+writers. Legacy JSON remains read-only input, and inconsistent/manual edits are
+refused rather than silently overwritten. The previous native geometry and trial
+identity are recorded before applying a mode.
+
+Display rollback now belongs to a transient user worker, independent of Settings.
+The worker verifies apply/revert, expires unconfirmed trials, recognizes Settings
+PID identity loss and reconciles interrupted Keep persistence. Settings only sends
+owner-bound requests and observes terminal results. Unsupported advanced profiles
+are refused before effects; outside changes and unplug are explicit outcomes.
+See [display transactions](../handover/display-transactions.md) for contracts and
+limits, including remaining live/VM, retention and recovery-tool acceptance.
+
+Focused checks: nine compositor storage cases, sixteen display fault cases,
+actual Settings process SIGKILL with independent worker rollback against fake
+hardware, real Settings Keep-to-durable-store fixture, display UI controls,
+Settings app startup/navigation, qmllint, shellcheck, cursor and diff checks.
+This batch is not live, not pushed/merged, and has not run a new complete gate.
+H2 remains open; the broader hardening program is not finished.

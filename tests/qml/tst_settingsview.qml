@@ -71,6 +71,7 @@ Item {
 		function clearError() { lastError = ""; }
 		property var hyprLive: ({ "general.gaps_in": 9 })
 		property var pendingDisplay: null
+		property bool displayBusy: false
 		property int pendingSeconds: 15
 		function keepDisplay() { calls.push(["keep"]); pendingDisplay = null; }
 		function revertDisplay() { calls.push(["revert"]); pendingDisplay = null; }
@@ -531,6 +532,20 @@ Item {
 			click(v, "displayRevert");
 			compare(fakeSys.calls, [["revert"]]);
 			verify(!part(v, "keepDisplay").visible);
+		}
+
+		function test_displayConfirmationWaitsForWorker() {
+			fakeSys.calls = [];
+			fakeSys.pendingDisplay = { name: "eDP-1" };
+			fakeSys.displayBusy = true;
+			const v = make("display");
+			verify(!part(v, "displayKeep").enabled);
+			verify(!part(v, "displayRevert").enabled);
+			compare(part(v, "keepCountdown").text, "Applying display settings…");
+			fakeSys.displayBusy = false;
+			verify(part(v, "displayKeep").enabled);
+			click(v, "displayKeep");
+			compare(fakeSys.calls, [["keep"]]);
 		}
 
 		function test_pagesShowLiveValues() {
