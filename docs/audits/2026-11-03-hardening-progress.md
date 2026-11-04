@@ -118,3 +118,16 @@ contract, evidence, non-cooperating-editor interval and remaining limits.
 No full suite, live settings mutation, package change, push or merge is included.
 The next H2 priority is display rollback independent of the Settings window,
 followed by generated configuration transactions and theme ownership restoration.
+
+### Settings batch complete gate and activation
+
+The owner approved one complete gate at `d2d9790` in the isolated worktree.
+`CI=true tests/run-all.sh` passed: 987 QML tests, all integration and CLI checks,
+lifecycle cases and systemd verification; exit 0. Private raw log:
+`hardening-ci-d2d9790.log`. No second complete run was used.
+
+The identical tested tree was reconciled locally as `87bbd91` and activated.
+Bloom is active and answers `pong`; the Settings result interface is available.
+The owner's settings SHA-256 was unchanged before/after activation. There was no
+separate old Settings process to replace. No owner setting was changed to test
+writes; write behavior was exercised in disposable fixtures. No push/main merge.
