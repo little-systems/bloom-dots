@@ -312,6 +312,17 @@ Item {
 			compare([exported.count, imported.count], [1, 1]);
 		}
 
+		function test_aboutSystemMetadataOmitsUnavailableFields() {
+			const v = make("about");
+			v.sys = { osInfo: { name: "Arch Linux", release: "Rolling release" }, kernel: "7.0-fixture", architecture: "x86_64" };
+			compare(part(v, "systemValue:Distribution").text, "Arch Linux");
+			compare(part(v, "systemValue:Release").text, "Rolling release");
+			compare(part(v, "systemValue:Kernel").text, "7.0-fixture");
+			verify(!findChild(v, "aboutSystem:Edition"));
+			v.sys = {};
+			tryVerify(() => !part(v, "distributionIdentity").visible);
+		}
+
 		function test_resetAsksFirst() {
 			const v = make();
 			const confirmed = spy(v, "resetConfirmed");

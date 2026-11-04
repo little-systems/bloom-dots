@@ -131,3 +131,22 @@ Bloom is active and answers `pong`; the Settings result interface is available.
 The owner's settings SHA-256 was unchanged before/after activation. There was no
 separate old Settings process to replace. No owner setting was changed to test
 writes; write behavior was exercised in disposable fixtures. No push/main merge.
+
+## Scoped About page addition
+
+The owner requested distro metadata and original branding alongside Bloom.
+About now reads allowlisted `/etc/os-release` data (fallback `/usr/lib/os-release`)
+without evaluating shell text, resolves the system-provided LOGO asset without
+recoloring it, and presents paired Bloom/distribution identities with metadata.
+Unavailable fields are omitted and narrow widths stack the identities.
+
+Data actions were real operations, but native dialog parentage and premature
+export-success reporting needed correction. File dialogs now have the actual
+Settings window parent. Export stages a private mode-0600 copy and reports success
+only after file/directory sync and replacement; invalid input/unsafe targets keep
+existing data. A real native-dialog export/import round trip passes in isolated
+XDG/compositor state, so the working Data section is retained rather than removed.
+Fourteen system-rule cases, focused About row/metadata checks, export failures,
+qmllint, cursor and shell checks pass; screenshot inspected. No additional full
+suite ran: the complete gate recorded above covers the earlier settings batch.
+Main hardening remains at the independent display-watchdog/config-commit work.

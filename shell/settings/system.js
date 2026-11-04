@@ -124,7 +124,7 @@ function withValues(current, overrides) {
 
 // infoProc's "key=value" lines: an absent tool leaves a key out, not a gap.
 function parseInfo(text) {
-	const out = { hostname: "", kernel: "", cpu: "", memory: "" };
+	const out = { hostname: "", kernel: "", cpu: "", memory: "", architecture: "" };
 	text.split("\n").forEach(line => {
 		const at = line.indexOf("=");
 		if (at > 0 && line.slice(0, at) in out) out[line.slice(0, at)] = line.slice(at + 1).trim();
@@ -176,4 +176,27 @@ function badLayouts(text, known) {
 
 function layerRules() {
 	return ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
+}
+
+// os-release is data, never shell code. Only these display fields are read.
+function parseOsRelease(text) {
+	const fields = {};
+	const allowed = ["NAME", "PRETTY_NAME", "ID", "VERSION", "VERSION_ID", "BUILD_ID", "VARIANT", "VARIANT_ID", "LOGO"];
+	text.split("\n").forEach(line => {
+		const match = /^([A-Z_]+)=(.*)$/.exec(line.trim());
+		if (!match || allowed.indexOf(match[1]) < 0) return;
+		let value = match[2].trim();
+		if (value.startsWith('"')) {
+			if (!value.endsWith('"')) return;
+			value = value.slice(1, -1).replace(/\\(["\\$`])/g, "$1");
+		} else if (value.startsWith("'")) {
+			if (!value.endsWith("'")) return;
+			value = value.slice(1, -1);
+		}
+		fields[match[1]] = value;
+	});
+	const release = fields.VERSION || fields.VERSION_ID || fields.BUILD_ID || "";
+	return { name: fields.PRETTY_NAME || fields.NAME || "", id: fields.ID || "",
+		release: release === "rolling" ? "Rolling release" : release,
+		variant: fields.VARIANT || fields.VARIANT_ID || "", logo: fields.LOGO || "" };
 }

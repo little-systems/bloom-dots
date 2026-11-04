@@ -16,6 +16,9 @@ Scope {
 	property var disks: []
 	property string hostname: ""
 	property string kernel: ""
+	property string architecture: ""
+	property var osInfo: ({})
+	readonly property string distroLogo: root.osInfo.logo ? Quickshell.iconPath(root.osInfo.logo, true) : ""
 	property string cpu: ""
 	property string memory: ""
 	property string timezone: ""
@@ -380,14 +383,23 @@ Scope {
 		command: ["df", "-B1", "--output=target,size,used"]
 		stdout: StdioCollector { onStreamFinished: root.disks = Sys.parseDisks(text) }
 	}
+	FileView {
+		id: osRelease
+		path: "/etc/os-release"
+		printErrors: false
+		onLoaded: root.osInfo = Sys.parseOsRelease(text())
+		onLoadFailed: error => { if (path !== "/usr/lib/os-release") path = "/usr/lib/os-release"; }
+	}
+
 	Process {
 		id: infoProc
-		command: ["sh", "-c", "echo hostname=$(cat /etc/hostname 2>/dev/null); echo kernel=$(uname -r); echo cpu=$(sed -n 's/^model name[^:]*: //p' /proc/cpuinfo | head -1); awk '/MemTotal/{printf \"memory=%.1f GB\\n\", $2/1048576}' /proc/meminfo"]
+		command: ["sh", "-c", "echo hostname=$(cat /etc/hostname 2>/dev/null); echo kernel=$(uname -r); echo architecture=$(uname -m); echo cpu=$(sed -n 's/^model name[^:]*: //p' /proc/cpuinfo | head -1); awk '/MemTotal/{printf \"memory=%.1f GB\\n\", $2/1048576}' /proc/meminfo"]
 		stdout: StdioCollector {
 			onStreamFinished: {
 				const info = Sys.parseInfo(text);
 				root.hostname = info.hostname;
 				root.kernel = info.kernel;
+				root.architecture = info.architecture;
 				root.cpu = info.cpu;
 				root.memory = info.memory;
 			}

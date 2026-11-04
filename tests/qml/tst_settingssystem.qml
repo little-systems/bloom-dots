@@ -33,6 +33,13 @@ TestCase {
 		compare(Sys.appName(""), "Not set");
 	}
 
+	function test_osReleaseIsParsedWithoutExecution() {
+		compare(Sys.parseOsRelease('NAME="Arch Linux"\nID=arch\nBUILD_ID=rolling\nLOGO=archlinux-logo'), { name: "Arch Linux", id: "arch", release: "Rolling release", variant: "", logo: "archlinux-logo" });
+		compare(Sys.parseOsRelease("PRETTY_NAME='Example Linux'\nVERSION_ID=42\nVARIANT=Desktop"), { name: "Example Linux", id: "", release: "42", variant: "Desktop", logo: "" });
+		compare(Sys.parseOsRelease('PRETTY_NAME="$(touch /tmp/never-run)"').name, "$(touch /tmp/never-run)");
+		compare(Sys.parseOsRelease('# comment\nINVALID\nNAME=Linux\nPRETTY_NAME="unclosed').name, "Linux");
+	}
+
 	function test_liveOptions() {
 		const o = Sys.parseOptions("general.gaps_in|css gap data: 4 4 4 4\ninput.repeat_rate|int: 35\ninput.sensitivity|float: -0.200000\nanimations.enabled|bool: true\ndecoration.blur.enabled|bool: false\nnoise");
 		compare(o, { "general.gaps_in": 4, "input.repeat_rate": 35, "input.sensitivity": -0.2, "animations.enabled": true, "decoration.blur.enabled": false });
@@ -40,7 +47,7 @@ TestCase {
 
 	// A missing hostname command once shifted every value up a row.
 	function test_infoSurvivesAMissingTool() {
-		compare(Sys.parseInfo("kernel=7.2\ncpu=Intel = fast\nmemory=11.5 GB\n"), { hostname: "", kernel: "7.2", cpu: "Intel = fast", memory: "11.5 GB" });
+		compare(Sys.parseInfo("kernel=7.2\ncpu=Intel = fast\nmemory=11.5 GB\n"), { hostname: "", kernel: "7.2", cpu: "Intel = fast", memory: "11.5 GB", architecture: "" });
 	}
 
 	function test_updatesNeverFakeUpToDate() {

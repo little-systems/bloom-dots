@@ -75,7 +75,7 @@ Rectangle {
 			{ id: "notch", label: "Notch", icon: "panel-top", copy: "Choose what appears at the top of your screen." },
 			{ id: "dock", label: "Dock", icon: "monitor", copy: "Shape the taskbar replacement around your workflow." },
 			{ id: "overlays", label: "Overlays", icon: "layers", copy: "Keep quick controls visible only when you need them." },
-			{ id: "about", label: "About", icon: "info", copy: "Version, updates and your settings data." }
+			{ id: "about", label: "About", icon: "info", copy: "Bloom, your system and settings data." }
 		] }
 	]
 	readonly property var _tabs: root._groups.reduce((all, g) => all.concat(g.tabs), [])
@@ -528,7 +528,7 @@ Rectangle {
 	Component {
 		id: aboutTab
 		AboutTab {
-			theme: root.theme; version: root.version; exportLabel: root.exportLabel; importLabel: root.importLabel
+			theme: root.theme; version: root.version; osInfo: root.sys?.osInfo ?? ({}); distroLogo: root.sys?.distroLogo ?? ""; kernel: root.sys?.kernel ?? ""; architecture: root.sys?.architecture ?? ""; exportLabel: root.exportLabel; importLabel: root.importLabel
 			onExportRequested: root.exportRequested()
 			onImportRequested: root.importRequested()
 		}

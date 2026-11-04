@@ -2,6 +2,7 @@
 //@ pragma AppId bloom-settings
 import QtQuick
 import QtQuick.Dialogs
+import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import qs.services
@@ -144,8 +145,8 @@ ShellRoot {
 			onResetConfirmed: app.reset()
 			onRestartRequested: app.run(["systemctl", "--user", "restart", "bloom-shell"])
 			onQuitRequested: app.run(["systemctl", "--user", "stop", "bloom-shell"])
-			onExportRequested: exportDialog.open()
-			onImportRequested: importDialog.open()
+			onExportRequested: if (!exportCopy.running) exportDialog.open()
+			onImportRequested: if (app.importLabel !== "Importing…" && !importFile.running) importDialog.open()
 			onColorRequested: colorDialog.open()
 			cityResults: app.cityResults
 			drives: app.drives
@@ -160,23 +161,38 @@ ShellRoot {
 	}
 
 	FileDialog {
+		parentWindow: win.contentItem.Window.window
 		id: exportDialog
 		fileMode: FileDialog.SaveFile
 		currentFile: "file://" + Quickshell.env("HOME") + "/bloom-settings.json"
 		onAccepted: {
-			app.run(["cp", Settings.path, selectedFile.toString().replace("file://", "")]);
-			app.exportLabel = "Settings Exported";
+			exportCopy.destination = decodeURIComponent(selectedFile.toString().replace("file://", ""));
+			app.saveError = "";
+			app.exportLabel = "Exporting…";
+			exportCopy.running = true;
 		}
 	}
 	FileDialog {
+		parentWindow: win.contentItem.Window.window
 		id: importDialog
 		fileMode: FileDialog.OpenFile
 		nameFilters: ["JSON (*.json)"]
 		onAccepted: {
-			importFile.path = selectedFile.toString().replace("file://", "");
+			app.importLabel = "Importing…";
+			importFile.path = decodeURIComponent(selectedFile.toString().replace("file://", ""));
 			importFile.running = true;
 		}
 	}
+	Process {
+		id: exportCopy
+		property string destination: ""
+		command: ["python3", Quickshell.shellPath("scripts/export-settings.py"), Settings.path, exportCopy.destination]
+		onExited: code => {
+			app.exportLabel = code === 0 ? "Settings Exported" : "Export Failed";
+			if (code !== 0) app.saveError = "Couldn't export settings. Check the selected file and its permissions.";
+		}
+	}
+
 	Process {
 		id: importFile
 		property string path: ""
@@ -196,6 +212,7 @@ ShellRoot {
 		onTriggered: app._fetchCities()
 	}
 	FolderDialog {
+		parentWindow: win.contentItem.Window.window
 		id: folderDialog
 		onAccepted: {
 			const path = selectedFolder.toString().replace("file://", "");
@@ -208,6 +225,7 @@ ShellRoot {
 		}
 	}
 	ColorDialog {
+		parentWindow: win.contentItem.Window.window
 		id: colorDialog
 		selectedColor: Settings.values["bloom-theme-color"]
 		onAccepted: checkedStore.set("bloom-theme-color", String(selectedColor))
@@ -223,7 +241,8 @@ ShellRoot {
 		target: "settingsapp"
 		function state(): string {
 			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version,
-				width: win.width, height: win.height, fixedWidth: win.fixedWidth, fixedHeight: win.fixedHeight });
+				width: win.width, height: win.height, fixedWidth: win.fixedWidth, fixedHeight: win.fixedHeight,
+				distribution: store.osInfo, distroLogo: store.distroLogo, architecture: store.architecture, kernel: store.kernel, exportStatus: app.exportLabel, importStatus: app.importLabel });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
 	}
