@@ -187,3 +187,31 @@ remain separate evidence. The private log is `hardening-ci-2b0e7e2.log`.
 
 The source correction is isolated; no live activation or push/main merge occurred.
 The approved full run is consumed. A further complete gate needs fresh approval.
+
+
+### Supervised display gate passed and reconciled locally
+
+The next approved terminal-bound run at `dd8cbf8` was interrupted by SIGTERM
+before a complete result; its sender is unconfirmed. The diagnostic Settings
+View rerun passed all 64 cases. That interrupted run was not called green.
+
+The owner then approved one supervised gate at the same immutable `dd8cbf8`.
+The bounded transient user test unit completed successfully: 990 QML cases,
+all script/integration/CLI/lifecycle/soak checks and systemd verification;
+`FULL_SUITE_EXIT=0` with a matching completion receipt. Private artifacts:
+`hardening-ci-dd8cbf8-supervised.log` and
+`hardening-ci-dd8cbf8-supervised.result.json`. No further complete run was used.
+
+Both tested commits were reconciled onto the local active hardening branch as
+`a6739c7` and `c8ca3d3`; `git diff --exit-code dd8cbf8 HEAD` verified an identical
+tree before this documentation update. Settings is closed and loads the new code
+on its next open, so no shell restart or forced window close was necessary. Bloom
+remains active and answers `pong`, and the new compositor reader accepts the live
+legacy preferences read-only. The settings JSON, generated compositor Lua and
+legacy compositor JSON hashes were unchanged across reconciliation. Private
+activation receipt: `display-batch-activation-dd8cbf8.json`.
+
+No owner monitor trial, push or main merge occurred. H2 still needs StateFile
+schemas/concurrency/retention, ownership-aware theme restoration, and the remaining
+live/VM fault acceptance; H3–H6 remain open. This gate is complete, not the entire
+hardening program.

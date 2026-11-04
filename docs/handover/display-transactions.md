@@ -1,7 +1,9 @@
 # Display trials and compositor preferences
 
-This H2 batch is isolated until its complete gate is approved. It does not
-change the owner's monitor, start a live trial, or activate a new shell.
+The complete gate passed at `dd8cbf8`; the identical tested tree was reconciled
+locally as `c8ca3d3`. Settings loads this batch on its next open. Activation did
+not change the owner's monitor/settings files, start a live trial, or restart
+the running shell. Actual monitor/systemd crash acceptance remains open below.
 
 ## One configuration document
 
