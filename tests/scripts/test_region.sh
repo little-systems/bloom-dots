@@ -27,15 +27,16 @@ fake swappy 'cat > /dev/null'
 cat > "$T/bin/wf-recorder" <<FAKE_RECORDER
 #!/usr/bin/python3
 import os, signal, sys, time
-with open("$T/calls", "a") as calls:
-    calls.write("wf-recorder " + " ".join(sys.argv[1:]) + "\\n")
 out = sys.argv[sys.argv.index("-f") + 1]
 def finish(*_):
     if not os.environ.get("FAKE_REC_LOSE"):
         open(out, "w").write("MP4")
     sys.exit(0)
+# Handlers first: the test stops the recorder as soon as the call is logged.
 signal.signal(signal.SIGINT, finish)
 signal.signal(signal.SIGTERM, finish)
+with open("$T/calls", "a") as calls:
+    calls.write("wf-recorder " + " ".join(sys.argv[1:]) + "\\n")
 time.sleep(30)
 FAKE_RECORDER
 chmod +x "$T/bin/wf-recorder"
@@ -73,14 +74,14 @@ called 'notify-send.*reach the translation' || fail "a failed translation wasn't
 echo "ok - translate copies the result, and reports a failure"
 
 bash "$SCRIPT" record
-for _ in 1 2 3 4 5 6 7 8 9 10; do
+for _ in $(seq 1 30); do
 	called 'wf-recorder -g 1,2 30x40 -f' && break
 	sleep 0.1
 done
 called 'wf-recorder -g 1,2 30x40 -f' || fail "recording didn't start"
 [[ "$(bash "$SCRIPT" status)" == recording ]] || fail "not reported as recording"
 if called 'wf-recorder.*-a'; then fail "audio on a silent recording"; fi
-bash "$SCRIPT" record
+bash "$SCRIPT" record || fail "stopping the recording failed"
 for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(bash "$SCRIPT" status)" == idle ]] && break; sleep 0.2; done
 [[ "$(bash "$SCRIPT" status)" == idle ]] || fail "the second press didn't stop it"
 ls "$T/pics"/Recording_*.mp4 >/dev/null 2>&1 || fail "the recording file wasn't finished"
@@ -90,7 +91,7 @@ echo "ok - record toggles, and stopping waits for a finished file"
 # A recorder that stops without producing a file is reported, not "saved".
 : > "$T/calls"
 FAKE_REC_LOSE=1 bash "$SCRIPT" record
-for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(bash "$SCRIPT" status)" == recording ]] && break; sleep 0.1; done
+for _ in $(seq 1 30); do [[ "$(bash "$SCRIPT" status)" == recording ]] && break; sleep 0.1; done
 if bash "$SCRIPT" record; then fail "a lost recording reported success"; fi
 called 'notify-send.*Recording failed' || fail "a lost recording wasn't reported"
 if called 'notify-send.*Recording saved'; then fail "a lost recording was announced as saved"; fi
@@ -105,7 +106,7 @@ printf '%s\n' "$other" > "$T/run/bloom-recording.pid"
 : > "$T/calls"
 bash "$SCRIPT" record
 kill -0 "$other" 2>/dev/null || fail "an unrelated process was interrupted"
-for _ in 1 2 3 4 5 6 7 8 9 10; do called 'wf-recorder -g' && break; sleep 0.1; done
+for _ in $(seq 1 30); do called 'wf-recorder -g' && break; sleep 0.1; done
 called 'wf-recorder -g' || fail "a stale record blocked a new recording"
 bash "$SCRIPT" record || true
 kill "$other"
@@ -116,7 +117,7 @@ fake hyprctl 'echo "[{\"name\":\"DP-2\",\"focused\":false},{\"name\":\"eDP-1\",\
 for action in record-screen record-screen-audio; do
 	: > "$T/calls"
 	bash "$SCRIPT" "$action"
-	for _ in {1..20}; do called 'wf-recorder -o eDP-1 -f' && break; sleep 0.1; done
+	for _ in $(seq 1 30); do called 'wf-recorder -o eDP-1 -f' && break; sleep 0.1; done
 	called 'wf-recorder -o eDP-1 -f' || fail "fullscreen didn't use the focused display"
 	if called slurp; then fail "fullscreen asked for a region"; fi
 	if [[ "$action" == record-screen-audio ]]; then
