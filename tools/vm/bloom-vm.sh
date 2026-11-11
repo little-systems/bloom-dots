@@ -52,7 +52,7 @@ EOF
 	qemu-system-x86_64 -enable-kvm -cpu host -smp 2 -m 3072 \
 		-drive file="$DISK",if=virtio,format=qcow2 \
 		-netdev user,id=n0,hostfwd=tcp:127.0.0.1:"$PORT"-:22 -device virtio-net-pci,netdev=n0 \
-		-vga virtio -display none -serial file:"$VM/console.log" \
+		-vga std -display none -serial file:"$VM/console.log" \
 		-smbios type=1,serial=ds='nocloud;s=http://10.0.2.2:8765/' \
 		-daemonize -pidfile "$VM/qemu.pid"
 	for _ in $(seq 1 120); do

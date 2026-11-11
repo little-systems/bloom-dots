@@ -20,10 +20,10 @@ refuse() { local what=$1; shift; if "$@" >>"$LOG" 2>&1; then bad "$what (was acc
 note() { echo "-- $*" | tee -a "$LOG"; }
 
 session_env() {
-	export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-	export HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY
-	HYPRLAND_INSTANCE_SIGNATURE="$(ls -t "$XDG_RUNTIME_DIR/hypr" 2>/dev/null | head -1)"
-	WAYLAND_DISPLAY="$(cd "$XDG_RUNTIME_DIR" && ls wayland-* 2>/dev/null | grep -v lock | head -1)"
+	XDG_RUNTIME_DIR="/run/user/$(id -u)"
+	export XDG_RUNTIME_DIR HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY
+	HYPRLAND_INSTANCE_SIGNATURE="$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2)"
+	WAYLAND_DISPLAY="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' -printf '%f\n' 2>/dev/null | head -1)"
 }
 
 start_hyprland() {
@@ -46,7 +46,7 @@ fingerprint() { find "$HOME/.config" -type f -not -path '*/bloom/*' -print0 2>/d
 
 stage_prereqs() {
 	note "prerequisites"
-	sudo loginctl enable-linger "$USER" >>"$LOG" 2>&1
+	sudo loginctl enable-linger "$USER" 2>&1 | tee -a "$LOG" >/dev/null
 	check "base system and prerequisites install" sudo pacman -Syu --noconfirm --needed git base-devel quickshell hyprland python
 	mkdir -p "$HOME/.config/hypr"
 	cat > "$HOME/.config/hypr/hyprland.lua" <<'LUA'
