@@ -37,7 +37,9 @@ Singleton {
 		root.entries = copy;
 		if (!old || old.state !== next.state) {
 			const text = `bloom capability: ${backend} ${next.state}${next.reason ? " (" + next.reason + ")" : ""}`;
-			if (next.state === "degraded" || next.state === "missing") console.warn(text);
+			// Absent services and tools are normal on many machines (no
+			// Bluetooth, no PulseAudio): note them; a backend that broke warns.
+			if (next.state === "degraded") console.warn(text);
 			else console.info(text);
 		}
 	}

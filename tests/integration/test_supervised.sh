@@ -18,6 +18,10 @@ pass "a process that is no longer wanted stops and stays stopped"
 log_has "RESULT retry-recovers=true" || fail "retry did not recover"
 log_has "RESULT unknown-retry-refused=true" || fail "a retry for an unknown backend was accepted"
 log_has "bloom capability: missing missing" || fail "the missing capability was not logged"
+# An absent program is normal on many machines; a backend that broke warns.
+grep -qE 'INFO.*bloom capability: missing missing' "$TEST_TMP/shell.log" || fail "missing was not logged as info"
+if grep -qE 'WARN.*bloom capability: missing missing' "$TEST_TMP/shell.log"; then fail "missing was logged as a warning"; fi
+grep -qE 'WARN.*bloom capability: flaky degraded' "$TEST_TMP/shell.log" || fail "a broken backend did not warn"
 pass "an explicit retry recovers and resets the backoff"
 log_has "RESULT restart-not-a-failure=true" || fail "restart counted as a failure"
 pass "restart applies a new command without counting a failure"
