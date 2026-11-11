@@ -81,6 +81,8 @@ with (root.parent / 'calls').open('a') as f:
     f.write(json.dumps([name] + args) + '\n')
 if os.environ.get('STUB_FAIL') == name:
     sys.exit(1)
+if name == 'pacman' and args[0] == '-T':
+    sys.exit(0 if os.environ.get('STUB_PROVIDED') else 127)
 units = root / 'etc/systemd/system'
 if name == 'systemctl':
     unit = args[-1] if args[-1].endswith('.service') else args[-1] + '.service'
@@ -122,10 +124,10 @@ class Phase(Facts):
         self.env = {"BLOOM_SYSTEM_ROOT": str(self.root), "PATH": f"{self.bin}:{os.environ['PATH']}"}
         self.user = system.choose_user(self.root, None, ask=None)
 
-    def run_stub(self, *args):
+    def run_stub(self, *args, check=True):
         result = subprocess.run([str(a) for a in args], env=dict(os.environ, **self.env), capture_output=True, text=True,
                                 cwd=os.getcwd())
-        if result.returncode:
+        if check and result.returncode:
             raise system.Failure(f"{args[0]} failed")
         return result
 
@@ -165,6 +167,18 @@ class Phase(Facts):
         built = [c for c in calls if c[:2] == ["runuser", "-u"]]
         self.assertEqual(built[0][2], "dhanush")
         self.assertTrue(any(c[:3] == ["pacman", "-U", "--noconfirm"] for c in calls))
+
+    def test_fresh_system_gets_the_right_providers_not_the_first_listed(self):
+        self.install()
+        calls = self.calls()
+        providers = ["pacman", "-S", "--needed", "--noconfirm", "--asdeps", "pipewire-jack", "tesseract-data-eng", "noto-fonts"]
+        self.assertIn(providers, calls)
+        upgrade = next(c for c in calls if c[:2] == ["pacman", "-U"])
+        self.assertLess(calls.index(providers), calls.index(upgrade))
+
+    def test_existing_providers_are_kept(self):
+        self.install(STUB_PROVIDED="1")
+        self.assertFalse([c for c in self.calls() if "pipewire-jack" in c])
 
     def test_existing_sddm_gets_the_theme_without_reinstall(self):
         (self.root / "etc/systemd/system/display-manager.service").symlink_to("/usr/lib/systemd/system/sddm.service")

@@ -86,6 +86,7 @@ DROPIN = "etc/sddm.conf.d/10-bloom.conf"
 LOGIN = "var/lib/bloom/login"
 DROPIN_TEXT = "# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\nDefaultSession=hyprland.desktop\n"
 SERVICES = ("bluetooth", "power-profiles-daemon")
+PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
 
 
 def _digest_bytes(data):
@@ -339,6 +340,13 @@ def _packages(user, run):
         packages = sorted(Path(temporary).glob("bloom-shell-deps-*.pkg.tar.*"))
         if not packages:
             raise Failure("building the dependency package produced nothing")
+        # With --noconfirm pacman takes the first provider alphabetically (jack2,
+        # Afrikaans OCR data, GNU FreeFont). Where nothing provides one yet,
+        # bring Bloom's choice first.
+        missing = [provider for virtual, provider in PROVIDERS
+                   if run("pacman", "-T", virtual, check=False).returncode != 0]
+        if missing:
+            run("pacman", "-S", "--needed", "--noconfirm", "--asdeps", *missing)
         run("pacman", "-U", "--noconfirm", "--needed", str(packages[-1]))
 
 
