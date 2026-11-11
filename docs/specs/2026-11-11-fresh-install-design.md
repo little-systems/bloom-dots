@@ -1,6 +1,6 @@
 # Fresh install: from archinstall to Bloom in one reboot
 
-Status: draft for owner review, 2026-11-11.
+Status: approved by the owner, 2026-11-11.
 
 ## Intent
 
@@ -145,8 +145,7 @@ can read it.
 Enabled with plain `systemctl enable` (no `--now` in chroot; `--now` on a
 booted system):
 
-- NetworkManager, but only when no other network service is enabled. (See
-  owner questions.)
+- NetworkManager, but only when no other network service is enabled.
 - `bluetooth.service`, which stays inert on machines without Bluetooth.
 - `power-profiles-daemon.service`.
 
@@ -208,6 +207,21 @@ surprising than leaving it on.
   - The greeter falls back to the shipped default if the folder is empty or
     unreadable.
 
+### Talking to the person (owner: "user friendly, interactive and informative")
+
+- Before any change, the installer prints a short plain-language summary of
+  what it will do at system level and in the user's desktop, then asks
+  `Continue? [Y/n]`. `--yes` answers for them.
+- With several accounts it shows a numbered list to pick the user.
+- Work is shown as three labelled stages (System, Your desktop, First login),
+  each step as one line that ends in ✓ or ✗ with a plain explanation, and
+  pacman's own output is shown while packages install.
+- It ends with a summary: what changed, what happens next (for example "Reboot:
+  you'll see the Bloom login screen"), and how to undo it (`bloom uninstall`).
+- A failure says what failed, what was put back, and the next command to run.
+- Without a terminal (scripts, archinstall's custom commands) it asks nothing,
+  explains and proceeds. Colour only in a terminal; `NO_COLOR` turns it off.
+
 ### Dry run, recovery, diagnostics
 
 - `bloom install --dry-run` prints the system plan (packages, services, SDDM
@@ -248,9 +262,10 @@ surprising than leaving it on.
 - How the default login wallpaper is drawn, within the description above.
 - How the chroot VM path is automated, within the description above.
 
-## Owner questions
+## Calls made without an owner answer
 
-1. If archinstall set up a different network service (its "copy ISO network
-   configuration" option uses systemd-networkd and iwd), Bloom's Wi-Fi panel
-   won't work. Should Bloom switch the machine to NetworkManager, or leave it
-   and have the Wi-Fi panel and `bloom doctor` explain why it's unavailable?
+- When another network service is enabled (archinstall's "copy ISO network
+  configuration" uses systemd-networkd and iwd), Bloom leaves it alone; the
+  Wi-Fi panel and `bloom doctor` explain that Wi-Fi controls need
+  NetworkManager. Chosen as the safer default (anti-goal: never break
+  networking); the owner can reverse it.
