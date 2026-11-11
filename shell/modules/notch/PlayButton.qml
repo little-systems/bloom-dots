@@ -20,6 +20,8 @@ PressArea {
 	tapScale: 0.95
 
 	onPlayingChanged: swap.restart()
+	// A disappearing MPRIS player can unload the button mid-swap.
+	Component.onDestruction: swap.stop()
 
 	SequentialAnimation {
 		id: swap
