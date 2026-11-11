@@ -204,10 +204,42 @@ stage_uninstall() {
 	pgrep -x qs >/dev/null && bad "orphan shell process after uninstall" || ok "no orphan shell process"
 	[[ ! -e "$STATE/install-manifest.json" ]] || grep -q '"uninstalled"' "$STATE/install-manifest.json" && ok "manifest retired" || bad "manifest still active"
 	check "reinstall after uninstall" "$BLOOM" install --no-deps
-	"$BLOOM" uninstall >>"$LOG" 2>&1 &
-	local pid=$!; sleep 0.4; kill -KILL "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+	local fixture pid killed
+	fixture="$(mktemp -d)" || { bad "allocate uninstall fixture"; return; }
+	cat > "$fixture/systemctl" <<'SH'
+#!/usr/bin/env bash
+"$BLOOM_VM_REAL_SYSTEMCTL" "$@" || exit $?
+if [[ "$*" == "--user disable --now bloom-shell.service" ]]; then
+	touch "$BLOOM_VM_UNINSTALL_FIXTURE/paused"
+	for _ in $(seq 1 100); do
+		[[ -e "$BLOOM_VM_UNINSTALL_FIXTURE/release" ]] && break
+		sleep 0.2
+	done
+fi
+SH
+	chmod +x "$fixture/systemctl"
+	PATH="$fixture:$PATH" BLOOM_VM_REAL_SYSTEMCTL="$(command -v systemctl)" BLOOM_VM_UNINSTALL_FIXTURE="$fixture" \
+		"$BLOOM" uninstall >>"$LOG" 2>&1 &
+	pid=$!
+	for _ in $(seq 1 50); do
+		[[ -e "$fixture/paused" ]] && break
+		kill -0 "$pid" 2>/dev/null || break
+		sleep 0.2
+	done
+	if [[ ! -e "$fixture/paused" ]] || ! kill -KILL "$pid" 2>/dev/null; then
+		touch "$fixture/release"
+		wait "$pid"
+		bad "uninstall did not reach its interruption point"
+		return
+	fi
+	wait "$pid" 2>/dev/null
+	killed=$?
+	touch "$fixture/release"
+	[[ "$killed" == 137 ]] && ok "uninstall process was interrupted" || bad "uninstall did not exit from SIGKILL"
+	check "interrupted uninstall has a pending journal" jq -e '.status == "uninstalling"' "$STATE/install-manifest.json"
 	check "interrupted uninstall is inspectable" "$BLOOM" recover
-	check "interrupted uninstall resumes" bash -c "'$BLOOM' recover --resume || '$BLOOM' uninstall"
+	check "interrupted uninstall resumes" "$BLOOM" recover --resume
+	check "resumed uninstall retires the manifest" jq -e '.status == "uninstalled"' "$STATE/install-manifest.json"
 	grep -q 'gaps_out = 7' "$HOME/.config/hypr/hyprland.lua" && ok "owner config intact after interrupted removal" || bad "owner config after interrupted removal"
 }
 
