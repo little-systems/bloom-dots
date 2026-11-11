@@ -45,11 +45,15 @@ start_hyprland() {
 	return 1
 }
 
-# Logout the way Bloom's session menu does it.
+# Use Bloom's normal logout, or exit Hyprland directly when Bloom has failed.
 stop_hyprland() {
 	session_env
 	rm -f "$HOME/.start-hyprland"
-	"$BLOOM" ipc session run logout >/dev/null 2>&1 || return 1
+	if [[ "${1:-}" == compositor ]]; then
+		hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1 || return 1
+	else
+		"$BLOOM" ipc session run logout >/dev/null 2>&1 || return 1
+	fi
 	for _ in $(seq 1 30); do hyprland_running || return 0; sleep 0.5; done
 	return 1
 }
@@ -109,8 +113,7 @@ stage_session() {
 	check "headless Hyprland login starts" start_hyprland
 	check "the start hook launched Bloom and it answers" shell_answers
 	check "doctor runs inside the session" bash -c "'$BLOOM' doctor --json > '$HOME/doctor.json'; [ \$? -le 1 ]"
-	stop_hyprland
-	check "logout ends Hyprland" bash -c "! pgrep -x Hyprland"
+	check "logout ends Hyprland" stop_hyprland
 	check "service stopped cleanly at logout" bash -c '[[ "$(systemctl --user show bloom-shell -p ActiveState --value)" == inactive && "$(systemctl --user show bloom-shell -p Result --value)" == success ]]'
 	check "second login starts Bloom again" start_hyprland
 	check "Bloom answers after relogin" shell_answers
@@ -132,7 +135,7 @@ stage_session() {
 	[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && ok "crash loop hits the restart limit" || bad "crash loop limit"
 	"$BLOOM" doctor --json > "$HOME/doctor-limited.json" 2>>"$LOG"
 	grep -q 'reset-failed' "$HOME/doctor-limited.json" && ok "doctor explains the restart limit" || bad "doctor restart limit"
-	stop_hyprland
+	check "compositor can exit after Bloom hits the limit" stop_hyprland compositor
 	check "next login clears the limit and starts Bloom" start_hyprland
 	check "Bloom answers after the limit was cleared" shell_answers
 }
