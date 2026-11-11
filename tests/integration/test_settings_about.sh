@@ -50,16 +50,18 @@ dialog_focused() { local now; now="$(sway_focus)"; [[ -n "$now" && "$now" != "$b
 before="$(sway_focus || true)"
 call probeExport >/dev/null
 wait_for 'the export dialog takes keyboard focus' dialog_focused
-sleep 0.3
+# Keyboard focus reaches a new window shortly after the compositor reports it.
+sleep 1
 # End only moves the cursor; a lone first key to a new window can be dropped.
 wtype -s 300 -k End -k Return
 wait_for 'export to the suggested name completes' matches '.exportStatus == "Settings Exported"'
-cmp "$HOME/bloom-settings.json" "$XDG_CONFIG_HOME/bloom/settings.json" || fail 'the suggested export name was not used'
+cmp "$HOME/bloom-settings.json" "$XDG_CONFIG_HOME/bloom/settings.json" || { find / -xdev -name bloom-settings.json -newer "$APP" 2>/dev/null >&2; fail "the suggested export name was not used"; }
 pass 'Export opens with the suggested file name focused, so Enter saves it'
 before="$(sway_focus || true)"
 call probeExport >/dev/null
 wait_for 'the export dialog takes keyboard focus' dialog_focused
-sleep 0.3
+# Keyboard focus reaches a new window shortly after the compositor reports it.
+sleep 1
 wtype -s 400 -M ctrl -k a -m ctrl "$NAME" -k Return
 # The label already reads Exported; the file appears whole when the copy commits.
 wait_for 'export to the typed path completes' test -s "$OUT"
@@ -72,7 +74,8 @@ sleep 0.4
 before="$(sway_focus || true)"
 call probeImport >/dev/null
 wait_for 'the import dialog takes keyboard focus' dialog_focused
-sleep 0.3
+# Keyboard focus reaches a new window shortly after the compositor reports it.
+sleep 1
 wtype -s 400 -M ctrl -k a -m ctrl "$NAME" -k Return
 wait_for 'import completes' matches '.importStatus == "Settings Imported"'
 jq -e '."bloom-theme-mode" == "dark"' "$XDG_CONFIG_HOME/bloom/settings.json" >/dev/null || fail 'import did not restore the exported value'

@@ -168,6 +168,8 @@ ShellRoot {
 		parentWindow: win.contentItem.Window.window
 		id: exportDialog
 		fileMode: Platform.FileDialog.SaveFile
+		// A fixed start, not wherever the app was launched from.
+		folder: "file://" + Quickshell.env("HOME")
 		onAccepted: {
 			exportCopy.destination = decodeURIComponent(file.toString().replace("file://", ""));
 			app.saveError = "";
