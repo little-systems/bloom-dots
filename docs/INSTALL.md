@@ -60,7 +60,7 @@ integrity. Recovery is not a filesystem snapshot or an OS/package rollback.
 
 ```sh
 bloom recover                     # inspect; no desktop changes
-bloom recover --resume            # finish the recorded install/removal
+bloom recover --resume            # finish install/removal or recover an interrupted update
 bloom recover --restore-originals # remove Bloom and restore pre-install files
 ```
 
@@ -68,6 +68,8 @@ Recovery validates the journal and refuses ambiguous owner edits. Resume of an
 installation uses the current checkout and installed prerequisites; it never
 runs a package transaction. `--restore-originals` restores the installation's
 original files, not the immediately preceding code/configuration generation.
+For an interrupted update, resume restores the pre-update checkout and restarts
+Bloom when a session is available. Retry the update after recovery succeeds.
 Keep the checkout and recovery backups until restoration finishes.
 New mutation journals use manifest version 2; this reader also accepts legacy
 version 1. Older Bloom lifecycle tools reject version 2 instead of incorrectly
@@ -94,13 +96,13 @@ bloom update
 bloom update --rollback
 ```
 
-Updates require a clean checkout and use `git pull --ff-only`. Keep personal
+Updates require a clean checkout and fast-forward to the configured upstream. Keep personal
 changes in the user-owned files under `~/.config/hypr/custom`, rather than
 editing the clone. A changed PKGBUILD rebuilds the dependency metapackage.
 Customized templates remain in place; updated defaults are offered as `.new`.
 The previous revision is recorded before each completed update, and the shell
 restarts after installation succeeds. Rollback checks out that revision; the
-next update returns to the recorded branch before pulling again.
+next update uses the recorded branch’s upstream.
 
 Review and merge `.new` files yourself. Run `bloom doctor` if the shell does
 not answer, and see [lock recovery](handover/phase6-lock-recovery.md) if you
