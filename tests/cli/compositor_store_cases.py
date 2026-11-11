@@ -33,6 +33,18 @@ class CompositorStoreCases(unittest.TestCase):
         self.assertEqual(result["state"]["hypr"], {})
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_pristine_installer_template_can_be_saved_but_owner_edits_are_refused(self):
+        template = (ROOT / "hypr/custom/bloom-settings.lua").read_bytes()
+        self.config.write_bytes(template)
+        before = store.snapshot(self.config, self.legacy)
+        self.assertEqual(self.config.read_bytes(), template)
+        self.config.write_bytes(template + b"-- owner edit\n")
+        with self.assertRaisesRegex(ValueError, "differs"):
+            store.snapshot(self.config, self.legacy)
+        self.config.write_bytes(template)
+        saved = store.commit(self.config, self.legacy, before["revision"], {"hypr": {"general": {"gaps_in": 8}}})
+        self.assertEqual(saved["state"]["hypr"]["general"]["gaps_in"], 8)
+
     def test_legacy_migration_and_noop_save(self):
         before = self.old_files()
         old_json = self.legacy.read_bytes()

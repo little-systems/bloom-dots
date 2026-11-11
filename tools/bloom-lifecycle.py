@@ -655,15 +655,61 @@ def uninstall(ctx, remove_deps=False):
     print("Bloom uninstalled; user settings and edited files are never silently deleted.")
 
 
+def restore_interrupted_update(ctx, pending):
+    """Restore the checkout recorded before the switch, then verify the shell."""
+    previous, target = pending.get("previous"), pending.get("target")
+    attached = pending.get("attached")
+    prior = pending.get("prior")
+    if (not all(isinstance(revision, str) and re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", revision)
+                for revision in (previous, target))
+            or not isinstance(attached, str) or not isinstance(prior, dict)
+            or prior.get("status") == "updating"):
+        raise Failure("incomplete update record; inspect the checkout and restore the previous revision manually")
+    if run("git", "status", "--porcelain", cwd=ROOT).stdout.strip():
+        raise Failure("checkout has local changes; resolve them before recovering the update")
+    head = run("git", "rev-parse", "HEAD", cwd=ROOT).stdout.strip()
+    current_branch = run("git", "symbolic-ref", "--quiet", "HEAD", cwd=ROOT, check=False).stdout.strip()
+    if head not in (previous, target) or (current_branch and current_branch != attached):
+        raise Failure("checkout moved outside the interrupted update; inspect it before recovery")
+    tip = None
+    if attached:
+        if not attached.startswith("refs/heads/"):
+            raise Failure("invalid update branch")
+        run("git", "check-ref-format", attached, cwd=ROOT)
+        tip = run("git", "rev-parse", "--verify", attached, cwd=ROOT).stdout.strip()
+        if tip not in (previous, target):
+            raise Failure("update branch moved outside the interrupted update; preserving it")
+    if head != previous:
+        run("git", "checkout", "--detach", previous, cwd=ROOT)
+    if attached and tip != previous:
+        worktrees = run("git", "worktree", "list", "--porcelain", cwd=ROOT).stdout.splitlines()
+        if f"branch {attached}" in worktrees:
+            raise Failure("update branch is checked out in another worktree; preserving it")
+        run("git", "update-ref", attached, previous, tip, cwd=ROOT)
+    if attached and (head != previous or current_branch != attached):
+        run("git", "checkout", attached.removeprefix("refs/heads/"), cwd=ROOT)
+    install(ctx, no_deps=True, restart=True)
+    restored = prior or {"previous": previous, "current": previous, "branch": pending.get("branch", ""),
+                         "lastGood": pending.get("lastGood") or previous, "status": "complete"}
+    atomic(ctx.state / "update.json", json.dumps(restored) + "\n")
+
+
 def recover(ctx, resume=False, restore_originals=False):
     doc = ctx.manifest
     status = doc.get("status", "complete") if doc else "absent"
     print(f"Installation state: {status}")
+    pending = read_json(ctx.state / "update.json", {})
+    updating = pending.get("status") == "updating"
+    if updating:
+        print("Update state: updating")
     if not resume and not restore_originals:
         print("Recovery is read-only unless --resume or --restore-originals is selected.")
         return
     if restore_originals or status in ("uninstalling", "uninstalled"):
         uninstall(ctx)
+    elif updating:
+        restore_interrupted_update(ctx, pending)
+        print("Interrupted update recovered.")
     elif status == "installing":
         # Recovery never performs a package transaction without a new explicit
         # install request. Existing prerequisites are still validated.
@@ -707,9 +753,12 @@ def update(ctx, rollback=False, no_deps=False):
     if run("git", "status", "--porcelain", cwd=ROOT).stdout.strip():
         raise Failure("checkout has local changes; keep personal overrides in ~/.config/hypr/custom")
     old = run("git", "rev-parse", "HEAD", cwd=ROOT).stdout.strip()
-    branch = run("git", "symbolic-ref", "--quiet", "--short", "HEAD", cwd=ROOT, check=False).stdout.strip()
+    attached = run("git", "symbolic-ref", "--quiet", "HEAD", cwd=ROOT, check=False).stdout.strip()
+    branch = attached.removeprefix("refs/heads/")
     record = ctx.state / "update.json"
     previous = read_json(record, {})
+    if previous.get("status") == "updating":
+        raise Failure("update is incomplete; run `bloom recover --resume` first")
     branch = branch or previous.get("branch", "")
     last_good = previous.get("lastGood") or old
     if rollback and not previous:
@@ -717,12 +766,11 @@ def update(ctx, rollback=False, no_deps=False):
     if rollback:
         target = previous["previous"]
     else:
-        if run("git", "symbolic-ref", "--quiet", "HEAD", cwd=ROOT, check=False).returncode:
-            if not branch:
-                raise Failure("detached checkout has no recorded update branch")
-            run("git", "checkout", branch, cwd=ROOT)
+        if not branch:
+            raise Failure("detached checkout has no recorded update branch")
         run("git", "fetch", cwd=ROOT, capture=False)
-        target = run("git", "rev-parse", "@{upstream}", cwd=ROOT).stdout.strip()
+        upstream = "@{upstream}" if attached else f"{branch}@{{upstream}}"
+        target = run("git", "rev-parse", "--verify", "--end-of-options", upstream, cwd=ROOT).stdout.strip()
         if run("git", "merge-base", "--is-ancestor", "HEAD", target, cwd=ROOT, check=False).returncode:
             raise Failure("the update is not a fast-forward of this checkout; nothing was changed")
     if target == old:
@@ -730,8 +778,9 @@ def update(ctx, rollback=False, no_deps=False):
         return
     validate_candidate(target)
     EVENTS.emit("lifecycle.candidate", stage="validated", outcome="success", revision=target[:12])
-    atomic(record, json.dumps({"previous": old, "current": old, "branch": branch, "lastGood": last_good,
-                               "status": "updating"}) + "\n")
+    pending = {"previous": old, "current": old, "target": target, "attached": attached,
+               "branch": branch, "lastGood": last_good, "prior": previous, "status": "updating"}
+    atomic(record, json.dumps(pending) + "\n")
     try:
         if rollback:
             run("git", "checkout", "--detach", target, cwd=ROOT)
@@ -740,19 +789,12 @@ def update(ctx, rollback=False, no_deps=False):
         install(ctx, no_deps=no_deps, restart=True)
     except BaseException as error:
         EVENTS.emit("lifecycle.candidate", level="error", stage="health", outcome="rolled-back", revision=target[:12])
-        run("git", "checkout", "--detach", old, cwd=ROOT)
-        if branch and not rollback:
-            run("git", "branch", "-f", branch, old, cwd=ROOT, check=False)
-            run("git", "checkout", branch, cwd=ROOT, check=False)
-        atomic(record, json.dumps({**previous, "lastGood": last_good, "branch": branch} if previous
-                                  else {"previous": old, "current": old, "branch": branch, "lastGood": last_good,
-                                        "status": "complete"}) + "\n")
-        # Say truthfully whether the restored version is running again.
         try:
-            install(ctx, no_deps=True, restart=True)
-            verdict = "the previous version is running and answering again"
+            restore_interrupted_update(ctx, pending)
+            verdict = ("the previous version is running and answering again" if ctx.verified
+                       else "the previous version was restored for the next login")
         except (Failure, OSError) as restore_error:
-            verdict = f"the previous version was restored but is not answering ({restore_error}); run: bloom doctor"
+            verdict = f"recovery remains pending ({restore_error}); run: bloom recover --resume"
         raise Failure(f"update to {target[:12]} failed ({error}); {verdict}") from error
     verified = getattr(ctx, "verified", False)
     # Only a revision seen answering becomes last-good.

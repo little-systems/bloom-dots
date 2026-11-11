@@ -24,6 +24,7 @@ retention = _importlib_util.module_from_spec(_retention_spec)
 _retention_spec.loader.exec_module(retention)
 
 LIMIT = 1024 * 1024
+INSTALLER_TEMPLATE = b"-- Written by Bloom Settings. Personal overrides belong in bloom.lua.\n"
 HEADER = "-- Written by Bloom Settings. Delete this file to undo everything in it."
 MARKER = "-- bloom-state-v1 "
 RULE = 'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'
@@ -132,7 +133,8 @@ def snapshot(config, legacy):
     else:
         old_json = read_file(legacy)
         state = validate(decode(old_json) if old_json is not None else {})
-        if data is not None and data != legacy_source(state):
+        pristine = old_json is None and data == INSTALLER_TEMPLATE
+        if data is not None and not pristine and data != legacy_source(state):
             raise ValueError("legacy compositor file differs from its state; preserving changes")
         revision = digest(b"legacy\0" + (data or b"missing") + b"\0" + (old_json or b"missing"))
     return {"state": state, "revision": revision, "previous": previous, "source": data}

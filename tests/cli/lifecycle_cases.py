@@ -500,6 +500,39 @@ m.main()
         self.assertEqual(self.git("rev-parse", "HEAD"), initial)
         self.assertNotIn("restart", (self.base / "calls").read_text())
 
+    def test_recover_update_killed_after_fast_forward(self):
+        upstream, initial = self.prepare_updates()
+        self.publish(upstream, "VERSION", "0.2.0\n")
+        git = shutil.which("git")
+        shim = self.bin / "git"
+        shim.write_text(f"""#!/usr/bin/env python3
+import os, signal, subprocess, sys
+status = subprocess.call([{git!r}, *sys.argv[1:]])
+if status == 0 and sys.argv[1:3] == ["merge", "--ff-only"]:
+    os.kill(os.getppid(), signal.SIGKILL)
+raise SystemExit(status)
+""")
+        shim.chmod(0o755)
+        try:
+            result = self.bloom("update", success=False)
+            self.assertEqual(result.returncode, -signal.SIGKILL, result.stderr)
+        finally:
+            shim.unlink()
+        record = self.state / "update.json"
+        self.assertEqual(json.loads(record.read_text())["status"], "updating")
+        self.assertNotEqual(self.git("rev-parse", "HEAD"), initial)
+        self.assertIn("Update state: updating", self.bloom("recover").stdout)
+        (self.root / "VERSION").write_text("owner edit\n")
+        self.assertIn("local changes", self.bloom("recover", "--resume", success=False).stderr)
+        self.assertEqual((self.root / "VERSION").read_text(), "owner edit\n")
+        self.git("restore", "VERSION")
+        self.bloom("recover", "--resume")
+        self.assertEqual(self.git("rev-parse", "HEAD"), initial)
+        self.assertEqual(self.git("symbolic-ref", "--short", "HEAD"), "main")
+        self.assertEqual(json.loads(record.read_text())["status"], "complete")
+        self.bloom("update")
+        self.assertNotEqual(self.git("rev-parse", "HEAD"), initial)
+
     def test_unhealthy_candidate_rolls_back_to_the_verified_last_good(self):
         upstream, initial = self.prepare_updates()
         self.publish(upstream, "VERSION", "unhealthy\n")
