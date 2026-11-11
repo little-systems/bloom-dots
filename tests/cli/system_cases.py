@@ -160,6 +160,8 @@ class Phase(Facts):
         self.install()
         calls = self.calls()
         self.assertIn(["makepkg", "-d", "--noconfirm"], calls)
+        tools = ["pacman", "-S", "--needed", "--noconfirm", "--asdeps", "fakeroot", "debugedit", "binutils"]
+        self.assertLess(calls.index(tools), calls.index(["makepkg", "-d", "--noconfirm"]), "a bare system can't build")
         built = [c for c in calls if c[:2] == ["runuser", "-u"]]
         self.assertEqual(built[0][2], "dhanush")
         self.assertTrue(any(c[:3] == ["pacman", "-U", "--noconfirm"] for c in calls))

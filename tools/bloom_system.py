@@ -324,7 +324,9 @@ def _write(path, text, mode):
 
 
 def _packages(user, run):
-    """makepkg refuses root: build the metapackage as the user, install as root."""
+    """makepkg refuses root: build the metapackage as the user, install as root.
+    A bare system lacks makepkg's own tools; they come in as dependencies."""
+    run("pacman", "-S", "--needed", "--noconfirm", "--asdeps", "fakeroot", "debugedit", "binutils")
     with tempfile.TemporaryDirectory(prefix="bloom-deps-") as temporary:
         shutil.copy2(SOURCE / "packaging/bloom-shell-deps/PKGBUILD", temporary)
         run("chown", "-R", f"{user['name']}:", temporary)
