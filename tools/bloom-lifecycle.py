@@ -6,6 +6,7 @@ import argparse
 import copy
 import fcntl
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -28,13 +29,38 @@ class Failure(RuntimeError):
     pass
 
 
+def _load(name, file):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "shell/services" / file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+events = _load("bloom_events", "bloom_events.py")
+operations = _load("bloom_operations", "bloom_operations.py")
+EVENTS = events.Events("lifecycle")
+
+
 def run(*args, check=True, capture=True, cwd=None):
-    try:
-        result = subprocess.run(args, cwd=cwd, text=True,
-                                stdout=subprocess.PIPE if capture else None,
-                                stderr=subprocess.PIPE if capture else None, timeout=20 if capture else None)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise Failure(f"{args[0]}: {exc}") from exc
+    action = Path(str(args[0])).name
+    if not capture:
+        # Interactive (package builds, sudo prompts): the terminal is inherited
+        # and there is no deadline, but the outcome is still recorded.
+        started = time.monotonic()
+        try:
+            result = subprocess.run(args, cwd=cwd, text=True)
+        except OSError as exc:
+            EVENTS.emit("operation.finished", level="warning", stage=action, outcome="failure", error="start-failed", action=action)
+            raise Failure(f"{args[0]}: {exc}") from exc
+        EVENTS.emit("operation.finished", level="info" if result.returncode == 0 else "warning", stage=action,
+                    outcome="success" if result.returncode == 0 else "failure", action=action,
+                    exitCode=result.returncode, durationMs=round((time.monotonic() - started) * 1000))
+    else:
+        outcome = operations.run_operation("lifecycle", action, [str(a) for a in args], timeout=20, cwd=cwd, events=EVENTS)
+        if outcome["errorCode"] in ("start-failed", "timeout"):
+            raise Failure(f"{args[0]}: {outcome['errorCode'].replace('-', ' ')}")
+        result = subprocess.CompletedProcess(args, outcome["exitCode"] if outcome["exitCode"] is not None else -(outcome["signal"] or 1),
+                                             outcome["stdout"], outcome["stderr"])
     if check and result.returncode:
         raise Failure(f"{' '.join(map(str, args))}: {(result.stderr or '').strip() or 'failed'}")
     return result
@@ -679,6 +705,10 @@ def main():
         except BlockingIOError as exc:
             raise Failure("another Bloom lifecycle operation is running; try again when it finishes") from exc
         ctx = Context()
+        # A dry run and a plain recovery inspection are queries: no effects, no log.
+        EVENTS.enabled = not (getattr(args, "dry_run", False) or
+                              (args.command == "recover" and not (args.resume or args.restore_originals)))
+        EVENTS.emit("lifecycle.started", stage=args.command)
         if args.command == "install":
             install(ctx, args.dry_run, args.no_deps, args.restart)
         elif args.command == "update":
@@ -693,5 +723,8 @@ if __name__ == "__main__":
     try:
         main()
     except (Failure, OSError, ValueError, KeyboardInterrupt) as error:
+        EVENTS.emit("lifecycle.failed", level="error", outcome="failure", error=type(error).__name__,
+                    reason=str(error))
         print(f"bloom: {error}", file=sys.stderr)
         sys.exit(1)
+    EVENTS.emit("lifecycle.finished", outcome="success")

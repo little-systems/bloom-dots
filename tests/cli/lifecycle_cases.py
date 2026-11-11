@@ -31,7 +31,8 @@ class Lifecycle(unittest.TestCase):
         for script in ("adaptive-theme.sh", "theme-owner.py", "app-theme.py"):
             shutil.copy2(ROOT / "shell/scripts" / script, self.root / "shell/scripts" / script)
         (self.root / "shell/services").mkdir()
-        shutil.copy2(ROOT / "shell/services/bloom_retention.py", self.root / "shell/services/bloom_retention.py")
+        for module in ("bloom_retention.py", "bloom_events.py", "bloom_operations.py"):
+            shutil.copy2(ROOT / "shell/services" / module, self.root / "shell/services" / module)
         shutil.copytree(ROOT / "shell/theming", self.root / "shell/theming")
         (self.root / "shell/settings-app.qml").write_text("// fixture\n")
         (self.root / "VERSION").write_text("0.1.0\n")
@@ -99,9 +100,28 @@ elif name == 'systemctl':
         result = {}
         for path in sorted(self.home.rglob("*")):
             key = str(path.relative_to(self.home))
+            # The private event log is diagnostics, not installed configuration.
+            if key.startswith(".local/state/bloom/log") or key in (".local", ".local/state", ".local/state/bloom"):
+                continue
             result[key] = ("link", os.readlink(path)) if path.is_symlink() else (
                 ("file", path.read_bytes()) if path.is_file() else ("dir",))
         return result
+
+    def test_failures_are_recorded_and_dry_runs_are_not(self):
+        log = self.state / "log/events.jsonl"
+        self.bloom("install", "--dry-run")
+        self.assertFalse(log.exists())
+        self.bloom("install")
+        path = self.config / "systemd/user/bloom-shell.service"
+        path.unlink()
+        path.write_text("[Service]\nExecStart=my-custom-shell\n")
+        self.bloom("uninstall", success=False)
+        records = [json.loads(line) for line in log.read_text().splitlines()]
+        failed = [r for r in records if r["event"] == "lifecycle.failed"]
+        self.assertEqual(len(failed), 1)
+        self.assertEqual(failed[0]["component"], "lifecycle")
+        self.assertNotIn(str(self.home), log.read_text())
+        self.assertEqual(log.stat().st_mode & 0o777, 0o600)
 
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()

@@ -88,14 +88,18 @@ if "$BLOOM" dev install >/dev/null 2>&1; then fail "dev install should refuse"; 
 pass "dev install refuses an existing config and changes nothing; uninstall leaves it"
 
 # doctor
-out="$("$BLOOM" doctor)"
-for want in "## Versions" "Quickshell 0.3.2 (stub)" "v0.56.2" "## Lock screen" "allow_session_lock_restore" "## Recent log"; do
+status=0
+out="$("$BLOOM" doctor)" || status=$?
+(( status <= 2 )) || fail "doctor exit status $status is not a verdict"
+for want in "Bloom doctor:" "Quickshell 0.3.2 (stub)" "v0.56.2" "allow_session_lock_restore" "Recent shell log"; do
 	grep -qF "$want" <<<"$out" || fail "doctor output missing: $want"
 done
 pass "doctor reports versions, lock safety and logs"
 
 # doctor is for when the shell is in trouble, so a hung shell must not hang it (spec §6 timeouts).
 start=$SECONDS
-STUB_QS_SLEEP=30 timeout 20 "$BLOOM" doctor >/dev/null || fail "doctor failed or hung with a hung shell"
+status=0
+STUB_QS_SLEEP=30 timeout 20 "$BLOOM" doctor >/dev/null || status=$?
+(( status <= 2 )) || fail "doctor failed or hung with a hung shell (exit $status)"
 (( SECONDS - start < 15 )) || fail "doctor took $((SECONDS - start)) s with a hung shell"
 pass "doctor does not hang when the shell is hung"

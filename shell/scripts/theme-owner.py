@@ -26,6 +26,10 @@ import importlib.util as _importlib_util
 _retention_spec = _importlib_util.spec_from_file_location("bloom_retention", Path(__file__).resolve().parent.parent / "services/bloom_retention.py")
 retention = _importlib_util.module_from_spec(_retention_spec)
 _retention_spec.loader.exec_module(retention)
+_events_spec = _importlib_util.spec_from_file_location("bloom_events", Path(__file__).resolve().parent.parent / "services/bloom_events.py")
+_events = _importlib_util.module_from_spec(_events_spec)
+_events_spec.loader.exec_module(_events)
+EVENTS = _events.Events("theme")
 
 TARGETS = (
     ".config/gtk-3.0/gtk.css",
@@ -328,8 +332,12 @@ def main(argv):
             retention.prune_stale(state, (".stage-*",))
             conflicts = commands[argv[0]][1](argv[1:])
         except Refused as error:
+            EVENTS.emit("theme." + argv[0], level="warning", outcome="refused", error="refused")
             print(f"bloom theme: {error}", file=sys.stderr)
             return 2
+    if argv[0] in ("commit", "restore"):
+        EVENTS.emit("theme." + argv[0], level="warning" if conflicts else "info",
+                    outcome="conflict" if conflicts else "success", conflicts=len(conflicts))
     for line in conflicts:
         print(f"conflict {line}")
     return 3 if conflicts else 0

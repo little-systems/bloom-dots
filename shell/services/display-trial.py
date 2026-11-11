@@ -23,6 +23,10 @@ sys.dont_write_bytecode = True
 _spec = importlib.util.spec_from_file_location("compositor_store", Path(__file__).with_name("compositor-store.py"))
 store = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(store)
+_events_spec = importlib.util.spec_from_file_location("bloom_events", Path(__file__).with_name("bloom_events.py"))
+_events = importlib.util.module_from_spec(_events_spec)
+_events_spec.loader.exec_module(_events)
+EVENTS = _events.Events("display")
 TERMINAL = {"kept", "reverted", "failed", "conflict", "disconnected"}
 
 
@@ -204,6 +208,9 @@ class Trial:
     def publish(self, phase, error="", **extra):
         self.status = {**self.status, **extra, "phase": phase, "error": error}
         write_json(self.directory / "status.json", self.status)
+        # Phase only: outputs, modes and geometry stay out of the log.
+        EVENTS.emit("display.trial", level="warning" if phase in ("failed", "conflict", "disconnected") else "info",
+                    op=self.directory.name[:12], stage=phase, outcome=phase, error="trial-error" if error else None)
 
     def rollback(self, reason=""):
         previous, wanted = self.status.get("previous"), self.status.get("wanted")
