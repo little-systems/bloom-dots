@@ -27,7 +27,9 @@ class Lifecycle(unittest.TestCase):
         for relative in ("bin", "systemd", "share", "hypr", "packaging"):
             shutil.copytree(ROOT / relative, self.root / relative)
         (self.root / "tools").mkdir()
-        shutil.copy2(ROOT / "tools/bloom-lifecycle.py", self.root / "tools/bloom-lifecycle.py")
+        for tool in ("bloom-lifecycle.py", "bloom_system.py", "bloom_ui.py"):
+            shutil.copy2(ROOT / "tools" / tool, self.root / "tools" / tool)
+        shutil.copytree(ROOT / "sddm", self.root / "sddm")
         (self.root / "shell").mkdir()
         (self.root / "shell/scripts").mkdir()
         for script in ("adaptive-theme.sh", "theme-owner.py", "app-theme.py"):
@@ -54,6 +56,15 @@ class Lifecycle(unittest.TestCase):
                         BLOOM_OS_RELEASE=str(self.base / "os-release"),
                         BLOOM_TEST_DIR=str(self.base), PATH=str(self.bin) + ":" + os.environ["PATH"])
         self.env["TMPDIR"] = str(self.base)
+        # The machine Bloom installs into: a fake root with one regular account.
+        self.sysroot = self.base / "sysroot"
+        (self.sysroot / "etc/systemd/system").mkdir(parents=True)
+        import pwd
+        self.user = pwd.getpwuid(os.getuid()).pw_name
+        (self.sysroot / "etc/passwd").write_text(
+            f"root:x:0:0::/root:/bin/bash\n{self.user}:x:{os.getuid()}:{os.getgid()}::{self.home}:/bin/bash\n")
+        (self.sysroot / "etc/group").write_text("root:x:0:\n")
+        self.env["BLOOM_SYSTEM_ROOT"] = str(self.sysroot)
         # A fake live Hyprland session (Wayland and instance sockets), so tests
         # never depend on the machine they run on.
         runtime = self.base / "run"
@@ -85,8 +96,34 @@ if name == 'qs':
     elif args[-2:] == ['polkit', 'state']: print(json.dumps({'registered': os.environ.get('STUB_POLKIT', 'yes') == 'yes'}))
     else: print(json.dumps({'ownership': os.environ.get('STUB_OWNERSHIP', 'owned')}))
 elif name == 'busctl': print('u ' + os.environ.get('STUB_TRAY_PID', '4242'))
+elif os.environ.get('STUB_FAIL') == name: sys.exit(1)
+elif name == 'sudo':
+    if args[0] == '-v': sys.exit(1 if os.environ.get('STUB_NO_SUDO') else 0)
+    os.execvpe(args[0], args, dict(os.environ, BLOOM_AS_ROOT='1'))
+elif name == 'runuser':
+    rest = args[args.index('--') + 1:]
+    os.execvp(rest[0], rest)
+elif name == 'systemd-detect-virt': sys.exit(0 if os.environ.get('STUB_CHROOT') else 1)
+elif name == 'makepkg': Path('bloom-shell-deps-1-1-any.pkg.tar.zst').write_text('package')
+elif name in ('pacman', 'chown', 'notify-send'): pass
+elif name in ('groupadd', 'usermod', 'groupdel'):
+    group = Path(os.environ['BLOOM_SYSTEM_ROOT']) / 'etc/group'
+    lines = group.read_text().splitlines()
+    if name == 'groupadd': lines.append(args[-1] + ':x:960:')
+    elif name == 'groupdel': lines = [l for l in lines if not l.startswith(args[-1] + ':')]
+    else: lines = [l + (',' if l.split(':')[3] else '') + args[-1] if l.startswith('bloom:') else l for l in lines]
+    group.write_text('\\n'.join(lines) + '\\n')
+elif name == 'systemctl' and args[0] != '--user':
+    units = Path(os.environ['BLOOM_SYSTEM_ROOT']) / 'etc/systemd/system'
+    unit = args[-1]
+    link = units / 'display-manager.service' if unit == 'sddm.service' else units / 'multi-user.target.wants' / unit
+    if 'enable' in args:
+        link.parent.mkdir(parents=True, exist_ok=True)
+        if not link.is_symlink(): link.symlink_to('/usr/lib/systemd/system/' + unit)
+    elif 'disable' in args and link.is_symlink(): link.unlink()
 elif name == 'hyprctl': print(json.dumps({'tag': os.environ.get('STUB_HYPR_VERSION', 'v0.56.2')}))
 elif name == 'systemctl':
+    if os.environ.get('STUB_NO_USER_MANAGER'): sys.exit(1)
     state_file = base / 'service'
     state = json.loads(state_file.read_text()) if state_file.exists() else {'enabled': False, 'active': False}
     command = args[1]
@@ -101,7 +138,8 @@ elif name == 'systemctl':
     if '--now' in args: state['active'] = command == 'enable'
     state_file.write_text(json.dumps(state))
 '''
-        for name in ("qs", "hyprctl", "systemctl", "makepkg", "sudo", "busctl"):
+        for name in ("qs", "hyprctl", "systemctl", "makepkg", "sudo", "busctl", "pacman", "runuser", "chown",
+                     "groupadd", "usermod", "groupdel", "systemd-detect-virt", "notify-send"):
             path = self.bin / name
             path.write_text(stub)
             path.chmod(0o755)
@@ -594,6 +632,105 @@ raise SystemExit(status)
         self.publish(upstream, "VERSION", "0.2.0\n")
         self.bloom("update")
         self.assertEqual(json.loads((self.state / "update.json").read_text())["lastGood"], self.git("rev-parse", "HEAD"))
+
+
+    def calls(self):
+        path = self.base / "calls"
+        return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+
+    def test_install_without_quickshell_installs_it_first(self):
+        # A fresh Arch has no qs yet: the package step comes before any version check.
+        (self.bin / "qs").rename(self.bin / "qs-later")
+        (self.bin / "makepkg").write_text((self.bin / "runuser").read_text().replace(
+            "elif name == 'makepkg':", "elif name == 'makepkg':\n    Path(os.environ['BLOOM_TEST_DIR'], 'stubs', 'qs-later').rename(Path(os.environ['BLOOM_TEST_DIR'], 'stubs', 'qs'))\n   "))
+        result = self.bloom("install")
+        names = [c[0] for c in self.calls()]
+        self.assertLess(names.index("makepkg"), names.index("qs"))
+        self.assertIn("pacman", names)
+        self.assertNotIn("missing qs", result.stderr)
+
+    def test_root_install_runs_system_then_user_phase_as_the_user(self):
+        result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        calls = self.calls()
+        self.assertTrue(any(c[:3] == ["runuser", "-u", self.user] for c in calls))
+        self.assertNotIn("sudo", [c[0] for c in calls])
+        self.assertEqual(json.loads((self.sysroot / "var/lib/bloom/system-manifest.json").read_text())["status"], "complete")
+        self.assertTrue((self.state / "install-manifest.json").exists())
+        self.assertIn("Reboot", result.stdout)
+
+    def test_root_install_hands_the_checkout_to_the_user(self):
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        owned = [c for c in self.calls() if c[0] == "chown" and c[-1] == str(self.root)]
+        self.assertEqual(owned, [], "the checkout is already the user's in this fixture")
+        self.assertTrue(all(c[0] != "chown" or c[-1] != str(self.home) for c in self.calls()))
+
+    def test_chroot_install_leaves_a_first_login_marker(self):
+        result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.assertTrue((self.state / "first-login-pending").exists())
+        self.assertFalse([c for c in self.calls() if c[:2] == ["systemctl", "--user"] and c[2] in ("enable", "start", "restart")])
+        self.assertIn("first login", result.stdout)
+
+    def test_first_login_enables_and_clears_the_marker(self):
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.bloom("first-login", "--start")
+        self.assertFalse((self.state / "first-login-pending").exists())
+        service = json.loads((self.base / "service").read_text())
+        self.assertTrue(service["enabled"] and service["active"])
+        before = len(self.calls())
+        self.bloom("first-login")
+        self.assertEqual(len(self.calls()), before, "no marker, nothing to do")
+
+    def test_first_login_failure_keeps_the_marker(self):
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.bloom("first-login", "--start", success=False, STUB_PING="dead")
+        self.assertTrue((self.state / "first-login-pending").exists())
+        self.assertIn("notify-send", [c[0] for c in self.calls()])
+
+    def test_user_install_runs_the_system_phase_through_sudo_once(self):
+        self.bloom("install")
+        sudo = [c for c in self.calls() if c[0] == "sudo" and c[1] != "-v"]
+        self.assertEqual(len(sudo), 1)
+        self.assertIn("system-apply", sudo[0])
+
+    def test_repeat_install_asks_for_no_sudo(self):
+        self.bloom("install")
+        (self.base / "calls").unlink()
+        self.bloom("install")
+        self.assertNotIn("sudo", [c[0] for c in self.calls()])
+
+    def test_without_sudo_nothing_changes(self):
+        before = self.snapshot()
+        result = self.bloom("install", success=False, STUB_NO_SUDO="1")
+        self.assertIn("sudo", result.stderr)
+        self.assertEqual(before, self.snapshot())
+        self.assertFalse((self.sysroot / "var/lib/bloom").exists())
+
+    def test_dry_run_lists_system_steps(self):
+        result = self.bloom("install", "--dry-run")
+        self.assertIn("Install the SDDM login screen", result.stdout)
+        self.assertIn("Turn on NetworkManager", result.stdout)
+        self.assertFalse((self.sysroot / "var/lib/bloom").exists())
+        self.assertNotIn("sudo", [c[0] for c in self.calls()])
+
+    def test_output_has_stages_and_a_next_step(self):
+        result = self.bloom("install")
+        for text in ("[1/2] System", "[2/2] Your desktop", "✓", "bloom uninstall"):
+            self.assertIn(text, result.stdout)
+
+    def test_no_colour_without_a_terminal(self):
+        self.assertNotIn("\033[", self.bloom("install").stdout)
+
+    def test_failed_system_phase_never_starts_the_user_phase(self):
+        result = self.bloom("install", success=False, STUB_FAIL="pacman")
+        self.assertFalse((self.state / "install-manifest.json").exists())
+        self.assertIn("bloom install", result.stderr)
+
+    def test_uninstall_undoes_the_system_phase(self):
+        self.bloom("install")
+        self.bloom("uninstall")
+        doc = json.loads((self.sysroot / "var/lib/bloom/system-manifest.json").read_text())
+        self.assertEqual(doc["status"], "uninstalled")
+        self.assertFalse((self.sysroot / "etc/sddm.conf.d/10-bloom.conf").exists())
 
 
 if __name__ == "__main__":

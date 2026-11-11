@@ -21,7 +21,7 @@ Usage: bloom <command> [args]
   doctor [--json]                    Read-only health report (exit 0 healthy, 1 degraded, 2 failed)
   support [--preview] [--output FILE] Write a private, redacted support bundle (never uploaded)
   settings                           Open Bloom Settings
-  install [--dry-run] [--no-deps] [--restart] Install Bloom with backups and a manifest
+  install [--dry-run] [--yes] [--user NAME] [--no-deps] [--restart]  Install Bloom (as root inside arch-chroot too)
   update [--rollback] [--no-deps]      Update a clean checkout or restore the previous revision
   uninstall [--remove-deps]           Restore files recorded by the installer
   recover [--resume|--restore-originals] Inspect or recover an interrupted lifecycle operation
@@ -183,7 +183,7 @@ main() {
 	doctor) cmd_doctor "$@" ;;
 	support) cmd_doctor --support "$@" ;;
 	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
-	install | update | uninstall | recover) exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
+	install | update | uninstall | recover | first-login) exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
 	dev) cmd_dev "$@" ;;
 	version) cmd_version ;;
 	help | -h | --help) usage ;;

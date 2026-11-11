@@ -36,7 +36,17 @@ def _load(name, file):
     return module
 
 
+def _tool(name):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "tools" / f"{name}.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 events = _load("bloom_events", "bloom_events.py")
+bsys = _tool("bloom_system")
+UI = _tool("bloom_ui").UI
+FIRST_LOGIN = "first-login-pending"
 operations = _load("bloom_operations", "bloom_operations.py")
 EVENTS = events.Events("lifecycle")
 
@@ -66,6 +76,16 @@ def run(*args, check=True, capture=True, cwd=None):
     if check and result.returncode:
         raise Failure(f"{' '.join(map(str, args))}: {(result.stderr or '').strip() or 'failed'}")
     return result
+
+
+def as_root():
+    return os.geteuid() == 0 or os.environ.get("BLOOM_AS_ROOT") == "1"
+
+
+def require_arch():
+    release = Path(os.environ.get("BLOOM_OS_RELEASE", "/etc/os-release")).read_text()
+    if not re.search(r'^ID=["\']?arch["\']?$', release, re.M):
+        raise Failure("installation currently supports Arch Linux; no files were changed")
 
 
 def live_session():
@@ -309,25 +329,35 @@ class Context:
                 raise Failure(f"original backup failed verification: {backup}; no files were changed")
 
     def service_state(self, unit=UNIT):
+        if getattr(self, "offline", False):
+            return {"enabled": False, "active": False}
         return {"enabled": run("systemctl", "--user", "is-enabled", unit, check=False).stdout.strip() == "enabled",
                 "active": run("systemctl", "--user", "is-active", unit, check=False).returncode == 0}
 
     def restore_service(self, state, unit=UNIT):
+        if getattr(self, "offline", False):
+            return
         run("systemctl", "--user", "daemon-reload")
         run("systemctl", "--user", "enable" if state["enabled"] else "disable", unit, check=False)
         run("systemctl", "--user", "restart" if state["active"] else "stop", unit, check=False)
         if self.service_state(unit) != state:
             raise Failure(f"could not restore {unit}; inspect the service state before continuing")
 
-    def preflight(self, no_deps=False):
-        release = Path(os.environ.get("BLOOM_OS_RELEASE", "/etc/os-release")).read_text()
-        if not re.search(r'^ID=["\']?arch["\']?$', release, re.M):
-            raise Failure("installation currently supports Arch Linux; no files were changed")
-        if os.geteuid() == 0:
+    def preflight(self):
+        """What must hold before anything, including the system phase."""
+        require_arch()
+        if as_root():
             raise Failure("run Bloom as your desktop user, not root")
-        for binary in ("qs", "hyprctl", "systemctl", "git") + (() if no_deps else ("makepkg",)):
+        for binary in ("systemctl", "git"):
             if not shutil.which(binary):
-                raise Failure(f"missing {binary}; install it before running Bloom's installer")
+                raise Failure(f"missing {binary}; install it with pacman, then run bloom install again")
+
+    def preflight_desktop(self):
+        """After the system phase: Bloom's packages provide qs and Hyprland."""
+        for binary in ("qs", "hyprctl"):
+            if not shutil.which(binary):
+                raise Failure(f"missing {binary}; Bloom's packages provide it, so run bloom install again "
+                              "(without --no-deps) or install bloom-shell-deps")
         quickshell = run("qs", "--version").stdout
         match = re.search(r"\b(\d+)\.(\d+)", quickshell)
         if not match or tuple(map(int, match.groups())) < (0, 3):
@@ -343,12 +373,9 @@ class Context:
         if not config.is_file() and not hyprland_default().is_file():
             raise Failure(f"{config} does not exist and Hyprland's default configuration was not found; "
                           "start Hyprland once (it writes its default) or create that file, then install again")
-        run("systemctl", "--user", "show-environment")
-
-    def dependencies(self):
-        with tempfile.TemporaryDirectory(prefix="bloom-deps-") as temporary:
-            shutil.copy2(ROOT / "packaging/bloom-shell-deps/PKGBUILD", temporary)
-            run("makepkg", "-si", cwd=temporary, capture=False)
+        # Inside arch-chroot (or before any login) there is no user manager:
+        # files are placed now and the rest finishes at the first login.
+        self.offline = run("systemctl", "--user", "show-environment", check=False).returncode != 0
 
     def hyprland_config(self):
         """The user's Hyprland config, or Hyprland's own default for a fresh install."""
@@ -490,31 +517,108 @@ class Transaction:
         self.temporary.cleanup()
 
 
-def install(ctx, dry_run=False, no_deps=False, restart=False):
+def current_user(ctx):
+    import pwd
+    entry = pwd.getpwuid(os.getuid())
+    return {"name": entry.pw_name, "uid": entry.pw_uid, "gid": entry.pw_gid, "home": str(ctx.home)}
+
+
+def show_system_plan(ui, steps, needs_password):
+    ui.say("System" + ("  (asks for your password once)" if needs_password else ""))
+    work = [step for step in steps if step["kind"] != "note"]
+    for step in work:
+        ui.item(step["label"])
+    if not work:
+        ui.item("Already set up")
+    for step in steps:
+        if step["kind"] == "note":
+            ui.note(step["label"])
+
+
+def show_desktop_plan(ui, session):
+    ui.say("Your desktop")
+    ui.item("Link Bloom into your Quickshell, Hyprland and systemd user configuration")
+    ui.item("Keep your settings, personal binds and edited files")
+    ui.item("Start Bloom now" if session else "Start Bloom at your first Hyprland login")
+
+
+def system_runner(*args, check=True, capture=True, cwd=None):
+    # Package builds and installs show their own progress.
+    loud = Path(str(args[0])).name in ("pacman", "runuser")
+    return run(*args, check=check, capture=capture and not loud, cwd=cwd)
+
+
+def apply_system(ui, root, user, steps):
+    booted = not bsys.in_chroot()
+
+    def report(step, ok, detail=""):
+        ui.step(step["label"], ok, detail)
+    try:
+        bsys.apply(root, user, steps, booted=booted, run=system_runner, report=report)
+    except (Failure, bsys.Failure, OSError) as error:
+        raise Failure(f"system setup failed ({error}); its changes were undone. "
+                      "Fix the problem above, then run bloom install again") from error
+    for step in steps:
+        if step["kind"] == "note":
+            ui.note(step["label"])
+    return booted
+
+
+def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_system=False, ui=None):
+    ui = ui or UI(yes=yes)
     if ctx.manifest and ctx.manifest.get("status") in ("uninstalling", "uninstalled"):
         raise Failure("removal is incomplete; run `bloom recover --resume` first")
     if ctx.manifest:
         ctx.verify_backups(ctx.manifest)
-    ctx.preflight(no_deps)
+    ctx.preflight()
+    root = bsys.system_root()
+    steps = [] if skip_system else bsys.plan(root, current_user(ctx), deps=not no_deps)
+    work = [step for step in steps if step["kind"] != "note"]
+    total = 2
+    if not skip_system:
+        ui.title("Bloom will set up this machine")
+        show_system_plan(ui, steps, bool(work))
+        show_desktop_plan(ui, live_session())
+    if dry_run:
+        if shutil.which("qs") and shutil.which("hyprctl") and (
+                (ctx.config / "hypr/hyprland.lua").is_file() or hyprland_default().is_file()):
+            ctx.preflight_desktop()
+            for path, kind, _ in ctx.plan():
+                print(f"would install {kind}: {path}")
+            if getattr(ctx, "created_hyprland_config", False):
+                print(f"would create {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration "
+                      "(removed again by uninstall unless you edit it)")
+        else:
+            print("file details are listed once Bloom's packages are installed")
+        print("dry run: nothing was changed")
+        return
+    if not skip_system and not ui.confirm():
+        raise Failure("cancelled; nothing was changed")
+    if not skip_system:
+        ui.stage(1, total, "System")
+        if work:
+            if run("sudo", "-v", check=False, capture=False).returncode:
+                raise Failure("Bloom needs sudo for the system part (packages, login screen, services); "
+                              "nothing was changed. Ask an administrator, or run the installer as root")
+            command = ["sudo", sys.executable, str(ROOT / "tools/bloom-lifecycle.py"), "system-apply",
+                       "--user", current_user(ctx)["name"]] + (["--no-deps"] if no_deps else [])
+            if run(*command, check=False, capture=False).returncode:
+                raise Failure("system setup failed and was undone; fix the problem above, then run bloom install again")
+        else:
+            ui.step("Already set up")
+    ui.stage(total, total, "Your desktop")
+    ctx.preflight_desktop()
     operations = ctx.plan()
     for path, kind, _ in operations:
         if path.is_dir() and not path.is_symlink():
             raise Failure(f"refusing to replace directory {path}; move it aside first")
-        print(f"{'would install' if dry_run else 'plan'} {kind}: {path}")
     if getattr(ctx, "created_hyprland_config", False):
-        print(f"{'would create' if dry_run else 'creating'} {ctx.config / 'hypr/hyprland.lua'} from "
-              "Hyprland's default configuration (removed again by uninstall unless you edit it)")
-    if dry_run:
-        if not no_deps:
-            print("would build bloom-shell-deps")
-        print("would enable Bloom; existing settings and personal binds are kept")
-        return
+        ui.step(f"Created {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration",
+                detail="removed again by uninstall unless you edit it")
+    offline = ctx.offline
     transaction = Transaction(ctx)
     service = ctx.service_state()
     try:
-        pkg_hash = digest(ROOT / "packaging/bloom-shell-deps/PKGBUILD")
-        if not no_deps and transaction.doc.get("pkgbuild_hash") != pkg_hash:
-            ctx.dependencies()
         for path, kind, payload in operations:
             transaction.change(path, kind, payload)
         # A resumed step can disappear from the fresh plan (for example the
@@ -526,14 +630,22 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
                     raise Failure(f"unfinished step for {item['path']}; inspect recovery state before proceeding")
                 item.pop("pending")
         changed = bool(transaction.changed)
-        if changed:
-            run("systemctl", "--user", "daemon-reload")
-        if not service["enabled"]:
-            run("systemctl", "--user", "enable", UNIT)
+        ui.step(f"Linked Bloom into your configuration ({len(transaction.changed)} changed)" if changed
+                else "Your configuration already matches")
+        marker = ctx.state / FIRST_LOGIN
+        if offline:
+            atomic(marker, "Bloom finishes setting up at the first Hyprland login.\n")
+            ui.step("Bloom will finish at your first login")
+        else:
+            if changed:
+                run("systemctl", "--user", "daemon-reload")
+            if not service["enabled"]:
+                run("systemctl", "--user", "enable", UNIT)
+            marker.unlink(missing_ok=True)
         # Exclusive services remain opt-in until migration. Existing settings survive.
         # Without a Hyprland session (a console, SSH, before the first login) the
         # unit's condition skips the start: Bloom starts at the next login instead.
-        session = live_session()
+        session = live_session() and not offline
         ctx.verified = False
         if session:
             if restart or (service["active"] and changed):
@@ -547,20 +659,123 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
             else:
                 raise Failure("Bloom did not answer after starting; restoring the previous installation")
             ctx.verified = True
-        transaction.doc["pkgbuild_hash"] = pkg_hash if not no_deps else transaction.doc.get("pkgbuild_hash")
+            ui.step("Bloom is running and answering")
         transaction.doc["status"] = "complete"
         if transaction.doc != transaction.previous:
             transaction.save()
+        ui.say()
         if session:
-            print("Bloom installed. Configure enabled surfaces in Bloom Settings.")
+            ui.say("Bloom installed. Configure enabled surfaces in Bloom Settings.")
+        elif offline:
+            ui.say("Bloom installed; it finishes at your first login.")
         else:
-            print("Bloom installed and enabled; it starts at your next Hyprland login. Run bloom doctor there to check it.")
+            ui.say("Bloom installed and enabled; it starts at your next Hyprland login. Run bloom doctor there to check it.")
+        ui.say("Undo any time with: bloom uninstall")
     except BaseException:
         transaction.rollback()
         ctx.restore_service(service)
         raise
     finally:
         transaction.close()
+
+
+def hand_over(user):
+    """A checkout cloned as root inside the user's home becomes the user's,
+    with any folders git created on the way."""
+    home = Path(user["home"])
+    if not ROOT.is_relative_to(home) or ROOT == home:
+        return
+    path = ROOT
+    while path != home:
+        if path.stat().st_uid != user["uid"]:
+            if path == ROOT:
+                run("chown", "-R", f"{user['uid']}:{user['gid']}", str(path))
+            else:
+                run("chown", f"{user['uid']}:{user['gid']}", str(path))
+        path = path.parent
+
+
+def root_install(args):
+    """`bloom install` as root, typically inside arch-chroot after archinstall."""
+    ui = UI(yes=args.yes)
+    require_arch()
+    root = bsys.system_root()
+
+    def ask(users):
+        return ui.menu("Install Bloom for which account?", [user["name"] for user in users])
+    try:
+        user = bsys.choose_user(root, args.user, ask if ui.interactive else None)
+    except bsys.Failure as error:
+        raise Failure(str(error)) from error
+    steps = bsys.plan(root, user, deps=not args.no_deps)
+    chroot = bsys.in_chroot()
+    ui.title(f"Bloom will set up this machine for {user['name']}")
+    show_system_plan(ui, steps, False)
+    show_desktop_plan(ui, False)
+    phase = ["runuser", "-u", user["name"], "--", "env", "-u", "BLOOM_AS_ROOT", "-u", "XDG_CONFIG_HOME",
+             "-u", "XDG_DATA_HOME", "-u", "XDG_STATE_HOME", "-u", "XDG_RUNTIME_DIR",
+             f"HOME={user['home']}", f"USER={user['name']}", f"LOGNAME={user['name']}",
+             str(ROOT / "bin/bloom"), "install", "--yes", "--skip-system", "--no-deps"]
+    if args.dry_run:
+        print("dry run: nothing was changed")
+        return
+    if not ui.confirm():
+        raise Failure("cancelled; nothing was changed")
+    ui.stage(1, 2, "System")
+    apply_system(ui, root, user, steps)
+    hand_over(user)
+    if run(*phase, check=False, capture=False).returncode:
+        raise Failure(f"the desktop part failed for {user['name']}; the system part stays installed. "
+                      f"Run bloom install again (as {user['name']} after rebooting, or here as root)")
+    ui.say()
+    if chroot or "install-sddm" in [step["kind"] for step in steps]:
+        ui.say("Reboot next (type exit, then reboot): you'll see the Bloom login screen. "
+               "Log in and Bloom finishes setting up.")
+    else:
+        ui.say(f"Next: log in as {user['name']} (or log out and back in) to start Bloom.")
+
+
+def system_apply(args):
+    if not as_root():
+        raise Failure("system-apply runs as root (bloom install asks for sudo itself)")
+    ui = UI(yes=True)
+    root = bsys.system_root()
+    try:
+        user = bsys.choose_user(root, args.user, None)
+    except bsys.Failure as error:
+        raise Failure(str(error)) from error
+    apply_system(ui, root, user, bsys.plan(root, user, deps=not args.no_deps))
+
+
+def system_uninstall(args):
+    if not as_root():
+        raise Failure("system-uninstall runs as root (bloom uninstall asks for sudo itself)")
+    ui = UI(yes=True)
+    for line in bsys.uninstall(bsys.system_root(), args.remove_deps, run=system_runner):
+        ui.step(line)
+
+
+def first_login(ctx, start=False):
+    """Finish a chroot or console install inside the first Hyprland session."""
+    marker = ctx.state / FIRST_LOGIN
+    if not marker.exists():
+        return
+    try:
+        run("systemctl", "--user", "daemon-reload")
+        run("systemctl", "--user", "enable", UNIT)
+        if start:
+            run("systemctl", "--user", "start", UNIT)
+            for _ in range(50):
+                if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.split()[-1:] == ["pong"]:
+                    break
+                time.sleep(0.1)
+            else:
+                raise Failure("Bloom did not answer after starting")
+        marker.unlink()
+    except Failure:
+        run("notify-send", "-a", "Bloom", "Bloom couldn't finish setting up",
+            "It tries again at your next login. To see why, open a terminal and run: bloom doctor", check=False)
+        raise
 
 
 def stop_and_disable():
@@ -665,10 +880,17 @@ def uninstall(ctx, remove_deps=False):
             Path(directory).rmdir()
         except OSError:
             pass
-    if remove_deps:
+    (ctx.state / FIRST_LOGIN).unlink(missing_ok=True)
+    system = bsys.read_manifest(bsys.system_root())
+    if system and system.get("status") != "uninstalled":
+        command = ["sudo", sys.executable, str(ROOT / "tools/bloom-lifecycle.py"), "system-uninstall"]
+        if run(*command, *(["--remove-deps"] if remove_deps else []), check=False, capture=False).returncode:
+            raise Failure("your desktop files were restored, but the system part could not be undone; "
+                          "run bloom uninstall again")
+    elif remove_deps:
         run("sudo", "pacman", "-Rns", "bloom-shell-deps", capture=False)
-    else:
-        print("Dependencies kept. Optional removal: sudo pacman -Rns bloom-shell-deps")
+    if not remove_deps:
+        print("Packages kept. Optional removal: bloom uninstall --remove-deps")
     print("Bloom uninstalled; user settings and edited files are never silently deleted.")
 
 
@@ -803,7 +1025,7 @@ def update(ctx, rollback=False, no_deps=False):
             run("git", "checkout", "--detach", target, cwd=ROOT)
         else:
             run("git", "merge", "--ff-only", target, cwd=ROOT)
-        install(ctx, no_deps=no_deps, restart=True)
+        install(ctx, no_deps=no_deps, restart=True, yes=True)
     except BaseException as error:
         EVENTS.emit("lifecycle.candidate", level="error", stage="health", outcome="rolled-back", revision=target[:12])
         try:
@@ -828,6 +1050,16 @@ def main():
     installer.add_argument("--dry-run", action="store_true")
     installer.add_argument("--no-deps", action="store_true", help="dependencies are already installed")
     installer.add_argument("--restart", action="store_true", help="restart even if managed files already match")
+    installer.add_argument("--yes", action="store_true", help="don't ask before changing anything")
+    installer.add_argument("--user", help="the account to install for (when run as root)")
+    installer.add_argument("--skip-system", action="store_true", help=argparse.SUPPRESS)
+    applier = commands.add_parser("system-apply")
+    applier.add_argument("--user", required=True)
+    applier.add_argument("--no-deps", action="store_true")
+    system_remover = commands.add_parser("system-uninstall")
+    system_remover.add_argument("--remove-deps", action="store_true")
+    finisher = commands.add_parser("first-login")
+    finisher.add_argument("--start", action="store_true")
     updater = commands.add_parser("update")
     updater.add_argument("--rollback", action="store_true")
     updater.add_argument("--no-deps", action="store_true")
@@ -838,6 +1070,14 @@ def main():
     selection.add_argument("--resume", action="store_true")
     selection.add_argument("--restore-originals", action="store_true")
     args = parser.parse_args()
+    if args.command == "system-apply":
+        return system_apply(args)
+    if args.command == "system-uninstall":
+        return system_uninstall(args)
+    if as_root():
+        if args.command != "install":
+            raise Failure(f"run bloom {args.command} as your desktop user; it asks for sudo when it needs it")
+        return root_install(args)
     # One lifecycle transaction per user/configuration, with no lock file left
     # in the user's configuration or installation manifest.
     config = os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))
@@ -862,7 +1102,9 @@ def main():
                               (args.command == "recover" and not (args.resume or args.restore_originals)))
         EVENTS.emit("lifecycle.started", stage=args.command)
         if args.command == "install":
-            install(ctx, args.dry_run, args.no_deps, args.restart)
+            install(ctx, args.dry_run, args.no_deps, args.restart, args.yes, args.skip_system)
+        elif args.command == "first-login":
+            first_login(ctx, args.start)
         elif args.command == "update":
             update(ctx, args.rollback, args.no_deps)
         elif args.command == "uninstall":
