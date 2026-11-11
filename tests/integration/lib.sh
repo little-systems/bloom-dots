@@ -21,6 +21,16 @@ bloom_env() {
 	# Adaptive theming writes here, never to the real home.
 	export BLOOM_THEME_HOME="$TEST_TMP/home"
 	export BLOOM_THEME_NO_RELOAD=1
+	# The private runtime has no PulseAudio socket. Keep the monitor alive
+	# without events unless a test supplies its own audio backend fixture.
+	cat > "$TEST_TMP/pactl" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == subscribe ]]; then
+    while kill -0 "$PPID" 2>/dev/null; do sleep 1; done
+fi
+SH
+	chmod 700 "$TEST_TMP/pactl"
+	export BLOOM_PACTL="$TEST_TMP/pactl"
 	unset WAYLAND_DISPLAY
 	mkdir -p "$XDG_CONFIG_HOME/quickshell" "$XDG_RUNTIME_DIR"
 	chmod 700 "$XDG_RUNTIME_DIR"

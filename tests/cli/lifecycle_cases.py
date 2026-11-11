@@ -23,6 +23,7 @@ class Lifecycle(unittest.TestCase):
         self.home.mkdir()
         self.root = self.base / "checkout with spaces"
         self.root.mkdir()
+        shutil.copy2(ROOT / ".gitignore", self.root / ".gitignore")
         for relative in ("bin", "systemd", "share", "hypr", "packaging"):
             shutil.copytree(ROOT / relative, self.root / relative)
         (self.root / "tools").mkdir()
