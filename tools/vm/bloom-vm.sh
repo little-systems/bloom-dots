@@ -4,6 +4,7 @@
 #
 #   bloom-vm.sh up        create a fresh overlay on the verified base image and boot it
 #   bloom-vm.sh up --screen  the same, in a window on the host desktop
+#   bloom-vm.sh up --reuse   boot the existing disks again (no fresh overlay)
 #   bloom-vm.sh desktop   install Hyprland and kitty and log tty1 straight into Hyprland
 #   bloom-vm.sh paste     copy the host clipboard into the VM's (then Ctrl+Shift+V in kitty)
 #   bloom-vm.sh boot-target  boot the second disk (built by tests/vm/chroot-install.sh) in a window
@@ -42,10 +43,14 @@ up() {
 	(cd "$VM" && sha256sum -c --quiet Arch-Linux-x86_64-cloudimg.qcow2.SHA256) || die "base image checksum mismatch"
 	[[ -f "$VM/qemu.pid" ]] && kill -0 "$(cat "$VM/qemu.pid")" 2>/dev/null && die "VM already running"
 	[[ -f "$KEY" ]] || ssh-keygen -q -t ed25519 -N "" -C bloom-vm -f "$KEY"
-	rm -f "$DISK"
-	qemu-img create -q -f qcow2 -F qcow2 -b "$BASE" "$DISK" 24G
-	rm -f "$TARGET"
-	qemu-img create -q -f qcow2 "$TARGET" 16G
+	if [[ "${1:-}" == --reuse || "${2:-}" == --reuse ]]; then
+		[[ -f "$DISK" && -f "$TARGET" ]] || die "nothing to reuse; run up without --reuse"
+	else
+		rm -f "$DISK"
+		qemu-img create -q -f qcow2 -F qcow2 -b "$BASE" "$DISK" 24G
+		rm -f "$TARGET"
+		qemu-img create -q -f qcow2 "$TARGET" 16G
+	fi
 	mkdir -p "$VM/seed"
 	printf 'instance-id: bloom-%s\nlocal-hostname: bloom-vm\n' "$(date +%s)" > "$VM/seed/meta-data"
 	cat > "$VM/seed/user-data" <<EOF
@@ -119,10 +124,14 @@ paste() {
 boot_target() {
 	[[ -f "$TARGET" ]] || die "no target disk; run up, push, then chroot-install.sh in the VM"
 	[[ -f "$VM/qemu.pid" ]] && kill -0 "$(cat "$VM/qemu.pid")" 2>/dev/null && die "power off the build VM first: $0 down --keep-target"
+	# --headless: no window; `screenshot FILE` grabs the screen through the monitor socket.
+	local display=(-display "gtk,zoom-to-fit=on")
+	[[ "${1:-}" == --headless ]] && display=(-display none)
 	setsid -f qemu-system-x86_64 -enable-kvm -cpu host -smp 2 -m 3072 \
-		-drive file="$TARGET",if=virtio,format=qcow2 \
-		-netdev user,id=n0,hostfwd=tcp:127.0.0.1:"$PORT"-:22 -device virtio-net-pci,netdev=n0 \
-		-device virtio-vga -display gtk,zoom-to-fit=on -serial file:"$VM/target-console.log" \
+		-drive "file=$TARGET,if=virtio,format=qcow2" \
+		-netdev "user,id=n0,hostfwd=tcp:127.0.0.1:$PORT-:22" -device "virtio-net-pci,netdev=n0" \
+		-device virtio-vga "${display[@]}" -serial file:"$VM/target-console.log" \
+		-monitor "unix:$VM/monitor.sock,server,nowait" \
 		-pidfile "$VM/qemu.pid" > "$VM/qemu.log" 2>&1
 	echo "booting the installed system in a window (ssh as bloom on port $PORT once it is up)"
 }
@@ -149,6 +158,7 @@ case "${1:-}" in
 	ssh) shift; ssh_vm "$@" ;;
 	push) push ;;
 	down) shift; down "$@" ;;
-	boot-target) boot_target ;;
+	boot-target) shift; boot_target "$@" ;;
+	screenshot) printf 'screendump %s\n' "${2:?file}" | python3 -c 'import socket,sys; s=socket.socket(socket.AF_UNIX); s.connect(sys.argv[1]); s.sendall(sys.stdin.buffer.read()); import time; time.sleep(1)' "$VM/monitor.sock" ;;
 	*) echo "usage: $0 up [--screen]|desktop|paste|ssh CMD|push|boot-target|down [--keep-target]" >&2; exit 2 ;;
 esac

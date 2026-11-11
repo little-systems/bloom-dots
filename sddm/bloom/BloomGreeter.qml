@@ -78,7 +78,7 @@ Item {
 		anchors.fill: parent
 		source: root._wallpaper()
 		zoom: root._state && root._state.zoom > 0 ? root._state.zoom : 1
-		shown: true
+		locked: true
 	}
 
 	LockView {

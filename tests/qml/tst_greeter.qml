@@ -123,6 +123,12 @@ Item {
 			compare(String(findChild(g, "user").color), String(Qt.rgba(1, 1, 1, 0.6)), "missing colours keep the dark palette");
 		}
 		function api_reset() { fakeApi.calls = []; }
+		function test_backdrop_shows_the_blurred_wallpaper() {
+			const g = make(oneUser, oneSession);
+			const backdrop = part(g, "backdrop");
+			tryCompare(findChild(backdrop, "still"), "visible", true, 3000);
+			tryCompare(backdrop, "opacity", 1, 3000);
+		}
 		function test_missing_login_state_uses_default_wallpaper() {
 			const g = make(oneUser, oneSession);
 			verify(String(part(g, "backdrop").source).endsWith("default-wallpaper.jpg"));
