@@ -2,7 +2,7 @@
 """Keep the Bloom login screen in step with the desktop: copy the wallpaper and
 write State.qml (wallpaper, lock screen colours, scale) into the login folder.
 
-Reads JSON on stdin. The folder (/var/lib/bloom/login, group bloom) is made by
+Reads JSON on stdin. The folder (/var/lib/bloom/login, group bloom-login) is made by
 the installer; without it, or without write access, this does nothing. Only
 validated colours and numbers reach the QML file the greeter loads."""
 import hashlib

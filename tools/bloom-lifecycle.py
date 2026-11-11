@@ -724,6 +724,8 @@ def root_install(args):
         raise Failure("cancelled; nothing was changed")
     ui.stage(1, 2, "System")
     apply_system(ui, root, user, steps)
+    if not [step for step in steps if step["kind"] != "note"]:
+        ui.step("Already set up")
     hand_over(user)
     if run(*phase, check=False, capture=False).returncode:
         raise Failure(f"the desktop part failed for {user['name']}; the system part stays installed. "

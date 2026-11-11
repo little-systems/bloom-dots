@@ -111,7 +111,7 @@ elif name in ('groupadd', 'usermod', 'groupdel'):
     lines = group.read_text().splitlines()
     if name == 'groupadd': lines.append(args[-1] + ':x:960:')
     elif name == 'groupdel': lines = [l for l in lines if not l.startswith(args[-1] + ':')]
-    else: lines = [l + (',' if l.split(':')[3] else '') + args[-1] if l.startswith('bloom:') else l for l in lines]
+    else: lines = [l + (',' if l.split(':')[3] else '') + args[-1] if l.startswith('bloom-login:') else l for l in lines]
     group.write_text('\\n'.join(lines) + '\\n')
 elif name == 'systemctl' and args[0] != '--user':
     units = Path(os.environ['BLOOM_SYSTEM_ROOT']) / 'etc/systemd/system'

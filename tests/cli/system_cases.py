@@ -221,11 +221,11 @@ class Phase(Facts):
 
     def test_group_and_login_folder(self):
         self.install()
-        self.assertIn("bloom:x:960:dhanush", (self.root / "etc/group").read_text())
+        self.assertIn("bloom-login:x:960:dhanush", (self.root / "etc/group").read_text())
         folder = self.root / "var/lib/bloom/login"
         self.assertTrue(folder.is_dir())
         self.assertEqual(folder.stat().st_mode & 0o7777, 0o2775)
-        self.assertIn(["chown", "root:bloom", str(folder)], self.calls())
+        self.assertIn(["chown", "root:bloom-login", str(folder)], self.calls())
 
     def test_second_plan_is_empty(self):
         self.install()
@@ -266,7 +266,7 @@ class Phase(Facts):
         self.assertFalse((self.root / "etc/sddm.conf.d/10-bloom.conf").exists())
         self.assertFalse((self.root / "usr/share/sddm/themes/bloom").exists())
         self.assertFalse((self.root / "var/lib/bloom/login").exists())
-        self.assertNotIn("bloom:", (self.root / "etc/group").read_text())
+        self.assertNotIn("bloom-login:", (self.root / "etc/group").read_text())
         self.assertTrue(any("NetworkManager" in m for m in messages), messages)
         self.assertNotIn(["pacman", "-Rns", "--noconfirm", "bloom-shell-deps"], self.calls())
         doc = json.loads((self.root / "var/lib/bloom/system-manifest.json").read_text())

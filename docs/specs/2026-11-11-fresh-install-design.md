@@ -197,7 +197,7 @@ surprising than leaving it on.
   - Bloom ships a default login wallpaper: original artwork with the Bloom
     logo on Bloom's dark backdrop. A fresh machine looks right on its first
     boot.
-  - The system phase creates `/var/lib/bloom/login/`, writable by a `bloom`
+  - The system phase creates `/var/lib/bloom/login/`, writable by a `bloom-login`
     group the target user joins, so later updates need no password.
   - When the person changes their wallpaper, Bloom copies the current image,
     plus the accent colour and theme mode the lock screen would use, into that

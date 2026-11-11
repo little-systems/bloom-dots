@@ -57,7 +57,7 @@ only when you have installed the dependency package's contents yourself.
   enabled; with systemd-networkd or iwd Bloom leaves networking alone and the
   Wi-Fi panel explains why its controls are unavailable), Bluetooth and power
   profiles.
-- **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom` group,
+- **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom-login` group,
   so the login screen follows your wallpaper and colours without a password.
 
 Everything is recorded in `/var/lib/bloom/system-manifest.json`. A failed
@@ -174,7 +174,7 @@ existing palette backups. Edited settings and Lua templates remain.
 Edited managed service units or launchers cause an explicit refusal before
 anything is stopped. Then, through `sudo`, the system part is undone: the
 Bloom login theme and its setting are removed, SDDM is disabled again if Bloom
-enabled it, and the login wallpaper folder and `bloom` group go. NetworkManager,
+enabled it, and the login wallpaper folder and `bloom-login` group go. NetworkManager,
 Bluetooth and power profiles stay enabled (listed), since turning them off is
 more disruptive than leaving them. Packages stay installed unless
 `--remove-deps` is specified. The clone itself and runtime history are kept.

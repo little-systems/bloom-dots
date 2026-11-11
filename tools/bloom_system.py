@@ -86,6 +86,8 @@ DROPIN = "etc/sddm.conf.d/10-bloom.conf"
 LOGIN = "var/lib/bloom/login"
 DROPIN_TEXT = "# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\nDefaultSession=hyprland.desktop\n"
 SERVICES = ("bluetooth", "power-profiles-daemon")
+# Not "bloom": that is often someone's own user group.
+GROUP = "bloom-login"
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
 
 
@@ -207,7 +209,7 @@ def plan(root, user, deps=True):
     for unit, label in zip(SERVICES, ("Turn on Bluetooth", "Turn on power profiles")):
         if not unit_enabled(root, unit):
             steps.append({"kind": "enable", "unit": unit, "label": label})
-    members = group_members(root, "bloom")
+    members = group_members(root, GROUP)
     if members is None or user["name"] not in members:
         steps.append({"kind": "group", "label": f"Let {user['name']} update the login wallpaper"})
     if not (root / LOGIN).is_dir():
@@ -271,14 +273,14 @@ def apply(root, user, steps, booted, run, report=None):
                 undo.append(("restore", path, before))
                 doc["files"][DROPIN] = _digest_bytes(DROPIN_TEXT.encode())
             elif kind == "group":
-                if group_members(root, "bloom") is None:
-                    run("groupadd", "-r", "bloom")
+                if group_members(root, GROUP) is None:
+                    run("groupadd", "-r", GROUP)
                     doc["group_created"] = True
-                run("usermod", "-aG", "bloom", user["name"])
+                run("usermod", "-aG", GROUP, user["name"])
             elif kind == "login-folder":
                 folder = root / LOGIN
                 folder.mkdir(parents=True, exist_ok=True)
-                run("chown", "root:bloom", str(folder))
+                run("chown", f"root:{GROUP}", str(folder))
                 os.chmod(folder, 0o2775)
                 undo.append(("rmtree", folder))
             save_manifest(root, doc)
@@ -377,7 +379,7 @@ def uninstall(root, remove_deps, run):
     if kept:
         messages.append("Left enabled: " + ", ".join(kept))
     if doc.get("group_created"):
-        run("groupdel", "bloom")
+        run("groupdel", GROUP)
     if remove_deps:
         run("pacman", "-Rns", "--noconfirm", "bloom-shell-deps")
     doc["status"] = "uninstalled"
