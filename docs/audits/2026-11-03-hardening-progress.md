@@ -279,3 +279,21 @@ compositor snapshot restore is deferred to H3's doctor/recovery tooling.
   - documentation of app-theme limitations
 - Ruling: immutable per-commit deployment directories are deferred; see
   [staged updates](../handover/staged-updates-and-budgets.md).
+
+## Complete gate at 035e5c0 and correction (2026-11-11)
+
+The owner approved one complete gate at `035e5c0`. `CI=true tests/run-all.sh`
+passed lint, shellcheck and 998 of 999 QML cases, then stopped (exit 1) on
+`BluetoothView::test_refreshKeepsTheScroll`: the glide did not settle within
+0.2 px of its target. The later script, integration and CLI stages did not
+run, so no result is claimed for them.
+
+The failure did not reproduce alone, under CPU load, or with neighbouring test
+files. Instrumentation found that the glide ends at 199.80 instead of 200 even
+on an idle machine. `Spring` marks itself settled before it snaps its value, so
+`ScrollGlide` never wrote the target, and the stopping point depends on frame
+timing. Separately, a view's own sub-pixel layout rounding cancelled glides.
+
+The corrected commit (next) adds regressions that failed first. All 1001 QML
+cases and the notification and panel scroll integration tests pass in a plain
+run. A new complete gate needs fresh owner approval.
