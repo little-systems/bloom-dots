@@ -112,6 +112,29 @@ bash "$SCRIPT" record || true
 kill "$other"
 echo "ok - a reused PID is never signalled and doesn't block recording"
 
+# A recorder that exited but wasn't reaped (some containers' init never reaps
+# orphans) is a zombie with the same name and start time: it is finished.
+mkdir -p "$T/zombie-bin"
+printf '#!/bin/sh\nexit 0\n' > "$T/zombie-bin/wf-recorder"
+chmod +x "$T/zombie-bin/wf-recorder"
+python3 - "$T/zombie-bin/wf-recorder" "$T/zombie.pid" <<'PY' &
+import os, sys, time
+pid = os.fork()
+if pid == 0:
+    os.execv(sys.argv[1], [sys.argv[1]])
+open(sys.argv[2], "w").write(str(pid))
+time.sleep(20)  # never reaps the child
+PY
+parent=$!
+for _ in $(seq 1 30); do [[ -s "$T/zombie.pid" ]] && grep -q ' Z ' "/proc/$(cat "$T/zombie.pid")/stat" 2>/dev/null && break; sleep 0.1; done
+zombie="$(cat "$T/zombie.pid")"
+grep -q ' Z ' "/proc/$zombie/stat" || fail "fixture: no zombie recorder"
+printf '%s\n%s\n%s/z.mp4\n' "$zombie" "$(awk '{ print $22 }' "/proc/$zombie/stat")" "$T/pics" > "$T/run/bloom-recording.pid"
+[[ "$(bash "$SCRIPT" status)" == idle ]] || fail "an exited, unreaped recorder was taken as still recording"
+kill "$parent" 2>/dev/null; wait "$parent" 2>/dev/null || true
+rm -f "$T/run/bloom-recording.pid"
+echo "ok - an exited recorder that was never reaped counts as finished"
+
 # Full display recording uses the focused output, never a region selector.
 fake hyprctl 'echo "[{\"name\":\"DP-2\",\"focused\":false},{\"name\":\"eDP-1\",\"focused\":true}]"'
 for action in record-screen record-screen-audio; do

@@ -29,7 +29,9 @@ recording() {
 	local pid start
 	{ read -r pid; read -r start; } < "$pidfile" || true
 	[[ "$pid" =~ ^[0-9]+$ && -n "$start" ]] || return 1
-	[[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == wf-recorder && "$(start_time "$pid")" == "$start" ]]
+	[[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == wf-recorder && "$(start_time "$pid")" == "$start" ]] || return 1
+	# An exited recorder nobody has reaped yet (a zombie) has finished.
+	[[ "$(awk '{ print $3 }' "/proc/$pid/stat" 2>/dev/null)" != Z ]]
 }
 
 # Stop the recorder and wait until it has finished writing; report the truth.
