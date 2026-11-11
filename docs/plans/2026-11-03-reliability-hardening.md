@@ -1,12 +1,11 @@
 # Bloom reliability hardening program
 
-Status: H1 core recovery and H2 persistence acknowledgment implemented in the
-first batch; complete work-package acceptance remains open. See the
+Status (2026-11-11, `main` at `2415b8f`): **H0–H5 complete**, with two
+deferrals recorded below. **H6 open**: release acceptance on the current commit
+and the physical-hardware and login-screen checks remain. See the
 [implementation ledger](../audits/2026-11-03-hardening-progress.md). Baseline
-`86fb0c4`. The owner requested this audit on
-2026-11-03 and selected desktop services, hardware controls and diagnostics as
-the scope of Arch control. Existing logout/startup fixes are committed locally;
-their final owner relogin check remains open. No new merge/push is implied.
+`86fb0c4`. The owner requested this audit on 2026-11-03 and selected desktop
+services, hardware controls and diagnostics as the scope of Arch control.
 
 Inputs: [audit](../audits/2026-11-03-reliability.md) and
 [upstream research](../research/2026-11-03-dotfiles-reliability.md).
@@ -269,7 +268,25 @@ documentation and an AGC handoff tied to a commit. Findings close only with
 evidence at the real interface; source edits alone do not close them. Preserve
 the baseline and owner-local rollback data until their dependents are retired.
 
-Current state: H0 audit/research recorded; owner relogin acceptance still open.
-H1 core and part of H2 have focused-check evidence; remaining H1/H2 acceptance
-and H3–H6 are pending. This document is not approval to run a full suite or mutate
-unrelated services/packages. Start with the reproduced data-loss defects.
+Current state (2026-11-11):
+
+- **H0–H5: complete.** Contracts and evidence are in the ledger and handover
+  docs: theme ownership, state documents, observability, backend resilience,
+  staged updates and budgets.
+- **Deferred, with rulings:**
+  - Immutable per-commit deployment directories (H5). They need an
+    install-layout migration. Until then, updates rely on candidate validation
+    and a health-verified rollback.
+  - A manual compositor snapshot restore command in `bloom doctor` (H2/H3).
+    Doctor reports the snapshot count.
+- **H6: open.**
+  - The disposable Arch VM run passed 46 checks at `1ae4730`, and VM SDDM,
+    suspend, USB hotplug and ENOSPC checks also passed. These need repeating on
+    the current `main`.
+  - Not yet tested: suspend/resume and hotplug on physical hardware, a
+    password-entry greeter, a UWSM login, and real power loss.
+- **Verification on `main`:** the last supervised full local gate passed at
+  `39ddb96`. GitHub CI is green at `2415b8f`.
+
+This document is not approval to run a full suite or mutate unrelated
+services/packages.

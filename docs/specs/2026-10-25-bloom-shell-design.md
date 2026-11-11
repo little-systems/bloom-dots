@@ -1,6 +1,6 @@
 # Bloom for Hyprland: shell design
 
-- Status: draft for owner review
+- Status: approved by the owner on 2026-10-25. Implemented through Phase 8; release pending (see the Phase 8 plan and the hardening program).
 - Date: 2026-10-25
 - Owner: Dhanush
 - Reference implementation: [Bloom](https://github.com/SehajveerSingh2005/bloom) (Windows, Tauri v2 + React 19), studied at fork `DhanushSantosh/bloom` @ `b5fb962`. Bloom's maintainer approved the port, the Bloom name and GPL-3.0 reuse with credit.

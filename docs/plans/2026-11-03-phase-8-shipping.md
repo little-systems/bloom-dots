@@ -1,5 +1,12 @@
 # Phase 8: Shipping and reversible installation
 
+Status (2026-11-11): the tooling is complete and on `main`: reversible install,
+staged update and rollback, uninstall, recovery, the dependency metapackage, and
+the documentation. Still open: owner-run checks (a managed install with the real
+metapackage on the owner's machine, and release performance measurements), H6
+release acceptance, and publishing (a version tag, release notes and an AUR
+package).
+
 ## Public scope
 
 - Arch/Hyprland/Quickshell preflight, dry-run installation, file ownership

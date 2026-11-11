@@ -63,14 +63,13 @@ changes require their own validation and fresh approval for another full run.
 
 ## Remaining program
 
-The complete corrected logout/login handoff still needs owner acceptance.
-H1's remaining fault matrix/VM evidence and H2's remaining state-store semantics,
-independent display rollback and ownership-aware themes are open. H3 operational logging /
-doctor, H4 device/daemon recovery, H5 staged activation / request budgets and H6
-real Arch lifecycle acceptance are not implemented by this batch.
+Superseded by the status below (2026-11-11). This paragraph described the first
+batch only.
 
-Full-suite execution requires the owner's separate approval. Historical green
-CI at `f00bf13` does not validate these commits. No push or merge is included.
+H0–H5 are complete; the later sections record their batches and evidence. H6
+release acceptance is open: a VM acceptance on the current `main`, plus physical
+suspend/hotplug, a password greeter, UWSM and power-loss checks. Full-suite
+execution still requires the owner's separate approval.
 
 ## Lock media design follow-up
 
@@ -297,3 +296,35 @@ timing. Separately, a view's own sub-pixel layout rounding cancelled glides.
 The corrected commit (next) adds regressions that failed first. All 1001 QML
 cases and the notification and panel scroll integration tests pass in a plain
 run. A new complete gate needs fresh owner approval.
+
+## Released to `main` and activated (2026-11-11)
+
+The owner approved a supervised full gate at `39ddb96`: exit 0, 1,002 QML
+cases and all later stages (receipt
+`hardening-ci-39ddb96-supervised.result.json`).
+
+The first GitHub CI runs on the branch found faults that only appear in CI's
+minimal container. Each was fixed and verified:
+- the region-tools recorder fake raced its own signal handler
+- an exited recorder was not reaped in the container
+- missing system services were logged as warnings (now info)
+- integration tests each kept their own copy of the allowed machine-noise list
+  (now one shared list)
+- the native file dialog was driven by keystrokes before it had focus
+- Qt Quick's fallback file dialog could not be used from the keyboard, now
+  replaced by `Qt.labs.platform` dialogs that start in the home folder
+- shell helpers were still running during test cleanup
+- `cmp` is unavailable in the container
+
+GitHub CI passed at `2415b8f`. `main` was fast-forwarded and pushed
+(`f00bf13..2415b8f`). The owner's live checkout now runs `main`. After a unit
+reload and restart, `bloom doctor` reported healthy with 11 of 11 checks OK.
+App-theme files were adopted into the ownership ledger: 11 targets, all with
+their originals saved.
+
+Rollback:
+
+```sh
+git switch --detach 1316527 && systemctl --user daemon-reload && systemctl --user restart bloom-shell
+```
+
