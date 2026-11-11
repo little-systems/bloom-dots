@@ -1,27 +1,74 @@
 # Install and maintain Bloom
 
-Bloom targets Arch Linux and Hyprland 0.56 or newer with a Lua configuration.
-Quickshell 0.3 or newer, Python, Git and `base-devel` must be installed first.
-On a fresh install where Hyprland has never been started, there is no
-`~/.config/hypr/hyprland.lua` yet. The installer then starts from Hyprland's own
-default (`/usr/share/hypr/hyprland.lua`, which Hyprland writes on its first
-start). Uninstall removes that file again unless you have edited it; if you
-have, it keeps it and removes only Bloom's loader line.
-Run the commands as your desktop user. Package tools prompt normally when
-privileges are needed; Bloom does not handle or save your password.
+Bloom targets Arch Linux. The installer brings everything else: Hyprland 0.56
+or newer (Lua configuration), Quickshell 0.3 or newer, Bloom's dependency
+package, the SDDM login screen with Bloom's theme, and the system services its
+controls use. Only `git` has to be there to clone Bloom.
 
 ## Install
 
+### From archinstall, before the first boot
+
+After archinstall, chroot into the new system (archinstall offers this at the
+end, or run `arch-chroot /mnt`). Replace `you` with the account you created:
+
 ```sh
-git clone https://github.com/DhanushSantosh/bloom-dots ~/.local/share/bloom
+pacman -S --needed git
+git clone https://github.com/little-systems/bloom-dots /home/you/.local/share/bloom
+/home/you/.local/share/bloom/bin/bloom install
+```
+
+Run as root, the installer:
+
+1. picks the account (the only regular one, `--user NAME`, or a numbered
+   choice when there are several);
+2. sets up the system: Bloom's packages (built as that user, installed with
+   pacman), the SDDM login screen with the Bloom theme, NetworkManager,
+   Bluetooth and power profiles, and the login wallpaper folder;
+3. hands the clone to that account and installs the desktop part as them.
+
+Nothing that needs a running session happens in the chroot. Exit and reboot:
+the Bloom login screen appears, and your first login finishes the setup
+(`bloom first-login`, run by Hyprland's start hook; if it fails it says so and
+runs again at the next login).
+
+### On an Arch system you already use
+
+```sh
+git clone https://github.com/little-systems/bloom-dots ~/.local/share/bloom
 ~/.local/share/bloom/bin/bloom install --dry-run
 ~/.local/share/bloom/bin/bloom install
 ```
 
-The installer builds `packaging/bloom-shell-deps/PKGBUILD` with `makepkg -si`
-in a temporary directory. Use `--no-deps` only when you have installed the
-metapackage's dependencies yourself. The dry run performs preflight checks
-and prints its file plan, without changing your desktop or installing packages.
+Run it as your desktop user. It shows what it will change and asks before
+starting (`--yes` skips the question; without a terminal it doesn't ask). The
+system part runs through `sudo` once, and only when something in it still
+needs to change; Bloom never handles or saves your password. Use `--no-deps`
+only when you have installed the dependency package's contents yourself.
+
+### What the system part changes
+
+- **Packages:** `packaging/bloom-shell-deps` is built and installed.
+- **Login screen:** with no display manager, SDDM is installed and enabled.
+  An existing SDDM is switched to the Bloom theme through
+  `/etc/sddm.conf.d/10-bloom.conf` (your own `sddm.conf` is never edited).
+  GDM, greetd, LightDM and others are left alone.
+- **Services:** NetworkManager (only when no other network service is
+  enabled; with systemd-networkd or iwd Bloom leaves networking alone and the
+  Wi-Fi panel explains why its controls are unavailable), Bluetooth and power
+  profiles.
+- **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom` group,
+  so the login screen follows your wallpaper and colours without a password.
+
+Everything is recorded in `/var/lib/bloom/system-manifest.json`. A failed
+system step undoes this run's file and service changes (installed packages
+stay) before your desktop is touched.
+
+On a fresh install where Hyprland has never been started, there is no
+`~/.config/hypr/hyprland.lua` yet. The installer then starts from Hyprland's own
+default (`/usr/share/hypr/hyprland.lua`). Uninstall removes that file again
+unless you have edited it; if you have, it keeps it and removes only Bloom's
+loader line.
 
 The install links the shell, CLI and user units, registers Settings with its
 icon, adds one marked loader line to `~/.config/hypr/hyprland.lua`, and offers
@@ -125,9 +172,12 @@ loader line, restores original files and service state, and prunes empty
 installer-created directories. Application themes are restored from Bloom's
 existing palette backups. Edited settings and Lua templates remain.
 Edited managed service units or launchers cause an explicit refusal before
-anything is stopped. Dependencies stay installed unless `--remove-deps` is
-specified; that command invokes the normal `sudo pacman -Rns` prompt.
-The clone itself and runtime history are kept.
+anything is stopped. Then, through `sudo`, the system part is undone: the
+Bloom login theme and its setting are removed, SDDM is disabled again if Bloom
+enabled it, and the login wallpaper folder and `bloom` group go. NetworkManager,
+Bluetooth and power profiles stay enabled (listed), since turning them off is
+more disruptive than leaving them. Packages stay installed unless
+`--remove-deps` is specified. The clone itself and runtime history are kept.
 
 ## Development
 

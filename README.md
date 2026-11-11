@@ -97,20 +97,34 @@ keeps backups. Updates, rollback and uninstall use that same record.
 
 ## Get It Running
 
-**Supported platform:** Arch Linux, Hyprland **0.56+** with Lua configuration,
-and Quickshell **0.3+**. Install Python, Git and `base-devel` first.
+**Supported platform:** Arch Linux. Bloom installs everything else it needs
+itself: Hyprland, Quickshell, its own packages, the SDDM login screen and the
+services its controls use. You only need `git`.
 
-Run as your desktop user:
+**On a fresh Arch install (archinstall, before the first boot):** after
+archinstall finishes, choose to chroot into the new system (or run
+`arch-chroot /mnt`), then, replacing `you` with the account you created:
 
 ```sh
-git clone https://github.com/DhanushSantosh/bloom-dots ~/.local/share/bloom
-~/.local/share/bloom/bin/bloom install --dry-run
+pacman -S --needed git
+git clone https://github.com/little-systems/bloom-dots /home/you/.local/share/bloom
+/home/you/.local/share/bloom/bin/bloom install
+exit
+reboot
+```
+
+The machine boots to the Bloom login screen; logging in finishes the setup.
+
+**On an Arch system you already use** (as your own user, not root):
+
+```sh
+git clone https://github.com/little-systems/bloom-dots ~/.local/share/bloom
 ~/.local/share/bloom/bin/bloom install
 ```
 
-The dry run shows the plan. The installer then builds the dependency
-metapackage, installs Bloom and registers its user service and Settings app.
-Package installation uses your normal authentication prompt.
+The installer shows what it will change, asks before starting, and asks for
+your password once for the system part (`--dry-run` shows the plan and changes
+nothing). Undo everything with `bloom uninstall`.
 
 A new installation starts with the notch and dock. Open **Bloom Settings** to
 choose additional surfaces and configure shortcuts. When another shell or
