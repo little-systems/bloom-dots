@@ -21,7 +21,24 @@ fake wl-copy 'cat > "'"$T"'/clip"'
 fake tesseract 'cat > /dev/null; echo recognised text'
 fake notify-send
 fake swappy 'cat > /dev/null'
-fake wf-recorder 'trap "exit 0" INT TERM; sleep 30 & wait'
+# Like the real recorder (a C program with its own SIGINT handler), the file
+# is finished when it is interrupted. A sh fake can't trap a signal ignored at
+# start, as background jobs' SIGINT is, so this one is Python.
+cat > "$T/bin/wf-recorder" <<FAKE_RECORDER
+#!/usr/bin/python3
+import os, signal, sys, time
+with open("$T/calls", "a") as calls:
+    calls.write("wf-recorder " + " ".join(sys.argv[1:]) + "\\n")
+out = sys.argv[sys.argv.index("-f") + 1]
+def finish(*_):
+    if not os.environ.get("FAKE_REC_LOSE"):
+        open(out, "w").write("MP4")
+    sys.exit(0)
+signal.signal(signal.SIGINT, finish)
+signal.signal(signal.SIGTERM, finish)
+time.sleep(30)
+FAKE_RECORDER
+chmod +x "$T/bin/wf-recorder"
 fake pidof 'exit 1'
 
 bash "$SCRIPT" screenshot
@@ -66,7 +83,33 @@ if called 'wf-recorder.*-a'; then fail "audio on a silent recording"; fi
 bash "$SCRIPT" record
 for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(bash "$SCRIPT" status)" == idle ]] && break; sleep 0.2; done
 [[ "$(bash "$SCRIPT" status)" == idle ]] || fail "the second press didn't stop it"
-echo "ok - record toggles"
+ls "$T/pics"/Recording_*.mp4 >/dev/null 2>&1 || fail "the recording file wasn't finished"
+called 'notify-send.*Recording saved' || fail "a finished recording wasn't announced"
+echo "ok - record toggles, and stopping waits for a finished file"
+
+# A recorder that stops without producing a file is reported, not "saved".
+: > "$T/calls"
+FAKE_REC_LOSE=1 bash "$SCRIPT" record
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ "$(bash "$SCRIPT" status)" == recording ]] && break; sleep 0.1; done
+if bash "$SCRIPT" record; then fail "a lost recording reported success"; fi
+called 'notify-send.*Recording failed' || fail "a lost recording wasn't reported"
+if called 'notify-send.*Recording saved'; then fail "a lost recording was announced as saved"; fi
+echo "ok - a recording that produced no file is reported as failed"
+
+# A stale record whose PID now belongs to something else is never signalled.
+sleep 300 & other=$!
+printf '%s\n1\n%s/x.mp4\n' "$other" "$T/pics" > "$T/run/bloom-recording.pid"
+[[ "$(bash "$SCRIPT" status)" == idle ]] || fail "a reused PID was taken for the recorder"
+printf '%s\n' "$other" > "$T/run/bloom-recording.pid"
+[[ "$(bash "$SCRIPT" status)" == idle ]] || fail "a legacy record with a reused PID was trusted"
+: > "$T/calls"
+bash "$SCRIPT" record
+kill -0 "$other" 2>/dev/null || fail "an unrelated process was interrupted"
+for _ in 1 2 3 4 5 6 7 8 9 10; do called 'wf-recorder -g' && break; sleep 0.1; done
+called 'wf-recorder -g' || fail "a stale record blocked a new recording"
+bash "$SCRIPT" record || true
+kill "$other"
+echo "ok - a reused PID is never signalled and doesn't block recording"
 
 # Full display recording uses the focused output, never a region selector.
 fake hyprctl 'echo "[{\"name\":\"DP-2\",\"focused\":false},{\"name\":\"eDP-1\",\"focused\":true}]"'

@@ -21,8 +21,37 @@ need() {
 	done
 }
 
+# The recorder is identified by PID plus its kernel start time (and name), so a
+# PID reused after a crash is never signalled. Record: pid, start time, file.
+start_time() { awk '{ print $22 }' "/proc/$1/stat" 2>/dev/null; }
 recording() {
-	[[ -f "$pidfile" ]] && kill -0 "$(cat "$pidfile")" 2>/dev/null
+	[[ -f "$pidfile" ]] || return 1
+	local pid start
+	{ read -r pid; read -r start; } < "$pidfile" || true
+	[[ "$pid" =~ ^[0-9]+$ && -n "$start" ]] || return 1
+	[[ "$(cat "/proc/$pid/comm" 2>/dev/null)" == wf-recorder && "$(start_time "$pid")" == "$start" ]]
+}
+
+# Stop the recorder and wait until it has finished writing; report the truth.
+stop_recording() {
+	local pid start file
+	{ read -r pid; read -r start; read -r file; } < "$pidfile" || true
+	kill -INT "$pid"
+	for _ in $(seq 1 100); do
+		recording || break
+		sleep 0.1
+	done
+	if recording; then
+		tell "Recording" "The recorder is still finishing; run this again in a moment."
+		exit 1
+	fi
+	rm -f "$pidfile"
+	if [[ -s "$file" ]]; then
+		tell "Recording saved" "$videos"
+		exit 0
+	fi
+	tell "Recording failed" "The recorder stopped without saving a video."
+	exit 1
 }
 
 # The selection, or nothing if it was cancelled. Visible windows are clickable.
@@ -78,12 +107,8 @@ case "$action" in
 		tell "Translation copied" "$out"
 		;;
 	record | record-audio | record-screen | record-screen-audio)
-		if recording; then
-			kill -INT "$(cat "$pidfile")"
-			rm -f "$pidfile"
-			tell "Recording saved" "$videos"
-			exit 0
-		fi
+		recording && stop_recording
+		rm -f "$pidfile"
 		need wf-recorder
 		mkdir -p "$videos"
 		args=()
@@ -98,10 +123,18 @@ case "$action" in
 			region="$(select_region)" || exit 0
 			args+=(-g "$region")
 		fi
-		args+=(-f "$videos/Recording_$(date +%Y-%m-%d_%H.%M.%S).mp4")
+		# Never reuse a name: an older file would hide a recording that failed.
+		base="$videos/Recording_$(date +%Y-%m-%d_%H.%M.%S)"
+		file="$base.mp4"
+		n=2
+		while [[ -e "$file" ]]; do file="${base}_$n.mp4"; n=$((n + 1)); done
+		args+=(-f "$file")
 		[[ "$action" == *-audio ]] && args+=(-a)
 		setsid wf-recorder "${args[@]}" >/dev/null 2>&1 &
-		echo $! > "$pidfile"
+		pid=$!
+		start=""
+		for _ in $(seq 1 20); do start="$(start_time "$pid")"; [[ -n "$start" ]] && break; sleep 0.05; done
+		printf '%s\n%s\n%s\n' "$pid" "$start" "$file" > "$pidfile.new" && mv -f "$pidfile.new" "$pidfile"
 		tell "Recording" "Run this again to stop."
 		;;
 	status)
