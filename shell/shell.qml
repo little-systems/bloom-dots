@@ -75,6 +75,8 @@ ShellRoot {
 
 	readonly property var _modules: Settings.values["bloom-enabled-modules"]
 
+	LoginScreen {}
+
 	LazyLoader {
 		id: notchLoader
 		active: _modules.indexOf("notch") >= 0

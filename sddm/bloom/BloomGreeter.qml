@@ -20,6 +20,17 @@ Item {
 	readonly property QtObject _state: loginState.status === Loader.Ready ? loginState.item : null
 	readonly property real _scale: root._state && root._state.scale > 0 ? root._state.scale : 1
 
+	function _pick(key, fallback) {
+		return root._state && root._state[key] !== undefined ? root._state[key] : fallback;
+	}
+	// State.qml names its wallpaper beside itself.
+	function _wallpaper() {
+		const name = String(root._pick("wallpaper", ""));
+		if (name === "") return Qt.resolvedUrl("default-wallpaper.jpg");
+		if (name.indexOf(":") >= 0 || name.startsWith("/")) return name;
+		const base = String(root.stateUrl);
+		return base.slice(0, base.lastIndexOf("/") + 1) + name;
+	}
 	function _names(instantiator) {
 		const names = [];
 		for (let i = 0; i < instantiator.count; i++) {
@@ -65,7 +76,7 @@ Item {
 
 	LockBackdrop {
 		anchors.fill: parent
-		source: root._state && root._state.wallpaper ? root._state.wallpaper : Qt.resolvedUrl("default-wallpaper.jpg")
+		source: root._wallpaper()
 		zoom: root._state && root._state.zoom > 0 ? root._state.zoom : 1
 		shown: true
 	}
@@ -76,8 +87,8 @@ Item {
 		height: root.height / root._scale
 		scale: root._scale
 		transformOrigin: Item.TopLeft
-		theme: root._state || defaultTheme
-		accent: root._state ? root._state.accent : "#007aff"
+		theme: palette
+		accent: root._pick("accent", "#007aff")
 		user: root._users[root.userIndex] || ""
 		clockTag: root.api && root.api.hostName ? root.api.hostName : "Welcome"
 		clockTagIcon: "monitor"
@@ -109,12 +120,13 @@ Item {
 		Component.onCompleted: view.focusField()
 	}
 
+	// Each colour falls back on its own to the dark palette.
 	QtObject {
-		id: defaultTheme
-		property color bgExpanded: Qt.rgba(0, 0, 0, 0.92)
-		property color border: Qt.rgba(1, 1, 1, 0.12)
-		property color text: "white"
-		property color textMuted: Qt.rgba(1, 1, 1, 0.6)
-		property color groupBg: Qt.rgba(1, 1, 1, 0.06)
+		id: palette
+		property color bgExpanded: root._pick("bgExpanded", Qt.rgba(0, 0, 0, 0.92))
+		property color border: root._pick("border", Qt.rgba(1, 1, 1, 0.12))
+		property color text: root._pick("text", "white")
+		property color textMuted: root._pick("textMuted", Qt.rgba(1, 1, 1, 0.6))
+		property color groupBg: root._pick("groupBg", Qt.rgba(1, 1, 1, 0.06))
 	}
 }

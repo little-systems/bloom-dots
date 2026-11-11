@@ -113,6 +113,16 @@ Item {
 			const g = make(oneUser, oneSession);
 			compare(part(g, "clockTag").text, "bloom-vm");
 		}
+		function test_login_state_sets_wallpaper_accent_and_scale() {
+			api_reset();
+			const g = createTemporaryObject(greeterComponent, host, { userModel: oneUser, sessionModel: oneSession,
+				stateUrl: Qt.resolvedUrl("login-state/State.qml") });
+			tryVerify(() => String(part(g, "backdrop").source).endsWith("login-state/wallpaper-0123456789ab.jpg"), 2000, String(part(g, "backdrop").source));
+			compare(String(findChild(g, "confirm").color), "#ff8800");
+			compare(findChild(g, "fieldBox").parent.scale, 1.15);
+			compare(String(findChild(g, "user").color), String(Qt.rgba(1, 1, 1, 0.6)), "missing colours keep the dark palette");
+		}
+		function api_reset() { fakeApi.calls = []; }
 		function test_missing_login_state_uses_default_wallpaper() {
 			const g = make(oneUser, oneSession);
 			verify(String(part(g, "backdrop").source).endsWith("default-wallpaper.jpg"));
