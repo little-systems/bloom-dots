@@ -84,7 +84,10 @@ MANIFEST = "var/lib/bloom/system-manifest.json"
 THEME = "usr/share/sddm/themes/bloom"
 DROPIN = "etc/sddm.conf.d/10-bloom.conf"
 LOGIN = "var/lib/bloom/login"
-DROPIN_TEXT = "# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\nDefaultSession=hyprland.desktop\n"
+# The greeter reads /var/lib/bloom/login/state.json as data; Qt only lets QML
+# read local files with QML_XHR_ALLOW_FILE_READ.
+DROPIN_TEXT = ("# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\n"
+               "DefaultSession=hyprland.desktop\nGreeterEnvironment=QML_XHR_ALLOW_FILE_READ=1\n")
 SERVICES = ("bluetooth", "power-profiles-daemon")
 # Not "bloom": that is often someone's own user group.
 GROUP = "bloom-login"

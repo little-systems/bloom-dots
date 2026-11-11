@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Keep the Bloom login screen in step with the desktop: copy the wallpaper and
-write State.qml (wallpaper, lock screen colours, scale) into the login folder.
+write state.json (wallpaper, lock screen colours, scale) into the login folder.
 
 Reads JSON on stdin. The folder (/var/lib/bloom/login, group bloom-login) is made by
-the installer; without it, or without write access, this does nothing. Only
-validated colours and numbers reach the QML file the greeter loads."""
+the installer; without it, or without write access, this does nothing. The
+folder is group-writable, so it holds data only: the greeter validates every
+value again and never runs anything from here."""
 import hashlib
 import json
 import os
@@ -24,10 +25,10 @@ LIMIT = 64 * 1024 * 1024
 
 def current_wallpaper():
     try:
-        match = re.search(r'property url wallpaper: "(wallpaper-[0-9a-f]+\.[a-z]+)"', (FOLDER / "State.qml").read_text())
-    except OSError:
+        name = json.loads((FOLDER / "state.json").read_text()).get("wallpaper", "")
+    except (OSError, ValueError, AttributeError):
         return None
-    return match.group(1) if match and (FOLDER / match.group(1)).is_file() else None
+    return name if re.fullmatch(r"wallpaper-[0-9a-f]{12}\.(?:jpg|png|webp)", str(name)) and (FOLDER / name).is_file() else None
 
 
 def still(source):
@@ -67,22 +68,21 @@ def main():
     picture = still(Path(str(request.get("wallpaper", "")))) if request.get("wallpaper") else None
     if picture:
         data, suffix = picture
-        name = f"wallpaper-{hashlib.sha256(data).hexdigest()[:12]}{suffix}"
+        name = f"wallpaper-{hashlib.sha256(data).hexdigest()[:12]}{'.jpg' if suffix == '.jpeg' else suffix}"
         if not (FOLDER / name).is_file():
             write(FOLDER / name, data)
-    lines = ["import QtQuick", "", "// Written by Bloom when the wallpaper or theme changes.", "QtObject {"]
-    if name:
-        lines.append(f'\tproperty url wallpaper: "{name}"')
+    state = {"wallpaper": name} if name else {}
     for key in COLOURS:
         value = request.get(key)
         if isinstance(value, str) and re.fullmatch(r"#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})", value):
-            lines.append(f'\tproperty color {key}: "{value}"')
+            state[key] = value
     for key, low, high in (("scale", 0.5, 4), ("zoom", 1, 4)):
         value = request.get(key)
         if isinstance(value, (int, float)) and not isinstance(value, bool) and low <= value <= high:
-            lines.append(f"\tproperty real {key}: {round(float(value), 4)}")
-    lines.append("}")
-    write(FOLDER / "State.qml", ("\n".join(lines) + "\n").encode())
+            state[key] = round(float(value), 4)
+    write(FOLDER / "state.json", (json.dumps(state, indent=1) + "\n").encode())
+    # Earlier builds wrote the state as QML; nothing in this folder may be code.
+    (FOLDER / "State.qml").unlink(missing_ok=True)
     for old in FOLDER.glob("wallpaper-*"):
         if old.name != name:
             old.unlink(missing_ok=True)

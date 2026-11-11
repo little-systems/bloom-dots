@@ -156,6 +156,8 @@ class Phase(Facts):
         dropin = (self.root / "etc/sddm.conf.d/10-bloom.conf").read_text()
         self.assertIn("Current=bloom", dropin)
         self.assertIn("DefaultSession=hyprland.desktop", dropin)
+        # The greeter reads the login state as data, so it may read files.
+        self.assertIn("GreeterEnvironment=QML_XHR_ALLOW_FILE_READ=1", dropin)
         self.assertTrue((self.root / "usr/share/sddm/themes/bloom/metadata.desktop").is_file())
 
     def test_packages_are_built_as_the_user_and_installed_by_pacman(self):

@@ -205,9 +205,10 @@ surprising than leaving it on.
     applies from the next login, so on a desktop install the login screen
     shows the shipped wallpaper until the first wallpaper or theme change
     after logging in again (builder's call: the root phase never reads a
-    home). The state is a generated `State.qml` (validated colours and
-    numbers only) that the greeter loads with a Loader, because the greeter
-    can't read JSON files without special permissions.
+    home). The state is plain data (`state.json`): the folder is writable by
+    users, so nothing in it may be code the greeter runs. The greeter reads it
+    with XMLHttpRequest (Bloom's SDDM drop-in sets
+    `GreeterEnvironment=QML_XHR_ALLOW_FILE_READ=1`) and validates every value.
   - With several users, the most recent change wins.
   - The greeter falls back to the shipped default if the folder is empty or
     unreadable.

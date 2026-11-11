@@ -114,13 +114,22 @@ Item {
 			compare(part(g, "clockTag").text, "bloom-vm");
 		}
 		function test_login_state_sets_wallpaper_accent_and_scale() {
-			api_reset();
-			const g = createTemporaryObject(greeterComponent, host, { userModel: oneUser, sessionModel: oneSession,
-				stateUrl: Qt.resolvedUrl("login-state/State.qml") });
-			tryVerify(() => String(part(g, "backdrop").source).endsWith("login-state/wallpaper-0123456789ab.jpg"), 2000, String(part(g, "backdrop").source));
+			const g = make(oneUser, oneSession);
+			g.stateUrl = "file:///var/lib/bloom/login/state.json";
+			g.applyState(JSON.stringify({ wallpaper: "wallpaper-0123456789ab.jpg", accent: "#ff8800", scale: 1.15 }));
+			compare(String(part(g, "backdrop").source), "file:///var/lib/bloom/login/wallpaper-0123456789ab.jpg");
 			compare(String(findChild(g, "confirm").color), "#ff8800");
 			compare(findChild(g, "fieldBox").parent.scale, 1.15);
 			compare(String(findChild(g, "user").color), String(Qt.rgba(1, 1, 1, 0.6)), "missing colours keep the dark palette");
+		}
+		function test_login_state_values_are_validated() {
+			const g = make(oneUser, oneSession);
+			g.applyState(JSON.stringify({ wallpaper: "../../../etc/passwd", accent: "red", scale: 9e9, text: "#zzzzzz" }));
+			verify(String(part(g, "backdrop").source).endsWith("default-wallpaper.jpg"));
+			compare(String(findChild(g, "confirm").color), "#007aff");
+			compare(findChild(g, "fieldBox").parent.scale, 1);
+			g.applyState("import QtQuick; Item {}");
+			compare(String(findChild(g, "confirm").color), "#007aff", "text that isn't JSON changes nothing");
 		}
 		function api_reset() { fakeApi.calls = []; }
 		function test_backdrop_shows_the_blurred_wallpaper() {

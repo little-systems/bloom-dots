@@ -3,8 +3,9 @@ import "shell/modules/lock"
 
 // The Bloom login screen: the lock screen's own backdrop and view, driven by
 // SDDM's models and actions. The wallpaper, colours and scale come from
-// /var/lib/bloom/login/State.qml, which Bloom rewrites when the wallpaper
-// changes; without it the shipped wallpaper and the dark palette are used.
+// /var/lib/bloom/login/state.json, which Bloom rewrites when the wallpaper
+// changes. That folder is writable by users, so it is read as data and every
+// value is checked; without it the shipped wallpaper and dark palette are used.
 Item {
 	id: root
 
@@ -12,22 +13,49 @@ Item {
 	property var userModel: null
 	property var sessionModel: null
 	property var keyboard: null
-	property url stateUrl: "file:///var/lib/bloom/login/State.qml"
+	property url stateUrl: "file:///var/lib/bloom/login/state.json"
 	property int userIndex: root.userModel && root.userModel.lastIndex >= 0 ? root.userModel.lastIndex : 0
 	property int sessionIndex: root.sessionModel && root.sessionModel.lastIndex >= 0 ? root.sessionModel.lastIndex : 0
 	property var _users: []
 	property var _sessions: []
-	readonly property QtObject _state: loginState.status === Loader.Ready ? loginState.item : null
-	readonly property real _scale: root._state && root._state.scale > 0 ? root._state.scale : 1
+	property var _state: ({})
+	readonly property real _scale: root._state.scale || 1
 
 	function _pick(key, fallback) {
-		return root._state && root._state[key] !== undefined ? root._state[key] : fallback;
+		return root._state[key] !== undefined ? root._state[key] : fallback;
 	}
-	// State.qml names its wallpaper beside itself.
+	// Only known keys with well-formed values survive.
+	function applyState(text) {
+		let doc;
+		try {
+			doc = JSON.parse(text);
+		} catch (error) {
+			return;
+		}
+		if (!doc || typeof doc !== "object") return;
+		const state = {};
+		for (const key of ["accent", "bgExpanded", "text", "textMuted", "border", "groupBg"]) {
+			if (typeof doc[key] === "string" && /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(doc[key])) state[key] = doc[key];
+		}
+		if (typeof doc.wallpaper === "string" && /^wallpaper-[0-9a-f]{12}\.(jpg|png|webp)$/.test(doc.wallpaper))
+			state.wallpaper = doc.wallpaper;
+		if (typeof doc.scale === "number" && doc.scale >= 0.5 && doc.scale <= 4) state.scale = doc.scale;
+		if (typeof doc.zoom === "number" && doc.zoom >= 1 && doc.zoom <= 4) state.zoom = doc.zoom;
+		root._state = state;
+	}
+	function _loadState() {
+		const request = new XMLHttpRequest();
+		request.onreadystatechange = () => {
+			if (request.readyState === XMLHttpRequest.DONE && request.responseText) root.applyState(request.responseText);
+		};
+		request.open("GET", root.stateUrl);
+		request.send();
+	}
+	Component.onCompleted: root._loadState()
+	// state.json names its wallpaper beside itself.
 	function _wallpaper() {
 		const name = String(root._pick("wallpaper", ""));
 		if (name === "") return Qt.resolvedUrl("default-wallpaper.jpg");
-		if (name.indexOf(":") >= 0 || name.startsWith("/")) return name;
 		const base = String(root.stateUrl);
 		return base.slice(0, base.lastIndexOf("/") + 1) + name;
 	}
@@ -40,7 +68,6 @@ Item {
 		return names;
 	}
 
-	Loader { id: loginState; source: root.stateUrl }
 	Instantiator {
 		id: users
 		model: root.userModel
@@ -77,7 +104,7 @@ Item {
 	LockBackdrop {
 		anchors.fill: parent
 		source: root._wallpaper()
-		zoom: root._state && root._state.zoom > 0 ? root._state.zoom : 1
+		zoom: root._state.zoom || 1
 		locked: true
 	}
 
