@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -48,19 +49,50 @@ def check(api_key):
         say(ok=True)
 
 
+# Budgets: the whole answer, its size, and any single stream line.
+MAX_ANSWER_CHARS = 64 * 1024
+MAX_LINE_BYTES = 1024 * 1024
+DEADLINE_S = 180
+
+
+def deadline():
+    # Tests may only shorten it.
+    try:
+        return min(DEADLINE_S, float(os.environ.get("BLOOM_AI_DEADLINE_S", DEADLINE_S)))
+    except ValueError:
+        return DEADLINE_S
+
+
 def chat(api_key):
     job = json.load(sys.stdin)
     url = "%s/models/%s:streamGenerateContent?alt=sse" % (BASE, job["model"])
+    ends = time.monotonic() + deadline()
+    sent = 0
     with request(url, api_key, {"contents": job["contents"]}) as reply:
-        for raw in reply:
+        while True:
+            if time.monotonic() > ends:
+                say(error="timeout")
+                return
+            raw = reply.readline(MAX_LINE_BYTES + 1)
+            if not raw:
+                break
+            if len(raw) > MAX_LINE_BYTES:
+                say(error="too-long")
+                return
             line = raw.decode("utf-8", "replace").strip()
             if not line.startswith("data:"):
                 continue
             event = json.loads(line[5:])
             for candidate in event.get("candidates", []):
                 for part in candidate.get("content", {}).get("parts", []):
-                    if part.get("text"):
-                        say(delta=part["text"])
+                    text = part.get("text")
+                    if not text:
+                        continue
+                    if sent + len(text) > MAX_ANSWER_CHARS:
+                        say(error="too-long")
+                        return
+                    sent += len(text)
+                    say(delta=text)
     say(done=True)
 
 

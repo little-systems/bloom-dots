@@ -4,6 +4,20 @@ import "../../shell/services/assistant.js" as Logic
 TestCase {
 	name: "Assistant"
 
+	// Only recent history is sent, within a byte budget, newest kept whole.
+	function test_contentsAreBounded() {
+		const long = [];
+		for (let i = 0; i < 80; i++) long.push({ role: i % 2 ? "model" : "user", text: "m" + i + " " + "y".repeat(2000) });
+		const sent = Logic.contents(long);
+		verify(sent.length < long.length);
+		verify(JSON.stringify(sent).length <= Logic.HISTORY_BYTES + 4096);
+		compare(sent[sent.length - 1].parts[0].text, long[long.length - 1].text);
+		compare(sent[0].role, "user");
+		compare(Logic.errorText("too-long").length > 0, true);
+		verify(Logic.errorText("too-long") !== Logic.errorText("server"));
+		verify(Logic.errorText("timeout") !== Logic.errorText("server"));
+	}
+
 	function test_contents() {
 		compare(Logic.contents([{ role: "user", text: "hi" }]), [{ role: "user", parts: [{ text: "hi" }] }]);
 	}

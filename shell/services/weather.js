@@ -13,7 +13,6 @@ var WMO = {
 };
 
 // Bloom's last-resort location.
-var DEFAULT_LOCATION = { lat: 28.6139, lon: 77.209, city: "Delhi" };
 
 function forecastUrl(lat, lon, unit) {
 	const unitParam = unit === "fahrenheit" ? "&temperature_unit=fahrenheit" : "";
@@ -32,11 +31,6 @@ function parseIpapi(json) {
 	const lat = json?.latitude ?? json?.lat;
 	const lon = json?.longitude ?? json?.lon;
 	return _validCoordinates(lat, lon) ? { lat: lat, lon: lon, city: json.city || "" } : null;
-}
-
-function parseIpApi(json) {
-	return json?.status === "success" && _validCoordinates(json.lat, json.lon)
-		? { lat: json.lat, lon: json.lon, city: json.city || "" } : null;
 }
 
 function _validCoordinates(lat, lon) {

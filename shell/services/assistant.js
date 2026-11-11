@@ -6,15 +6,30 @@ var ERRORS = {
 	"bad-model": "That model isn't available on your key. Pick another in Settings, under AI.",
 	"rate-limit": "Gemini's limit was reached. Try again in a moment.",
 	"offline": "Couldn't reach Gemini. Check your connection.",
-	"server": "Gemini had a problem. Try again."
+	"server": "Gemini had a problem. Try again.",
+	"too-long": "The answer was too long and was cut off.",
+	"timeout": "Gemini took too long to answer. Try again."
 };
 
 function errorText(code) {
 	return ERRORS[code] || ERRORS.server;
 }
 
+// Request budget: only the newest history that fits is sent, starting on a
+// user turn (the API expects that); the newest message is always included.
+var HISTORY_BYTES = 48 * 1024;
+
 function contents(messages) {
-	return messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+	const all = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+	let start = all.length, size = 0;
+	while (start > 0) {
+		const next = JSON.stringify(all[start - 1]).length;
+		if (start < all.length && size + next > HISTORY_BYTES) break;
+		size += next;
+		start--;
+	}
+	while (start < all.length - 1 && all[start].role !== "user") start++;
+	return all.slice(start);
 }
 
 function parseLine(line) {

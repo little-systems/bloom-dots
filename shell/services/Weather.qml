@@ -21,6 +21,8 @@ Singleton {
 	property string condition: ""
 	property bool isDay: true
 	property string city: ""
+	// No location could be found: the owner sets one in Settings → Weather.
+	property bool needsLocation: false
 
 	readonly property bool shown: Settings.values["bloom-weather-enabled"] && root.temperature !== null
 	readonly property string label: root.temperature === null ? "" : Logic.label(root.temperature, root.unit)
@@ -66,20 +68,21 @@ Singleton {
 		const lat = Settings.values["bloom-weather-lat"];
 		const lon = Settings.values["bloom-weather-lon"];
 		if (lat !== null && lon !== null) {
+			root.needsLocation = false;
 			done({ lat: lat, lon: lon, city: Settings.values["bloom-weather-city"] });
 			return;
 		}
+		// One HTTPS lookup. Without an answer there is no reading: a guessed
+		// place or a plaintext lookup would be worse than asking.
 		root._get("https://ipapi.co/json/", json => {
 			const a = Logic.parseIpapi(json);
-			if (a) {
-				done(root._named(a));
-				return;
+			root.needsLocation = !a;
+			if (a) done(root._named(a));
+			else {
+				console.info("bloom weather: no location; set one in Settings → Weather");
+				root._busy = false;
+				root._pending = false;
 			}
-			// ip-api.com's free tier is HTTP-only (its https endpoint needs a paid key).
-			root._get("http://ip-api.com/json/?fields=status,lat,lon,city,country", json2 => {
-				const b = Logic.parseIpApi(json2);
-				done(b ? root._named(b) : Logic.DEFAULT_LOCATION);
-			});
 		});
 	}
 
@@ -92,7 +95,7 @@ Singleton {
 
 	function _get(url, done) {
 		// Http ends stalled requests; QML's own XHR timeout never fires.
-		Http.get(url, done, 10000);
+		Http.get(url, done, 10000, { maxBytes: 65536 });
 	}
 
 	StateFile {

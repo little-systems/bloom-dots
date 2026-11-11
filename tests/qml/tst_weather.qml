@@ -31,13 +31,11 @@ TestCase {
 	function test_geolocation() {
 		compare(Weather.parseIpapi({ latitude: 13.08, longitude: 80.27, city: "Chennai" }), { lat: 13.08, lon: 80.27, city: "Chennai" });
 		compare(Weather.parseIpapi({ error: true, reason: "RateLimited" }), null);
-		compare(Weather.parseIpApi({ status: "success", lat: 13.08, lon: 80.27, city: "Chennai" }), { lat: 13.08, lon: 80.27, city: "Chennai" });
-		compare(Weather.parseIpApi({ status: "fail" }), null);
 		compare(Weather.parseIpapi({ latitude: 0, longitude: 0, city: "Null Island" }), { lat: 0, lon: 0, city: "Null Island" });
-		compare(Weather.parseIpApi({ status: "success", lat: 0, lon: 0 }), { lat: 0, lon: 0, city: "" });
 		compare(Weather.parseIpapi({ latitude: 91, longitude: 0 }), null);
-		compare(Weather.parseIpApi({ status: "fail", lat: 10, lon: 20 }), null);
-		compare(Weather.DEFAULT_LOCATION, { lat: 28.6139, lon: 77.209, city: "Delhi" });
+		// No plaintext fallback and no invented location (hardening H5).
+		compare(Weather.parseIpApi, undefined);
+		compare(Weather.DEFAULT_LOCATION, undefined);
 	}
 
 	// Bloom getWeatherIcon, with lucide-static names.

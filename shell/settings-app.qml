@@ -52,17 +52,11 @@ ShellRoot {
 	}
 	function _fetchCities() {
 		const query = app._cityQuery;
-		const xhr = new XMLHttpRequest();
-		xhr.onreadystatechange = () => {
-			if (xhr.readyState !== XMLHttpRequest.DONE || xhr.status !== 200 || query !== app._cityQuery) return;
-			try {
-				app.cityResults = (JSON.parse(xhr.responseText).results || []).slice(0, 5);
-			} catch (e) {
-				app.cityResults = [];
-			}
-		};
-		xhr.open("GET", "https://geocoding-api.open-meteo.com/v1/search?count=5&name=" + encodeURIComponent(query));
-		xhr.send();
+		// Bounded, and a newer search cancels an older one still in flight.
+		Http.get("https://geocoding-api.open-meteo.com/v1/search?count=5&name=" + encodeURIComponent(query), json => {
+			if (query !== app._cityQuery) return;
+			app.cityResults = Array.isArray(json?.results) ? json.results.slice(0, 5) : [];
+		}, 8000, { key: "city-search", maxBytes: 65536 });
 	}
 
 	function run(argv) { Quickshell.execDetached(argv); }

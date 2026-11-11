@@ -32,6 +32,18 @@ class H(http.server.BaseHTTPRequestHandler):
             self.send_response(404); self.end_headers(); return
         self.send_response(200); self.end_headers()
         said = body["contents"][-1]["parts"][0]["text"]
+        if said == "flood":
+            chunk = {"candidates": [{"content": {"parts": [{"text": "x" * 8192}]}}]}
+            for _ in range(200):
+                self.wfile.write(("data: " + json.dumps(chunk) + "\n\n").encode())
+            return
+        if said == "drip":
+            import time
+            for _ in range(30):
+                event = {"candidates": [{"content": {"parts": [{"text": "."}]}}]}
+                self.wfile.write(("data: " + json.dumps(event) + "\n\n").encode()); self.wfile.flush()
+                time.sleep(0.5)
+            return
         for word in ("You said ", said):
             event = {"candidates": [{"content": {"parts": [{"text": word}]}}]}
             self.wfile.write(("data: " + json.dumps(event) + "\n\n").encode())
@@ -39,7 +51,7 @@ s = http.server.HTTPServer(("127.0.0.1", 0), H)
 print(s.server_port, flush=True)
 s.serve_forever()
 PY
-python3 "$T/server.py" > "$T/port" &
+python3 "$T/server.py" > "$T/port" 2> "$T/server.log" &
 SERVER=$!
 for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do [[ -s "$T/port" ]] && break; sleep 0.1; done
 BLOOM_GEMINI_URL="http://127.0.0.1:$(cat "$T/port")"
@@ -60,6 +72,17 @@ out="$(run "$JOB")"
 echo "ok - a good key streams the reply"
 [[ "$(run '{"model":"missing-model","contents":[]}')" == *bad-model* ]] || fail "a bad model wasn't reported"
 echo "ok - a bad model says so"
+# Budgets: an endless answer stops at its size cap, a slow one at its deadline.
+job() { printf '{"model":"m","contents":[{"role":"user","parts":[{"text":"%s"}]}]}' "$1"; }
+out="$(run "$(job flood)")"
+[[ "$out" == *'"error": "too-long"'* ]] || fail "an oversized answer wasn't stopped"
+(( ${#out} < 200000 )) || fail "the oversized answer was passed on (${#out} bytes)"
+start=$SECONDS
+out="$(job drip | BLOOM_AI_DEADLINE_S=2 python3 "$ROOT/shell/scripts/assistant.py")"
+[[ "$out" == *'"error": "timeout"'* ]] || fail "a slow answer wasn't stopped at its deadline"
+(( SECONDS - start < 8 )) || fail "the deadline took $((SECONDS - start)) s"
+echo "ok - answers stop at their size cap and deadline"
 kill "$SERVER"; wait "$SERVER" 2>/dev/null || true; SERVER=""
 [[ "$(run "$JOB")" == *offline* ]] || fail "no server wasn't reported"
 echo "ok - no connection says so"
+
