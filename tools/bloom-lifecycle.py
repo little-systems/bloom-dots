@@ -524,7 +524,7 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
             elif not service["active"]:
                 run("systemctl", "--user", "start", UNIT)
             for _ in range(50):
-                if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.strip() == "pong":
+                if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.split()[-1:] == ["pong"]:
                     break
                 time.sleep(0.1)
             else:

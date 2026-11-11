@@ -78,6 +78,8 @@ if name == 'qs':
     elif args[-2:] == ['shell', 'ping']:
         # A candidate whose VERSION says "unhealthy" never answers.
         unhealthy = (base / 'checkout with spaces/VERSION').read_text().startswith('unhealthy')
+        # Quickshell prints warnings (e.g. a non-UTF-8 locale) on stdout first.
+        print('  WARN: Detected locale "C" which is not UTF-8.')
         print('dead' if unhealthy else os.environ.get('STUB_PING', 'pong'))
     elif args[-2:] == ['polkit', 'state']: print(json.dumps({'registered': os.environ.get('STUB_POLKIT', 'yes') == 'yes'}))
     else: print(json.dumps({'ownership': os.environ.get('STUB_OWNERSHIP', 'owned')}))

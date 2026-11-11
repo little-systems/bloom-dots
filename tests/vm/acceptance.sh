@@ -11,6 +11,7 @@ BLOOM="$CLONE/bin/bloom"
 STATE="$HOME/.local/state/bloom"
 LOG="$HOME/acceptance.log"
 export PATH="$HOME/.local/bin:$PATH"
+export LANG=C.UTF-8
 failures=0
 
 ok() { echo "ok - $*" | tee -a "$LOG"; }
@@ -19,34 +20,56 @@ check() { local what=$1; shift; if "$@" >>"$LOG" 2>&1; then ok "$what"; else bad
 refuse() { local what=$1; shift; if "$@" >>"$LOG" 2>&1; then bad "$what (was accepted)"; else ok "$what"; fi; }
 note() { echo "-- $*" | tee -a "$LOG"; }
 
+# The user manager's environment is what the start hook imported at login.
 session_env() {
 	XDG_RUNTIME_DIR="/run/user/$(id -u)"
 	export XDG_RUNTIME_DIR HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY
-	HYPRLAND_INSTANCE_SIGNATURE="$(find "$XDG_RUNTIME_DIR/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2)"
-	WAYLAND_DISPLAY="$(find "$XDG_RUNTIME_DIR" -maxdepth 1 -type s -name 'wayland-*' -printf '%f\n' 2>/dev/null | head -1)"
+	HYPRLAND_INSTANCE_SIGNATURE="$(systemctl --user show-environment | sed -n 's/^HYPRLAND_INSTANCE_SIGNATURE=//p')"
+	WAYLAND_DISPLAY="$(systemctl --user show-environment | sed -n 's/^WAYLAND_DISPLAY=//p')"
 }
 
+hyprland_running() { pgrep -x Hyprland >/dev/null; }
+
+# A real console login: tty1 autologin runs ~/.bash_profile, which starts
+# Hyprland while ~/.start-hyprland exists (set up in the prereqs stage).
 start_hyprland() {
-	# A headless compositor with software rendering stands in for an SDDM login.
-	systemd-run --user --unit=accept-hyprland --collect -E HYPRLAND_HEADLESS_ONLY=1 \
-		-E LIBGL_ALWAYS_SOFTWARE=1 -E XDG_SESSION_TYPE=wayland /usr/bin/Hyprland >>"$LOG" 2>&1
-	for _ in $(seq 1 60); do session_env; [[ -n "$WAYLAND_DISPLAY" && -n "$HYPRLAND_INSTANCE_SIGNATURE" ]] && hyprctl version >/dev/null 2>&1 && return 0; sleep 1; done
+	local before; before="$(systemctl --user show-environment | sed -n 's/^HYPRLAND_INSTANCE_SIGNATURE=//p')"
+	touch "$HOME/.start-hyprland"
+	sudo systemctl restart getty@tty1
+	for _ in $(seq 1 60); do
+		session_env
+		if hyprland_running && [[ -n "$HYPRLAND_INSTANCE_SIGNATURE" && "$HYPRLAND_INSTANCE_SIGNATURE" != "$before" ]] \
+			&& hyprctl version >/dev/null 2>&1; then return 0; fi
+		sleep 1
+	done
 	return 1
 }
 
+# Logout the way Bloom's session menu does it.
 stop_hyprland() {
 	session_env
-	hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1 || systemctl --user stop accept-hyprland >/dev/null 2>&1
-	for _ in $(seq 1 20); do systemctl --user is-active --quiet accept-hyprland || return 0; sleep 0.5; done
-	systemctl --user stop accept-hyprland >/dev/null 2>&1
+	rm -f "$HOME/.start-hyprland"
+	hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1
+	for _ in $(seq 1 30); do hyprland_running || return 0; sleep 0.5; done
+	return 1
 }
 
-shell_answers() { for _ in $(seq 1 40); do [[ "$(timeout 3 qs -c bloom ipc call shell ping 2>/dev/null)" == pong ]] && return 0; sleep 0.5; done; return 1; }
+shell_answers() { for _ in $(seq 1 60); do timeout 3 qs -c bloom ipc call shell ping 2>/dev/null | grep -qx pong && return 0; sleep 0.5; done; return 1; }
 fingerprint() { find "$HOME/.config" -type f -not -path '*/bloom/*' -print0 2>/dev/null | sort -z | xargs -0 sha256sum 2>/dev/null | sha256sum | cut -c1-16; }
 
 stage_prereqs() {
 	note "prerequisites"
 	sudo loginctl enable-linger "$USER" 2>&1 | tee -a "$LOG" >/dev/null
+	sudo mkdir -p /etc/systemd/system/getty@tty1.service.d
+	printf '[Service]\nExecStart=\nExecStart=-/sbin/agetty --autologin %s --noclear %%I $TERM\n' "$USER" \
+		| sudo tee /etc/systemd/system/getty@tty1.service.d/autologin.conf >/dev/null
+	cat > "$HOME/.bash_profile" <<'PROFILE'
+[[ -f ~/.bashrc ]] && . ~/.bashrc
+if [[ "$(tty)" == /dev/tty1 && -f ~/.start-hyprland ]]; then
+	exec Hyprland > ~/hyprland-tty.log 2>&1
+fi
+PROFILE
+	sudo systemctl daemon-reload
 	check "base system and prerequisites install" sudo pacman -Syu --noconfirm --needed git base-devel quickshell hyprland python
 	mkdir -p "$HOME/.config/hypr"
 	cat > "$HOME/.config/hypr/hyprland.lua" <<'LUA'
@@ -87,10 +110,16 @@ stage_session() {
 	check "the start hook launched Bloom and it answers" shell_answers
 	check "doctor runs inside the session" bash -c "'$BLOOM' doctor --json > '$HOME/doctor.json'; [ \$? -le 1 ]"
 	stop_hyprland
-	check "service skips cleanly after logout" bash -c "! systemctl --user is-failed --quiet bloom-shell"
+	check "logout ends Hyprland" bash -c "! pgrep -x Hyprland"
+	check "service did not fail at logout" bash -c "! systemctl --user is-failed --quiet bloom-shell"
 	check "second login starts Bloom again" start_hyprland
 	check "Bloom answers after relogin" shell_answers
-	for _ in 1 2 3 4 5 6; do pkill -SEGV -x qs; sleep 1.5; done
+	# Crash the shell each time it comes back until systemd gives up.
+	for _ in $(seq 1 10); do
+		[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && break
+		for _ in $(seq 1 20); do pgrep -x qs >/dev/null && break; sleep 0.25; done
+		pkill -SEGV -x qs; sleep 0.5
+	done
 	[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && ok "crash loop hits the restart limit" || bad "crash loop limit"
 	"$BLOOM" doctor --json > "$HOME/doctor-limited.json" 2>>"$LOG"
 	grep -q 'reset-failed' "$HOME/doctor-limited.json" && ok "doctor explains the restart limit" || bad "doctor restart limit"
