@@ -20,7 +20,24 @@ APP="$TEST_TMP/harness/settings-app.qml"
 python3 - "$APP" <<'PY'
 import sys
 p=sys.argv[1]
-s=open(p).read().replace('function state(): string {', 'function probeExport(): string { exportDialog.open(); return "ok"; }\n\t\tfunction probeImport(): string { importDialog.open(); return "ok"; }\n\t\tfunction state(): string {')
+hook = """// Qt's fallback dialog takes its file when it opens, so a path is preset then.
+		function probeExport(path: string): string {
+			if (path) exportDialog.currentFile = "file://" + path.split("/").map(encodeURIComponent).join("/");
+			exportDialog.open();
+			return "ok";
+		}
+		function probeImport(path: string): string {
+			if (path) importDialog.currentFile = "file://" + path.split("/").map(encodeURIComponent).join("/");
+			importDialog.open();
+			return "ok";
+		}
+		// Accept the open dialog, as its Save/Open button would.
+		function probeAccept(which: string): string {
+			(which === "export" ? exportDialog : importDialog).accept();
+			return "ok";
+		}
+		function state(): string {"""
+s=open(p).read().replace('function state(): string {', hook)
 open(p,'w').write(s)
 PY
 BLOOM_SETTINGS_TAB=about qs --no-color -p "$APP" > "$TEST_TMP/shell.log" 2>&1 &
@@ -39,22 +56,33 @@ if [[ -n "${BLOOM_ABOUT_SCREENSHOT:-}" ]]; then
 fi
 OUT="$TEST_TMP/exports/export # café.json"
 before="$(sway_focus || true)"
-call probeExport >/dev/null
+# A native dialog (KDE, portal, GTK) takes a typed path. Qt's fallback dialog
+# takes no keyboard input in a headless compositor (CI), so there the test
+# accepts the real, open dialog with the path, as its Save button would.
+choose() {
+	case "${QT_QPA_PLATFORMTHEME:-}" in
+	kde | xdgdesktopportal | gtk3) wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return ;;
+	*) call probeAccept "$1" >/dev/null ;;
+	esac
+}
+# Fallback dialogs get the path preset before they open.
+preset() { case "${QT_QPA_PLATFORMTHEME:-}" in kde | xdgdesktopportal | gtk3) echo "" ;; *) echo "$OUT" ;; esac; }
+call probeExport "$(preset)" >/dev/null
 dialog_focused() { local now; now="$(sway_focus)"; [[ -n "$now" && "$now" != "$before" ]]; }
 wait_for 'the export dialog takes keyboard focus' dialog_focused
 sleep 0.3
-wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return
+choose export
 wait_for 'export completes' matches '.exportStatus == "Settings Exported"'
-cmp "$OUT" "$XDG_CONFIG_HOME/bloom/settings.json" || fail 'export contents differ'
+cmp "$OUT" "$XDG_CONFIG_HOME/bloom/settings.json" || { find "$TEST_TMP" -name "*.json" -newer "$APP" -not -path "*/config/*" >&2; fail "export contents differ"; }
 [[ "$(stat -c %a "$OUT")" == 600 ]] || fail 'export is not private'
 pass 'Export Settings opens a real dialog and writes an acknowledged private copy'
 printf '{"bloom-weather-enabled":false,"bloom-theme-mode":"light"}' > "$XDG_CONFIG_HOME/bloom/settings.json"
 sleep 0.4
 before="$(sway_focus || true)"
-call probeImport >/dev/null
+call probeImport "$(preset)" >/dev/null
 wait_for 'the import dialog takes keyboard focus' dialog_focused
 sleep 0.3
-wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return
+choose import
 wait_for 'import completes' matches '.importStatus == "Settings Imported"'
 jq -e '."bloom-theme-mode" == "dark"' "$XDG_CONFIG_HOME/bloom/settings.json" >/dev/null || fail 'import did not restore the exported value'
 pass 'Import Settings opens a real dialog and commits the selected data'
