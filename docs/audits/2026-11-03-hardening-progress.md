@@ -328,3 +328,16 @@ Rollback:
 git switch --detach 1316527 && systemctl --user daemon-reload && systemctl --user restart bloom-shell
 ```
 
+## H6 VM acceptance at `2415b8f` (2026-11-11)
+
+A fresh disposable Arch VM passed `tests/vm/acceptance.sh` on the released
+`main` (`2415b8f`) with 48 of 48 checks and `ACCEPTANCE_FAILURES=0`. The
+stages were prerequisites, install (including a real `bloom-shell-deps` build),
+session (autologin, relogin, crash-loop limit and recovery), state and
+diagnostics (damaged state, support bundle preview, privacy and redaction),
+update (healthy update, broken candidate refused, rollback) and uninstall
+(restore, twice, reinstall, SIGKILL mid-uninstall then resume).
+
+H6 still needs the checks the VM can't provide: suspend/resume and hotplug on
+physical hardware, a password-entry greeter, a UWSM login and real power loss.
+

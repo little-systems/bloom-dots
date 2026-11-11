@@ -280,9 +280,9 @@ Current state (2026-11-11):
   - A manual compositor snapshot restore command in `bloom doctor` (H2/H3).
     Doctor reports the snapshot count.
 - **H6: open.**
-  - The disposable Arch VM run passed 46 checks at `1ae4730`, and VM SDDM,
-    suspend, USB hotplug and ENOSPC checks also passed. These need repeating on
-    the current `main`.
+  - The disposable Arch VM acceptance passed 48 of 48 checks on the released
+    `main` (`2415b8f`). Earlier VM SDDM, suspend, USB hotplug and ENOSPC
+    checks passed at `1ae4730`.
   - Not yet tested: suspend/resume and hotplug on physical hardware, a
     password-entry greeter, a UWSM login, and real power loss.
 - **Verification on `main`:** the last supervised full local gate passed at
