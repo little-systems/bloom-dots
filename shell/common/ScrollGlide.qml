@@ -21,16 +21,23 @@ WheelHandler {
 	property bool _driving: false
 	property bool _coasting: false
 	property bool _writing: false
+	property real _written: 0
 	property real _velocity: 0
 	property real _lastInput: 0
 	property bool _nativeMomentum: false
 
 	function _clamp(v) { return Math.max(minimum, Math.min(maximum, v)); }
 	function _write(v) {
+		_written = v;
 		_writing = true;
 		if (horizontal) flickable.contentX = v;
 		else flickable.contentY = v;
 		_writing = false;
+	}
+	// A view rounding its own position while laying out rows (under a pixel) is
+	// not the user taking over; the glide's next frame corrects it.
+	function _nudged() {
+		return (_driving || _coasting) && Math.abs(position - _written) < 1;
 	}
 	function stop() {
 		_driving = false; _coasting = false; _velocity = 0;
@@ -100,8 +107,8 @@ WheelHandler {
 	}
 	readonly property Connections _positionWatch: Connections {
 		target: root.flickable
-		function onContentXChanged() { if (root.horizontal && !root._writing) root.stop(); }
-		function onContentYChanged() { if (!root.horizontal && !root._writing) root.stop(); }
+		function onContentXChanged() { if (root.horizontal && !root._writing && !root._nudged()) root.stop(); }
+		function onContentYChanged() { if (!root.horizontal && !root._writing && !root._nudged()) root.stop(); }
 	}
 	readonly property Connections _motionWatch: Connections {
 		target: Render
@@ -131,6 +138,8 @@ WheelHandler {
 		id: spring
 		stiffness: Tokens.scroll.stiffness; damping: Tokens.scroll.damping
 		onValueChanged: if (root._driving) root._write(spring.value)
-		onSettledChanged: if (spring.settled) root._driving = false
+		// Spring marks itself settled before it snaps its value, so land on the
+		// target here; otherwise every glide stops a fraction of a pixel short.
+		onSettledChanged: if (spring.settled) { if (root._driving) root._write(spring.target); root._driving = false; }
 	}
 }

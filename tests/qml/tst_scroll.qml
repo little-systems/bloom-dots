@@ -121,6 +121,26 @@ Item {
 			compare(f.contentY, 300);
 			verify(!scroller._coasting);
 		}
+		// A view's own sub-pixel layout adjustment (ListView rounding while it
+		// lays out rows) is not the user taking over: the glide lands exactly.
+		function test_layoutNudgeDoesNotStopAGlide() {
+			mouseWheel(host, 150, 150, 0, -240);
+			tryVerify(() => f.contentY > 40, 1000, "moves");
+			f.contentY = f.contentY + 0.4;
+			verify(scroller._driving, "still gliding after a nudge");
+			tryCompare(scroller, "_driving", false, 3000);
+			compare(f.contentY, 200, "lands on the target");
+		}
+
+		function test_externalJumpStillStopsAWheelGlide() {
+			mouseWheel(host, 150, 150, 0, -240);
+			tryVerify(() => f.contentY > 40, 1000, "moves");
+			f.contentY = 600;
+			wait(150);
+			compare(f.contentY, 600);
+			verify(!scroller._driving);
+		}
+
 		function test_horizontalWheelGlides() {
 			scroller.horizontal = true; f.contentWidth = 1200;
 			mouseWheel(host, 150, 150, 0, -120);
