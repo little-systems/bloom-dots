@@ -9,7 +9,9 @@ export BLOOM_THEME_HOME="$T/home" XDG_STATE_HOME="$T/state" PATH="$T/bin:$PATH" 
 mkdir -p "$T/bin" "$T/home/.config/gtk-3.0" "$T/home/.local/state/quickshell/user/generated/terminal"
 cat > "$T/bin/gsettings" <<'FAKE'
 #!/bin/sh
-if [ "$1" = get ]; then echo "'default'"; else echo "$*" >> "$THEME_TEST_CALLS"; fi
+# Stateful like the real tool: get returns the last value set.
+f="$THEME_TEST_CALLS.$3"
+if [ "$1" = get ]; then cat "$f" 2>/dev/null || echo "'default'"; else echo "$*" >> "$THEME_TEST_CALLS"; echo "$4" > "$f"; fi
 FAKE
 for command in pkill hyprctl plasma-apply-colorscheme; do
 	printf '#!/bin/sh\necho "%s $*" >> "$THEME_TEST_CALLS"\n' "$command" > "$T/bin/$command"
@@ -40,7 +42,7 @@ grep -q 'accent_color #34c759;' "$T/home/.config/gtk-4.0/gtk.css" || fail 'custo
 grep -q 'prefer-dark' "$T/calls" || fail 'dark desktop scheme'
 grep -q 'gtk-theme-name=adw-gtk3-dark$' "$T/home/.config/gtk-3.0/settings.ini" || fail 'installed dark GTK theme for Electron'
 grep -q 'gtk-theme adw-gtk3-dark' "$T/calls" || fail 'desktop uses installed GTK theme'
-grep -q 'owner style' "$T/state/bloom/app-themes/.config/gtk-3.0/gtk.css" || fail 'first backup retained'
+grep -q 'owner style' "$T/state/bloom/app-themes/originals/.config/gtk-3.0/gtk.css" || fail 'first backup retained'
 grep -qx 'background_opacity 0.7' "$T/home/.local/state/quickshell/user/generated/terminal/kitty-transparency.conf" || fail 'app theming changed opacity'
 if apply '{"surface":{"r":999,"g":0,"b":0}}' 2>/dev/null; then fail 'invalid palette accepted'; fi
 grep -q 'window_bg_color #000000;' "$T/home/.config/gtk-4.0/gtk.css" || fail 'invalid palette changed files'

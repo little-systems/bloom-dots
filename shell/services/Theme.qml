@@ -54,8 +54,10 @@ Singleton {
 		stdinEnabled: true
 		onStarted: { appTheme.write(palette); appTheme.stdinEnabled = false; }
 		onExited: code => {
-			if (code === 0) root._appliedPalette = palette;
-			else console.warn("bloom: couldn't apply the selected app theme (exit " + code + ")");
+			// 3: applied, but files the owner edited, deleted or symlinked were left alone.
+			if (code === 0 || code === 3) root._appliedPalette = palette;
+			if (code === 3) console.info("bloom: app theme applied; some files you changed were left alone");
+			else if (code !== 0) console.warn("bloom: couldn't apply the selected app theme (exit " + code + ")");
 			if (root._appPalette !== palette) applyDelay.restart();
 		}
 	}

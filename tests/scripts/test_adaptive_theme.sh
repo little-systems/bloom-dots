@@ -18,7 +18,9 @@ printf '#!/bin/sh\necho "$*" >> "%s/plasma"\n' "$T" > "$T/bin/plasma-apply-color
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/pkill"
 cat > "$T/bin/gsettings" <<'FAKE_GSETTINGS'
 #!/bin/sh
-if [ "$1" = get ]; then echo "'default'"; fi
+# Stateful like the real tool: get returns the last value set.
+f="$(dirname "$0")/.gs-$3"
+if [ "$1" = get ]; then cat "$f" 2>/dev/null || echo "'default'"; else echo "$4" > "$f"; fi
 exit 0
 FAKE_GSETTINGS
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/hyprctl"
@@ -46,7 +48,7 @@ grep -qx BloomAdaptiveA "$T/plasma" || fail "the Qt scheme wasn't applied"
 echo "ok - every app's colours are written from the wallpaper"
 
 bash "$SCRIPT" apply "$T/wall.png"
-grep -q original-fuzzel "$T/state/bloom/app-themes/.config/fuzzel/fuzzel_theme.ini" || fail "a second apply overwrote the backup"
+grep -q original-fuzzel "$T/state/bloom/app-themes/originals/.config/fuzzel/fuzzel_theme.ini" || fail "a second apply overwrote the backup"
 echo "ok - a second wallpaper keeps the first backup"
 
 bash "$SCRIPT" restore

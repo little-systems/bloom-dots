@@ -539,8 +539,12 @@ def uninstall(ctx, remove_deps=False):
             item.pop("pending", None)
         atomic(ctx.manifest_path, json.dumps(doc, indent=2) + "\n")
         run("systemctl", "--user", "disable", "--now", UNIT)
-        if (ctx.state / "app-themes/manifest").exists():
-            run("bash", str(ROOT / "shell/scripts/adaptive-theme.sh"), "restore", capture=False)
+        themes = ctx.state / "app-themes"
+        if (themes / "manifest").exists() or (themes / "ownership.json").exists():
+            # 3: restored, but files edited after Bloom themed them were kept (listed).
+            restored = run("bash", str(ROOT / "shell/scripts/adaptive-theme.sh"), "restore", check=False, capture=False)
+            if restored.returncode not in (0, 3):
+                raise Failure("application themes could not be restored; recovery data retained")
         for step in doc["removal"]:
             path = Path(step["path"])
             if step["mode"] == "keep":

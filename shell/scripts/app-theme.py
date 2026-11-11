@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Render supported application themes from Bloom's selected opaque palette.
 
-The shell passes colors on stdin. Only paths rooted at the chosen home are
-written; adaptive-theme.sh owns backups, locking and desktop notifications.
+The shell passes colors on stdin. Files are written under BLOOM_THEME_OUT, a
+staging tree; adaptive-theme.sh and theme-owner.py own installation, backups,
+locking and restore.
 """
 import json
 import os
@@ -80,6 +81,8 @@ def main():
                  secondary_fixed_dim=(30, 120, 135) if light else (125, 210, 225),
                  tertiary_fixed_dim=(140, 65, 150) if light else (215, 170, 225))
     home = Path(os.environ.get("BLOOM_THEME_HOME", Path.home()))
+    # adaptive-theme.sh renders into a staging tree and installs owned files.
+    out = Path(os.environ.get("BLOOM_THEME_OUT", home))
     templates = Path(__file__).resolve().parent.parent / "theming" / "templates"
     targets = {"gtk3.css": ".config/gtk-3.0/gtk.css", "gtk4.css": ".config/gtk-4.0/gtk.css",
                "fuzzel.ini": ".config/fuzzel/fuzzel_theme.ini",
@@ -95,7 +98,7 @@ def main():
                           substitute, (templates / template).read_text())
         if "{{" in rendered:
             raise ValueError("unresolved theme token")
-        outputs[home / destination] = rendered
+        outputs[out / destination] = rendered
     # Validate all tokens before changing a file.
     for path, rendered in outputs.items():
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -103,7 +106,7 @@ def main():
         temporary.write_text(rendered)
         temporary.replace(path)
     for version in ("3.0", "4.0"):
-        update_settings(home / f".config/gtk-{version}/settings.ini", {
+        update_settings(out / f".config/gtk-{version}/settings.ini", {
             "gtk-theme-name": gtk_theme(home, light) if version == "3.0" else "Adwaita",
             "gtk-application-prefer-dark-theme": "false" if light else "true"})
     print("light" if light else "dark")

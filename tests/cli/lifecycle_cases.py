@@ -28,7 +28,8 @@ class Lifecycle(unittest.TestCase):
         shutil.copy2(ROOT / "tools/bloom-lifecycle.py", self.root / "tools/bloom-lifecycle.py")
         (self.root / "shell").mkdir()
         (self.root / "shell/scripts").mkdir()
-        shutil.copy2(ROOT / "shell/scripts/adaptive-theme.sh", self.root / "shell/scripts/adaptive-theme.sh")
+        for script in ("adaptive-theme.sh", "theme-owner.py", "app-theme.py"):
+            shutil.copy2(ROOT / "shell/scripts" / script, self.root / "shell/scripts" / script)
         shutil.copytree(ROOT / "shell/theming", self.root / "shell/theming")
         (self.root / "shell/settings-app.qml").write_text("// fixture\n")
         (self.root / "VERSION").write_text("0.1.0\n")
@@ -184,6 +185,22 @@ elif name == 'systemctl':
         current.write_text("/* Bloom palette */\n")
         self.bloom("uninstall")
         self.assertEqual(current.read_text(), "/* original desktop theme */\n")
+
+    def test_uninstall_keeps_theme_files_edited_after_bloom_themed_them(self):
+        self.bloom("install")
+        relative = ".config/gtk-3.0/gtk.css"
+        current = self.home / relative
+        current.parent.mkdir(parents=True)
+        current.write_text("/* original desktop theme */\n")
+        stage = self.base / "stage"
+        (stage / relative).parent.mkdir(parents=True)
+        (stage / relative).write_text("/* Bloom palette */\n")
+        subprocess.run(["python3", str(self.root / "shell/scripts/theme-owner.py"), "commit", str(stage)],
+                       env=self.env, check=True, capture_output=True)
+        current.write_text("/* edited by the owner */\n")
+        self.bloom("uninstall")
+        self.assertEqual(current.read_text(), "/* edited by the owner */\n")
+        self.assertFalse((self.state / "app-themes/ownership.json").exists())
 
     def test_edited_managed_unit_blocks_uninstall_before_stopping(self):
         self.bloom("install")
