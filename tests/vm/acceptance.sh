@@ -146,28 +146,45 @@ stage_state() {
 	echo '{broken' > "$STATE/dock.json"
 	"$BLOOM" doctor --json > "$HOME/doctor-state.json" 2>>"$LOG"
 	grep -q '"id": "state"' "$HOME/doctor-state.json" && grep -q 'dock' "$HOME/doctor-state.json" && ok "doctor reports damaged state" || bad "doctor damaged state"
-	check "support bundle preview writes nothing" "$BLOOM" support --preview
-	check "support bundle is written privately" bash -c "'$BLOOM' support --output '$HOME/support.tar.gz' && [ \$(stat -c %a '$HOME/support.tar.gz') = 600 ]"
-	if tar -xOzf "$HOME/support.tar.gz" | grep -q "$HOME"; then bad "support bundle leaks the home path"; else ok "support bundle is redacted"; fi
+	local output
+	output="$(mktemp -d)" || { bad "allocate support bundle fixture"; return; }
+	check "support bundle preview succeeds" "$BLOOM" support --preview --output "$output/support.tar.gz"
+	check "support preview leaves output absent" test ! -e "$output/support.tar.gz"
+	check "support bundle is written" "$BLOOM" support --output "$output/support.tar.gz"
+	[[ "$(stat -c %a "$output/support.tar.gz" 2>/dev/null)" == 600 ]] && ok "support bundle is private" || bad "support bundle permissions"
+	if tar -xOzf "$output/support.tar.gz" > "$output/contents"; then
+		if grep -Fq "$HOME" "$output/contents"; then bad "support bundle leaks the home path"; else ok "support bundle is redacted"; fi
+	else
+		bad "support bundle is unreadable"
+	fi
 }
 
 stage_update() {
 	note "update"
 	session_env
-	local upstream="$HOME/upstream" initial
-	git clone -q --bare "$CLONE" "$HOME/remote.git"
-	git -C "$CLONE" remote set-url origin "$HOME/remote.git" 2>/dev/null || git -C "$CLONE" remote add origin "$HOME/remote.git"
+	local fixture upstream initial
+	fixture="$(mktemp -d)" || { bad "allocate update fixture"; return; }
+	upstream="$fixture/upstream"
+	git clone -q --bare "$CLONE" "$fixture/remote.git" || { bad "clone update remote"; return; }
+	git -C "$CLONE" remote set-url origin "$fixture/remote.git" || { bad "set update remote"; return; }
 	git -C "$CLONE" fetch -q origin && git -C "$CLONE" branch -q --set-upstream-to=origin/main main
-	git clone -q "$HOME/remote.git" "$upstream"
+	git clone -q "$fixture/remote.git" "$upstream" || { bad "clone update fixture"; return; }
 	git -C "$upstream" config user.email accept@example.invalid; git -C "$upstream" config user.name Acceptance
 	initial="$(git -C "$CLONE" rev-parse HEAD)"
 	echo "# acceptance" >> "$upstream/docs/INSTALL.md"; git -C "$upstream" commit -qam "healthy change"; git -C "$upstream" push -q
 	check "healthy update applies and Bloom answers" bash -c "'$BLOOM' update && qs -c bloom ipc call shell ping | grep -q pong"
 	echo 'def broken(:' > "$upstream/tools/bloom-lifecycle.py"; git -C "$upstream" commit -qam "broken"; git -C "$upstream" push -q
 	local good; good="$(git -C "$CLONE" rev-parse HEAD)"
-	refuse "broken candidate is refused" "$BLOOM" update
+	if "$BLOOM" update > "$fixture/rejected.log" 2>&1; then
+		bad "broken candidate was accepted"
+	elif grep -Fq 'failed validation' "$fixture/rejected.log"; then
+		ok "broken candidate fails validation"
+	else
+		cat "$fixture/rejected.log" >> "$LOG"
+		bad "broken candidate was refused for the wrong reason"
+	fi
 	[[ "$(git -C "$CLONE" rev-parse HEAD)" == "$good" ]] && ok "checkout unchanged after a refused candidate" || bad "checkout moved"
-	git -C "$upstream" revert -q --no-edit HEAD && git -C "$upstream" push -q
+	git -C "$upstream" revert --no-edit HEAD && git -C "$upstream" push -q || { bad "publish repaired candidate"; return; }
 	check "update after a fixed upstream succeeds" "$BLOOM" update
 	check "explicit rollback returns to the previous revision" "$BLOOM" update --rollback
 	check "Bloom answers after rollback" shell_answers
