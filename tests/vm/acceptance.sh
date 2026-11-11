@@ -209,7 +209,7 @@ stage_uninstall() {
 	cat > "$fixture/systemctl" <<'SH'
 #!/usr/bin/env bash
 "$BLOOM_VM_REAL_SYSTEMCTL" "$@" || exit $?
-if [[ "$*" == "--user disable --now bloom-shell.service" ]]; then
+if [[ "$*" == "--user disable bloom-shell.service" ]]; then
 	touch "$BLOOM_VM_UNINSTALL_FIXTURE/paused"
 	for _ in $(seq 1 100); do
 		[[ -e "$BLOOM_VM_UNINSTALL_FIXTURE/release" ]] && break
@@ -240,7 +240,7 @@ SH
 	check "interrupted uninstall has a pending journal" jq -e '.status == "uninstalling"' "$STATE/install-manifest.json"
 	check "interrupted uninstall is inspectable" "$BLOOM" recover
 	check "interrupted uninstall resumes" "$BLOOM" recover --resume
-	check "resumed uninstall retires the manifest" jq -e '.status == "uninstalled"' "$STATE/install-manifest.json"
+	check "resumed uninstall retires the manifest" test ! -e "$STATE/install-manifest.json"
 	grep -q 'gaps_out = 7' "$HOME/.config/hypr/hyprland.lua" && ok "owner config intact after interrupted removal" || bad "owner config after interrupted removal"
 }
 

@@ -546,6 +546,17 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
         transaction.close()
 
 
+def stop_and_disable():
+    # Disabling a linked unit can remove its definition. Stop it while the
+    # definition is still available and tolerate a missing unit on resume.
+    for action in ("stop", "disable"):
+        result = run("systemctl", "--user", action, UNIT, check=False)
+        if result.returncode:
+            state = run("systemctl", "--user", "show", UNIT, "-p", "LoadState", "--value", check=False)
+            if state.stdout.strip() != "not-found":
+                raise Failure(f"could not {action} {UNIT}: {result.stderr.strip() or 'systemctl failed'}")
+
+
 def uninstall(ctx, remove_deps=False):
     if not ctx.manifest:
         print("No managed installation to remove; development links were left untouched.")
@@ -578,17 +589,27 @@ def uninstall(ctx, remove_deps=False):
                     step["text"] = text
                 steps.append(step)
             doc["removal"] = steps
+        unit_path = str(ctx.config / "systemd/user" / UNIT)
+
+        def expected_removal_state(step, current):
+            if current in (step["before"], step["after"]):
+                return True
+            # systemctl disable can unlink our service definition before the
+            # file restoration step. No other resource gets this allowance.
+            return (doc["status"] == "uninstalling" and step["path"] == unit_path
+                    and current is None and step["before"] == entries[unit_path]["installed"])
+
         # Inspect every step before stopping anything. Both sides are accepted
         # so a killed removal can resume without confusing originals with edits.
         for step in doc["removal"]:
-            if step["mode"] != "keep" and signature(Path(step["path"])) not in (step["before"], step["after"]):
+            if step["mode"] != "keep" and not expected_removal_state(step, signature(Path(step["path"]))):
                 raise Failure(f"{step['path']} changed during removal; recovery data retained")
         doc["status"] = "uninstalling"
         doc["version"] = MANIFEST_VERSION
         for item in doc["entries"]:
             item.pop("pending", None)
         atomic(ctx.manifest_path, json.dumps(doc, indent=2) + "\n")
-        run("systemctl", "--user", "disable", "--now", UNIT)
+        stop_and_disable()
         themes = ctx.state / "app-themes"
         if (themes / "manifest").exists() or (themes / "ownership.json").exists():
             # 3: restored, but files edited after Bloom themed them were kept (listed).
@@ -603,7 +624,7 @@ def uninstall(ctx, remove_deps=False):
             current = signature(path)
             if current == step["after"]:
                 continue
-            if current != step["before"]:
+            if not expected_removal_state(step, current):
                 raise Failure(f"{path} changed during removal; recovery data retained")
             if step["mode"] == "loader":
                 place(path, "file", step["text"])
