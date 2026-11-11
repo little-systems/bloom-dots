@@ -321,6 +321,18 @@ var ROWS = [
 		"tab": "overlays"
 	},
 	{
+		"label": "Device Name",
+		"tab": "about"
+	},
+	{
+		"label": "Processor",
+		"tab": "about"
+	},
+	{
+		"label": "Memory",
+		"tab": "about"
+	},
+	{
 		"label": "Distribution ID",
 		"tab": "about"
 	},
@@ -403,22 +415,6 @@ var ROWS = [
 	{
 		"label": "Battery",
 		"tab": "power"
-	},
-	{
-		"label": "Device Name",
-		"tab": "device"
-	},
-	{
-		"label": "Processor",
-		"tab": "device"
-	},
-	{
-		"label": "Memory",
-		"tab": "device"
-	},
-	{
-		"label": "Kernel",
-		"tab": "device"
 	},
 	{
 		"label": "Repeat Delay",

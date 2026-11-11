@@ -308,7 +308,9 @@ Item {
 			const v = make("about");
 			compare(part(v, "version").text, "Version 0.1.0");
 			const exported = spy(v, "exportRequested"), imported = spy(v, "importRequested");
+			reveal(v, "export");
 			click(v, "export");
+			reveal(v, "import");
 			click(v, "import");
 			compare([exported.count, imported.count], [1, 1]);
 		}
@@ -322,6 +324,24 @@ Item {
 			verify(!findChild(v, "aboutSystem:Edition"));
 			v.sys = {};
 			tryVerify(() => !part(v, "distributionIdentity").visible);
+		}
+
+		// About is the one place for this machine: device details sit in its
+		// System group, there is no separate Device page, and the Data group
+		// keeps the normal gap below System.
+		function test_aboutHoldsTheDeviceDetails() {
+			const v = make("about");
+			v.sys = { osInfo: { name: "Arch Linux", id: "arch" }, kernel: "7.0-fixture", architecture: "x86_64",
+				hostname: "arch-dev", cpu: "Intel i3", memory: "11.5 GB" };
+			compare(part(v, "systemValue:Device Name").text, "arch-dev");
+			compare(part(v, "systemValue:Processor").text, "Intel i3");
+			compare(part(v, "systemValue:Memory").text, "11.5 GB");
+			compare(part(v, "systemValue:Kernel").text, "7.0-fixture");
+			verify(findChild(v, "tab:about"), "sidebar is built");
+			verify(!findChild(v, "tab:device"), "no separate Device page");
+			const data = part(v, "dataLabel");
+			compare(data.above, part(v, "systemLabel").aboveGroup, "Data has the normal group gap");
+			verify(data.above > 0);
 		}
 
 		function test_resetAsksFirst() {
@@ -764,7 +784,7 @@ Item {
 		}
 
 		function test_scrollbarAppearsOnlyWhenNeeded() {
-			const v = make("device");
+			const v = make("display");
 			waitForRendering(host);
 			verify(!part(v, "pageThumb").visible);
 			v.tab = "notch";

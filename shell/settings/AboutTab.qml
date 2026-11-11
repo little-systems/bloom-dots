@@ -12,7 +12,14 @@ Column {
 	property string distroLogo: ""
 	property string kernel: ""
 	property string architecture: ""
+	property string hostname: ""
+	property string cpu: ""
+	property string memory: ""
+	// The one place for this machine's details (there is no separate Device page).
 	readonly property var systemRows: [
+		{ label: "Device Name", value: root.hostname, icon: "monitor" },
+		{ label: "Processor", value: root.cpu, icon: "cpu" },
+		{ label: "Memory", value: root.memory, icon: "memory-stick" },
 		{ label: "Distribution ID", value: root.osInfo.id || "", icon: "info" },
 		{ label: "Edition", value: root.osInfo.variant || "", icon: "info" },
 		{ label: "Architecture", value: root.architecture, icon: "cpu" },
@@ -133,7 +140,8 @@ Column {
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "System"; above: 0; visible: root.systemRows.length > 0 }
+	SGroupLabel { objectName: "systemLabel"; theme: root.theme; text: "System"; above: 0; visible: root.systemRows.length > 0
+		readonly property real aboveGroup: Tokens.settings.group.label.top }
 	SGroup {
 		theme: root.theme
 		visible: root.systemRows.length > 0
@@ -162,7 +170,7 @@ Column {
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "Data"; above: 0 }
+	SGroupLabel { objectName: "dataLabel"; theme: root.theme; text: "Data"; visible: true }
 	SGroup {
 		theme: root.theme
 		SRow { objectName: "export"; theme: root.theme; icon: "file-down"; label: root.exportLabel; desc: "Save settings to a file"; action: true; onClicked: root.exportRequested() }

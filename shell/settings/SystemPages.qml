@@ -249,18 +249,6 @@ Column {
 	}
 
 	Page {
-		pageId: "device"
-		SGroupLabel { theme: root.theme; text: "Device"; above: 0 }
-		SGroup {
-			theme: root.theme
-			SRow { theme: root.theme; icon: "monitor"; label: "Device Name"; desc: root.sys.hostname }
-			SRow { theme: root.theme; icon: "cpu"; label: "Processor"; desc: root.sys.cpu }
-			SRow { theme: root.theme; icon: "memory-stick"; label: "Memory"; desc: root.sys.memory }
-			SRow { theme: root.theme; icon: "info"; label: "Kernel"; desc: root.sys.kernel; divider: false }
-		}
-	}
-
-	Page {
 		pageId: "input"
 		HyprNotice {}
 		SGroupLabel { theme: root.theme; text: "Keyboard"; above: 0 }

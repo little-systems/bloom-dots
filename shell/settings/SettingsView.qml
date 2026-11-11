@@ -55,7 +55,6 @@ Rectangle {
 			{ id: "sound", label: "Sound", icon: "volume-2", copy: "Where sound plays and which microphone listens." },
 			{ id: "power", label: "Power", icon: "gauge", copy: "Power mode and battery." },
 			{ id: "storage", label: "Storage", icon: "hard-drive", copy: "How full your disks are." },
-			{ id: "device", label: "Device", icon: "cpu", copy: "This machine." }
 		] },
 		{ label: "Connections", tabs: [
 			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi, saved networks and VPN." },
@@ -528,7 +527,7 @@ Rectangle {
 	Component {
 		id: aboutTab
 		AboutTab {
-			theme: root.theme; version: root.version; osInfo: root.sys?.osInfo ?? ({}); distroLogo: root.sys?.distroLogo ?? ""; kernel: root.sys?.kernel ?? ""; architecture: root.sys?.architecture ?? ""; exportLabel: root.exportLabel; importLabel: root.importLabel
+			theme: root.theme; version: root.version; osInfo: root.sys?.osInfo ?? ({}); distroLogo: root.sys?.distroLogo ?? ""; kernel: root.sys?.kernel ?? ""; architecture: root.sys?.architecture ?? ""; hostname: root.sys?.hostname ?? ""; cpu: root.sys?.cpu ?? ""; memory: root.sys?.memory ?? ""; exportLabel: root.exportLabel; importLabel: root.importLabel
 			onExportRequested: root.exportRequested()
 			onImportRequested: root.importRequested()
 		}
