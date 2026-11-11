@@ -34,6 +34,15 @@ Item {
 	property bool batteryLow: false
 	property bool leaving: false
 	property var media: ({ hasMedia: false, isPlaying: false })
+	// The login screen only: switchable accounts and desktop sessions. With
+	// one of each (and always on the lock screen) the extra controls stay hidden.
+	property string clockTag: "Locked"
+	property string clockTagIcon: "lock"
+	property var users: []
+	property var sessions: []
+	property int sessionIndex: 0
+	signal userStepped(int step)
+	signal sessionStepped()
 	property bool _mediaPlayed: false
 	readonly property bool mediaShown: root._mediaPlayed && root.media.hasMedia === true
 	onMediaChanged: {
@@ -90,6 +99,8 @@ Item {
 		theme: root.theme
 		accent: root.accent
 		time: root.time
+		tag: root.clockTag
+		tagIcon: root.clockTagIcon
 		turning: root.clockTurning
 	}
 
@@ -252,11 +263,23 @@ Item {
 			height: parent.height
 			spacing: Tokens.lock.island.itemGap
 
+			Button {
+				objectName: "userPrevious"
+				icon: "chevron-left"
+				visible: root.users.length > 1
+				onClicked: root.userStepped(-1)
+			}
 			Glyph { name: "user" }
 			Label {
 				objectName: "user"
 				text: root.user
 				textFormat: Text.PlainText
+			}
+			Button {
+				objectName: "userNext"
+				icon: "chevron-right"
+				visible: root.users.length > 1
+				onClicked: root.userStepped(1)
 			}
 			Item { visible: root.layout !== ""; width: Tokens.lock.island.itemGap; height: 1 }
 			Glyph { name: "keyboard"; visible: root.layout !== "" }
@@ -264,6 +287,16 @@ Item {
 				objectName: "layout"
 				visible: root.layout !== ""
 				text: root.layout
+			}
+			Item { visible: root.sessions.length > 1; width: Tokens.lock.island.itemGap; height: 1 }
+			Glyph { name: "monitor"; visible: root.sessions.length > 1 }
+			Label {
+				objectName: "session"
+				visible: root.sessions.length > 1
+				text: root.sessions[root.sessionIndex] || ""
+				textFormat: Text.PlainText
+				HoverHandler { cursorShape: Qt.PointingHandCursor }
+				TapHandler { onTapped: root.sessionStepped() }
 			}
 		}
 	}

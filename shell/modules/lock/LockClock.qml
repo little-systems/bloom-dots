@@ -13,6 +13,9 @@ Item {
 	property color accent: "#007aff"
 	property date time: new Date()
 	property bool turning: true
+	// The login screen names the machine here instead.
+	property string tag: "Locked"
+	property string tagIcon: "lock"
 
 	readonly property real _size: Tokens.lock.clock.size
 	readonly property var _hands: Lock.hands(root.time)
@@ -152,13 +155,15 @@ Item {
 			spacing: Tokens.lock.clock.tag.gap
 
 			SvgIcon {
-				name: "lock"
+				name: root.tagIcon
 				size: Tokens.lock.clock.tag.icon
 				color: root.theme.text
 				anchors.verticalCenter: parent.verticalCenter
 			}
 			Text {
-				text: "Locked"
+				objectName: "clockTag"
+				text: root.tag
+				textFormat: Text.PlainText
 				color: root.theme.text
 				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: Fonts.px(Tokens.lock.clock.tag.text)

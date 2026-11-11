@@ -106,7 +106,9 @@ def theme_sources():
     """(source, path inside the installed theme). The greeter can't read the
     checkout, so the lock screen's own files travel with the theme."""
     sources = [(SOURCE / "sddm/bloom", Path("."))]
-    for relative in ("shell/common", "shell/modules/lock", "shell/modules/notch/FilterBlur.qml", "shell/assets/fonts",
+    # The lock screen borrows the notch's blur and media parts; QML compiles
+    # only the types it uses, so the rest of the folder is inert here.
+    for relative in ("shell/common", "shell/modules/lock", "shell/modules/notch", "shell/assets/fonts",
                      "shell/assets/bloom.png"):
         if (SOURCE / relative).exists():
             sources.append((SOURCE / relative, Path(relative)))
@@ -117,8 +119,11 @@ def build_theme(destination):
     for source, relative in theme_sources():
         target = destination / relative
         if source.is_dir():
+            # sddm/bloom/shell links back to the checkout for tests; the copy
+            # takes only the parts listed above.
             shutil.copytree(source, target, dirs_exist_ok=True,
-                            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+                            ignore=lambda folder, names: [n for n in names if n in ("__pycache__",) or n.endswith(".pyc")
+                                                          or (Path(folder) / n).is_symlink()])
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
@@ -225,7 +230,7 @@ def _replace_tree(root, temporary_parent, destination):
         shutil.rmtree(old)
 
 
-def apply(root, user, steps, booted, run):
+def apply(root, user, steps, booted, run, report=None):
     """Apply `steps` in order, recording each. A failure undoes this run's file
     changes and the services it enabled, then raises. Installed packages stay."""
     previous = read_manifest(root)
@@ -276,7 +281,11 @@ def apply(root, user, steps, booted, run):
                 os.chmod(folder, 0o2775)
                 undo.append(("rmtree", folder))
             save_manifest(root, doc)
-    except BaseException:
+            if report and kind != "note":
+                report(step, True)
+    except BaseException as error:
+        if report and step["kind"] != "note":
+            report(step, False, str(error))
         for action in reversed(undo):
             try:
                 if action[0] == "disable":
