@@ -124,9 +124,10 @@ Singleton {
 		root.refresh();
 	}
 	onActiveChanged: if (!active) { root.devices = []; root._looking = false; root.pairing = ""; root.prompt = null; }
-	Process {
+	SupervisedProcess {
 		id: monitor
-		running: root.active
+		backend: "bluetooth"
+		wanted: root.active
 		command: ["dbus-monitor", "--system", "type='signal',sender='org.bluez'"]
 		stdout: SplitParser { onRead: line => { if (line.indexOf("signal ") >= 0) debounce.restart(); } }
 	}
@@ -136,11 +137,16 @@ Singleton {
 		property bool again: false
 		command: ["timeout", "-k", "1s", "5s", "busctl", "--system", "--json=short", "call", "org.bluez", "/", "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"]
 		stdout: StdioCollector { id: snapshotOut }
+		stderr: StdioCollector { id: snapshotErr }
 		onExited: code => {
 			const s = code === 0 ? Logic.managed(snapshotOut.text) : Logic.managed("");
 			root.loaded = true;
 			root.available = s.available; root.powered = s.powered; root.adapter = s.adapter; root.devices = s.devices; root.discovering = s.discovering;
-			if (!s.available) root.error = "Bluetooth adapter unavailable";
+			// The service being down is not the same as having no adapter.
+			const failed = code === 0 ? null : Logic.failure(code, snapshotErr.text);
+			Capabilities.report("bluez", failed ? failed.state : "available", failed ? failed.reason : "", 0);
+			if (failed) root.error = failed.message;
+			else if (!s.available) root.error = "Bluetooth adapter unavailable";
 			else root.error = "";
 			if (again) {
 				again = false;

@@ -14,7 +14,6 @@ Singleton {
 	readonly property string device: root.info?.device ?? ""
 	readonly property int percent: root.info?.percent ?? -1
 	property string error: ""
-	property bool _monitorOk: true
 	signal levelChanged(int percent)
 
 	function refresh() {
@@ -31,13 +30,12 @@ Singleton {
 
 	Component.onCompleted: root.refresh()
 	Timer { id: eventDebounce; interval: 150; onTriggered: root.refresh() }
-	Timer { id: monitorRetry; interval: 30000; onTriggered: root._monitorOk = true }
-	Process {
+	SupervisedProcess {
 		id: monitor
-		running: root._monitorOk
+		backend: "brightness"
+		wanted: true
 		command: ["udevadm", "monitor", "--kernel", "--subsystem-match=backlight"]
 		stdout: SplitParser { onRead: line => { if (line.indexOf(" change ") >= 0) eventDebounce.restart(); } }
-		onExited: { root._monitorOk = false; monitorRetry.restart(); }
 	}
 	Process {
 		id: scan

@@ -33,17 +33,19 @@ operations = _load("bloom_operations", "bloom_operations.py")
 
 VERSION = 1
 UNIT = "bloom-shell.service"
+# Commands Bloom actually runs (shell, scripts, CLI), mapped to Arch packages.
 REQUIRED = {
     "qs": "quickshell", "hyprctl": "hyprland", "python3": "python", "jq": "jq", "matugen": "matugen",
     "cava": "cava", "cliphist": "cliphist", "wl-copy": "wl-clipboard", "grim": "grim", "slurp": "slurp",
-    "wf-recorder": "wf-recorder", "tesseract": "tesseract", "hypridle": "hypridle", "hyprsunset": "hyprsunset",
-    "hyprlock": "hyprlock", "brightnessctl": "brightnessctl", "playerctl": "playerctl", "qalc": "libqalculate",
-    "wpctl": "wireplumber", "pactl": "libpulse", "nmcli": "networkmanager", "bluetoothctl": "bluez-utils",
-    "notify-send": "libnotify", "xdg-open": "xdg-utils", "upower": "upower",
-    "powerprofilesctl": "power-profiles-daemon", "pkexec": "polkit", "busctl": "systemd",
+    "wf-recorder": "wf-recorder", "tesseract": "tesseract", "hyprsunset": "hyprsunset", "hyprlock": "hyprlock",
+    "brightnessctl": "brightnessctl", "qalc": "libqalculate", "pactl": "libpulse", "nmcli": "networkmanager",
+    "notify-send": "libnotify", "xdg-open": "xdg-utils", "gsettings": "glib2", "gio": "glib2",
+    "dbus-monitor": "dbus", "busctl": "systemd", "udevadm": "systemd", "systemd-run": "systemd",
+    "lsblk": "util-linux",
 }
-OPTIONAL = {"mpvpaper": "video wallpapers", "satty": "screenshot annotation", "songrec": "music recognition",
-            "trans": "translation", "checkupdates": "package updates", "secret-tool": "AI key storage"}
+OPTIONAL = {"mpvpaper": "video wallpapers", "satty": "screenshot annotation", "swappy": "screenshot annotation",
+            "songrec": "music recognition", "trans": "translation", "checkupdates": "package updates",
+            "secret-tool": "AI key storage", "udisksctl": "dock drives"}
 EXCLUSIVE = {"org.freedesktop.Notifications": "notifications", "org.kde.StatusNotifierWatcher": "tray"}
 LIFECYCLE_OK = {"complete", "uninstalled"}
 LIFECYCLE_INTERRUPTED = {"installing", "uninstalling", "updating"}
@@ -246,7 +248,23 @@ def display():
     return check("display", "ok", f"no unfinished display trials; {len(history)} compositor snapshot(s) kept")
 
 
-CHECKS = (session, service, shell_ipc, settings, state, lifecycle, themes, dependencies, bus, display)
+def capabilities():
+    result = probe("capabilities", ["qs", "-c", "bloom", "ipc", "call", "capabilities", "snapshot"])
+    if result is None or result["state"] != "success":
+        return check("capabilities", "skipped", "the shell is not answering; backend states unknown")
+    try:
+        backends = json.loads(result["stdout"]).get("backends", {})
+    except (ValueError, AttributeError):
+        return check("capabilities", "skipped", "the shell returned no capability report")
+    bad = sorted(f"{name} {entry.get('state')}" + (f" ({entry['reason']})" if entry.get("reason") else "")
+                 for name, entry in backends.items() if entry.get("state") in ("degraded", "missing"))
+    if bad:
+        return check("capabilities", "degraded", "; ".join(bad),
+                     "Missing programs: install them (see dependencies). Restarting backends retry on their own with backoff.")
+    return check("capabilities", "ok", f"{len(backends)} backend(s) reporting, none degraded")
+
+
+CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, themes, dependencies, bus, display)
 
 
 def report():

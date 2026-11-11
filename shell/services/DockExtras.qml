@@ -20,7 +20,6 @@ Singleton {
 	property string _currentCheck: ""
 	property string toast: ""
 	property int toastSerial: 0
-	property bool _monitorOk: true
 	readonly property bool busy: actionProc.running || verifyScan.running
 	property var _pendingDrive: null
 	readonly property bool active: Settings.values["bloom-dock-extras-position"] !== "off"
@@ -131,7 +130,7 @@ Singleton {
 	property var _job: null
 
 	onActiveChanged: {
-		if (root.active) { root._monitorOk = true; root.refresh(); }
+		if (root.active) root.refresh();
 		else { root.drives = []; root.folders = []; root._folderQueue = []; root._checkQueue = []; }
 	}
 	Connections {
@@ -142,13 +141,14 @@ Singleton {
 	}
 	Timer { interval: 30000; repeat: true; running: root.active; onTriggered: root.refresh() }
 	Timer { id: debounce; interval: 300; onTriggered: root.refresh() }
-	Timer { id: monitorRetry; interval: 30000; onTriggered: if (root.active) root._monitorOk = true }
-	Process {
+	SupervisedProcess {
 		id: monitor
-		running: root.active && root._monitorOk && Settings.values["bloom-dock-extras-drives"]
+		backend: "drives"
+		wanted: root.active && Settings.values["bloom-dock-extras-drives"]
 		command: ["udisksctl", "monitor"]
 		stdout: SplitParser { onRead: _ => debounce.restart() }
-		onExited: if (root.active) { root._monitorOk = false; monitorRetry.restart(); debounce.restart(); }
+		// Changes may have been missed while it was down.
+		onExited: if (root.active) debounce.restart()
 	}
 	Process {
 		id: driveScan

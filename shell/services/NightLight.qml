@@ -11,9 +11,11 @@ Singleton {
 	readonly property bool wanted: Settings.values["bloom-night-light"]
 	readonly property int temperature: Settings.values["bloom-night-temperature"]
 
-	Process {
-		running: root.wanted
+	SupervisedProcess {
+		id: sunset
+		backend: "night-light"
+		wanted: root.wanted
 		command: ["hyprsunset", "-t", String(root.temperature)]
-		onCommandChanged: if (running) { running = false; running = Qt.binding(() => root.wanted); }
+		onCommandChanged: if (running) sunset.restart()
 	}
 }

@@ -79,3 +79,16 @@ function connectCommand(ssid, password) {
 		? ["timeout", "-k", "1s", "20s", "nmcli", "--ask", "-w", "18", "device", "wifi", "connect", ssid]
 		: ["timeout", "-k", "1s", "15s", "nmcli", "-w", "12", "device", "wifi", "connect", ssid];
 }
+
+// Why an nmcli query failed: NetworkManager stopped or nmcli absent, versus a
+// transient failure. "No Wi-Fi device" is not a failure.
+function failure(code, stderr) {
+	const text = String(stderr || "");
+	if (code === 127)
+		return { state: "missing", reason: "nmcli is not installed", message: "NetworkManager tools aren't installed" };
+	if (code === 8 || /NetworkManager is not running|could not be found|ServiceUnknown/i.test(text))
+		return { state: "missing", reason: "NetworkManager is not running", message: "NetworkManager isn't running" };
+	if (code === 124)
+		return { state: "degraded", reason: "query timed out", message: "NetworkManager isn't responding" };
+	return { state: "degraded", reason: "query failed", message: "NetworkManager unavailable" };
+}

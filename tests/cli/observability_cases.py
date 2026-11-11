@@ -212,6 +212,12 @@ class DoctorCases(Home):
         self.assertEqual(check["status"], "degraded")
         self.assertIn("dunst", check["summary"])
 
+    def test_degraded_backends_are_reported_from_the_running_shell(self):
+        self.fake("qs", 'case "$*" in *"shell ping"*) echo pong;; *"capabilities snapshot"*) echo \'{"version":1,"backends":{"network":{"state":"degraded","reason":"exited with status 1","attempts":3},"brightness":{"state":"available","reason":"","attempts":0}}}\';; esac')
+        check = next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "capabilities")
+        self.assertEqual(check["status"], "degraded")
+        self.assertIn("network degraded", check["summary"])
+
     def test_doctor_changes_nothing_and_leaks_no_home_path(self):
         (self.home / ".config/bloom/settings.json").write_text('{"bloom-gemini-key": "AIzaSyA1234567890abcdefghijk"}')
         before = sorted(str(p) for p in self.home.rglob("*"))

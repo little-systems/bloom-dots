@@ -89,9 +89,10 @@ Singleton {
 	function _networks() { root.networks = Logic.wifiList(root._listText, root._saved); }
 	onActiveChanged: if (!active) { root.networks = []; root.ssid = ""; root._listText = ""; }
 
-	Process {
+	SupervisedProcess {
 		id: monitor
-		running: root.active
+		backend: "network"
+		wanted: root.active
 		command: ["nmcli", "monitor"]
 		stdout: SplitParser { onRead: line => { if (line.trim()) debounce.restart(); } }
 	}
@@ -100,15 +101,18 @@ Singleton {
 		id: statusQuery
 		command: ["timeout", "-k", "1s", "5s", "nmcli", "-t", "-f", "WIFI,STATE", "general", "status"]
 		stdout: StdioCollector { id: statusOut }
+		stderr: StdioCollector { id: statusErr }
 		onExited: code => {
 			root.available = code === 0;
 			root.loaded = true;
+			const failed = code === 0 ? null : Logic.failure(code, statusErr.text);
+			Capabilities.report("networkmanager", failed ? failed.state : "available", failed ? failed.reason : "", 0);
 			if (code === 0) {
 				const s = Logic.status(statusOut.text);
 				root.wifiEnabled = s.wifiEnabled;
 				root.connected = s.connected;
 				root.error = "";
-			} else root.error = "NetworkManager unavailable";
+			} else root.error = failed.message;
 		}
 	}
 	Process {

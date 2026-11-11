@@ -106,8 +106,9 @@ Singleton {
 	}
 	// udev only says something changed; a device brings several events (its
 	// interfaces), gathered for 0.7 s as Bloom does, then the list is read.
-	Process {
-		running: root.active
+	SupervisedProcess {
+		backend: "devices"
+		wanted: root.active
 		command: [Quickshell.env("BLOOM_UDEVADM") || "udevadm", "monitor", "--udev", "--subsystem-match=usb", "--subsystem-match=sound", "--subsystem-match=video4linux", "--subsystem-match=block"]
 		stdout: SplitParser { onRead: line => { if (/^UDEV /.test(line)) usbGather.restart(); } }
 	}
@@ -116,8 +117,9 @@ Singleton {
 	// ---- Headphone jack ----
 
 	function refreshJacks() { if (root.active && !jackQuery.running) jackQuery.running = true; }
-	Process {
-		running: root.active
+	SupervisedProcess {
+		backend: "audio-events"
+		wanted: root.active
 		command: [Quickshell.env("BLOOM_PACTL") || "pactl", "subscribe"]
 		stdout: SplitParser { onRead: line => { if (/on (sink|card) #/.test(line)) jackDebounce.restart(); } }
 	}

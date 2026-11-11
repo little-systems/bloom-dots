@@ -99,3 +99,15 @@ var ERROR_TEXT = {
 function errorText(code) {
 	return ERROR_TEXT[code] ?? String(code);
 }
+
+// Why a BlueZ query failed: the service is absent (bluetoothd stopped or not
+// installed, or no system bus) versus a transient failure. A missing adapter
+// is not a failure: the query succeeds with no Adapter1.
+function failure(code, stderr) {
+	const text = String(stderr || "");
+	if (code === 127 || /ServiceUnknown|was not provided by any|not activatable|Failed to connect to bus/i.test(text))
+		return { state: "missing", reason: "bluetoothd is not running", message: "Bluetooth service isn't running" };
+	if (code === 124)
+		return { state: "degraded", reason: "query timed out", message: "Bluetooth isn't responding" };
+	return { state: "degraded", reason: "query failed", message: "Bluetooth query failed" };
+}

@@ -17,6 +17,9 @@ cat > "$TEST_TMP/bin/nmcli" <<'FAKE_NMCLI'
 #!/bin/sh
 echo "$*" >> "$FAKE/nmcli.log"
 case "$*" in
+	*"general status"*) [ -e "$FAKE/nm-down" ] && { echo "Error: NetworkManager is not running." >&2; exit 8; } ;;
+esac
+case "$*" in
 	monitor) sleep 600 ;;
 	*"general status"*) echo "enabled:connected" ;;
 	*"connection show"*) cat "$FAKE/saved" ;;
@@ -29,6 +32,7 @@ FAKE_NMCLI
 cat > "$TEST_TMP/bin/busctl" <<'FAKE_BUSCTL'
 #!/bin/sh
 echo "$*" >> "$FAKE/busctl.log"
+[ -e "$FAKE/bluez-down" ] && { echo "Call failed: The name org.bluez was not provided by any .service files" >&2; exit 1; }
 case "$*" in
 	*GetManagedObjects*)
 		paired=false; [ -e "$FAKE/paired" ] && paired=true
@@ -111,3 +115,21 @@ wait_for "the lost session reported" session_lost
 pass "a session that dies is reported, not waited on for ever"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -v textinput; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"
+
+# A stopped NetworkManager or BlueZ is reported as a missing service, not as
+# "no Wi-Fi" or "no adapter". (After the log check: this logs on purpose.)
+touch "$FAKE/nm-down" "$FAKE/bluez-down"
+ipc wifi scan >/dev/null
+ipc bluetooth hold false >/dev/null; ipc bluetooth hold true >/dev/null
+services_missing() {
+	ipc capabilities snapshot | jq -e '.backends.networkmanager.state == "missing" and .backends.networkmanager.reason == "NetworkManager is not running"
+		and .backends.bluez.state == "missing" and .backends.bluez.reason == "bluetoothd is not running"' >/dev/null
+}
+wait_for "both services reported missing" services_missing
+rm "$FAKE/nm-down" "$FAKE/bluez-down"
+ipc wifi scan >/dev/null
+ipc bluetooth hold false >/dev/null; ipc bluetooth hold true >/dev/null
+services_back() { ipc capabilities snapshot | jq -e '.backends.networkmanager.state == "available" and .backends.bluez.state == "available"' >/dev/null; }
+wait_for "both services available again" services_back
+pass "stopped NetworkManager and BlueZ are reported as missing services and recover"
+
