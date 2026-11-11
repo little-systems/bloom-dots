@@ -12,9 +12,10 @@ var ACTIONS = [
 
 function command(id) {
 	return ({
-		// Ask the compositor to exit normally. Terminating the whole user
-		// also signals start-hyprland and can abort its watchdog during teardown.
-		logout: ["hyprctl", "dispatch", "hl.dsp.exit()"],
+		// Launch from Hyprland so stopping Bloom cannot kill the logout command.
+		// Stop the shell before disconnecting Wayland. Development sessions can
+		// still log out when the service is absent.
+		logout: ["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"systemctl --user stop bloom-shell.service; hyprctl dispatch 'hl.dsp.exit()'\")"],
 		suspend: ["systemctl", "suspend"],
 		hibernate: ["systemctl", "hibernate"],
 		reboot: ["systemctl", "reboot"],

@@ -30,10 +30,12 @@ if [[ -n "${BLOOM_SESSION_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_SESSION_SCREENSHOT"
 fi
 pass "opening checks what's running"
-for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:systemctl reboot --firmware-setup" "lock:loginctl lock-session" "logout:hyprctl dispatch hl.dsp.exit()"; do
+for pair in "suspend:systemctl suspend" "shutdown:systemctl poweroff" "firmware:systemctl reboot --firmware-setup" "lock:loginctl lock-session"; do
 	assert_eq "$(ipc session run "${pair%%:*}")" "ok" "run ${pair%%:*}"
-	wait_for "${pair#*:}" grep -qx "${pair#*:}" "$FAKE/calls"
+	wait_for "${pair#*:}" grep -Fxq "${pair#*:}" "$FAKE/calls"
 done
+assert_eq "$(ipc session run logout)" "ok" "run logout"
+wait_for "logout starts from Hyprland" grep -Fxq "hyprctl dispatch "'hl.dsp.exec_cmd("systemctl --user stop bloom-shell.service; hyprctl dispatch '"'"'hl.dsp.exit()'"'"'")' "$FAKE/calls"
 assert_eq "$(ipc session state | jq .opened)" "false" "acting closes the menu"
 pass "each action runs its command"
 # Only one polkit agent can register: asking for its state must not load one.

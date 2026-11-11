@@ -17,7 +17,7 @@ TestCase {
 		compare(Session.command("reboot"), ["systemctl", "reboot"]);
 		compare(Session.command("shutdown"), ["systemctl", "poweroff"]);
 		compare(Session.command("firmware"), ["systemctl", "reboot", "--firmware-setup"]);
-		compare(Session.command("logout"), ["hyprctl", "dispatch", "hl.dsp.exit()"]);
+		compare(Session.command("logout"), ["hyprctl", "dispatch", "hl.dsp.exec_cmd(\"systemctl --user stop bloom-shell.service; hyprctl dispatch 'hl.dsp.exit()'\")"]);
 		compare(Session.command("nonsense"), null);
 	}
 

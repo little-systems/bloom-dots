@@ -49,7 +49,7 @@ start_hyprland() {
 stop_hyprland() {
 	session_env
 	rm -f "$HOME/.start-hyprland"
-	hyprctl dispatch 'hl.dsp.exit()' >/dev/null 2>&1
+	"$BLOOM" ipc session run logout >/dev/null 2>&1 || return 1
 	for _ in $(seq 1 30); do hyprland_running || return 0; sleep 0.5; done
 	return 1
 }
@@ -111,14 +111,23 @@ stage_session() {
 	check "doctor runs inside the session" bash -c "'$BLOOM' doctor --json > '$HOME/doctor.json'; [ \$? -le 1 ]"
 	stop_hyprland
 	check "logout ends Hyprland" bash -c "! pgrep -x Hyprland"
-	check "service did not fail at logout" bash -c "! systemctl --user is-failed --quiet bloom-shell"
+	check "service stopped cleanly at logout" bash -c '[[ "$(systemctl --user show bloom-shell -p ActiveState --value)" == inactive && "$(systemctl --user show bloom-shell -p Result --value)" == success ]]'
 	check "second login starts Bloom again" start_hyprland
 	check "Bloom answers after relogin" shell_answers
-	# Crash the shell each time it comes back until systemd gives up.
-	for _ in $(seq 1 10); do
-		[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && break
-		for _ in $(seq 1 20); do pgrep -x qs >/dev/null && break; sleep 0.25; done
-		pkill -SEGV -x qs; sleep 0.5
+	# Count only confirmed process replacements, within the unit's start window.
+	systemctl --user reset-failed bloom-shell
+	local previous next deadline=$((SECONDS + 40))
+	for _ in $(seq 1 6); do
+		previous="$(systemctl --user show bloom-shell -p MainPID --value)"
+		[[ "$previous" =~ ^[1-9][0-9]*$ ]] || break
+		systemctl --user kill --kill-whom=main --signal=KILL bloom-shell || break
+		while ((SECONDS < deadline)); do
+			[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && break 2
+			next="$(systemctl --user show bloom-shell -p MainPID --value)"
+			[[ "$next" =~ ^[1-9][0-9]*$ && "$next" != "$previous" ]] && break
+			sleep 0.2
+		done
+		((SECONDS < deadline)) || break
 	done
 	[[ "$(systemctl --user show bloom-shell -p Result --value)" == start-limit-hit ]] && ok "crash loop hits the restart limit" || bad "crash loop limit"
 	"$BLOOM" doctor --json > "$HOME/doctor-limited.json" 2>>"$LOG"
