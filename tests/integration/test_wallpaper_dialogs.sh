@@ -50,4 +50,4 @@ touch "$TEST_TMP/unavailable"
 call pickFile >/dev/null
 wait_for 'missing dialog reports recoverable error' matches '(.dialog | not) and .visible and (.error | contains("unavailable"))'
 pass 'cancellation and missing dialog preserve wallpaper and restore the picker'
-if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE 'textinput|pipewire|wl_keyboard.leave'; then fail 'picker logged unexpected warnings'; fi
+if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS"; then fail 'picker logged unexpected warnings'; fi

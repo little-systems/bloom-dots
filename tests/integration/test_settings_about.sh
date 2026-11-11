@@ -53,4 +53,4 @@ wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return
 wait_for 'import completes' matches '.importStatus == "Settings Imported"'
 jq -e '."bloom-theme-mode" == "dark"' "$XDG_CONFIG_HOME/bloom/settings.json" >/dev/null || fail 'import did not restore the exported value'
 pass 'Import Settings opens a real dialog and commits the selected data'
-if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE 'textinput|pipewire|wl_keyboard.leave'; then fail 'About logged unexpected warnings'; fi
+if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS"; then fail 'About logged unexpected warnings'; fi

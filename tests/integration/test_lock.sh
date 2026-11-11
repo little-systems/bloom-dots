@@ -154,5 +154,5 @@ pass "a missing wallpaper still covers the screen"
 
 if grep -F "letmein" "$TEST_TMP/shell.log"; then fail "the password reached the log"; fi
 pass "the password never reaches the log"
-if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|wl_keyboard.leave|missing.png"; then fail "shell log has warnings"; fi
+if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS|missing.png"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

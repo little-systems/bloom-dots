@@ -125,5 +125,5 @@ wait_for "the dock to restore after unlock" dock_restored
 wait_for "fixed panels to reserve app space after unlock" workarea_is "52,955"
 pass "unlock restores both panels and their fixed work area"
 
-problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" | grep -vE 'textinput|pipewire|wl_keyboard.leave' || true)"
+problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS" || true)"
 [[ -z "$problems" ]] || fail "shell logged warnings or errors: $problems"

@@ -50,4 +50,4 @@ call control seek 120000 >/dev/null
 call control volume 0.1 >/dev/null
 wait_for 'disabled seek and volume refused' matches '.position == 90000 and .volume == 0.4'
 pass 'privacy switch removes media and blocks transport, seeking and volume'
-if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE 'textinput|pipewire|wl_keyboard.leave'; then fail 'lock media logged an unexpected warning'; fi
+if grep -E 'WARN|ERROR' "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS"; then fail 'lock media logged an unexpected warning'; fi

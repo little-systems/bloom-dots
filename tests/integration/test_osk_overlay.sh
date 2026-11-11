@@ -22,5 +22,5 @@ assert_eq "$(ipc overlay state | jq .opened)" "true" "overlay opened"
 assert_eq "$(ipc overlay toggle)" "ok" "close the overlay"
 pass "the overlay opens and closes"
 sleep 0.5
-if grep -E "WARN|ERROR|caused by" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire|wl_keyboard.leave"; then fail "shell log has warnings"; fi
+if grep -E "WARN|ERROR|caused by" "$TEST_TMP/shell.log" | grep -vE "$ENV_ONLY_WARNINGS"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

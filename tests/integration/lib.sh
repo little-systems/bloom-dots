@@ -5,6 +5,12 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SHELL_PID=""
 
+# Log lines caused by the test machine, not by Bloom: no text-input protocol or
+# PipeWire in headless sessions, sway's focus quirk, no session D-Bus for MPRIS
+# (CI containers), and capability reports about absent system services.
+# shellcheck disable=SC2034  # used by the tests that source this file
+ENV_ONLY_WARNINGS='textinput|pipewire|wl_keyboard.leave|mpris.watcher: Could not connect to DBus|bloom capability: [a-z-]+ (missing|degraded)'
+
 bloom_env() {
 	# systemd --user is reached through the session's own runtime dir.
 	HOST_RUNTIME_DIR="${XDG_RUNTIME_DIR:-}"
