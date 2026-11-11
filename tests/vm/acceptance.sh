@@ -204,7 +204,7 @@ stage_uninstall() {
 	pgrep -x qs >/dev/null && bad "orphan shell process after uninstall" || ok "no orphan shell process"
 	[[ ! -e "$STATE/install-manifest.json" ]] || grep -q '"uninstalled"' "$STATE/install-manifest.json" && ok "manifest retired" || bad "manifest still active"
 	check "reinstall after uninstall" "$BLOOM" install --no-deps
-	local fixture pid killed
+	local fixture pid killed real_systemctl
 	fixture="$(mktemp -d)" || { bad "allocate uninstall fixture"; return; }
 	cat > "$fixture/systemctl" <<'SH'
 #!/usr/bin/env bash
@@ -218,7 +218,8 @@ if [[ "$*" == "--user disable --now bloom-shell.service" ]]; then
 fi
 SH
 	chmod +x "$fixture/systemctl"
-	PATH="$fixture:$PATH" BLOOM_VM_REAL_SYSTEMCTL="$(command -v systemctl)" BLOOM_VM_UNINSTALL_FIXTURE="$fixture" \
+	real_systemctl="$(command -v systemctl)" || { bad "locate systemctl"; return; }
+	PATH="$fixture:$PATH" BLOOM_VM_REAL_SYSTEMCTL="$real_systemctl" BLOOM_VM_UNINSTALL_FIXTURE="$fixture" \
 		"$BLOOM" uninstall >>"$LOG" 2>&1 &
 	pid=$!
 	for _ in $(seq 1 50); do
