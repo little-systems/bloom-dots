@@ -670,6 +670,12 @@ raise SystemExit(status)
         self.assertFalse([c for c in self.calls() if c[:2] == ["systemctl", "--user"] and c[2] in ("enable", "start", "restart")])
         self.assertIn("first login", result.stdout)
 
+    def test_chroot_counts_as_offline_even_when_systemctl_answers(self):
+        # Inside arch-chroot systemctl says "Running in chroot, ignoring" and exits 0.
+        result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1")
+        self.assertTrue((self.state / "first-login-pending").exists())
+        self.assertIn("first login", result.stdout)
+
     def test_first_login_enables_and_clears_the_marker(self):
         self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
         self.bloom("first-login", "--start")

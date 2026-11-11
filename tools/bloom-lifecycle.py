@@ -375,7 +375,8 @@ class Context:
                           "start Hyprland once (it writes its default) or create that file, then install again")
         # Inside arch-chroot (or before any login) there is no user manager:
         # files are placed now and the rest finishes at the first login.
-        self.offline = run("systemctl", "--user", "show-environment", check=False).returncode != 0
+        # A chroot's systemctl "ignores" commands and still exits 0.
+        self.offline = bsys.in_chroot() or run("systemctl", "--user", "show-environment", check=False).returncode != 0
 
     def hyprland_config(self):
         """The user's Hyprland config, or Hyprland's own default for a fresh install."""
@@ -487,7 +488,7 @@ class Transaction:
         place(path, kind, payload)
         existing["installed"] = signature(path)
         existing.pop("pending", None)
-        print(f"installed {path}")
+        print(f"      {path}")
 
     def save(self):
         self.doc["entries"] = list(self.entries.values())

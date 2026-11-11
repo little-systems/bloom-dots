@@ -32,5 +32,8 @@ git clone -q /root/bloom-dots.bundle /home/bloom/.local/share/bloom
 git -C /home/bloom/.local/share/bloom checkout -q -B main
 /home/bloom/.local/share/bloom/bin/bloom install --yes
 INSTALL
-sudo umount /mnt
+# pacman's keyring agent outlives the chroot; stop it so the disk unmounts cleanly.
+sudo arch-chroot /mnt gpgconf --homedir /etc/pacman.d/gnupg --kill gpg-agent 2>/dev/null || true
+sync
+sudo umount -R /mnt
 echo "CHROOT_INSTALL=ok"
