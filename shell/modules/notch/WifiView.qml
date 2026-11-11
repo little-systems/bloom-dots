@@ -13,6 +13,8 @@ Item {
 	property QtObject theme: QpTheme {}
 	property bool enabled: false
 	property bool available: true
+	// Why Wi-Fi can't be controlled here (another service runs the network).
+	property string unavailableText: ""
 	// network.js wifiList entries: { ssid, signal, security, connected, saved }.
 	property var networks: []
 	property bool scanning: false
@@ -149,7 +151,8 @@ Item {
 				anchors.fill: parent
 				visible: !root.enabled || root.networks.length === 0
 				theme: root.theme
-				text: !root.enabled ? "Wi-Fi is off" : root.scanning ? "Looking for networks…" : "No networks found"
+				text: !root.available && root.unavailableText !== "" ? root.unavailableText
+					: !root.enabled ? "Wi-Fi is off" : root.scanning ? "Looking for networks…" : "No networks found"
 			}
 
 			QpList {

@@ -23,6 +23,8 @@ Singleton {
 	readonly property bool scanning: listQuery.running && listQuery.rescan
 	property string busy: ""
 	property var lastError: null
+	// Set when NetworkManager is unavailable because another service runs the network.
+	property string unavailableText: ""
 	property var _saved: []
 	property string _listText: ""
 
@@ -112,7 +114,22 @@ Singleton {
 				root.wifiEnabled = s.wifiEnabled;
 				root.connected = s.connected;
 				root.error = "";
-			} else root.error = failed.message;
+				root.unavailableText = "";
+			} else {
+				root.error = failed.message;
+				if (!managers.running) managers.running = true;
+			}
+		}
+	}
+	Process {
+		id: managers
+		readonly property var units: ["NetworkManager", "systemd-networkd", "iwd", "connman"]
+		command: ["systemctl", "list-unit-files", "--state=enabled", "--no-legend", ...managers.units.map(name => name + ".service")]
+		stdout: StdioCollector {
+			onStreamFinished: {
+				const enabled = text.split("\n").map(line => line.split(/\s+/)[0].replace(/\.service$/, ""));
+				root.unavailableText = Logic.unmanaged(managers.units.filter(name => enabled.indexOf(name) >= 0));
+			}
 		}
 	}
 	Process {

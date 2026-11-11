@@ -29,6 +29,9 @@ def _load(name, file):
 
 
 events = _load("bloom_events", "bloom_events.py")
+_system_spec = importlib.util.spec_from_file_location("bloom_system", ROOT / "tools/bloom_system.py")
+bsys = importlib.util.module_from_spec(_system_spec)
+_system_spec.loader.exec_module(bsys)
 operations = _load("bloom_operations", "bloom_operations.py")
 
 VERSION = 1
@@ -280,7 +283,48 @@ def capabilities():
     return check("capabilities", "ok", f"{count(len(backends), 'backend')} reporting, none degraded")
 
 
-CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, themes, dependencies, bus, display)
+def _managed(root):
+    doc = bsys.read_manifest(root)
+    return bool(doc) and doc.get("status") == "complete"
+
+
+def login():
+    root = bsys.system_root()
+    manager = bsys.display_manager(root)
+    themed = (root / bsys.DROPIN).is_file()
+    if manager == "sddm" and themed:
+        return check("login", "ok", "the Bloom login screen (SDDM) is active")
+    if manager not in (None, "sddm"):
+        return check("login", "ok", f"login screen: {manager} (the Bloom login screen needs SDDM)")
+    if not _managed(root):
+        return check("login", "ok", "the login screen is not managed by Bloom")
+    if manager == "sddm":
+        return check("login", "degraded", "SDDM is not using the Bloom theme", "Run: bloom install")
+    return check("login", "degraded", "no login screen is enabled; you log in at a text console", "Run: bloom install")
+
+
+def first_login():
+    if (state_dir() / "first-login-pending").exists():
+        return check("first-login", "degraded", "Bloom hasn't finished its first-login setup",
+                     "Log out and back in, or run: bloom first-login --start")
+    return check("first-login", "ok", "no setup waiting for a login")
+
+
+def network():
+    root = bsys.system_root()
+    enabled = bsys.enabled_network(root)
+    if "NetworkManager" in enabled:
+        return check("network", "ok", "NetworkManager manages the network")
+    if enabled:
+        return check("network", "ok", f"{', '.join(enabled)} manages the network; "
+                     "Bloom's Wi-Fi controls need NetworkManager")
+    if not _managed(root):
+        return check("network", "ok", "no network service is enabled at boot")
+    return check("network", "degraded", "no network service is enabled", "Run: bloom install")
+
+
+CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, first_login, login, network, themes,
+          dependencies, bus, display)
 
 
 def report():

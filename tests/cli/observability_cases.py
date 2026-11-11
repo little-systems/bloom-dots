@@ -208,6 +208,62 @@ class DoctorCases(Home):
         check = next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "lifecycle")
         self.assertEqual(check["status"], "ok")
 
+    def system(self, manager=None, managed=True, network=("NetworkManager",)):
+        root = self.home.parent / "sysroot"
+        units = root / "etc/systemd/system"
+        (units / "multi-user.target.wants").mkdir(parents=True, exist_ok=True)
+        if manager:
+            (units / "display-manager.service").symlink_to(f"/usr/lib/systemd/system/{manager}.service")
+        for name in network:
+            (units / "multi-user.target.wants" / f"{name}.service").symlink_to(f"/usr/lib/systemd/system/{name}.service")
+        if managed:
+            (root / "var/lib/bloom").mkdir(parents=True)
+            (root / "var/lib/bloom/system-manifest.json").write_text(json.dumps({"status": "complete"}))
+        self.env["BLOOM_SYSTEM_ROOT"] = str(root)
+        return root
+
+    def check(self, name):
+        return next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == name)
+
+    def test_login_screen_with_the_bloom_theme_is_ok(self):
+        root = self.system("sddm")
+        (root / "etc/sddm.conf.d").mkdir(parents=True)
+        (root / "etc/sddm.conf.d/10-bloom.conf").write_text("[Theme]\nCurrent=bloom\n")
+        check = self.check("login")
+        self.assertEqual(check["status"], "ok")
+        self.assertIn("Bloom", check["summary"])
+
+    def test_sddm_without_the_bloom_theme_points_to_install(self):
+        self.system("sddm")
+        check = self.check("login")
+        self.assertEqual(check["status"], "degraded")
+        self.assertIn("bloom install", check["recovery"])
+
+    def test_another_display_manager_is_named_not_blamed(self):
+        self.system("gdm")
+        check = self.check("login")
+        self.assertEqual(check["status"], "ok")
+        self.assertIn("gdm", check["summary"])
+
+    def test_unmanaged_machine_only_informs(self):
+        self.system(None, managed=False, network=())
+        self.assertEqual(self.check("login")["status"], "ok")
+        self.assertEqual(self.check("network")["status"], "ok")
+
+    def test_pending_first_login_is_degraded_with_next_step(self):
+        self.system("sddm")
+        (self.home / ".local/state/bloom/first-login-pending").write_text("pending\n")
+        check = self.check("first-login")
+        self.assertEqual(check["status"], "degraded")
+        self.assertIn("bloom first-login", check["recovery"])
+
+    def test_other_network_service_is_explained(self):
+        self.system("sddm", network=("systemd-networkd", "iwd"))
+        check = self.check("network")
+        self.assertEqual(check["status"], "ok")
+        self.assertIn("systemd-networkd", check["summary"])
+        self.assertIn("NetworkManager", check["summary"])
+
     def test_counts_read_naturally(self):
         (self.home / ".config/bloom/settings.json").write_text('{"bloom-theme-mode": "dark"}')
         check = next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "settings")

@@ -82,6 +82,16 @@ function connectCommand(ssid, password) {
 
 // Why an nmcli query failed: NetworkManager stopped or nmcli absent, versus a
 // transient failure. "No Wi-Fi device" is not a failure.
+// Another service runs the network (archinstall can choose systemd-networkd
+// and iwd): say so instead of reporting NetworkManager as broken.
+function unmanaged(enabled) {
+	const others = (enabled || []).filter(name => name !== "NetworkManager");
+	if (others.length === 0 || (enabled || []).indexOf("NetworkManager") >= 0)
+		return "";
+	const names = others.length === 1 ? others[0] : others.slice(0, -1).join(", ") + " and " + others[others.length - 1];
+	return `${names} manage${others.length === 1 ? "s" : ""} the network. Bloom's Wi-Fi controls need NetworkManager.`;
+}
+
 function failure(code, stderr) {
 	const text = String(stderr || "");
 	if (code === 127)

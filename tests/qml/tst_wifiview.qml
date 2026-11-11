@@ -79,6 +79,11 @@ Item {
 			compare(findChild(part(make({ networks: [], scanning: false }), "empty"), "label").text, "No networks found");
 		}
 
+		function test_unavailableExplainsWhoManagesTheNetwork() {
+			const v = make({ available: false, enabled: false,
+				unavailableText: "systemd-networkd manages the network. Bloom's Wi-Fi controls need NetworkManager." });
+			compare(findChild(part(v, "empty"), "label").text, "systemd-networkd manages the network. Bloom's Wi-Fi controls need NetworkManager.");
+		}
 		function test_rowsAndBadges() {
 			const v = make({ busy: "Home" });
 			const sub = ssid => findChild(part(v, "row:" + ssid), "sub").text;

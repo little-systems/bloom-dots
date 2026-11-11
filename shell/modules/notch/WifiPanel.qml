@@ -15,6 +15,7 @@ WifiView {
 	theme: Theme
 	enabled: Network.wifiEnabled
 	available: Network.available
+	unavailableText: Network.unavailableText
 	networks: Network.networks
 	scanning: Network.scanning
 	busy: Network.busy

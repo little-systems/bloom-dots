@@ -15,6 +15,13 @@ TestCase {
 	}
 
 	// Bloom's labels (wifi.rs security_label) from nmcli's SECURITY field.
+	function test_otherNetworkServiceIsNamed() {
+		compare(Network.unmanaged([]), "");
+		compare(Network.unmanaged(["NetworkManager"]), "");
+		compare(Network.unmanaged(["systemd-networkd", "iwd"]),
+			"systemd-networkd and iwd manage the network. Bloom's Wi-Fi controls need NetworkManager.");
+		compare(Network.unmanaged(["iwd"]), "iwd manages the network. Bloom's Wi-Fi controls need NetworkManager.");
+	}
 	function test_securityLabels() {
 		compare(Network.security(""), "open");
 		compare(Network.security("--"), "open");
