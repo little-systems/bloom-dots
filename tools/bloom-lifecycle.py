@@ -81,6 +81,11 @@ def live_session():
         return False
 
 
+def hyprland_default():
+    # Hyprland writes this to ~/.config/hypr/hyprland.lua on its first start.
+    return Path(os.environ.get("BLOOM_HYPR_DEFAULT_CONFIG", "/usr/share/hypr/hyprland.lua"))
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -332,14 +337,21 @@ class Context:
         match = re.search(r"\b(?:v)?(\d+)\.(\d+)", text)
         if not match or tuple(map(int, match.groups())) < (0, 56):
             raise Failure("Hyprland 0.56 or newer with Lua configuration is required")
-        if not (self.config / "hypr/hyprland.lua").is_file():
-            raise Failure("create ~/.config/hypr/hyprland.lua before installation")
+        config = self.config / "hypr/hyprland.lua"
+        if not config.is_file() and not hyprland_default().is_file():
+            raise Failure(f"{config} does not exist and Hyprland's default configuration was not found; "
+                          "start Hyprland once (it writes its default) or create that file, then install again")
         run("systemctl", "--user", "show-environment")
 
     def dependencies(self):
         with tempfile.TemporaryDirectory(prefix="bloom-deps-") as temporary:
             shutil.copy2(ROOT / "packaging/bloom-shell-deps/PKGBUILD", temporary)
             run("makepkg", "-si", cwd=temporary, capture=False)
+
+    def hyprland_config(self):
+        """The user's Hyprland config, or Hyprland's own default for a fresh install."""
+        config = self.config / "hypr/hyprland.lua"
+        return (config.read_text(), False) if config.is_file() else (hyprland_default().read_text(), True)
 
     def loader(self):
         return f"dofile({json.dumps(str(ROOT / 'hypr/bloom.lua'), ensure_ascii=False)}) {MARKER}"
@@ -357,7 +369,7 @@ class Context:
         for source in sorted((ROOT / "hypr/custom").glob("*.lua")):
             operations.append((self.config / "hypr/custom" / source.name, "template", source))
         config = self.config / "hypr/hyprland.lua"
-        original = config.read_text()
+        original, self.created_hyprland_config = self.hyprland_config()
         lines = [line for line in original.splitlines() if not line.endswith(MARKER)]
         operations.append((config, "loader", "\n".join(lines) + "\n" + self.loader() + "\n"))
         if not (self.config / "bloom/settings.json").exists():
@@ -487,6 +499,9 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
         if path.is_dir() and not path.is_symlink():
             raise Failure(f"refusing to replace directory {path}; move it aside first")
         print(f"{'would install' if dry_run else 'plan'} {kind}: {path}")
+    if getattr(ctx, "created_hyprland_config", False):
+        print(f"{'would create' if dry_run else 'creating'} {ctx.config / 'hypr/hyprland.lua'} from "
+              "Hyprland's default configuration (removed again by uninstall unless you edit it)")
     if dry_run:
         if not no_deps:
             print("would build bloom-shell-deps")

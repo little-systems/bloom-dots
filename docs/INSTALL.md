@@ -2,6 +2,11 @@
 
 Bloom targets Arch Linux and Hyprland 0.56 or newer with a Lua configuration.
 Quickshell 0.3 or newer, Python, Git and `base-devel` must be installed first.
+On a fresh install where Hyprland has never been started, there is no
+`~/.config/hypr/hyprland.lua` yet. The installer then starts from Hyprland's own
+default (`/usr/share/hypr/hyprland.lua`, which Hyprland writes on its first
+start). Uninstall removes that file again unless you have edited it; if you
+have, it keeps it and removes only Bloom's loader line.
 Run the commands as your desktop user. Package tools prompt normally when
 privileges are needed; Bloom does not handle or save your password.
 

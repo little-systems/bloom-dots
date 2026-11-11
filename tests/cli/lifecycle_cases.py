@@ -153,6 +153,49 @@ elif name == 'systemctl':
         manifest = json.loads((self.state / "install-manifest.json").read_text())
         self.assertEqual(manifest["status"], "complete")
 
+    def fresh_hyprland(self, default="-- Hyprland default config\nhl.config({})\n"):
+        # A fresh Arch: Hyprland installed but never started, so no user config.
+        (self.config / "hypr/hyprland.lua").unlink()
+        shipped = self.base / "hyprland-default.lua"
+        if default is not None:
+            shipped.write_text(default)
+        return {"BLOOM_HYPR_DEFAULT_CONFIG": str(shipped)}
+
+    def test_missing_hyprland_config_starts_from_hyprlands_default(self):
+        env = self.fresh_hyprland()
+        config = self.config / "hypr/hyprland.lua"
+        dry = self.bloom("install", "--dry-run", **env)
+        self.assertIn("Hyprland's default configuration", dry.stdout)
+        self.assertFalse(config.exists(), "a dry run creates nothing")
+        self.bloom("install", **env)
+        text = config.read_text()
+        self.assertTrue(text.startswith("-- Hyprland default config\nhl.config({})\n"))
+        self.assertEqual(sum(line.endswith("-- bloom managed loader") for line in text.splitlines()), 1)
+
+    def test_uninstall_removes_an_unedited_created_hyprland_config(self):
+        env = self.fresh_hyprland()
+        self.bloom("install", **env)
+        self.bloom("uninstall", **env)
+        self.assertFalse((self.config / "hypr/hyprland.lua").exists())
+
+    def test_uninstall_keeps_a_created_hyprland_config_the_owner_edited(self):
+        env = self.fresh_hyprland()
+        self.bloom("install", **env)
+        config = self.config / "hypr/hyprland.lua"
+        with config.open("a") as stream:
+            stream.write("-- my own bind\n")
+        self.bloom("uninstall", **env)
+        text = config.read_text()
+        self.assertIn("-- my own bind", text)
+        self.assertNotIn("bloom managed loader", text)
+
+    def test_missing_config_without_hyprlands_default_is_refused_with_instructions(self):
+        env = self.fresh_hyprland(default=None)
+        result = self.bloom("install", success=False, **env)
+        self.assertIn("/hypr/hyprland.lua", result.stderr)
+        self.assertIn("start Hyprland once", result.stderr)
+        self.assertFalse((self.state / "install-manifest.json").exists())
+
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()
         self.bloom("install", "--dry-run")
