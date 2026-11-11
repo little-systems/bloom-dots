@@ -192,6 +192,7 @@ surprising than leaving it on.
   - The right island keeps battery and the three power buttons. Battery shows
     when the greeter can read it, otherwise that part of the island is hidden.
   - The media card never shows (there's no session to play anything yet).
+  - The clock's "Locked" tag names the machine instead (builder's call).
 - **Wallpaper:**
   - Bloom ships a default login wallpaper: original artwork with the Bloom
     logo on Bloom's dark backdrop. A fresh machine looks right on its first
@@ -201,8 +202,12 @@ surprising than leaving it on.
   - When the person changes their wallpaper, Bloom copies the current image,
     plus the accent colour and theme mode the lock screen would use, into that
     folder. Video wallpapers contribute a still frame. Group membership only
-    applies from the next login, so the install itself makes the first copy
-    as root.
+    applies from the next login, so on a desktop install the login screen
+    shows the shipped wallpaper until the first wallpaper or theme change
+    after logging in again (builder's call: the root phase never reads a
+    home). The state is a generated `State.qml` (validated colours and
+    numbers only) that the greeter loads with a Loader, because the greeter
+    can't read JSON files without special permissions.
   - With several users, the most recent change wins.
   - The greeter falls back to the shipped default if the folder is empty or
     unreadable.
