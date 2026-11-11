@@ -19,8 +19,23 @@ local function uwsm()
     file:close()
     return text:find("wayland%-wm@", 1) ~= nil
 end
+-- After an install from arch-chroot or a console, the first session finishes
+-- what needed a running user manager (see bloom first-login).
+local checkout = debug.getinfo(1, "S").source:match("^@(.*)/hypr/[^/]*$") or "."
+local function first_login(extra)
+    local state = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
+    local marker = io.open(state .. "/bloom/first-login-pending", "r")
+    if not marker then return "" end
+    marker:close()
+    return "'" .. (checkout .. "/bin/bloom"):gsub("'", "'\\''") .. "' first-login" .. extra
+end
 hl.on("hyprland.start", function()
-    if uwsm() then return end
+    if uwsm() then
+        local finish = first_login(" --start")
+        if finish ~= "" then hl.exec_cmd(finish) end
+        return
+    end
+    local finish = first_login("")
     local present = {}
     for _, name in ipairs({"WAYLAND_DISPLAY", "DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE",
         "XDG_CURRENT_DESKTOP", "XDG_SESSION_TYPE", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
@@ -31,7 +46,7 @@ hl.on("hyprland.start", function()
     -- A plain Hyprland logout can leave the user manager alive. Import this
     -- session first, clear its predecessor's crash limit, then replace any
     -- surviving process so it cannot retain the old display environment.
-    hl.exec_cmd("systemctl --user import-environment " .. table.concat(present, " ")
+    hl.exec_cmd((finish ~= "" and finish .. "; " or "") .. "systemctl --user import-environment " .. table.concat(present, " ")
         .. " && systemctl --user reset-failed bloom-shell.service"
         .. " && systemctl --user restart bloom-shell.service")
 end)

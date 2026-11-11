@@ -104,5 +104,48 @@ dofile(arg[1])
             self.assertFalse(calls.exists(), "UWSM imports the environment and starts graphical-session.target itself")
 
 
+    def first_login_run(self, uwsm, pending):
+        """The hook from a copied checkout whose bin/bloom only records its arguments."""
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            checkout = base / "check out"
+            (checkout / "hypr").mkdir(parents=True)
+            (checkout / "bin").mkdir()
+            shutil.copy2(ROOT / "hypr/bloom.lua", checkout / "hypr/bloom.lua")
+            calls = base / "calls"
+            for name in ("bin/bloom", "systemctl"):
+                stub = (checkout / name) if name.startswith("bin") else base / name
+                stub.write_text(f"#!/bin/sh\necho \"$(basename \"$0\") $*\" >> '{calls}'\n")
+                stub.chmod(0o755)
+            state = base / "state"
+            if pending:
+                (state / "bloom").mkdir(parents=True)
+                (state / "bloom/first-login-pending").write_text("pending\n")
+            cgroup = base / "cgroup"
+            cgroup.write_text("0::/user.slice/wayland-wm@hyprland.desktop.service\n" if uwsm else "0::/user.slice\n")
+            env = dict(os.environ, PATH=str(base) + ":" + os.environ["PATH"], XDG_CONFIG_HOME=str(base),
+                       XDG_STATE_HOME=str(state), BLOOM_CGROUP_FILE=str(cgroup), WAYLAND_DISPLAY="wayland-new")
+            harness = """hl = {
+ on = function(event, callback) callback() end,
+ exec_cmd = function(command) os.execute(command) end
+}
+dofile(arg[1])
+"""
+            subprocess.run(["lua", "-", str(checkout / "hypr/bloom.lua")], input=harness, text=True, env=env, check=True)
+            return calls.read_text().splitlines() if calls.exists() else []
+
+    @unittest.skipUnless(shutil.which("lua"), "Lua is required to execute the start hook")
+    def test_native_login_runs_first_login_when_pending(self):
+        calls = self.first_login_run(uwsm=False, pending=True)
+        self.assertEqual(calls[0], "bloom first-login")
+        self.assertIn("systemctl --user restart bloom-shell.service", calls)
+        self.assertNotIn("bloom first-login", self.first_login_run(uwsm=False, pending=False))
+
+    @unittest.skipUnless(shutil.which("lua"), "Lua is required to execute the start hook")
+    def test_uwsm_login_starts_bloom_when_pending(self):
+        self.assertEqual(self.first_login_run(uwsm=True, pending=True), ["bloom first-login --start"])
+        self.assertEqual(self.first_login_run(uwsm=True, pending=False), [])
+
+
 if __name__ == '__main__':
     unittest.main()
