@@ -51,7 +51,8 @@ def redact(text, limit=TEXT_LIMIT):
         text = text.replace(home.rstrip("/"), "~")
     user = os.environ.get("USER") or os.environ.get("LOGNAME")
     if user and len(user) > 2:
-        text = re.sub(rf"\b{re.escape(user)}\b", "<user>", text)
+        # Its own word only: not inside names like bloom-shell or bloom_events.
+        text = re.sub(rf"(?<![\w-]){re.escape(user)}(?![\w-])", "<user>", text)
     for pattern in _SECRETS:
         text = pattern.sub(lambda m: (m.group(1) + "=<redacted>") if m.re is _SECRETS[0] else "<redacted>", text)
     return text[:limit]

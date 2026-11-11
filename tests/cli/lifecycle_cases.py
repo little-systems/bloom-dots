@@ -196,6 +196,12 @@ elif name == 'systemctl':
         self.assertIn("start Hyprland once", result.stderr)
         self.assertFalse((self.state / "install-manifest.json").exists())
 
+    def test_a_clean_install_logs_no_problems(self):
+        self.bloom("install")
+        log = self.state / "log/events.jsonl"
+        problems = [r for r in map(json.loads, log.read_text().splitlines()) if r["level"] in ("warning", "error")]
+        self.assertEqual(problems, [], "expected probe results must not read as problems")
+
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()
         self.bloom("install", "--dry-run")

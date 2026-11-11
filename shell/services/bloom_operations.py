@@ -9,7 +9,9 @@ one terminal result:
     stdout, stderr, truncated
 
 errorCode: None | start-failed | timeout | exit | signal | output-limit |
-verify-failed | cancelled. `cancel` (a threading.Event) ends an owned
+verify-failed | cancelled. `expected_failure` marks a probe whose non-zero
+exit is a normal answer (for example "not enabled"): its outcome is still
+recorded, at info level, so it doesn't read as a problem. `cancel` (a threading.Event) ends an owned
 operation early; its whole process group is killed. `retry` is the caller's statement that repeating the request is
 safe (a desired-state setter); toggles and destructive actions pass False and
 must not be replayed after an uncertain result. `verify` is a readback that
@@ -34,7 +36,7 @@ def _kill_group(process):
 
 
 def run_operation(component, action, argv, timeout=20.0, output_limit=OUTPUT_LIMIT, events=None, verify=None,
-                  retry=False, input=None, cwd=None, env=None, cancel=None):
+                  retry=False, input=None, cwd=None, env=None, cancel=None, expected_failure=False):
     op = uuid.uuid4().hex[:12]
     started = time.monotonic()
     result = {"id": op, "component": component, "action": action, "state": "failure", "errorCode": None,
@@ -48,7 +50,7 @@ def run_operation(component, action, argv, timeout=20.0, output_limit=OUTPUT_LIM
                                    start_new_session=True)
     except OSError:
         result["errorCode"] = "start-failed"
-        return _finish(result, started, events)
+        return _finish(result, started, events, expected_failure)
     if input is not None:
         try:
             process.stdin.write(input.encode() if isinstance(input, str) else input)
@@ -117,13 +119,14 @@ def run_operation(component, action, argv, timeout=20.0, output_limit=OUTPUT_LIM
         result["state"] = "success"
     elif result["errorCode"] == "cancelled":
         result["state"] = "cancelled"
-    return _finish(result, started, events)
+    return _finish(result, started, events, expected_failure)
 
 
-def _finish(result, started, events):
+def _finish(result, started, events, expected_failure=False):
     result["durationMs"] = round((time.monotonic() - started) * 1000)
     if events is not None:
-        events.emit("operation.finished", level="info" if result["state"] == "success" else "warning",
+        quiet = result["state"] == "success" or expected_failure
+        events.emit("operation.finished", level="info" if quiet else "warning",
                     op=result["id"], stage=result["action"], outcome=result["state"], error=result["errorCode"],
                     action=result["action"], exitCode=result["exitCode"], signal=result["signal"],
                     durationMs=result["durationMs"], verified=result["verified"], truncated=result["truncated"])

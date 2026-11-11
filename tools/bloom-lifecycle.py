@@ -52,11 +52,13 @@ def run(*args, check=True, capture=True, cwd=None):
         except OSError as exc:
             EVENTS.emit("operation.finished", level="warning", stage=action, outcome="failure", error="start-failed", action=action)
             raise Failure(f"{args[0]}: {exc}") from exc
-        EVENTS.emit("operation.finished", level="info" if result.returncode == 0 else "warning", stage=action,
+        EVENTS.emit("operation.finished", level="info" if result.returncode == 0 or not check else "warning", stage=action,
                     outcome="success" if result.returncode == 0 else "failure", action=action,
                     exitCode=result.returncode, durationMs=round((time.monotonic() - started) * 1000))
     else:
-        outcome = operations.run_operation("lifecycle", action, [str(a) for a in args], timeout=20, cwd=cwd, events=EVENTS)
+        # check=False means a non-zero exit is an answer the caller handles.
+        outcome = operations.run_operation("lifecycle", action, [str(a) for a in args], timeout=20, cwd=cwd,
+                                           events=EVENTS, expected_failure=not check)
         if outcome["errorCode"] in ("start-failed", "timeout"):
             raise Failure(f"{args[0]}: {outcome['errorCode'].replace('-', ' ')}")
         result = subprocess.CompletedProcess(args, outcome["exitCode"] if outcome["exitCode"] is not None else -(outcome["signal"] or 1),

@@ -51,6 +51,10 @@ LIFECYCLE_OK = {"complete", "uninstalled"}
 LIFECYCLE_INTERRUPTED = {"installing", "uninstalling", "updating"}
 
 
+def count(n, word, plural=None):
+    return f"{n} {word if n == 1 else plural or word + 's'}"
+
+
 def home():
     return Path(os.environ.get("HOME") or Path.home())
 
@@ -150,8 +154,8 @@ def settings():
     leftovers = len(list(path.parent.glob(".settings-*.tmp")))
     if info.st_mode & 0o022:
         return check("settings", "degraded", "settings.json is writable by other users", "Run: chmod 600 ~/.config/bloom/settings.json")
-    note = f"; {leftovers} interrupted save leftover(s), cleaned on the next save" if leftovers else ""
-    return check("settings", "ok", f"{len(doc)} keys, valid{note}")
+    note = f"; {count(leftovers, 'interrupted save leftover')}, cleaned on the next save" if leftovers else ""
+    return check("settings", "ok", f"{count(len(doc), 'key')}, valid{note}")
 
 
 def state():
@@ -202,13 +206,13 @@ def themes():
         return check("themes", "ok", "no app theme files are owned by Bloom")
     try:
         doc = json.loads(ledger.read_text())
-        count = len(doc.get("targets", {}))
+        owned = len(doc.get("targets", {}))
     except (OSError, ValueError, AttributeError):
         return check("themes", "failed", "the app theme ownership ledger is unreadable",
                      "Move ~/.local/state/bloom/app-themes/ownership.json aside; originals stay in originals/.")
     kept = directory / "kept"
     note = "; pre-Bloom copies of edited files are in app-themes/kept" if kept.exists() else ""
-    return check("themes", "ok", f"Bloom owns {count} app theme file(s){note}")
+    return check("themes", "ok", f"Bloom owns {count(owned, 'app theme file')}{note}")
 
 
 def dependencies():
@@ -254,9 +258,9 @@ def display():
                 unfinished += 1
     history = list((home() / ".config/hypr/custom/.bloom-settings-history").glob("*.json"))
     if unfinished:
-        return check("display", "degraded", f"{unfinished} display trial(s) did not finish",
+        return check("display", "degraded", f"{count(unfinished, 'display trial')} did not finish",
                      "Open Settings → Display to review the current mode; unconfirmed trials revert automatically.")
-    return check("display", "ok", f"no unfinished display trials; {len(history)} compositor snapshot(s) kept")
+    return check("display", "ok", f"no unfinished display trials; {count(len(history), 'compositor snapshot')} kept")
 
 
 def capabilities():
@@ -273,7 +277,7 @@ def capabilities():
         return check("capabilities", "degraded", "; ".join(bad),
                      "Missing programs: install them (see dependencies). Backends retry on their own with backoff; "
                      "to retry now: bloom ipc capabilities retry <backend>")
-    return check("capabilities", "ok", f"{len(backends)} backend(s) reporting, none degraded")
+    return check("capabilities", "ok", f"{count(len(backends), 'backend')} reporting, none degraded")
 
 
 CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, themes, dependencies, bus, display)

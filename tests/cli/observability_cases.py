@@ -80,6 +80,14 @@ class EventCases(Home):
         record = self.records()[0]
         self.assertNotIn(user or "\0", record["session"])
 
+    def test_username_is_redacted_only_as_its_own_word(self):
+        # A user named like a program must not mangle that program's names.
+        os.environ["USER"] = "bloom"
+        self.assertEqual(events.redact("bloom-shell.service is inactive"), "bloom-shell.service is inactive")
+        self.assertEqual(events.redact("bloom_events and pre-bloom"), "bloom_events and pre-bloom")
+        self.assertEqual(events.redact("signed in as bloom."), "signed in as <user>.")
+        self.assertEqual(events.redact("owner: bloom"), "owner: <user>")
+
     def test_rate_cap_drops_and_reports_floods(self):
         log = events.Events("notifications", rate=5, window=0.2)
         for _ in range(50):
@@ -146,6 +154,15 @@ class OperationCases(Home):
         killed = operations.run_operation("lifecycle", "probe", ["sh", "-c", "kill -TERM $$"])
         self.assertEqual((killed["errorCode"], killed["signal"]), ("signal", 15))
 
+    def test_an_expected_failure_is_not_a_problem(self):
+        # A probe whose non-zero exit is a normal answer ("not enabled").
+        operations.run_operation("lifecycle", "probe", ["sh", "-c", "exit 1"], events=events.Events("lifecycle"),
+                                 expected_failure=True)
+        finished = [r for r in self.records() if r["event"] == "operation.finished"]
+        self.assertEqual(finished[0]["level"], "info")
+        self.assertEqual(finished[0]["outcome"], "failure")
+        self.assertEqual(events.read_recent(), [])
+
     def test_readback_decides_verified(self):
         result = operations.run_operation("audio", "set-volume", ["true"], verify=lambda r: False)
         self.assertEqual((result["state"], result["errorCode"], result["verified"]), ("failure", "verify-failed", False))
@@ -190,6 +207,11 @@ class DoctorCases(Home):
         (self.home / ".local/state/bloom/install-manifest.json").write_text(json.dumps({"status": "complete"}))
         check = next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "lifecycle")
         self.assertEqual(check["status"], "ok")
+
+    def test_counts_read_naturally(self):
+        (self.home / ".config/bloom/settings.json").write_text('{"bloom-theme-mode": "dark"}')
+        check = next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "settings")
+        self.assertTrue(check["summary"].startswith("1 key,"), check["summary"])
 
     def test_rate_limited_service_is_reported(self):
         self.fake("systemctl", 'echo "LoadState=loaded"; echo "ActiveState=failed"; echo "SubState=failed"; echo "Result=start-limit-hit"; echo "NRestarts=5"')

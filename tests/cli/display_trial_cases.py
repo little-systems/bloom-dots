@@ -11,6 +11,10 @@ from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
+# The worker records trial phases in Bloom's event log; keep this run's events
+# out of the real user's state.
+_STATE = tempfile.TemporaryDirectory(prefix='bloom-trial-state-')
+os.environ['XDG_STATE_HOME'] = _STATE.name
 spec = importlib.util.spec_from_file_location('display_trial', ROOT / 'shell/services/display-trial.py')
 trial = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(trial)
