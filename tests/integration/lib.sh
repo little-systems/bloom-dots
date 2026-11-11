@@ -7,9 +7,10 @@ SHELL_PID=""
 
 # Log lines caused by the test machine, not by Bloom: no text-input protocol or
 # PipeWire in headless sessions, sway's focus quirk, no session D-Bus for MPRIS
-# (CI containers), and capability reports about absent system services.
+# (CI containers), capability reports about absent system services, and Qt's
+# animation timer noting it was already stopped when a dialog window closes.
 # shellcheck disable=SC2034  # used by the tests that source this file
-ENV_ONLY_WARNINGS='textinput|pipewire|wl_keyboard.leave|mpris.watcher: Could not connect to DBus|bloom capability: [a-z-]+ (missing|degraded)'
+ENV_ONLY_WARNINGS='textinput|pipewire|wl_keyboard.leave|mpris.watcher: Could not connect to DBus|bloom capability: [a-z-]+ (missing|degraded)|QUnifiedTimer::stopAnimationDriver: driver is not running'
 
 bloom_env() {
 	# systemd --user is reached through the session's own runtime dir.
@@ -43,12 +44,31 @@ SH
 	trap bloom_cleanup EXIT
 }
 
+# A process and everything it started (theme helpers, monitors).
+descendants() {
+	local child
+	for child in $(pgrep -P "$1" 2>/dev/null); do
+		descendants "$child"
+		echo "$child"
+	done
+}
+
 bloom_cleanup() {
 	if [[ -n "$SHELL_PID" ]]; then
+		# Helpers the shell started would otherwise keep writing into the
+		# test home while it is being removed.
+		local helpers
+		helpers="$(descendants "$SHELL_PID")"
 		kill "$SHELL_PID" 2>/dev/null || true
+		# shellcheck disable=SC2086  # one PID per word
+		[[ -z "$helpers" ]] || kill $helpers 2>/dev/null || true
 		wait "$SHELL_PID" 2>/dev/null || true
 	fi
 	if [[ -n "${SWAY_UNIT:-}${SWAY_PID:-}" ]]; then stop_sway; fi
+	for _ in 1 2 3 4 5; do
+		rm -rf "$TEST_TMP" 2>/dev/null && return 0
+		sleep 0.2
+	done
 	rm -rf "$TEST_TMP"
 }
 
