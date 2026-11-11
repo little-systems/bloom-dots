@@ -1,0 +1,8 @@
+[SddmGreeterTheme]
+Name=Bloom
+Description=Bloom login screen
+Type=sddm-theme
+Version=1
+MainScript=Main.qml
+ConfigFile=theme.conf
+QtVersion=6
