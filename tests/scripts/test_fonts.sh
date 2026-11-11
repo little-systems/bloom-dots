@@ -29,3 +29,12 @@ for weight in 400 500 600 700; do
 done
 [[ -f "$FONTS/OFL.txt" ]] || { echo "FAIL: the font's licence is missing"; exit 1; }
 echo "ok - Bloom Inter covers Google's subsets at every weight, under its own names, with its licence"
+
+# Every bundled font ships with its license notice (OFL requires it).
+for font in "$FONTS"/*.ttf "$FONTS"/*.woff2; do
+	name="$(basename "$font")"
+	family="${name%%-*}"
+	grep -q "$family" "$ROOT/licenses/fonts.txt" || { echo "FAIL: no license notice for $name" >&2; exit 1; }
+done
+grep -q 'SIL OPEN FONT LICENSE Version 1.1' "$ROOT/licenses/fonts.txt" || { echo "FAIL: OFL text missing" >&2; exit 1; }
+echo "ok - every bundled font has its license notice"

@@ -160,7 +160,7 @@ Tests use disposable configuration and isolated compositors. GitHub CI runs the
 checks in Arch Linux. See [the installation guide](docs/INSTALL.md#development)
 for the development workflow.
 
-Licensed under [GPLv3](LICENSE). Bundled third-party notices live in [licenses](licenses/).
+Licensed under [GPLv3](LICENSE). Bundled third-party notices live in [licenses](licenses/) (Lucide icons and the OFL fonts: Inter, Selawik, Syne).
 
 ---
 

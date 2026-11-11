@@ -54,3 +54,20 @@ done, with the kept files listed.
 
 Tests: `tests/cli/test_theme_owner.sh` (13 ownership cases), the two app-theme
 script tests, and the lifecycle uninstall theme cases.
+
+## What app theming covers, and what it doesn't
+
+Supported:
+- GTK 3/4: CSS colours, `settings.ini` light/dark, and the GNOME
+  `color-scheme`/`gtk-theme` keys. Electron apps follow the GTK theme name.
+- Qt/KDE apps, through `kdeglobals` and colour schemes. A Qt app sees them only
+  when a platform theme reads them (Plasma integration or qt6ct).
+- Hyprland borders, fuzzel, and kitty, through the ii-style include path.
+
+Not themed:
+- Web page content in browsers.
+- Apps that ignore the platform theme (some Flatpaks, Java and SDL apps).
+- Terminals other than kitty, and editors' own themes.
+
+A change reaches a running app only if the app reloads its theme; kitty gets
+SIGUSR1 and Hyprland reloads. Others pick it up when they next start.

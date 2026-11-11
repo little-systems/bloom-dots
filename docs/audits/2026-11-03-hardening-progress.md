@@ -267,3 +267,15 @@ compositor snapshot restore is deferred to H3's doctor/recovery tooling.
   window can't switch workspaces. It was verified after `hyprctl reload`.
 - A doctor false positive was corrected: Bloom never runs `bluetoothctl`. The
   dependency map now lists only the commands Bloom invokes.
+
+## H5 batch (2026-11-11)
+
+- `5b273d1`: request, assistant and clipboard budgets. Weather no longer uses a
+  plaintext lookup or a default location.
+- This batch also adds:
+  - staged `bloom update`: candidate validation before the checkout moves,
+    plus a health-verified rollback with an honest verdict and `lastGood`
+  - font license notices for all bundled fonts, with a test
+  - documentation of app-theme limitations
+- Ruling: immutable per-commit deployment directories are deferred; see
+  [staged updates](../handover/staged-updates-and-budgets.md).

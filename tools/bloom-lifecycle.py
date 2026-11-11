@@ -627,7 +627,36 @@ def recover(ctx, resume=False, restore_originals=False):
         print("No interrupted operation to resume.")
 
 
+REQUIRED_FILES = ("VERSION", "bin/bloom", "shell/shell.qml", "shell/settings-app.qml", "tools/bloom-lifecycle.py",
+                  "systemd/bloom-shell.service", "hypr/bloom.lua")
+
+
+def validate_candidate(commit):
+    """Static checks on an exported candidate before the live checkout moves."""
+    with tempfile.TemporaryDirectory(prefix="bloom-candidate-") as temporary:
+        archive = subprocess.run(["git", "archive", "--format=tar", commit], cwd=ROOT, capture_output=True, timeout=60)
+        if archive.returncode:
+            raise Failure(f"candidate {commit[:12]} could not be exported")
+        subprocess.run(["tar", "-x", "-C", temporary], input=archive.stdout, check=True, timeout=60)
+        tree = Path(temporary)
+        problems = [f"missing {name}" for name in REQUIRED_FILES if not (tree / name).is_file()]
+        if not problems and not (tree / "VERSION").read_text().strip():
+            problems.append("empty VERSION")
+        for script in sorted(tree.glob("tools/*.py")) + sorted(tree.glob("shell/**/*.py")):
+            try:
+                compile(script.read_text(), str(script.relative_to(tree)), "exec")
+            except (SyntaxError, ValueError, UnicodeDecodeError) as error:
+                problems.append(f"{script.relative_to(tree)}: {type(error).__name__}")
+        if shutil.which("luac"):
+            for lua in sorted(tree.glob("hypr/**/*.lua")):
+                if subprocess.run(["luac", "-p", str(lua)], capture_output=True, timeout=10).returncode:
+                    problems.append(f"{lua.relative_to(tree)}: Lua syntax")
+        if problems:
+            raise Failure(f"candidate {commit[:12]} failed validation ({'; '.join(problems[:5])}); nothing was changed")
+
+
 def update(ctx, rollback=False, no_deps=False):
+    """Validate, switch, verify health; roll back to the last good revision if needed."""
     if not ctx.manifest:
         raise Failure("install Bloom before updating")
     if run("git", "status", "--porcelain", cwd=ROOT).stdout.strip():
@@ -637,36 +666,52 @@ def update(ctx, rollback=False, no_deps=False):
     record = ctx.state / "update.json"
     previous = read_json(record, {})
     branch = branch or previous.get("branch", "")
+    last_good = previous.get("lastGood") or old
     if rollback and not previous:
         raise Failure("no previous update to roll back")
-    atomic(record, json.dumps({"previous": old, "current": old, "branch": branch, "status": "updating"}) + "\n")
+    if rollback:
+        target = previous["previous"]
+    else:
+        if run("git", "symbolic-ref", "--quiet", "HEAD", cwd=ROOT, check=False).returncode:
+            if not branch:
+                raise Failure("detached checkout has no recorded update branch")
+            run("git", "checkout", branch, cwd=ROOT)
+        run("git", "fetch", cwd=ROOT, capture=False)
+        target = run("git", "rev-parse", "@{upstream}", cwd=ROOT).stdout.strip()
+        if run("git", "merge-base", "--is-ancestor", "HEAD", target, cwd=ROOT, check=False).returncode:
+            raise Failure("the update is not a fast-forward of this checkout; nothing was changed")
+    if target == old:
+        print("Already up to date")
+        return
+    validate_candidate(target)
+    EVENTS.emit("lifecycle.candidate", stage="validated", outcome="success", revision=target[:12])
+    atomic(record, json.dumps({"previous": old, "current": old, "branch": branch, "lastGood": last_good,
+                               "status": "updating"}) + "\n")
     try:
         if rollback:
-            run("git", "checkout", "--detach", previous["previous"], cwd=ROOT)
+            run("git", "checkout", "--detach", target, cwd=ROOT)
         else:
-            if run("git", "symbolic-ref", "--quiet", "HEAD", cwd=ROOT, check=False).returncode:
-                if not branch:
-                    raise Failure("detached checkout has no recorded update branch")
-                run("git", "checkout", branch, cwd=ROOT)
-            run("git", "pull", "--ff-only", cwd=ROOT, capture=False)
-        new = run("git", "rev-parse", "HEAD", cwd=ROOT).stdout.strip()
-        if new == old:
-            if previous:
-                atomic(record, json.dumps(previous) + "\n")
-            else:
-                record.unlink()
-            print("Already up to date")
-            return
+            run("git", "merge", "--ff-only", target, cwd=ROOT)
         install(ctx, no_deps=no_deps, restart=True)
-    except BaseException:
+    except BaseException as error:
+        EVENTS.emit("lifecycle.candidate", level="error", stage="health", outcome="rolled-back", revision=target[:12])
         run("git", "checkout", "--detach", old, cwd=ROOT)
-        if previous:
-            atomic(record, json.dumps(previous) + "\n")
-        else:
-            record.unlink(missing_ok=True)
-        raise
-    atomic(record, json.dumps({"previous": old, "current": new, "branch": branch, "status": "complete"}) + "\n")
-    print(f"updated {old[:12]} -> {new[:12]}; rollback: bloom update --rollback")
+        if branch and not rollback:
+            run("git", "branch", "-f", branch, old, cwd=ROOT, check=False)
+            run("git", "checkout", branch, cwd=ROOT, check=False)
+        atomic(record, json.dumps({**previous, "lastGood": last_good, "branch": branch} if previous
+                                  else {"previous": old, "current": old, "branch": branch, "lastGood": last_good,
+                                        "status": "complete"}) + "\n")
+        # Say truthfully whether the restored version is running again.
+        try:
+            install(ctx, no_deps=True, restart=True)
+            verdict = "the previous version is running and answering again"
+        except (Failure, OSError) as restore_error:
+            verdict = f"the previous version was restored but is not answering ({restore_error}); run: bloom doctor"
+        raise Failure(f"update to {target[:12]} failed ({error}); {verdict}") from error
+    atomic(record, json.dumps({"previous": old, "current": target, "branch": branch, "lastGood": target,
+                               "status": "complete"}) + "\n")
+    print(f"updated {old[:12]} -> {target[:12]}; rollback: bloom update --rollback")
 
 
 def main():

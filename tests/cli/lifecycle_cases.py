@@ -35,6 +35,7 @@ class Lifecycle(unittest.TestCase):
             shutil.copy2(ROOT / "shell/services" / module, self.root / "shell/services" / module)
         shutil.copytree(ROOT / "shell/theming", self.root / "shell/theming")
         (self.root / "shell/settings-app.qml").write_text("// fixture\n")
+        (self.root / "shell/shell.qml").write_text("// fixture\n")
         (self.root / "VERSION").write_text("0.1.0\n")
         self.config = self.home / ".config"
         (self.config / "hypr").mkdir(parents=True)
@@ -62,7 +63,10 @@ with (base / 'calls').open('a') as f:
     f.write(json.dumps([name] + args) + '\\n')
 if name == 'qs':
     if args == ['--version']: print('Quickshell 0.3.2')
-    elif args[-2:] == ['shell', 'ping']: print(os.environ.get('STUB_PING', 'pong'))
+    elif args[-2:] == ['shell', 'ping']:
+        # A candidate whose VERSION says "unhealthy" never answers.
+        unhealthy = (base / 'checkout with spaces/VERSION').read_text().startswith('unhealthy')
+        print('dead' if unhealthy else os.environ.get('STUB_PING', 'pong'))
     elif args[-2:] == ['polkit', 'state']: print(json.dumps({'registered': os.environ.get('STUB_POLKIT', 'yes') == 'yes'}))
     else: print(json.dumps({'ownership': os.environ.get('STUB_OWNERSHIP', 'owned')}))
 elif name == 'busctl': print('u ' + os.environ.get('STUB_TRAY_PID', '4242'))
@@ -435,6 +439,53 @@ m.main()
         self.assertNotEqual(self.git("rev-parse", "HEAD"), initial)
         (self.root / "VERSION").write_text("edited\n")
         self.bloom("update", success=False)
+
+    def prepare_updates(self):
+        self.git("init", "-b", "main")
+        self.git("config", "user.name", "Bloom Test")
+        self.git("config", "user.email", "test@example.invalid")
+        self.git("add", ".")
+        self.git("commit", "-m", "fixture")
+        bare = self.base / "remote.git"
+        self.git("clone", "--bare", str(self.root), str(bare))
+        self.git("remote", "add", "origin", str(bare))
+        self.git("fetch", "origin")
+        self.git("branch", "--set-upstream-to=origin/main", "main")
+        upstream = self.base / "upstream"
+        self.git("clone", str(bare), str(upstream))
+        self.git("config", "user.name", "Bloom Test", cwd=upstream)
+        self.git("config", "user.email", "test@example.invalid", cwd=upstream)
+        self.bloom("install")
+        return upstream, self.git("rev-parse", "HEAD")
+
+    def publish(self, upstream, path, text):
+        (upstream / path).parent.mkdir(parents=True, exist_ok=True)
+        (upstream / path).write_text(text)
+        self.git("add", "-A", cwd=upstream)
+        self.git("commit", "-m", "change " + path, cwd=upstream)
+        self.git("push", cwd=upstream)
+
+    def test_broken_candidate_is_refused_before_the_checkout_changes(self):
+        upstream, initial = self.prepare_updates()
+        self.publish(upstream, "tools/bloom-lifecycle.py", "def broken(:\n")
+        (self.base / "calls").write_text("")
+        result = self.bloom("update", success=False)
+        self.assertIn("failed validation", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD"), initial)
+        self.assertNotIn("restart", (self.base / "calls").read_text())
+
+    def test_unhealthy_candidate_rolls_back_to_the_verified_last_good(self):
+        upstream, initial = self.prepare_updates()
+        self.publish(upstream, "VERSION", "unhealthy\n")
+        result = self.bloom("update", success=False)
+        self.assertIn("previous version", result.stderr)
+        self.assertIn("answering", result.stderr)
+        self.assertEqual(self.git("rev-parse", "HEAD"), initial)
+        record = json.loads((self.state / "update.json").read_text())
+        self.assertEqual(record.get("lastGood"), initial)
+        self.publish(upstream, "VERSION", "0.2.0\n")
+        self.bloom("update")
+        self.assertEqual(json.loads((self.state / "update.json").read_text())["lastGood"], self.git("rev-parse", "HEAD"))
 
 
 if __name__ == "__main__":
