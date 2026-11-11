@@ -2,6 +2,10 @@
 //@ pragma AppId bloom-settings
 import QtQuick
 import QtQuick.Dialogs
+// Native dialog when the desktop provides one, else Qt Widgets' file dialog
+// (this is a QApplication), which focuses its name field and shows the
+// suggested file. Qt Quick's own fallback did neither.
+import Qt.labs.platform as Platform
 import QtQuick.Window
 import Quickshell
 import Quickshell.Io
@@ -60,6 +64,12 @@ ShellRoot {
 	}
 
 	function run(argv) { Quickshell.execDetached(argv); }
+	// The platform dialog is created on open, so the suggested file is chosen
+	// after: the name field then shows it, selected and focused.
+	function openExport() {
+		exportDialog.open();
+		exportDialog.currentFile = "file://" + Quickshell.env("HOME") + "/bloom-settings.json";
+	}
 	function reset() {
 		const defaults = Logic.defaults();
 		const changes = {};
@@ -139,7 +149,7 @@ ShellRoot {
 			onResetConfirmed: app.reset()
 			onRestartRequested: app.run(["systemctl", "--user", "restart", "bloom-shell"])
 			onQuitRequested: app.run(["systemctl", "--user", "stop", "bloom-shell"])
-			onExportRequested: if (!exportCopy.running) exportDialog.open()
+			onExportRequested: if (!exportCopy.running) app.openExport()
 			onImportRequested: if (app.importLabel !== "Importing…" && !importFile.running) importDialog.open()
 			onColorRequested: colorDialog.open()
 			cityResults: app.cityResults
@@ -154,26 +164,26 @@ ShellRoot {
 		}
 	}
 
-	FileDialog {
+	Platform.FileDialog {
 		parentWindow: win.contentItem.Window.window
 		id: exportDialog
-		fileMode: FileDialog.SaveFile
-		currentFile: "file://" + Quickshell.env("HOME") + "/bloom-settings.json"
+		fileMode: Platform.FileDialog.SaveFile
 		onAccepted: {
-			exportCopy.destination = decodeURIComponent(selectedFile.toString().replace("file://", ""));
+			exportCopy.destination = decodeURIComponent(file.toString().replace("file://", ""));
 			app.saveError = "";
 			app.exportLabel = "Exporting…";
 			exportCopy.running = true;
 		}
 	}
-	FileDialog {
+	Platform.FileDialog {
 		parentWindow: win.contentItem.Window.window
 		id: importDialog
-		fileMode: FileDialog.OpenFile
+		fileMode: Platform.FileDialog.OpenFile
+		folder: "file://" + Quickshell.env("HOME")
 		nameFilters: ["JSON (*.json)"]
 		onAccepted: {
 			app.importLabel = "Importing…";
-			importFile.path = decodeURIComponent(selectedFile.toString().replace("file://", ""));
+			importFile.path = decodeURIComponent(file.toString().replace("file://", ""));
 			importFile.running = true;
 		}
 	}
