@@ -175,6 +175,18 @@ cmd_doctor() {
 	return "$status"
 }
 
+# A fresh Arch base system has no Python, which the installer is written in.
+need_python() {
+	command -v python3 >/dev/null && return 0
+	echo "Bloom's installer needs Python; installing it first." >&2
+	if [[ $EUID -eq 0 || "${BLOOM_AS_ROOT:-}" == 1 ]]; then
+		pacman -S --needed --noconfirm python
+	else
+		sudo pacman -S --needed --noconfirm python
+	fi
+	command -v python3 >/dev/null || die "Python could not be installed; run: sudo pacman -S python"
+}
+
 main() {
 	local cmd="${1:-}"
 	shift || true
@@ -183,7 +195,7 @@ main() {
 	doctor) cmd_doctor "$@" ;;
 	support) cmd_doctor --support "$@" ;;
 	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
-	install | update | uninstall | recover | first-login) exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
+	install | update | uninstall | recover | first-login) need_python; exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
 	dev) cmd_dev "$@" ;;
 	version) cmd_version ;;
 	help | -h | --help) usage ;;
