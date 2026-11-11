@@ -66,6 +66,21 @@ def run(*args, check=True, capture=True, cwd=None):
     return result
 
 
+def live_session():
+    """The unit's own condition: a live Wayland socket and Hyprland instance."""
+    runtime = os.environ.get("XDG_RUNTIME_DIR", "")
+    display = os.environ.get("WAYLAND_DISPLAY", "")
+    signature = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "")
+    if not runtime or not display or not signature or "/" in signature or signature.startswith("."):
+        return False
+    socket_path = Path(display) if display.startswith("/") else Path(runtime) / display
+    try:
+        return stat.S_ISSOCK(socket_path.stat().st_mode) and \
+            stat.S_ISSOCK((Path(runtime) / "hypr" / signature / ".socket.sock").stat().st_mode)
+    except OSError:
+        return False
+
+
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -499,21 +514,30 @@ def install(ctx, dry_run=False, no_deps=False, restart=False):
         if not service["enabled"]:
             run("systemctl", "--user", "enable", UNIT)
         # Exclusive services remain opt-in until migration. Existing settings survive.
-        if restart or (service["active"] and changed):
-            run("systemctl", "--user", "restart", UNIT)
-        elif not service["active"]:
-            run("systemctl", "--user", "start", UNIT)
-        for _ in range(50):
-            if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.strip() == "pong":
-                break
-            time.sleep(0.1)
-        else:
-            raise Failure("Bloom did not answer after starting; restoring the previous installation")
+        # Without a Hyprland session (a console, SSH, before the first login) the
+        # unit's condition skips the start: Bloom starts at the next login instead.
+        session = live_session()
+        ctx.verified = False
+        if session:
+            if restart or (service["active"] and changed):
+                run("systemctl", "--user", "restart", UNIT)
+            elif not service["active"]:
+                run("systemctl", "--user", "start", UNIT)
+            for _ in range(50):
+                if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.strip() == "pong":
+                    break
+                time.sleep(0.1)
+            else:
+                raise Failure("Bloom did not answer after starting; restoring the previous installation")
+            ctx.verified = True
         transaction.doc["pkgbuild_hash"] = pkg_hash if not no_deps else transaction.doc.get("pkgbuild_hash")
         transaction.doc["status"] = "complete"
         if transaction.doc != transaction.previous:
             transaction.save()
-        print("Bloom installed. Configure enabled surfaces in Bloom Settings.")
+        if session:
+            print("Bloom installed. Configure enabled surfaces in Bloom Settings.")
+        else:
+            print("Bloom installed and enabled; it starts at your next Hyprland login. Run bloom doctor there to check it.")
     except BaseException:
         transaction.rollback()
         ctx.restore_service(service)
@@ -709,9 +733,12 @@ def update(ctx, rollback=False, no_deps=False):
         except (Failure, OSError) as restore_error:
             verdict = f"the previous version was restored but is not answering ({restore_error}); run: bloom doctor"
         raise Failure(f"update to {target[:12]} failed ({error}); {verdict}") from error
-    atomic(record, json.dumps({"previous": old, "current": target, "branch": branch, "lastGood": target,
-                               "status": "complete"}) + "\n")
-    print(f"updated {old[:12]} -> {target[:12]}; rollback: bloom update --rollback")
+    verified = getattr(ctx, "verified", False)
+    # Only a revision seen answering becomes last-good.
+    atomic(record, json.dumps({"previous": old, "current": target, "branch": branch,
+                               "lastGood": target if verified else last_good, "status": "complete"}) + "\n")
+    note = "" if verified else " (not verified: no Hyprland session; it starts at your next login)"
+    print(f"updated {old[:12]} -> {target[:12]}{note}; rollback: bloom update --rollback")
 
 
 def main():

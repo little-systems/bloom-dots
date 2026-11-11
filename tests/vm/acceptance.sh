@@ -64,9 +64,18 @@ stage_install() {
 	local before; before="$(fingerprint)"
 	check "dry run succeeds" "$BLOOM" install --dry-run
 	[[ "$(fingerprint)" == "$before" && ! -e "$STATE/install-manifest.json" ]] && ok "dry run changes nothing" || bad "dry run changed files"
-	refuse "missing dependencies are refused before effects" env PATH=/usr/bin/false-path:/usr/bin "$BLOOM" install --no-deps --dry-run
-	check "normal install (builds and installs bloom-shell-deps)" "$BLOOM" install
-	check "repeated install is a no-op" "$BLOOM" install
+	# A PATH with everything the CLI needs except Quickshell.
+	local nodeps="$HOME/nodeps-bin" tool
+	mkdir -p "$nodeps"
+	for tool in bash env python3 git systemctl hyprctl makepkg sudo dirname readlink cat jq timeout; do
+		ln -sf "$(command -v "$tool")" "$nodeps/$tool" 2>/dev/null
+	done
+	refuse "a missing Quickshell is refused before effects" env PATH="$nodeps" "$BLOOM" install --no-deps --dry-run
+	[[ ! -e "$STATE/install-manifest.json" ]] && ok "the refusal changed nothing" || bad "the refusal left a manifest"
+	# makepkg asks for a provider and a confirmation; a user answers in their
+	# terminal, here the defaults are fed on stdin.
+	check "normal install (builds and installs bloom-shell-deps)" bash -c "yes '' | '$BLOOM' install"
+	check "repeated install is a no-op" bash -c "yes '' | '$BLOOM' install"
 	grep -q 'bloom managed loader' "$HOME/.config/hypr/hyprland.lua" && grep -q 'gaps_out = 7' "$HOME/.config/hypr/hyprland.lua" \
 		&& ok "personal Hyprland config kept with one loader line" || bad "Hyprland config"
 	check "dependency package installed" pacman -Q bloom-shell-deps

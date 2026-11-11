@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 import signal
+import socket
 import fcntl
 import hashlib
 
@@ -52,6 +53,17 @@ class Lifecycle(unittest.TestCase):
                         BLOOM_OS_RELEASE=str(self.base / "os-release"),
                         BLOOM_TEST_DIR=str(self.base), PATH=str(self.bin) + ":" + os.environ["PATH"])
         self.env["TMPDIR"] = str(self.base)
+        # A fake live Hyprland session (Wayland and instance sockets), so tests
+        # never depend on the machine they run on.
+        runtime = self.base / "run"
+        (runtime / "hypr/fixture").mkdir(parents=True, mode=0o700)
+        runtime.chmod(0o700)
+        for path in (runtime / "wayland-fixture", runtime / "hypr/fixture/.socket.sock"):
+            sock = socket.socket(socket.AF_UNIX)
+            sock.bind(str(path))
+            self.addCleanup(sock.close)
+        self.env.update(XDG_RUNTIME_DIR=str(runtime), WAYLAND_DISPLAY="wayland-fixture",
+                        HYPRLAND_INSTANCE_SIGNATURE="fixture")
         self.state = self.home / ".local/state/bloom"
         stub = '''#!/usr/bin/env python3
 import json, os, sys
@@ -126,6 +138,17 @@ elif name == 'systemctl':
         self.assertEqual(failed[0]["component"], "lifecycle")
         self.assertNotIn(str(self.home), log.read_text())
         self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+
+    def test_install_without_a_session_enables_bloom_for_the_next_login(self):
+        # From a console or SSH before the first Hyprland login.
+        result = self.bloom("install", WAYLAND_DISPLAY="", HYPRLAND_INSTANCE_SIGNATURE="")
+        self.assertIn("next Hyprland login", result.stdout)
+        service = json.loads((self.base / "service").read_text())
+        self.assertTrue(service["enabled"])
+        self.assertFalse(service["active"])
+        self.assertNotIn("ping", (self.base / "calls").read_text())
+        manifest = json.loads((self.state / "install-manifest.json").read_text())
+        self.assertEqual(manifest["status"], "complete")
 
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()
