@@ -137,6 +137,15 @@ start_sway() {
 	export WAYLAND_DISPLAY=wayland-1 QT_QPA_PLATFORM=wayland
 }
 
+# The test compositor's focused window id, or nothing. Dialogs are their own
+# windows, so a changed focus means the dialog is ready for keyboard input.
+sway_focus() {
+	local sock
+	sock="$(find "$SWAY_RUNTIME_DIR" -maxdepth 1 -type s -name 'sway-ipc.*.sock' 2>/dev/null | head -1)"
+	[[ -n "$sock" ]] || return 1
+	SWAYSOCK="$sock" swaymsg -t get_tree 2>/dev/null | jq -r '[.. | objects | select(.focused == true and (.type == "con" or .type == "floating_con"))][0].id // empty'
+}
+
 stop_sway() {
 	if [[ -n "$SWAY_UNIT" ]]; then
 		XDG_RUNTIME_DIR="$HOST_RUNTIME_DIR" systemctl --user stop "$SWAY_UNIT" 2>/dev/null || true

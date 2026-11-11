@@ -38,8 +38,11 @@ if [[ -n "${BLOOM_ABOUT_SCREENSHOT:-}" ]]; then
     grim -o HEADLESS-1 "$BLOOM_ABOUT_SCREENSHOT"
 fi
 OUT="$TEST_TMP/exports/export # café.json"
+before="$(sway_focus || true)"
 call probeExport >/dev/null
-sleep 0.5
+dialog_focused() { local now; now="$(sway_focus)"; [[ -n "$now" && "$now" != "$before" ]]; }
+wait_for 'the export dialog takes keyboard focus' dialog_focused
+sleep 0.3
 wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return
 wait_for 'export completes' matches '.exportStatus == "Settings Exported"'
 cmp "$OUT" "$XDG_CONFIG_HOME/bloom/settings.json" || fail 'export contents differ'
@@ -47,8 +50,10 @@ cmp "$OUT" "$XDG_CONFIG_HOME/bloom/settings.json" || fail 'export contents diffe
 pass 'Export Settings opens a real dialog and writes an acknowledged private copy'
 printf '{"bloom-weather-enabled":false,"bloom-theme-mode":"light"}' > "$XDG_CONFIG_HOME/bloom/settings.json"
 sleep 0.4
+before="$(sway_focus || true)"
 call probeImport >/dev/null
-sleep 0.5
+wait_for 'the import dialog takes keyboard focus' dialog_focused
+sleep 0.3
 wtype -s 400 -M ctrl -k a -m ctrl "$OUT" -k Return
 wait_for 'import completes' matches '.importStatus == "Settings Imported"'
 jq -e '."bloom-theme-mode" == "dark"' "$XDG_CONFIG_HOME/bloom/settings.json" >/dev/null || fail 'import did not restore the exported value'
