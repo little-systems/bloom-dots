@@ -15,6 +15,11 @@ import sys
 import tempfile
 import time
 
+import importlib.util as _importlib_util
+_retention_spec = _importlib_util.spec_from_file_location("bloom_retention", Path(__file__).resolve().with_name("bloom_retention.py"))
+retention = _importlib_util.module_from_spec(_retention_spec)
+_retention_spec.loader.exec_module(retention)
+
 LIMIT = 1024 * 1024
 
 
@@ -75,6 +80,8 @@ def patch(path, changes, base):
                 if time.monotonic() >= deadline:
                     raise ValueError("settings writer busy; retry")
                 time.sleep(0.01)
+        # Only the lock holder writes; old temporaries are crash leftovers.
+        retention.prune_stale(parent, (".settings-*.tmp",))
         original, current = read(path)
         # Unrelated changes merge; conflicting edits to a touched key reject
         # the entire batch. Repeating an already-committed value is a no-op.

@@ -30,6 +30,8 @@ class Lifecycle(unittest.TestCase):
         (self.root / "shell/scripts").mkdir()
         for script in ("adaptive-theme.sh", "theme-owner.py", "app-theme.py"):
             shutil.copy2(ROOT / "shell/scripts" / script, self.root / "shell/scripts" / script)
+        (self.root / "shell/services").mkdir()
+        shutil.copy2(ROOT / "shell/services/bloom_retention.py", self.root / "shell/services/bloom_retention.py")
         shutil.copytree(ROOT / "shell/theming", self.root / "shell/theming")
         (self.root / "shell/settings-app.qml").write_text("// fixture\n")
         (self.root / "VERSION").write_text("0.1.0\n")

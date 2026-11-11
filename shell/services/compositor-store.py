@@ -18,6 +18,11 @@ import sys
 import tempfile
 import time
 
+import importlib.util as _importlib_util
+_retention_spec = _importlib_util.spec_from_file_location("bloom_retention", Path(__file__).resolve().with_name("bloom_retention.py"))
+retention = _importlib_util.module_from_spec(_retention_spec)
+_retention_spec.loader.exec_module(retention)
+
 LIMIT = 1024 * 1024
 HEADER = "-- Written by Bloom Settings. Delete this file to undo everything in it."
 MARKER = "-- bloom-state-v1 "
@@ -199,6 +204,9 @@ def commit(config, legacy, expected, changes):
         if snapshot(config, legacy)["revision"] != expected:
             raise ValueError("compositor preferences changed during save; retry")
         atomic_write(config, encode(state, old["revision"]))
+        # The newest snapshot is the new document's previous revision.
+        retention.prune_history(history)
+        retention.prune_stale(config.parent, (".bloom-compositor-*",))
         return snapshot(config, legacy)
 
 

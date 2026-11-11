@@ -22,6 +22,11 @@ import subprocess
 import sys
 import time
 
+import importlib.util as _importlib_util
+_retention_spec = _importlib_util.spec_from_file_location("bloom_retention", Path(__file__).resolve().parent.parent / "services/bloom_retention.py")
+retention = _importlib_util.module_from_spec(_retention_spec)
+_retention_spec.loader.exec_module(retention)
+
 TARGETS = (
     ".config/gtk-3.0/gtk.css",
     ".config/gtk-4.0/gtk.css",
@@ -83,6 +88,7 @@ def sync_dir(path):
 
 def atomic_write(path, data, mode=0o644):
     path.parent.mkdir(parents=True, exist_ok=True)
+    retention.prune_stale(path.parent, (f".{path.name}.bloom-*",))
     temporary = path.with_name(f".{path.name}.bloom-{os.getpid()}")
     fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
     try:
@@ -318,6 +324,8 @@ def main(argv):
         if os.environ.get("BLOOM_THEME_LOCKED") != "1":
             fcntl.flock(lock, fcntl.LOCK_EX)
         try:
+            # Staging trees from a killed run; the lock holder's own is fresh.
+            retention.prune_stale(state, (".stage-*",))
             conflicts = commands[argv[0]][1](argv[1:])
         except Refused as error:
             print(f"bloom theme: {error}", file=sys.stderr)

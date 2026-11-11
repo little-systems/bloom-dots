@@ -346,6 +346,7 @@ def start(request):
     if owner is None:
         raise ValueError("Settings process identity unavailable")
     root = root_path(True)
+    store.retention.prune_trials(root)
     trial = uuid.uuid4().hex
     directory = trial_path(root, trial)
     directory.mkdir(mode=0o700)

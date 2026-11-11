@@ -215,3 +215,34 @@ No owner monitor trial, push or main merge occurred. H2 still needs StateFile
 schemas/concurrency/retention, ownership-aware theme restoration, and the remaining
 live/VM fault acceptance; H3–H6 remain open. This gate is complete, not the entire
 hardening program.
+
+## H2 completion batch (2026-11-11)
+
+Branch `hardening/h2-state-themes`, isolated worktree; the live checkout is
+unchanged.
+
+- `fb8af1f` app themes: renderers write into staging, and `theme-owner.py`
+  installs and restores only files Bloom still owns. That means SHA-256
+  fingerprints, a pending fingerprint before each write, conflicts for owner
+  edits, deletions and symlinks (exit 3), XDG roots and legacy manifest
+  adoption. See [theme ownership](../handover/theme-ownership.md).
+- `1a51756` state documents: watched files, adoption of external replacements
+  and announcement to callers, per-document shape checks and byte budgets,
+  error kinds, and quarantine retention. See
+  [state documents](../handover/state-documents.md).
+- Retention: crash temporaries for settings, compositor and theme writers,
+  compositor history (10) and finished display trials (10) are bounded.
+
+Focused checks:
+- Python: theme ownership (13), retention (6), settings, compositor and
+  display store cases, lifecycle (all).
+- Script: app-theme and wallpaper-theme tests.
+- Integration: state store, persistence failures, settings concurrency and
+  durability, compositor store, display trial (real Settings crash), dock order,
+  notifications, dock.
+- The full QML suite (993) ran as a plain `qmltestrunner` run, not a complete
+  gate.
+
+H2 status: the code contracts are implemented. Live/VM acceptance (real
+monitor trial, power loss/ENOSPC) moves into the H6 matrix. A manual
+compositor snapshot restore is deferred to H3's doctor/recovery tooling.

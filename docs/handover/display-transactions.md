@@ -67,14 +67,17 @@ a new choice.
   trial. General advanced-profile support is not claimed. Hotplug can prevent a
   physical rollback; the durable previous geometry remains available.
 - A cooperating lock cannot prevent an arbitrary editor in the final
-  check-to-rename interval. Manual recovery tooling, bounded history/temp
-  retention, and power-loss/real ENOSPC acceptance remain open hardening work.
+  check-to-rename interval. History and temporaries are bounded
+  (`shell/services/bloom_retention.py`): the 10 newest compositor snapshots,
+  the 10 newest finished trial records, and crash temporaries older than an
+  hour. Manual snapshot restore is planned with `bloom doctor` (H3);
+  power-loss/real ENOSPC acceptance remains open.
 - Runtime records survive Settings/worker exit for the session, not reboot.
   Unconfirmed trials never write a new boot-time monitor preference. This does
   not provide guaranteed recovery from compositor/kernel/hardware failure.
-- This is compositor/display persistence only. StateFile cross-process schemas,
-  theme ownership restoration, general operation logging and the rest of H2–H6
-  remain open. No package change, real logout/lock, push, merge or full-suite
+- This is compositor/display persistence only. State documents and theme
+  ownership are covered by [state documents](state-documents.md) and
+  [theme ownership](theme-ownership.md); operation logging and H3–H6 remain open. No package change, real logout/lock, push, merge or full-suite
   authority follows from these focused tests.
 
 Focused evidence: compositor migration/serialization/conflicts/backup faults;
