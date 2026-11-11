@@ -23,7 +23,8 @@ Singleton {
 	Timer {
 		id: saveTimer
 		interval: 500
-		onTriggered: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$(dirname "$1")" && printf %s "$2" > "$1"', "sh", root._file, root.notes])
+		// Write beside, then rename: a crash mid-save never empties the notes.
+		onTriggered: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$(dirname "$1")" && printf %s "$2" > "$1.tmp" && mv -f "$1.tmp" "$1"', "sh", root._file, root.notes])
 	}
 	Process {
 		running: true

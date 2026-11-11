@@ -246,3 +246,24 @@ Focused checks:
 H2 status: the code contracts are implemented. Live/VM acceptance (real
 monitor trial, power loss/ENOSPC) moves into the H6 matrix. A manual
 compositor snapshot restore is deferred to H3's doctor/recovery tooling.
+
+## H3 and H4 batches (2026-11-11)
+
+- H3 `1a0828c`: typed operation results, a private redacted event ledger,
+  read-only `bloom doctor --json` (exit 0/1/2) and `bloom support`. See
+  [observability](../handover/observability.md).
+- H4 `3833851`, `16332da`, `8313ad6` and this batch's follow-up:
+  - supervised monitors with bounded backoff
+  - a capability registry with IPC snapshot/retry, checked by doctor
+  - NetworkManager/BlueZ missing-service classification
+  - verified recorder identity and finish
+  - Hyprland-only unit condition and UWSM detection
+  - atomic overlay notes
+  See [backend resilience](../handover/backend-resilience.md).
+- Owner-requested live fix (outside the branch): `misc.focus_on_activate = false`
+  was written through Bloom's compositor writer to
+  `~/.config/hypr/custom/bloom-settings.lua` (backup
+  `~/Projects/bloom-backup-20261111-085512-focus/`), so apps such as the ChatGPT
+  window can't switch workspaces. It was verified after `hyprctl reload`.
+- A doctor false positive was corrected: Bloom never runs `bluetoothctl`. The
+  dependency map now lists only the commands Bloom invokes.

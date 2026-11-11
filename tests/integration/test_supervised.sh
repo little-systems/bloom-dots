@@ -16,6 +16,7 @@ log_has "RESULT steady-stopped=true flaky-stopped=true" || fail "unwanted proces
 log_has "RESULT no-restart-when-unwanted=true" || fail "an unwanted process restarted"
 pass "a process that is no longer wanted stops and stays stopped"
 log_has "RESULT retry-recovers=true" || fail "retry did not recover"
+log_has "RESULT unknown-retry-refused=true" || fail "a retry for an unknown backend was accepted"
 log_has "bloom capability: missing missing" || fail "the missing capability was not logged"
 pass "an explicit retry recovers and resets the backoff"
 log_has "RESULT restart-not-a-failure=true" || fail "restart counted as a failure"

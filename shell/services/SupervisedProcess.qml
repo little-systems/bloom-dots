@@ -62,7 +62,10 @@ Process {
 			proc._set("stopped", "");
 		}
 	}
-	Component.onCompleted: if (proc.wanted) proc.running = true
+	Component.onCompleted: {
+		Capabilities.register(proc.backend, proc.retry);
+		if (proc.wanted) proc.running = true;
+	}
 	onStarted: {
 		proc._started = true;
 		proc._startedAt = Date.now();

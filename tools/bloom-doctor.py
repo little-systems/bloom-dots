@@ -271,7 +271,8 @@ def capabilities():
                  for name, entry in backends.items() if entry.get("state") in ("degraded", "missing"))
     if bad:
         return check("capabilities", "degraded", "; ".join(bad),
-                     "Missing programs: install them (see dependencies). Restarting backends retry on their own with backoff.")
+                     "Missing programs: install them (see dependencies). Backends retry on their own with backoff; "
+                     "to retry now: bloom ipc capabilities retry <backend>")
     return check("capabilities", "ok", f"{len(backends)} backend(s) reporting, none degraded")
 
 

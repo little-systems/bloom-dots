@@ -11,6 +11,22 @@ Singleton {
 	id: root
 
 	property var entries: ({})
+	property var _retries: ({})
+
+	// Supervised processes register a retry for their backend.
+	function register(backend, retry) {
+		const list = (root._retries[backend] || []).concat([retry]);
+		root._retries = Object.assign({}, root._retries, { [backend]: list });
+	}
+
+	// A controlled repair: restart this Bloom-owned backend process now. It
+	// never restarts shared system daemons.
+	function retry(backend) {
+		const list = root._retries[backend];
+		if (!list || list.length === 0) return "unknown backend";
+		for (const fn of list) fn();
+		return "ok";
+	}
 
 	function report(backend, state, reason, attempts) {
 		const old = root.entries[backend];
@@ -35,6 +51,9 @@ Singleton {
 
 		function snapshot(): string {
 			return JSON.stringify({ version: 1, backends: root.entries });
+		}
+		function retry(backend: string): string {
+			return root.retry(backend);
 		}
 	}
 }

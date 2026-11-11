@@ -72,7 +72,8 @@ ShellRoot {
 		onTriggered: {
 			console.log(`RESULT no-restart-when-unwanted=${root.flakyStarts === later.starts}`);
 			missing.command = ["sleep", "30"];
-			missing.retry();
+			console.log(`RESULT unknown-retry-refused=${Capabilities.retry("nonexistent") === "unknown backend"}`);
+			Capabilities.retry("missing");
 			recovered.start();
 		}
 	}
