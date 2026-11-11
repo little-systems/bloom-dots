@@ -90,7 +90,18 @@ def session():
         tag = json.loads(result["stdout"]).get("tag", "unknown")
     except ValueError:
         tag = "unknown"
-    return check("session", "ok", f"Hyprland {tag} is answering")
+    return check("session", "ok", f"Hyprland {tag} is answering ({profile()} session)")
+
+
+def profile():
+    # Where Hyprland itself runs decides the profile, never what is installed.
+    result = probe("hyprland-pid", ["pgrep", "-x", "Hyprland"])
+    pid = result["stdout"].split()[0] if result and result["state"] == "success" and result["stdout"].split() else None
+    try:
+        text = Path(f"/proc/{pid}/cgroup").read_text() if pid else ""
+    except OSError:
+        text = ""
+    return "UWSM" if "wayland-wm@" in text else "native" if pid else "unknown"
 
 
 def service():

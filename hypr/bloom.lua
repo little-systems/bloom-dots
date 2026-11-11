@@ -9,7 +9,18 @@ for _, name in ipairs({"bloom-settings", "bloom", "bloom-keybinds"}) do
         dofile(path)
     end
 end
+-- Session profile, from where Hyprland itself runs (not from what is installed):
+-- under UWSM it is a wayland-wm@ unit, and UWSM imports the environment and
+-- starts graphical-session.target, which starts Bloom. Native sessions start it here.
+local function uwsm()
+    local file = io.open(os.getenv("BLOOM_CGROUP_FILE") or "/proc/self/cgroup", "r")
+    if not file then return false end
+    local text = file:read("*a") or ""
+    file:close()
+    return text:find("wayland%-wm@", 1) ~= nil
+end
 hl.on("hyprland.start", function()
+    if uwsm() then return end
     local present = {}
     for _, name in ipairs({"WAYLAND_DISPLAY", "DISPLAY", "HYPRLAND_INSTANCE_SIGNATURE",
         "XDG_CURRENT_DESKTOP", "XDG_SESSION_TYPE", "XDG_CONFIG_HOME", "XDG_DATA_HOME",

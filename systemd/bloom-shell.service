@@ -11,9 +11,11 @@ OnFailure=bloom-shell-failed.service
 
 [Service]
 Type=simple
-# Without a compositor there is nothing to restart. A skipped condition is
-# not a crash: preserve retries for real failures and wait for the next login.
-ExecCondition=/bin/sh -c 'case "$$WAYLAND_DISPLAY" in "") exit 1;; /*) test -S "$$WAYLAND_DISPLAY";; *) test -S "%t/$$WAYLAND_DISPLAY";; esac'
+# Bloom runs only in a live Hyprland session: not under another desktop that
+# also uses graphical-session.target, and not with a dead Hyprland's leftover
+# environment. A skipped condition is not a crash: preserve retries for real
+# failures and wait for the next login.
+ExecCondition=/bin/sh -c 'case "$$WAYLAND_DISPLAY" in "") exit 1;; /*) test -S "$$WAYLAND_DISPLAY";; *) test -S "%t/$$WAYLAND_DISPLAY";; esac || exit 1; case "$$HYPRLAND_INSTANCE_SIGNATURE" in "" | */* | .*) exit 1;; esac; test -S "%t/hypr/$$HYPRLAND_INSTANCE_SIGNATURE/.socket.sock"'
 ExecStart=/usr/bin/qs --no-color -c bloom
 Restart=on-failure
 RestartSec=1
