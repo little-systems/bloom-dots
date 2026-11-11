@@ -76,7 +76,12 @@ Singleton {
 		id: state
 		name: "shelf"
 		defaultValue: []
-		onLoadedChanged: if (loaded && Settings.values["bloom-shelf-persist"]) {
+		validate: v => Array.isArray(v) ? v : undefined
+		maxBytes: 2097152
+		onLoadedChanged: if (loaded) restore()
+		onExternallyChanged: restore()
+		function restore() {
+			if (!Settings.values["bloom-shelf-persist"]) return;
 			root.items = Logic.clean(value, root._newId);
 			root._preview();
 			prune.start();

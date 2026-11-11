@@ -116,8 +116,11 @@ Scope {
 		id: state
 		name: "notifications"
 		defaultValue: ({ entries: [] })
+		validate: v => v !== null && typeof v === "object" && !Array.isArray(v) && (v.entries === undefined || Array.isArray(v.entries)) ? v : undefined
+		maxBytes: 1048576
 		onLoadedChanged: if (loaded)
 			root.history = Logic.restore(value, Settings.values["bloom-notifications-history-limit"])
+		onExternallyChanged: root.history = Logic.restore(value, Settings.values["bloom-notifications-history-limit"])
 	}
 	Timer {
 		id: ownerCheckDelay

@@ -347,6 +347,8 @@ Singleton {
 		id: pins
 		name: "dock"
 		defaultValue: ({ pinned: [], order: [] })
+		validate: v => v !== null && typeof v === "object" && !Array.isArray(v) ? v : undefined
+		maxBytes: 65536
 		onValueChanged: root._order = Logic.nextOrder(Logic.orderOf(pins.value), root.groups.map(g => g.id))
 	}
 }

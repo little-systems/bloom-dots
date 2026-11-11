@@ -101,7 +101,11 @@ Singleton {
 		id: state
 		name: "calendar"
 		defaultValue: ({ durationSec: 1500, deadlineMs: 0, pausedSec: 0, finished: false })
-		onLoadedChanged: if (loaded) {
+		validate: v => v !== null && typeof v === "object" && !Array.isArray(v) ? v : undefined
+		maxBytes: 4096
+		onLoadedChanged: if (loaded) restore()
+		onExternallyChanged: restore()
+		function restore() {
 			const s = Logic.restored(value, Date.now());
 			root.durationSec = s.durationSec;
 			root.deadlineMs = s.deadlineMs;

@@ -99,6 +99,8 @@ Singleton {
 		id: cache
 		name: "weather"
 		defaultValue: ({})
+		validate: v => v !== null && typeof v === "object" && !Array.isArray(v) ? v : undefined
+		maxBytes: 16384
 		onLoadedChanged: {
 			const v = cache.value;
 			if (cache.loaded && root.temperature === null && typeof v.temperature === "number" && v.unit === root.unit)

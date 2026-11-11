@@ -18,7 +18,13 @@ Singleton {
 		id: state
 		name: "notch-panel"
 		defaultValue: ({ lastPanel: "calendar" })
-		onLoadedChanged: if (loaded && ["calendar", "command-center", "devices"].indexOf(value?.lastPanel) >= 0)
-			root.lastPanel = value.lastPanel
+		validate: v => v !== null && typeof v === "object" && !Array.isArray(v) ? v : undefined
+		maxBytes: 4096
+		onLoadedChanged: if (loaded) restore()
+		onExternallyChanged: restore()
+		function restore() {
+			if (["calendar", "command-center", "devices"].indexOf(value?.lastPanel) >= 0)
+				root.lastPanel = value.lastPanel;
+		}
 	}
 }
