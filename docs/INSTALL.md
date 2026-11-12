@@ -62,7 +62,7 @@ only when you have installed the dependency package's contents yourself.
   profiles.
 - **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom-login` group,
   so the login screen follows your wallpaper and colours without a password.
-- **Default apps** (only without ii, and only once): kitty, Nautilus, Firefox,
+- **Default apps** (only without ii, and only once): kitty, Dolphin, Firefox,
   GNOME Text Editor, Loupe and mpv. They are ordinary apps: uninstall keeps
   them, and an update never reinstalls one you removed. One that another
   package brought in (ii, say) is marked as your own, so removing that

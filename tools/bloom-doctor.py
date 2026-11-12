@@ -44,11 +44,11 @@ REQUIRED = {
     "brightnessctl": "brightnessctl", "qalc": "libqalculate", "pactl": "libpulse", "nmcli": "networkmanager",
     "notify-send": "libnotify", "xdg-open": "xdg-utils", "gsettings": "glib2", "gio": "glib2",
     "dbus-monitor": "dbus", "busctl": "systemd", "udevadm": "systemd", "systemd-run": "systemd",
-    "lsblk": "util-linux",
+    "lsblk": "util-linux", "secret-tool": "libsecret",
 }
 OPTIONAL = {"mpvpaper": "video wallpapers", "satty": "screenshot annotation", "swappy": "screenshot annotation",
             "songrec": "music recognition", "trans": "translation", "checkupdates": "package updates",
-            "secret-tool": "AI key storage", "udisksctl": "dock drives"}
+            "udisksctl": "dock drives"}
 EXCLUSIVE = {"org.freedesktop.Notifications": "notifications", "org.kde.StatusNotifierWatcher": "tray"}
 LIFECYCLE_OK = {"complete", "uninstalled"}
 LIFECYCLE_INTERRUPTED = {"installing", "uninstalling", "updating"}
@@ -248,6 +248,17 @@ def bus():
     return check("bus", "ok", "Bloom owns: " + ", ".join(owners) if owners else "no exclusive desktop services are claimed")
 
 
+def keyring():
+    """The AI key is stored with secret-tool, which needs a Secret Service."""
+    result = probe("keyring", ["busctl", "--user", "list"])
+    if result is None or result["state"] != "success":
+        return check("keyring", "skipped", "the session bus can't be listed")
+    if any(line.split()[:1] == ["org.freedesktop.secrets"] for line in result["stdout"].splitlines()):
+        return check("keyring", "ok", "a keyring is running for the AI chat's API key")
+    return check("keyring", "degraded", "no keyring is running, so the AI chat can't save its API key",
+                 "Install one with: sudo pacman -S gnome-keyring, then log out and back in")
+
+
 def display():
     runtime = os.environ.get("XDG_RUNTIME_DIR")
     unfinished = 0
@@ -326,7 +337,7 @@ def network():
     return check("network", "degraded", "no network service is enabled", "Run: bloom install")
 
 
-CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, first_login, login, network, themes,
+CHECKS = (session, service, shell_ipc, capabilities, settings, state, lifecycle, first_login, login, network, keyring, themes,
           dependencies, bus, display)
 
 

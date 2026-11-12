@@ -273,8 +273,8 @@ shortcuts and no apps. The owner decided, for machines without ii (no
   with a marked desktop line first and the loader last, so the user's lines
   win. Uninstall restores the example or removes a created file; an edited
   file keeps the user's lines. A personal config only gains the loader.
-- **Default apps, GNOME-style:** kitty, nautilus, firefox, gnome-text-editor,
-  loupe, mpv. Installed explicitly (not as dependencies) by the system phase,
+- **Default apps, GNOME-style:** kitty, dolphin, firefox, gnome-text-editor,
+  loupe, mpv (Dolphin replaced Nautilus by owner ruling, 2026-11-12). Installed explicitly (not as dependencies) by the system phase,
   offered once (`apps_offered` in the system manifest), kept by uninstall.
 - **Shortcuts** (owner-approved table): Super tap or Super+Space launcher,
   Super+/ cheatsheet, Super+Tab overview, Super+N Command Center, Super+M

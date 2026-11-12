@@ -274,6 +274,12 @@ class Phase(Facts):
         steps = system.plan(self.root, self.user, deps=True)
         self.assertEqual([(s["packages"], s["adopt"]) for s in steps if s["kind"] == "apps"], [([], ["kitty"])])
 
+    def test_shell_dependencies_include_a_keyring(self):
+        # The AI key is stored with secret-tool, which needs a Secret Service.
+        pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
+        self.assertIn("'gnome-keyring'", pkgbuild)
+        self.assertIn("'libsecret'", pkgbuild)
+
     def test_shell_dependencies_include_the_pulse_server(self):
         # Bloom's audio events use pactl, which needs PipeWire's Pulse server.
         pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text()
@@ -372,7 +378,7 @@ class Phase(Facts):
         self.assertFalse((self.root / "var/lib/bloom/login").exists())
         self.assertNotIn("bloom-login:", (self.root / "etc/group").read_text())
         self.assertTrue(any("NetworkManager" in m for m in messages), messages)
-        self.assertIn("Kept the default apps: kitty, nautilus, firefox, gnome-text-editor, loupe, mpv", messages)
+        self.assertIn("Kept the default apps: kitty, dolphin, firefox, gnome-text-editor, loupe, mpv", messages)
         self.assertFalse(any(call[:2] == ["pacman", "-R"] or call[:2] == ["pacman", "-Rns"] and "firefox" in call
                              for call in self.calls()))
         self.assertNotIn(["pacman", "-Rns", "--noconfirm", "bloom-shell-deps"], self.calls())

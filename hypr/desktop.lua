@@ -6,7 +6,7 @@ local bloom = "'" .. (checkout .. "/bin/bloom"):gsub("'", "'\\''") .. "'"
 local function ipc(args) return hl.dsp.exec_cmd(bloom .. " ipc " .. args) end
 
 local terminal = "kitty"
-local files = "nautilus --new-window"
+local files = "dolphin --new-window"
 local browser = "firefox"
 
 -- 100% on every screen; Settings > Display changes it per screen.

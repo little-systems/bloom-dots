@@ -195,6 +195,22 @@ class DoctorCases(Home):
         ids = {c["id"] for c in report["checks"]}
         self.assertTrue({"session", "service", "settings", "state", "lifecycle", "dependencies"} <= ids)
 
+    def keyring(self):
+        return next(c for c in json.loads(self.doctor("--json").stdout)["checks"] if c["id"] == "keyring")
+
+    # The AI key lives in the keyring (Secret Service); without one, saving it fails.
+    def test_a_keyring_on_the_session_bus_is_ok(self):
+        self.fake("busctl", 'if [ "$2" = list ]; then echo "org.freedesktop.secrets - - - (activatable) - - -"; fi')
+        self.assertEqual(self.keyring()["status"], "ok")
+
+    def test_no_keyring_says_how_to_get_one(self):
+        self.fake("busctl", 'if [ "$2" = list ]; then echo "org.freedesktop.DBus 1 dbus-daemon"; fi')
+        check = self.keyring()
+        self.assertEqual(check["status"], "degraded")
+        self.assertIn("gnome-keyring", check["recovery"])
+        # The report is redacted; the words "key" and "secret" must not eat the message.
+        self.assertNotIn("redacted", check["summary"] + check["recovery"])
+
     def test_interrupted_lifecycle_is_a_failure_with_recovery(self):
         (self.home / ".local/state/bloom/install-manifest.json").write_text(json.dumps({"status": "uninstalling"}))
         report = json.loads(self.doctor("--json").stdout)

@@ -145,7 +145,7 @@ LAUNCHER_TEXT = ("#!/bin/sh\n# Bloom's command for every account; removed by blo
 # Not "bloom": that is often someone's own user group.
 GROUP = "bloom-login"
 # Where Bloom is the whole desktop (no ii), a fresh machine gets these once.
-APPS = ("kitty", "nautilus", "firefox", "gnome-text-editor", "loupe", "mpv")
+APPS = ("kitty", "dolphin", "firefox", "gnome-text-editor", "loupe", "mpv")
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
 
 
