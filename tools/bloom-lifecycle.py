@@ -30,8 +30,14 @@ MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", "ses
            "regiontools", "wallpaper", "cheatsheet", "osk", "overlay"]
 
 
+# kitty.conf takes no trailing comments, so its managed lines are known by
+# what they include: Bloom's settings, then the colours Bloom's theme writes.
+KITTY_THEME_LINE = "include bloom-theme.conf"
+
+
 def managed(line):
-    return line.endswith(MARKER) or line.endswith(DESKTOP_MARKER)
+    return (line.endswith(MARKER) or line.endswith(DESKTOP_MARKER) or line == KITTY_THEME_LINE
+            or re.fullmatch(r"include /.*/kitty/bloom\.conf", line) is not None)
 MANIFEST_VERSION = 2
 
 
@@ -255,6 +261,7 @@ class Context:
             str(self.home / ".local/bin/bloom"): {"link"},
             str(self.data / "applications/bloom-settings.desktop"): {"file"},
             str(self.config / "hypr/hyprland.lua"): {"loader"},
+            str(self.config / "kitty/kitty.conf"): {"loader"},
             str(self.config / "bloom/settings.json"): {"config"},
         }
         for source in (ROOT / "systemd").glob("*.service"):
@@ -414,6 +421,13 @@ class Context:
         desktop = f"dofile({json.dumps(str(ROOT / 'hypr/desktop.lua'), ensure_ascii=False)}) {DESKTOP_MARKER}\n"
         return (desktop if self.bloom_desktop else "") + own + self.loader() + "\n"
 
+    def kitty_text(self):
+        """kitty.conf with Bloom's settings and colours first; the user's lines follow and win."""
+        config = self.config / "kitty/kitty.conf"
+        own = config.read_text() if config.is_file() else ""
+        own = "".join(line + "\n" for line in own.splitlines() if not managed(line))
+        return f"include {ROOT / 'kitty/bloom.conf'}\n{KITTY_THEME_LINE}\n" + own
+
     def plan(self):
         operations = [(self.config / "quickshell/bloom", "link", str(ROOT / "shell")),
                       (self.home / ".local/bin/bloom", "link", str(ROOT / "bin/bloom"))]
@@ -427,6 +441,7 @@ class Context:
         for source in sorted((ROOT / "hypr/custom").glob("*.lua")):
             operations.append((self.config / "hypr/custom" / source.name, "template", source))
         operations.append((self.config / "hypr/hyprland.lua", "loader", self.hyprland_text()))
+        operations.append((self.config / "kitty/kitty.conf", "loader", self.kitty_text()))
         if not (self.config / "bloom/settings.json").exists():
             # Beside ii, ii keeps its surfaces (the wallpaper among them); otherwise Bloom is the whole desktop.
             modules = ["notch", "dock"] if self.beside_ii() else MODULES

@@ -25,7 +25,7 @@ class Lifecycle(unittest.TestCase):
         self.root = self.base / "checkout with spaces"
         self.root.mkdir()
         shutil.copy2(ROOT / ".gitignore", self.root / ".gitignore")
-        for relative in ("bin", "systemd", "share", "hypr", "packaging"):
+        for relative in ("bin", "systemd", "share", "hypr", "kitty", "packaging"):
             shutil.copytree(ROOT / relative, self.root / relative)
         (self.root / "tools").mkdir()
         for tool in ("bloom-lifecycle.py", "bloom_system.py", "bloom_ui.py"):
@@ -283,6 +283,31 @@ elif name == 'systemctl':
         self.bloom("install")
         settings = json.loads((self.config / "bloom/settings.json").read_text())
         self.assertEqual(settings["bloom-enabled-modules"], ["notch", "dock"])
+
+    # kitty: Bloom's settings are included first, so the user's own lines win.
+    def test_kitty_gets_blooms_settings_first_and_loses_them_on_uninstall(self):
+        self.bloom("install")
+        kitty = self.config / "kitty/kitty.conf"
+        lines = kitty.read_text().splitlines()
+        self.assertTrue(re.fullmatch(r"include /.*/kitty/bloom\.conf", lines[0]), lines[0])
+        self.assertTrue((Path(lines[0].split(" ", 1)[1])).is_file())
+        self.bloom("uninstall")
+        self.assertFalse(kitty.exists())
+
+    def test_an_existing_kitty_config_keeps_its_lines(self):
+        kitty = self.config / "kitty/kitty.conf"
+        kitty.parent.mkdir(parents=True)
+        kitty.write_text("font_size 14\n")
+        self.bloom("install")
+        text = kitty.read_text()
+        self.assertTrue(text.startswith("include "))
+        self.assertTrue(text.endswith("font_size 14\n"))
+        self.bloom("install")
+        self.assertEqual(kitty.read_text(), text)
+        with kitty.open("a") as stream:
+            stream.write("cursor_shape block\n")
+        self.bloom("uninstall")
+        self.assertEqual(kitty.read_text(), "font_size 14\ncursor_shape block\n")
 
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()
