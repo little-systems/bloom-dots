@@ -85,9 +85,8 @@ def main():
     out = Path(os.environ.get("BLOOM_THEME_OUT", home))
     templates = Path(__file__).resolve().parent.parent / "theming" / "templates"
     targets = {"gtk3.css": ".config/gtk-3.0/gtk.css", "gtk4.css": ".config/gtk-4.0/gtk.css",
-               "fuzzel.ini": ".config/fuzzel/fuzzel_theme.ini",
-               "kitty.conf": ".local/state/quickshell/user/generated/terminal/kitty-theme.conf",
-               "hyprland.lua": ".config/hypr/hyprland/colors.lua",
+               "kitty.conf": ".config/kitty/bloom-theme.conf",
+               "hyprland.lua": ".config/hypr/custom/bloom-colors.lua",
                "qt.colors": ".local/share/color-schemes/BloomAdaptive.colors"}
     outputs = {}
     for template, destination in targets.items():

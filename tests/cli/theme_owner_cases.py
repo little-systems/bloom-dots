@@ -10,7 +10,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 HELPER = ROOT / "shell/scripts/theme-owner.py"
 CSS = ".config/gtk-4.0/gtk.css"
-FUZZEL = ".config/fuzzel/fuzzel_theme.ini"
+KITTY = ".config/kitty/bloom-theme.conf"
+OLD_KITTY = ".local/state/quickshell/user/generated/terminal/kitty-theme.conf"
 
 
 class ThemeOwnerCases(unittest.TestCase):
@@ -54,37 +55,55 @@ class ThemeOwnerCases(unittest.TestCase):
         return path
 
     def test_restore_returns_originals_and_removes_files_bloom_created(self):
-        self.write(FUZZEL, "owner fuzzel\n")
-        self.stage({FUZZEL: "bloom fuzzel\n", CSS: "bloom css\n"})
-        self.assertEqual((self.home / FUZZEL).read_text(), "bloom fuzzel\n")
+        self.write(KITTY, "owner kitty\n")
+        self.stage({KITTY: "bloom kitty\n", CSS: "bloom css\n"})
+        self.assertEqual((self.home / KITTY).read_text(), "bloom kitty\n")
         self.run_owner("restore")
-        self.assertEqual((self.home / FUZZEL).read_text(), "owner fuzzel\n")
+        self.assertEqual((self.home / KITTY).read_text(), "owner kitty\n")
         self.assertFalse((self.home / CSS).exists())
         self.assertFalse(self.ledger.exists())
 
+    # Earlier Bloom versions themed files in ii's folders; the next apply
+    # gives back the ones Bloom still owns and leaves edited ones alone.
+    def test_retired_targets_are_given_back_on_the_next_apply(self):
+        old_hypr = ".config/hypr/hyprland/colors.lua"
+        ledger = {"version": 1, "targets": {
+            OLD_KITTY: {"original": False, "written": hashlib.sha256(b"bloom kitty\n").hexdigest(), "pending": None},
+            old_hypr: {"original": False, "written": hashlib.sha256(b"bloom hypr\n").hexdigest(), "pending": None}},
+            "gsettings": {}}
+        self.ledger.parent.mkdir(parents=True)
+        self.ledger.write_text(json.dumps(ledger))
+        self.write(OLD_KITTY, "bloom kitty\n")
+        self.write(old_hypr, "owner edit\n")
+        result = self.stage({CSS: "bloom css\n"})
+        self.assertFalse((self.home / OLD_KITTY).exists())
+        self.assertEqual((self.home / old_hypr).read_text(), "owner edit\n")
+        self.assertIn(old_hypr, result.stdout)
+        self.assertEqual(sorted(json.loads(self.ledger.read_text())["targets"]), [CSS])
+
     def test_second_apply_keeps_the_first_original(self):
-        self.write(FUZZEL, "owner fuzzel\n")
-        self.stage({FUZZEL: "bloom one\n"})
-        self.stage({FUZZEL: "bloom two\n"})
-        self.assertEqual((self.home / FUZZEL).read_text(), "bloom two\n")
+        self.write(KITTY, "owner kitty\n")
+        self.stage({KITTY: "bloom one\n"})
+        self.stage({KITTY: "bloom two\n"})
+        self.assertEqual((self.home / KITTY).read_text(), "bloom two\n")
         self.run_owner("restore")
-        self.assertEqual((self.home / FUZZEL).read_text(), "owner fuzzel\n")
+        self.assertEqual((self.home / KITTY).read_text(), "owner kitty\n")
 
     def test_owner_edit_after_apply_is_preserved_by_apply_and_restore(self):
-        self.write(FUZZEL, "owner fuzzel\n")
-        self.stage({FUZZEL: "bloom one\n", CSS: "bloom css\n"})
-        self.write(FUZZEL, "edited by owner\n")
-        result = self.stage({FUZZEL: "bloom two\n", CSS: "bloom css 2\n"})
+        self.write(KITTY, "owner kitty\n")
+        self.stage({KITTY: "bloom one\n", CSS: "bloom css\n"})
+        self.write(KITTY, "edited by owner\n")
+        result = self.stage({KITTY: "bloom two\n", CSS: "bloom css 2\n"})
         self.assertEqual(result.returncode, 3)
-        self.assertIn(FUZZEL, result.stdout)
-        self.assertEqual((self.home / FUZZEL).read_text(), "edited by owner\n")
+        self.assertIn(KITTY, result.stdout)
+        self.assertEqual((self.home / KITTY).read_text(), "edited by owner\n")
         self.assertEqual((self.home / CSS).read_text(), "bloom css 2\n")
         result = self.run_owner("restore")
         self.assertEqual(result.returncode, 3)
-        self.assertEqual((self.home / FUZZEL).read_text(), "edited by owner\n")
+        self.assertEqual((self.home / KITTY).read_text(), "edited by owner\n")
         self.assertFalse((self.home / CSS).exists())
-        kept = list((self.t / "state/bloom/app-themes").rglob("fuzzel_theme.ini"))
-        self.assertTrue(any(p.read_text() == "owner fuzzel\n" for p in kept), "the pre-Bloom original stays recoverable")
+        kept = list((self.t / "state/bloom/app-themes").rglob("bloom-theme.conf"))
+        self.assertTrue(any(p.read_text() == "owner kitty\n" for p in kept), "the pre-Bloom original stays recoverable")
 
     def test_owner_deletion_after_apply_is_not_undone(self):
         self.stage({CSS: "bloom css\n"})
@@ -103,34 +122,34 @@ class ThemeOwnerCases(unittest.TestCase):
         self.assertEqual(real.read_text(), "managed elsewhere\n")
 
     def test_crash_after_writing_a_file_is_not_mistaken_for_an_owner_edit(self):
-        self.write(FUZZEL, "owner fuzzel\n")
-        env = dict(self.env, BLOOM_THEME_CUT=f"written:{FUZZEL}")
+        self.write(KITTY, "owner kitty\n")
+        env = dict(self.env, BLOOM_THEME_CUT=f"written:{KITTY}")
         stage = Path(tempfile.mkdtemp(dir=self.t))
-        self.write(FUZZEL, "bloom one\n", stage)
+        self.write(KITTY, "bloom one\n", stage)
         cut = self.run_owner("commit", str(stage), env=env, check=False)
         self.assertEqual(cut.returncode, 137)
-        self.assertEqual((self.home / FUZZEL).read_text(), "bloom one\n")
-        self.assertEqual(self.stage({FUZZEL: "bloom two\n"}).returncode, 0)
-        self.assertEqual((self.home / FUZZEL).read_text(), "bloom two\n")
+        self.assertEqual((self.home / KITTY).read_text(), "bloom one\n")
+        self.assertEqual(self.stage({KITTY: "bloom two\n"}).returncode, 0)
+        self.assertEqual((self.home / KITTY).read_text(), "bloom two\n")
         self.run_owner("restore")
-        self.assertEqual((self.home / FUZZEL).read_text(), "owner fuzzel\n")
+        self.assertEqual((self.home / KITTY).read_text(), "owner kitty\n")
 
     def test_legacy_backup_manifest_restores_and_keeps_unknown_new_files(self):
         legacy = self.t / "state/bloom/app-themes"
-        self.write(FUZZEL, "owner fuzzel\n", legacy)
-        (legacy / "manifest").write_text(FUZZEL + "\n")
-        self.write(FUZZEL, "bloom fuzzel\n")
+        self.write(KITTY, "owner kitty\n", legacy)
+        (legacy / "manifest").write_text(KITTY + "\n")
+        self.write(KITTY, "bloom kitty\n")
         self.write(CSS, "maybe the owner's\n")
         self.assertEqual(self.run_owner("restore").returncode, 3)
-        self.assertEqual((self.home / FUZZEL).read_text(), "owner fuzzel\n")
+        self.assertEqual((self.home / KITTY).read_text(), "owner kitty\n")
         self.assertEqual((self.home / CSS).read_text(), "maybe the owner's\n", "unverifiable legacy file left in place")
         self.assertFalse((legacy / "manifest").exists())
 
     def test_legacy_unlisted_file_is_backed_up_on_the_next_apply(self):
         legacy = self.t / "state/bloom/app-themes"
         legacy.mkdir(parents=True)
-        (legacy / "manifest").write_text(FUZZEL + "\n")
-        self.write(FUZZEL, "bloom fuzzel\n", legacy)
+        (legacy / "manifest").write_text(KITTY + "\n")
+        self.write(KITTY, "bloom kitty\n", legacy)
         settings = ".config/gtk-3.0/settings.ini"
         self.write(settings, "[Settings]\ngtk-font-name=Example 11\n")
         self.stage({settings: "[Settings]\ngtk-font-name=Example 11\ngtk-theme-name=Adwaita\n"})

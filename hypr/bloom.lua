@@ -1,7 +1,8 @@
 -- Bloom's integration. The installer loads this file once from hyprland.lua.
 -- Custom files belong to the user and are never overwritten after editing.
 local config = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
-for _, name in ipairs({"bloom-settings", "bloom", "bloom-keybinds"}) do
+-- bloom-colors is written by Bloom's theme; the user's own files come after it.
+for _, name in ipairs({"bloom-colors", "bloom-settings", "bloom", "bloom-keybinds"}) do
     local path = config .. "/hypr/custom/" .. name .. ".lua"
     local file = io.open(path, "r")
     if file then

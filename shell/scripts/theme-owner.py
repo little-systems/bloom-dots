@@ -36,10 +36,9 @@ TARGETS = (
     ".config/gtk-4.0/gtk.css",
     ".config/gtk-3.0/settings.ini",
     ".config/gtk-4.0/settings.ini",
-    ".config/fuzzel/fuzzel_theme.ini",
-    ".config/hypr/hyprland/colors.lua",
+    ".config/hypr/custom/bloom-colors.lua",
     ".config/kdeglobals",
-    ".local/state/quickshell/user/generated/terminal/kitty-theme.conf",
+    ".config/kitty/bloom-theme.conf",
     ".local/share/color-schemes/BloomAdaptive.colors",
     ".local/share/color-schemes/BloomAdaptiveA.colors",
     ".local/share/color-schemes/BloomAdaptiveB.colors",
@@ -224,6 +223,10 @@ def commit(stage):
         entry.update(written=new, pending=None)
         entry.pop("legacy", None)
         ledger.save()
+    # Earlier versions themed files in ii's folders: give back the ones Bloom
+    # still owns, as restore would, and stop tracking all of them.
+    for rel in sorted(set(targets) - set(TARGETS)):
+        conflicts += give_back(ledger, rel)
     return conflicts
 
 
@@ -254,35 +257,43 @@ def set_desktop(key, value):
     return []
 
 
+def give_back(ledger, rel):
+    """Put one target back as it was before Bloom and stop tracking it."""
+    targets = ledger.doc["targets"]
+    entry = targets[rel]
+    path = target_path(rel)
+    current = fingerprint(path)
+    original = ledger.original(rel)
+    conflicts = []
+    if path.is_symlink() or current == "not-a-file":
+        conflicts.append(f"{rel}: not a regular file; left alone")
+    elif entry.get("legacy") and not entry["original"]:
+        if current is not None:
+            conflicts.append(f"{rel}: predates Bloom's ownership records; left in place")
+    elif owned(entry, current):
+        if entry["original"]:
+            atomic_write(path, original.read_bytes(), original.stat().st_mode & 0o777 or 0o644)
+        elif current is not None:
+            path.unlink()
+            sync_dir(path.parent)
+    else:
+        what = "deleted" if current is None else "edited"
+        conflicts.append(f"{rel}: {what} after Bloom themed it; left alone")
+        if entry["original"]:
+            kept = ledger.keep(original, rel)
+            conflicts[-1] += f" (pre-Bloom copy kept at {kept})"
+    original.unlink(missing_ok=True)
+    del targets[rel]
+    ledger.save()
+    return conflicts
+
+
 def restore():
     ledger = Ledger().load()
     targets = ledger.doc["targets"]
     conflicts = []
     for rel in sorted(targets):
-        entry = targets[rel]
-        path = target_path(rel)
-        current = fingerprint(path)
-        original = ledger.original(rel)
-        if path.is_symlink() or current == "not-a-file":
-            conflicts.append(f"{rel}: not a regular file; left alone")
-        elif entry.get("legacy") and not entry["original"]:
-            if current is not None:
-                conflicts.append(f"{rel}: predates Bloom's ownership records; left in place")
-        elif owned(entry, current):
-            if entry["original"]:
-                atomic_write(path, original.read_bytes(), original.stat().st_mode & 0o777 or 0o644)
-            elif current is not None:
-                path.unlink()
-                sync_dir(path.parent)
-        else:
-            what = "deleted" if current is None else "edited"
-            conflicts.append(f"{rel}: {what} after Bloom themed it; left alone")
-            if entry["original"]:
-                kept = ledger.keep(original, rel)
-                conflicts[-1] += f" (pre-Bloom copy kept at {kept})"
-        original.unlink(missing_ok=True)
-        del targets[rel]
-        ledger.save()
+        conflicts += give_back(ledger, rel)
     if shutil.which("gsettings") is not None:
         for key in sorted(ledger.doc["gsettings"]):
             entry = ledger.doc["gsettings"][key]

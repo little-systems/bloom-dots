@@ -13,7 +13,7 @@ T="$(mktemp -d)"
 trap 'rm -rf "$T"' EXIT
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 export BLOOM_THEME_HOME="$T/home" XDG_STATE_HOME="$T/state" PATH="$T/bin:$PATH"
-mkdir -p "$T/bin" "$T/home/.config/fuzzel" "$T/home/.config/hypr/hyprland"
+mkdir -p "$T/bin" "$T/home/.config/kitty" "$T/home/.config/hypr/custom"
 printf '#!/bin/sh\necho "$*" >> "%s/plasma"\n' "$T" > "$T/bin/plasma-apply-colorscheme"
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/pkill"
 cat > "$T/bin/gsettings" <<'FAKE_GSETTINGS'
@@ -25,8 +25,8 @@ exit 0
 FAKE_GSETTINGS
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/hyprctl"
 chmod +x "$T/bin/"*
-echo original-fuzzel > "$T/home/.config/fuzzel/fuzzel_theme.ini"
-echo original-hypr > "$T/home/.config/hypr/hyprland/colors.lua"
+echo original-kitty > "$T/home/.config/kitty/bloom-theme.conf"
+echo original-hypr > "$T/home/.config/hypr/custom/bloom-colors.lua"
 python3 - "$T/wall.png" <<'PY'
 import struct, sys, zlib
 w = 64
@@ -37,29 +37,29 @@ open(sys.argv[1], "wb").write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(
 PY
 
 bash "$SCRIPT" apply "$T/wall.png"
-for f in .config/gtk-3.0/gtk.css .config/gtk-4.0/gtk.css .config/fuzzel/fuzzel_theme.ini .config/hypr/hyprland/colors.lua .local/state/quickshell/user/generated/terminal/kitty-theme.conf .local/share/color-schemes/BloomAdaptive.colors; do
+for f in .config/gtk-3.0/gtk.css .config/gtk-4.0/gtk.css .config/kitty/bloom-theme.conf .config/hypr/custom/bloom-colors.lua .local/share/color-schemes/BloomAdaptive.colors; do
 	[[ -s "$T/home/$f" ]] || fail "$f wasn't written"
 	if grep -q '{{' "$T/home/$f"; then fail "$f has an unfilled colour"; fi
 done
 grep -qE '@define-color accent_color #[0-9a-f]{6};' "$T/home/.config/gtk-4.0/gtk.css" || fail "no accent in GTK 4"
-grep -qE 'selection=[0-9a-f]{8}$' "$T/home/.config/fuzzel/fuzzel_theme.ini" || fail "fuzzel colour format"
-grep -qE 'active_border += "rgba\([0-9a-f]{8}\)"' "$T/home/.config/hypr/hyprland/colors.lua" || fail "Hyprland colour format"
+grep -qE '^background #[0-9a-f]{6}$' "$T/home/.config/kitty/bloom-theme.conf" || fail "kitty colour format"
+grep -qE 'active_border += "rgba\([0-9a-f]{8}\)"' "$T/home/.config/hypr/custom/bloom-colors.lua" || fail "Hyprland colour format"
 grep -qx BloomAdaptiveA "$T/plasma" || fail "the Qt scheme wasn't applied"
 echo "ok - every app's colours are written from the wallpaper"
 
 bash "$SCRIPT" apply "$T/wall.png"
-grep -q original-fuzzel "$T/state/bloom/app-themes/originals/.config/fuzzel/fuzzel_theme.ini" || fail "a second apply overwrote the backup"
+grep -q original-kitty "$T/state/bloom/app-themes/originals/.config/kitty/bloom-theme.conf" || fail "a second apply overwrote the backup"
 echo "ok - a second wallpaper keeps the first backup"
 
 bash "$SCRIPT" restore
-grep -q original-fuzzel "$T/home/.config/fuzzel/fuzzel_theme.ini" || fail "fuzzel wasn't restored"
-grep -q original-hypr "$T/home/.config/hypr/hyprland/colors.lua" || fail "Hyprland wasn't restored"
+grep -q original-kitty "$T/home/.config/kitty/bloom-theme.conf" || fail "kitty wasn't restored"
+grep -q original-hypr "$T/home/.config/hypr/custom/bloom-colors.lua" || fail "Hyprland wasn't restored"
 [[ ! -s "$T/home/.config/gtk-4.0/gtk.css" ]] || fail "a file that didn't exist before kept its theme"
 echo "ok - leaving Adaptive restores everything"
 
 bash "$SCRIPT" restore || fail "restoring twice is an error"
-echo modified > "$T/home/.config/fuzzel/fuzzel_theme.ini"
+echo modified > "$T/home/.config/kitty/bloom-theme.conf"
 bash "$SCRIPT" apply "$T/wall.png"
 bash "$SCRIPT" restore
-grep -q modified "$T/home/.config/fuzzel/fuzzel_theme.ini" || fail "a later Adaptive restored a stale backup"
+grep -q modified "$T/home/.config/kitty/bloom-theme.conf" || fail "a later Adaptive restored a stale backup"
 echo "ok - each Adaptive session keeps its own backup"
