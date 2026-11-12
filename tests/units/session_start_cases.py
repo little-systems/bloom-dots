@@ -44,7 +44,8 @@ sys.exit(1 if args[1] == 'import-environment' and os.environ['IMPORT_FAILS'] == 
  on = function(event, callback)
    assert(event == 'hyprland.start'); callback()
  end,
- exec_cmd = function(command) os.execute(command) end
+ exec_cmd = function(command) os.execute(command) end,
+ config = function(options) end
 }
 dofile(arg[1])
 """
@@ -96,7 +97,8 @@ dofile(arg[1])
                        BLOOM_CGROUP_FILE=str(cgroup), WAYLAND_DISPLAY="wayland-new")
             harness = """hl = {
  on = function(event, callback) callback() end,
- exec_cmd = function(command) os.execute(command) end
+ exec_cmd = function(command) os.execute(command) end,
+ config = function(options) end
 }
 dofile(arg[1])
 """
@@ -127,7 +129,8 @@ dofile(arg[1])
                        XDG_STATE_HOME=str(state), BLOOM_CGROUP_FILE=str(cgroup), WAYLAND_DISPLAY="wayland-new")
             harness = """hl = {
  on = function(event, callback) callback() end,
- exec_cmd = function(command) os.execute(command) end
+ exec_cmd = function(command) os.execute(command) end,
+ config = function(options) end
 }
 dofile(arg[1])
 """
