@@ -257,6 +257,7 @@ wait_for 'floating button to clear history and live cards' cleared
 wait_for 'cleared history on disk' jq -e '.entries | length == 0' "$state_file"
 pass 'floating clear-all button dismisses live cards and clears history'
 problems="$(grep -E '^ *(WARN|ERROR|FATAL)' "$TEST_TMP/shell.log" "$TEST_TMP/restarted.log" || true)"
-problems="$(grep -viE 'upower|powerprofiles|dbus|pipewire' <<<"$problems" || true)"
+# Whether an app's icon name resolves depends on the machine's icon themes.
+problems="$(grep -viE 'upower|powerprofiles|dbus|pipewire|Could not load icon' <<<"$problems" || true)"
 [[ -z "$problems" ]] || fail "notification shell logged warnings or errors: $problems"
 pass 'notification shell has no unexpected warnings'
