@@ -21,6 +21,15 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 UNIT = "bloom-shell.service"
 MARKER = "-- bloom managed loader"
+# Bloom's desktop (hypr/desktop.lua), first in hyprland.lua where Bloom is the whole desktop.
+DESKTOP_MARKER = "-- bloom managed desktop"
+# Every surface; where Bloom is the whole desktop they all start on.
+MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", "session", "lock", "polkit", "tray",
+           "regiontools", "wallpaper", "cheatsheet", "osk", "overlay"]
+
+
+def managed(line):
+    return line.endswith(MARKER) or line.endswith(DESKTOP_MARKER)
 MANIFEST_VERSION = 2
 
 
@@ -386,6 +395,23 @@ class Context:
     def loader(self):
         return f"dofile({json.dumps(str(ROOT / 'hypr/bloom.lua'), ensure_ascii=False)}) {MARKER}"
 
+    def beside_ii(self):
+        return (self.config / "quickshell/ii").exists() or (self.config / "illogical-impulse").exists()
+
+    def hyprland_text(self):
+        """hyprland.lua as Bloom leaves it. Without ii, a missing config or
+        Hyprland's untouched example becomes Bloom's desktop; any other config
+        stays the user's own and only gains the loader."""
+        original, self.created_hyprland_config = self.hyprland_config()
+        own = "\n".join(line for line in original.splitlines() if not managed(line)) + "\n"
+        stock = hyprland_default()
+        untouched = self.created_hyprland_config or (stock.is_file() and own == stock.read_text())
+        self.bloom_desktop = not self.beside_ii() and (untouched or DESKTOP_MARKER in original)
+        if self.bloom_desktop and untouched:
+            own = (ROOT / "hypr/hyprland-template.lua").read_text()
+        desktop = f"dofile({json.dumps(str(ROOT / 'hypr/desktop.lua'), ensure_ascii=False)}) {DESKTOP_MARKER}\n"
+        return (desktop if self.bloom_desktop else "") + own + self.loader() + "\n"
+
     def plan(self):
         operations = [(self.config / "quickshell/bloom", "link", str(ROOT / "shell")),
                       (self.home / ".local/bin/bloom", "link", str(ROOT / "bin/bloom"))]
@@ -398,14 +424,10 @@ class Context:
             operations.append((self.data / "icons" / source.relative_to(ROOT / "share/icons"), "copy", source))
         for source in sorted((ROOT / "hypr/custom").glob("*.lua")):
             operations.append((self.config / "hypr/custom" / source.name, "template", source))
-        config = self.config / "hypr/hyprland.lua"
-        original, self.created_hyprland_config = self.hyprland_config()
-        lines = [line for line in original.splitlines() if not line.endswith(MARKER)]
-        operations.append((config, "loader", "\n".join(lines) + "\n" + self.loader() + "\n"))
+        operations.append((self.config / "hypr/hyprland.lua", "loader", self.hyprland_text()))
         if not (self.config / "bloom/settings.json").exists():
-            # Beside ii, ii keeps drawing the wallpaper; otherwise Bloom draws its own.
-            ii = (self.config / "quickshell/ii").exists() or (self.config / "illogical-impulse").exists()
-            modules = ["notch", "dock"] if ii else ["notch", "dock", "wallpaper"]
+            # Beside ii, ii keeps its surfaces (the wallpaper among them); otherwise Bloom is the whole desktop.
+            modules = ["notch", "dock"] if self.beside_ii() else MODULES
             operations.append((self.config / "bloom/settings.json", "config",
                                json.dumps({"bloom-enabled-modules": modules}, indent=2) + "\n"))
         return operations
@@ -589,7 +611,10 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
             ctx.preflight_desktop()
             for path, kind, _ in ctx.plan():
                 print(f"would install {kind}: {path}")
-            if getattr(ctx, "created_hyprland_config", False):
+            if getattr(ctx, "bloom_desktop", False):
+                print(f"would set up {ctx.config / 'hypr/hyprland.lua'} with Bloom's desktop: shortcuts, look and input "
+                      "(uninstall puts back what was there)")
+            elif getattr(ctx, "created_hyprland_config", False):
                 print(f"would create {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration "
                       "(removed again by uninstall unless you edit it)")
         else:
@@ -616,7 +641,9 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
     for path, kind, _ in operations:
         if path.is_dir() and not path.is_symlink():
             raise Failure(f"refusing to replace directory {path}; move it aside first")
-    if getattr(ctx, "created_hyprland_config", False):
+    if getattr(ctx, "bloom_desktop", False):
+        ui.step("Set up Hyprland with Bloom's desktop", detail="shortcuts, look and input; Super+/ lists the shortcuts")
+    elif getattr(ctx, "created_hyprland_config", False):
         ui.step(f"Created {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration",
                 detail="removed again by uninstall unless you edit it")
     offline = ctx.offline
@@ -816,7 +843,7 @@ def uninstall(ctx, remove_deps=False):
                     if path.is_symlink():
                         raise Failure(f"{path} became a symlink; resolve it before removal")
                     mode = "loader"
-                    text = "\n".join(line for line in path.read_text().splitlines() if not line.endswith(MARKER)) + "\n"
+                    text = "\n".join(line for line in path.read_text().splitlines() if not managed(line)) + "\n"
                     after = "file:" + hashlib.sha256(text.encode()).hexdigest()
                 elif current and current != item["installed"]:
                     pending = item.get("pending")

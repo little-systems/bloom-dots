@@ -114,6 +114,9 @@ reboot
 ```
 
 The machine boots to the Bloom login screen; logging in finishes the setup.
+Bloom is then the whole desktop: every surface is on, Bloom's shortcuts are set
+(press Super+/ to see them all), and a terminal, file manager, browser, text
+editor, image viewer and video player are installed.
 
 **On an Arch system you already use** (as your own user, not root):
 
@@ -126,8 +129,9 @@ The installer shows what it will change, asks before starting, and asks for
 your password once for the system part (`--dry-run` shows the plan and changes
 nothing). Undo everything with `bloom uninstall`.
 
-A new installation starts with the notch and dock. Open **Bloom Settings** to
-choose additional surfaces and configure shortcuts. When another shell or
+Without another shell, a new installation turns every surface on; next to
+illogical-impulse it starts with the notch and dock. Open **Bloom Settings** to
+choose surfaces and configure shortcuts. When another shell or
 notification daemon is running, choose which service should own each surface
 before enabling replacements.
 

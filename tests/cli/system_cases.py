@@ -229,6 +229,24 @@ class Phase(Facts):
         self.assertEqual(folder.stat().st_mode & 0o7777, 0o2775)
         self.assertIn(["chown", "root:bloom-login", str(folder)], self.calls())
 
+    def test_without_ii_the_default_apps_are_installed_once(self):
+        steps = self.install()
+        self.assertIn("apps", self.kinds(steps))
+        self.assertIn(["pacman", "-S", "--noconfirm", "--needed", *system.APPS], self.calls())
+        # Removing an app later is the user's choice; an update never brings it back.
+        self.assertNotIn("apps", self.kinds(system.plan(self.root, self.user, deps=True)))
+
+    def test_installed_apps_are_not_installed_again(self):
+        local = self.root / "var/lib/pacman/local"
+        for name in system.APPS[:-1]:
+            (local / f"{name}-1.0-1").mkdir(parents=True)
+        steps = system.plan(self.root, self.user, deps=True)
+        self.assertEqual([s["packages"] for s in steps if s["kind"] == "apps"], [list(system.APPS[-1:])])
+
+    def test_beside_ii_no_apps_are_added(self):
+        (self.root / "home/dhanush/.config/quickshell/ii").mkdir(parents=True)
+        self.assertNotIn("apps", self.kinds(system.plan(self.root, self.user, deps=True)))
+
     def test_second_plan_is_empty(self):
         self.install()
         self.assertEqual([s for s in system.plan(self.root, self.user, deps=True) if s["kind"] != "note"], [])
@@ -270,6 +288,9 @@ class Phase(Facts):
         self.assertFalse((self.root / "var/lib/bloom/login").exists())
         self.assertNotIn("bloom-login:", (self.root / "etc/group").read_text())
         self.assertTrue(any("NetworkManager" in m for m in messages), messages)
+        self.assertIn("Kept the default apps: kitty, nautilus, firefox, gnome-text-editor, loupe, mpv", messages)
+        self.assertFalse(any(call[:2] == ["pacman", "-R"] or call[:2] == ["pacman", "-Rns"] and "firefox" in call
+                             for call in self.calls()))
         self.assertNotIn(["pacman", "-Rns", "--noconfirm", "bloom-shell-deps"], self.calls())
         doc = json.loads((self.root / "var/lib/bloom/system-manifest.json").read_text())
         self.assertEqual(doc["status"], "uninstalled")

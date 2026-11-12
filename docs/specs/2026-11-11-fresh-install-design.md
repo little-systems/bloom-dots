@@ -258,6 +258,36 @@ surprising than leaving it on.
 - The owner repeats the archinstall walkthrough by hand in the interactive VM
   (`tools/vm/bloom-vm.sh up --screen`) before release.
 
+### Bloom as the whole desktop (owner, 2026-11-12)
+
+Found in the owner's own fresh-VM test: Bloom grew up beside ii, so a machine
+without ii got only the notch, dock and wallpaper, Hyprland's example
+shortcuts and no apps. The owner decided, for machines without ii (no
+`~/.config/quickshell/ii` or `~/.config/illogical-impulse`):
+
+- **Every module on** in the first `settings.json`.
+- **Bloom's own Hyprland config.** `hypr/desktop.lua` (in the checkout, updated
+  by `bloom update`) holds the look, input and every shortcut, each with a
+  description for the cheatsheet. When `hyprland.lua` is missing or byte-equal
+  to Hyprland's example, the installer writes `hypr/hyprland-template.lua`
+  with a marked desktop line first and the loader last, so the user's lines
+  win. Uninstall restores the example or removes a created file; an edited
+  file keeps the user's lines. A personal config only gains the loader.
+- **Default apps, GNOME-style:** kitty, nautilus, firefox, gnome-text-editor,
+  loupe, mpv. Installed explicitly (not as dependencies) by the system phase,
+  offered once (`apps_offered` in the system manifest), kept by uninstall.
+- **Shortcuts** (owner-approved table): Super tap or Super+Space launcher,
+  Super+/ cheatsheet, Super+Tab overview, Super+N Command Center, Super+M
+  music, Super+V clipboard, Super+. emoji, Super+W wallpaper, Super+I
+  Settings, Super+K keyboard, Super+G overlay, Super+L lock, Ctrl+Alt+Delete
+  session; Super+Return or Super+T terminal, Super+E files, Super+B browser;
+  Print or Super+Shift+S screenshot, Super+Shift+A annotate, Super+Shift+T
+  text, Super+Shift+R record; Super+Q close, Super+F fullscreen,
+  Super+Alt+Space float, Super+arrows focus, Super+Shift+arrows move,
+  Super+drag move/resize; Super+1–9, Super+Shift+1–9, Super+scroll, Super+S
+  scratch, Super+Alt+1–9 dock; media, volume and brightness keys.
+- The desktop also starts `cliphist` (nothing else did on a fresh machine).
+
 ## Left to the builder
 
 - How the root and user phases pass the plan and results between them, and

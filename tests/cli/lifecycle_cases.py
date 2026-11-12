@@ -1,5 +1,6 @@
 """Black-box lifecycle contracts: no real packages, services or session changes."""
 import json
+import re
 import os
 from pathlib import Path
 import shutil
@@ -200,6 +201,7 @@ elif name == 'systemctl':
         return {"BLOOM_HYPR_DEFAULT_CONFIG": str(shipped)}
 
     def test_missing_hyprland_config_starts_from_hyprlands_default(self):
+        (self.config / "quickshell/ii").mkdir(parents=True)
         env = self.fresh_hyprland()
         config = self.config / "hypr/hyprland.lua"
         dry = self.bloom("install", "--dry-run", **env)
@@ -240,10 +242,41 @@ elif name == 'systemctl':
         problems = [r for r in map(json.loads, log.read_text().splitlines()) if r["level"] in ("warning", "error")]
         self.assertEqual(problems, [], "expected probe results must not read as problems")
 
-    def test_without_ii_bloom_draws_the_wallpaper(self):
+    def test_without_ii_every_module_is_on(self):
         self.bloom("install")
         settings = json.loads((self.config / "bloom/settings.json").read_text())
-        self.assertEqual(settings["bloom-enabled-modules"], ["notch", "dock", "wallpaper"])
+        modules = re.search(r"var MODULES = (\[.*?\]);", (ROOT / "shell/services/settings.js").read_text()).group(1)
+        self.assertEqual(settings["bloom-enabled-modules"], json.loads(modules))
+
+    def test_without_ii_a_fresh_machine_gets_blooms_desktop(self):
+        env = self.fresh_hyprland()
+        dry = self.bloom("install", "--dry-run", **env)
+        self.assertIn("Bloom's desktop", dry.stdout)
+        self.bloom("install", **env)
+        self.bloom("install", **env)
+        lines = (self.config / "hypr/hyprland.lua").read_text().splitlines()
+        self.assertTrue(lines[0].endswith("-- bloom managed desktop"), "Bloom's desktop loads before personal lines")
+        self.assertIn("hypr/desktop.lua", lines[0])
+        self.assertEqual(sum(line.endswith("-- bloom managed desktop") for line in lines), 1)
+        self.assertEqual(sum(line.endswith("-- bloom managed loader") for line in lines), 1)
+        self.assertNotIn("Hyprland default config", "\n".join(lines))
+        self.bloom("uninstall", **env)
+        self.assertFalse((self.config / "hypr/hyprland.lua").exists())
+
+    def test_hyprlands_untouched_example_becomes_blooms_desktop_and_comes_back(self):
+        env = self.fresh_hyprland()
+        stock = Path(env["BLOOM_HYPR_DEFAULT_CONFIG"]).read_text()
+        (self.config / "hypr/hyprland.lua").write_text(stock)
+        self.bloom("install", **env)
+        self.assertIn("-- bloom managed desktop", (self.config / "hypr/hyprland.lua").read_text())
+        self.bloom("uninstall", **env)
+        self.assertEqual((self.config / "hypr/hyprland.lua").read_text(), stock)
+
+    def test_a_personal_config_never_gets_blooms_desktop(self):
+        self.bloom("install")
+        text = (self.config / "hypr/hyprland.lua").read_text()
+        self.assertTrue(text.startswith("-- personal configuration\n"))
+        self.assertNotIn("bloom managed desktop", text)
 
     def test_beside_ii_the_wallpaper_stays_with_ii(self):
         (self.config / "quickshell/ii").mkdir(parents=True)

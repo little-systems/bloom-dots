@@ -1,5 +1,6 @@
 -- User-owned Bloom shortcuts; remove or change any binding here.
--- Existing personal shortcuts are kept. Uncomment the examples you want.
+-- Existing personal shortcuts are kept. Where Bloom is the whole desktop these
+-- are already bound (hypr/desktop.lua); elsewhere, uncomment the ones you want.
 -- hl.bind("SUPER+N", hl.dsp.exec_cmd("bloom ipc notch openPanel command-center"), { description = "Bloom: Command Center" })
 -- hl.bind("SUPER+M", hl.dsp.exec_cmd("bloom ipc notch openMusic"), { description = "Bloom: Open music" })
 -- hl.bind("SUPER+Slash", hl.dsp.exec_cmd("bloom ipc cheatsheet toggle"), { description = "Bloom: Cheatsheet" })

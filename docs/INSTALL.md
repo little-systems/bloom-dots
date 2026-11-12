@@ -59,16 +59,29 @@ only when you have installed the dependency package's contents yourself.
   profiles.
 - **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom-login` group,
   so the login screen follows your wallpaper and colours without a password.
+- **Default apps** (only without ii, and only once): kitty, Nautilus, Firefox,
+  GNOME Text Editor, Loupe and mpv. They are ordinary apps: uninstall keeps
+  them, and an update never reinstalls one you removed.
 
 Everything is recorded in `/var/lib/bloom/system-manifest.json`. A failed
 system step undoes this run's file and service changes (installed packages
 stay) before your desktop is touched.
 
-On a fresh install where Hyprland has never been started, there is no
-`~/.config/hypr/hyprland.lua` yet. The installer then starts from Hyprland's own
-default (`/usr/share/hypr/hyprland.lua`). Uninstall removes that file again
-unless you have edited it; if you have, it keeps it and removes only Bloom's
-loader line.
+### Bloom as the whole desktop
+
+Without illogical-impulse (no `~/.config/quickshell/ii` or
+`~/.config/illogical-impulse`), Bloom is the whole desktop: every module starts
+on, and when `~/.config/hypr/hyprland.lua` is missing or still Hyprland's
+untouched example, the installer writes a short one that loads Bloom's desktop
+(`hypr/desktop.lua`: look, input and every shortcut, kept current by
+`bloom update`) before your own lines, so anything you add there wins. Super+/
+shows every shortcut. Uninstall removes that file again, or puts Hyprland's
+example back; if you edited it, it keeps your lines and removes only Bloom's.
+
+A personal `hyprland.lua` is never replaced: it only gains the loader line.
+Beside ii, Bloom adds its notch and dock and leaves ii's own desktop alone; a
+missing config then starts from Hyprland's default
+(`/usr/share/hypr/hyprland.lua`).
 
 The install links the shell, CLI and user units, registers Settings with its
 icon, adds one marked loader line to `~/.config/hypr/hyprland.lua`, and offers

@@ -1,0 +1,8 @@
+-- Your Hyprland configuration. Bloom's desktop (the first line) sets the
+-- look, input and shortcuts (Super+/ lists them); anything you add below it
+-- wins. Personal shortcuts can also go in custom/bloom-keybinds.lua.
+-- https://wiki.hypr.land/
+--
+-- Examples:
+-- hl.monitor({ output = "eDP-1", mode = "1920x1080@60", position = "0x0", scale = 1.25 })
+-- hl.config({ input = { kb_layout = "us,de", kb_options = "grp:alt_shift_toggle" } })

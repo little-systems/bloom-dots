@@ -70,6 +70,20 @@ def enabled_network(root):
     return [name for name in NETWORK_SERVICES if name in enabled]
 
 
+def beside_ii(root, user):
+    """ii is installed for this user, so it keeps the desktop and Bloom adds to it."""
+    config = root / user["home"].lstrip("/") / ".config"
+    return (config / "quickshell/ii").exists() or (config / "illogical-impulse").exists()
+
+
+def installed(root, package):
+    try:
+        names = [entry.name.rsplit("-", 2)[0] for entry in (root / "var/lib/pacman/local").iterdir()]
+    except OSError:
+        return False
+    return package in names
+
+
 def in_chroot():
     try:
         return subprocess.run(["systemd-detect-virt", "--chroot"], capture_output=True).returncode == 0
@@ -91,6 +105,8 @@ DROPIN_TEXT = ("# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCu
 SERVICES = ("bluetooth", "power-profiles-daemon")
 # Not "bloom": that is often someone's own user group.
 GROUP = "bloom-login"
+# Where Bloom is the whole desktop (no ii), a fresh machine gets these once.
+APPS = ("kitty", "nautilus", "firefox", "gnome-text-editor", "loupe", "mpv")
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
 
 
@@ -189,6 +205,11 @@ def plan(root, user, deps=True):
     steps = []
     if deps and current.get("pkgbuild_hash") != pkgbuild_hash():
         steps.append({"kind": "packages", "label": "Install Bloom's packages (Quickshell, Hyprland and the rest)"})
+    if not current.get("apps_offered") and not beside_ii(root, user):
+        missing = [name for name in APPS if not installed(root, name)]
+        if missing:
+            steps.append({"kind": "apps", "packages": missing,
+                          "label": "Install the default apps (terminal, files, browser, text editor, image viewer, video player)"})
     manager = display_manager(root)
     if manager is None:
         steps.append({"kind": "install-sddm", "label": "Install the SDDM login screen"})
@@ -251,6 +272,11 @@ def apply(root, user, steps, booted, run, report=None):
             if kind == "packages":
                 _packages(user, run)
                 doc["pkgbuild_hash"] = pkgbuild_hash()
+            elif kind == "apps":
+                # Ordinary apps, not dependencies: they stay if Bloom goes.
+                run("pacman", "-S", "--noconfirm", "--needed", *step["packages"])
+                doc["apps_offered"] = True
+                doc["apps"] = list(step["packages"])
             elif kind == "install-sddm":
                 run("pacman", "-S", "--noconfirm", "--needed", "sddm")
                 doc["sddm_installed"] = True
@@ -381,6 +407,8 @@ def uninstall(root, remove_deps, run):
     kept = [unit for unit in doc.get("enabled", []) if unit != "sddm"]
     if kept:
         messages.append("Left enabled: " + ", ".join(kept))
+    if doc.get("apps"):
+        messages.append("Kept the default apps: " + ", ".join(doc["apps"]))
     if doc.get("group_created"):
         run("groupdel", GROUP)
     if remove_deps:
