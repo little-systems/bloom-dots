@@ -132,8 +132,10 @@ def snapshot(config, legacy):
         revision = digest(data)
     else:
         old_json = read_file(legacy)
-        state = validate(decode(old_json) if old_json is not None else {})
-        pristine = old_json is None and data == INSTALLER_TEMPLATE
+        # The installer's template is Bloom's own: a JSON left by an earlier
+        # install describes a file that no longer exists, so start clean.
+        pristine = data == INSTALLER_TEMPLATE
+        state = validate(decode(old_json) if old_json is not None and not pristine else {})
         if data is not None and not pristine and data != legacy_source(state):
             raise ValueError("legacy compositor file differs from its state; preserving changes")
         revision = digest(b"legacy\0" + (data or b"missing") + b"\0" + (old_json or b"missing"))

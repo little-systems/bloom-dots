@@ -45,6 +45,18 @@ class CompositorStoreCases(unittest.TestCase):
         saved = store.commit(self.config, self.legacy, before["revision"], {"hypr": {"general": {"gaps_in": 8}}})
         self.assertEqual(saved["state"]["hypr"]["general"]["gaps_in"], 8)
 
+    # A reinstall writes a fresh template while the previous install's state
+    # folder still holds the old JSON; the template is Bloom's own, so it starts clean.
+    def test_fresh_template_beside_an_old_json_starts_clean(self):
+        template = (ROOT / "hypr/custom/bloom-settings.lua").read_bytes()
+        self.config.write_bytes(template)
+        self.legacy.write_text(json.dumps(self.state))
+        before = store.snapshot(self.config, self.legacy)
+        self.assertEqual(before["state"]["hypr"], {})
+        self.assertEqual(before["state"]["monitors"], [])
+        saved = store.commit(self.config, self.legacy, before["revision"], {"hypr": {"general": {"gaps_in": 8}}})
+        self.assertEqual(saved["state"]["hypr"], {"general": {"gaps_in": 8}})
+
     def test_legacy_migration_and_noop_save(self):
         before = self.old_files()
         old_json = self.legacy.read_bytes()
