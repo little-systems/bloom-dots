@@ -403,8 +403,11 @@ class Context:
         lines = [line for line in original.splitlines() if not line.endswith(MARKER)]
         operations.append((config, "loader", "\n".join(lines) + "\n" + self.loader() + "\n"))
         if not (self.config / "bloom/settings.json").exists():
+            # Beside ii, ii keeps drawing the wallpaper; otherwise Bloom draws its own.
+            ii = (self.config / "quickshell/ii").exists() or (self.config / "illogical-impulse").exists()
+            modules = ["notch", "dock"] if ii else ["notch", "dock", "wallpaper"]
             operations.append((self.config / "bloom/settings.json", "config",
-                               json.dumps({"bloom-enabled-modules": ["notch", "dock"]}, indent=2) + "\n"))
+                               json.dumps({"bloom-enabled-modules": modules}, indent=2) + "\n"))
         return operations
 
 

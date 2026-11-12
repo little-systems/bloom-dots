@@ -240,6 +240,17 @@ elif name == 'systemctl':
         problems = [r for r in map(json.loads, log.read_text().splitlines()) if r["level"] in ("warning", "error")]
         self.assertEqual(problems, [], "expected probe results must not read as problems")
 
+    def test_without_ii_bloom_draws_the_wallpaper(self):
+        self.bloom("install")
+        settings = json.loads((self.config / "bloom/settings.json").read_text())
+        self.assertEqual(settings["bloom-enabled-modules"], ["notch", "dock", "wallpaper"])
+
+    def test_beside_ii_the_wallpaper_stays_with_ii(self):
+        (self.config / "quickshell/ii").mkdir(parents=True)
+        self.bloom("install")
+        settings = json.loads((self.config / "bloom/settings.json").read_text())
+        self.assertEqual(settings["bloom-enabled-modules"], ["notch", "dock"])
+
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()
         self.bloom("install", "--dry-run")
