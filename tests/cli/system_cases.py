@@ -259,6 +259,15 @@ class Phase(Facts):
         self.assertIn(["pacman", "-D", "--asexplicit", "kitty"], self.calls())
         self.assertFalse([c for c in self.calls() if c[:2] == ["pacman", "-S"] and "kitty" in c])
 
+    def test_kept_apps_are_named_in_plain_words(self):
+        self.install()
+        self.dependency("kitty")
+        label = next(s["label"] for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "apps")
+        self.assertEqual(label, "Keep kitty as your own app (it came with another package)")
+        self.dependency("mpv")
+        label = next(s["label"] for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "apps")
+        self.assertEqual(label, "Keep kitty and mpv as your own apps (they came with other packages)")
+
     def test_default_apps_are_kept_on_later_runs_too(self):
         self.install()
         self.dependency("kitty")

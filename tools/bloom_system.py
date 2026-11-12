@@ -251,8 +251,11 @@ def plan(root, user, deps=True):
             steps.append({"kind": "apps", "packages": missing, "adopt": adopt,
                           "label": "Install the default apps (terminal, files, browser, text editor, image viewer, video player)"})
         elif adopt:
+            names = adopt[0] if len(adopt) == 1 else ", ".join(adopt[:-1]) + " and " + adopt[-1]
+            reason = ("app (it came with another package)" if len(adopt) == 1
+                      else "apps (they came with other packages)")
             steps.append({"kind": "apps", "packages": [], "adopt": adopt,
-                          "label": f"Keep {', '.join(adopt)} as your own apps (another package brought them in)"})
+                          "label": f"Keep {names} as your own {reason}"})
     manager = display_manager(root)
     if manager is None:
         steps.append({"kind": "install-sddm", "label": "Install the SDDM login screen"})
