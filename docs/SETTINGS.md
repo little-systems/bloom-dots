@@ -32,6 +32,9 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-wallpaper-dir` | string | `""` | text, up to 4096 characters | Folder the wallpaper picker lists. Empty means ~/Pictures/Wallpapers. |
 | `bloom-lock-wallpaper` | string | `""` | text, up to 4096 characters | Image behind the lock screen. Empty uses the desktop wallpaper. |
 | `bloom-lock-media-enabled` | bool | `true` | `true`, `false` | Show a compact transport card inside the secure lock screen when media is playing. After pausing there it remains available to resume. No app-launch action is offered. |
+| `bloom-idle-lock` | number | `5` | 0 to 1440 | Minutes without input before the screen locks; 0 never locks. Needs the lock module. |
+| `bloom-idle-screen-off` | number | `10` | 0 to 1440 | Minutes without input before the screen turns off; 0 keeps it on. Needs the lock module. |
+| `bloom-idle-sleep` | number | `15` | 0 to 1440 | Minutes without input before the computer sleeps; 0 never sleeps. It locks first. Needs the lock module. |
 | `bloom-low-battery-threshold` | number | `20` | 5 to 50 | Battery percentage at or below which the battery fill turns red and the notch shows a low-battery pulse. |
 | `bloom-show-update-indicator` | bool | `true` | `true`, `false` | Check for pacman updates hourly (needs pacman-contrib) and show a green dot under the clock while some are pending, with a pulse when new ones arrive. |
 | `bloom-dock-mode` | enum | `"smart"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Dock visibility. fixed = always shown, with its strip reserved; smart = hides while a window covers it; peek = hidden until the pointer rests on the bottom edge. |

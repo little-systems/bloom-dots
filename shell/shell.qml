@@ -187,6 +187,10 @@ ShellRoot {
 		component: LockSurface {}
 	}
 	LazyLoader {
+		active: _modules.indexOf("lock") >= 0
+		component: IdleDaemon {}
+	}
+	LazyLoader {
 		id: polkitLoader
 		active: _modules.indexOf("polkit") >= 0
 		component: PolkitSurface {}

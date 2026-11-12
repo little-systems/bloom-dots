@@ -8,6 +8,10 @@ Column {
 	property var store
 	property Item popup
 	property bool autostart: false
+	// Minutes; 0 turns that step off.
+	readonly property var idleOptions: [{ value: 0, label: "Never" }, { value: 1, label: "1 minute" },
+		{ value: 2, label: "2 minutes" }, { value: 5, label: "5 minutes" }, { value: 10, label: "10 minutes" },
+		{ value: 15, label: "15 minutes" }, { value: 30, label: "30 minutes" }, { value: 60, label: "1 hour" }]
 	signal autostartToggled(bool enabled)
 	signal resetRequested()
 	signal restartRequested()
@@ -59,6 +63,33 @@ Column {
 	SGroupLabel { theme: root.theme; text: "Lock Screen" }
 	SGroup {
 		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "lock"; label: "Lock After"; desc: "When you're away"
+			SSelect {
+				objectName: "idleLock"; accessibleName: "Lock After"; theme: root.theme; popup: root.popup
+				options: root.idleOptions
+				value: root.store.values["bloom-idle-lock"]
+				onActivated: value => root.store.set("bloom-idle-lock", value)
+			}
+		}
+		SRow {
+			theme: root.theme; icon: "monitor"; label: "Turn Screen Off After"; desc: "When you're away"
+			SSelect {
+				objectName: "idleScreenOff"; accessibleName: "Turn Screen Off After"; theme: root.theme; popup: root.popup
+				options: root.idleOptions
+				value: root.store.values["bloom-idle-screen-off"]
+				onActivated: value => root.store.set("bloom-idle-screen-off", value)
+			}
+		}
+		SRow {
+			theme: root.theme; icon: "moon"; label: "Sleep After"; desc: "Locks first"
+			SSelect {
+				objectName: "idleSleep"; accessibleName: "Sleep After"; theme: root.theme; popup: root.popup
+				options: root.idleOptions
+				value: root.store.values["bloom-idle-sleep"]
+				onActivated: value => root.store.set("bloom-idle-sleep", value)
+			}
+		}
 		SRow {
 			theme: root.theme; icon: "music"; label: "Media Player"; desc: "Artwork and playback controls while locked"; divider: false
 			SToggle { objectName: "lockMedia"; accessibleName: "Lock Screen Media Player"; theme: root.theme; checked: root.store.values["bloom-lock-media-enabled"]; onToggled: value => root.store.set("bloom-lock-media-enabled", value) }

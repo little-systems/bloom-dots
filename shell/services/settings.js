@@ -149,6 +149,18 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Show a compact transport card inside the secure lock screen when media is playing. After pausing there it remains available to resume. No app-launch action is offered."
 	},
+	"bloom-idle-lock": {
+		type: "number", min: 0, max: 1440, default: 5,
+		doc: "Minutes without input before the screen locks; 0 never locks. Needs the lock module."
+	},
+	"bloom-idle-screen-off": {
+		type: "number", min: 0, max: 1440, default: 10,
+		doc: "Minutes without input before the screen turns off; 0 keeps it on. Needs the lock module."
+	},
+	"bloom-idle-sleep": {
+		type: "number", min: 0, max: 1440, default: 15,
+		doc: "Minutes without input before the computer sleeps; 0 never sleeps. It locks first. Needs the lock module."
+	},
 	"bloom-low-battery-threshold": {
 		type: "number",
 		min: 5,
