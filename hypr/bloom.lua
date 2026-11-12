@@ -10,6 +10,10 @@ for _, name in ipairs({"bloom-colors", "bloom-settings", "bloom", "bloom-keybind
         dofile(path)
     end
 end
+-- The lock screen fades over the live desktop on the way in and out, so the
+-- desktop must keep rendering under it (xray); if the lock surface crashes,
+-- the session stays locked and the restarted shell takes the lock back.
+hl.config({ misc = { session_lock_xray = true, allow_session_lock_restore = true } })
 -- Session profile, from where Hyprland itself runs (not from what is installed):
 -- under UWSM it is a wayland-wm@ unit, and UWSM imports the environment and
 -- starts graphical-session.target, which starts Bloom. Native sessions start it here.
