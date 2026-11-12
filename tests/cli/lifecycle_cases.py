@@ -25,7 +25,7 @@ class Lifecycle(unittest.TestCase):
         self.root = self.base / "checkout with spaces"
         self.root.mkdir()
         shutil.copy2(ROOT / ".gitignore", self.root / ".gitignore")
-        for relative in ("bin", "systemd", "share", "hypr", "kitty", "packaging"):
+        for relative in ("bin", "systemd", "share", "hypr", "kitty", "defaults", "packaging"):
             shutil.copytree(ROOT / relative, self.root / relative)
         (self.root / "tools").mkdir()
         for tool in ("bloom-lifecycle.py", "bloom_system.py", "bloom_ui.py"):
@@ -308,6 +308,30 @@ elif name == 'systemctl':
             stream.write("cursor_shape block\n")
         self.bloom("uninstall")
         self.assertEqual(kitty.read_text(), "font_size 14\ncursor_shape block\n")
+
+    # App defaults (browser flags, portal picker, mpv, Dolphin) are copied only
+    # where the user has none, and only Bloom's untouched copies go again.
+    def test_app_defaults_are_copied_once_and_never_over_the_users_own(self):
+        flags = self.config / "chromium-flags.conf"
+        portals = self.config / "xdg-desktop-portal/hyprland-portals.conf"
+        mine = self.config / "mpv/mpv.conf"
+        mine.parent.mkdir(parents=True)
+        mine.write_text("volume=50\n")
+        self.bloom("install")
+        self.assertIn("--ozone-platform-hint=auto", flags.read_text().splitlines())
+        self.assertIn("--password-store=gnome-libsecret", flags.read_text().splitlines())
+        self.assertIn("org.freedesktop.impl.portal.FileChooser=kde", portals.read_text().splitlines())
+        self.assertEqual(mine.read_text(), "volume=50\n")
+        self.assertFalse(mine.with_name("mpv.conf.new").exists())
+        with portals.open("a") as stream:
+            stream.write("# mine now\n")
+        (self.config / "dolphinrc").unlink()
+        self.bloom("install")
+        self.assertFalse((self.config / "dolphinrc").exists())
+        self.bloom("uninstall")
+        self.assertFalse(flags.exists())
+        self.assertTrue(portals.read_text().endswith("# mine now\n"))
+        self.assertEqual(mine.read_text(), "volume=50\n")
 
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()

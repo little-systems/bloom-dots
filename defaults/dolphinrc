@@ -1,0 +1,3 @@
+# From Bloom: show the whole path in the location bar.
+[General]
+ShowFullPath=true

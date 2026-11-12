@@ -186,7 +186,7 @@ def place(path, kind, payload):
         if kind == "link":
             staging.unlink()
             staging.symlink_to(payload)
-        elif kind in ("copy", "template"):
+        elif kind in ("copy", "template", "default"):
             shutil.copy2(payload, staging)
             with staging.open("rb") as stream:
                 os.fsync(stream.fileno())
@@ -272,6 +272,8 @@ class Context:
             path = self.config / "hypr/custom" / source.name
             allowed[str(path)] = {"template"}
             allowed[str(path) + ".new"] = {"copy"}
+        for source in (p for p in (ROOT / "defaults").rglob("*") if p.is_file()):
+            allowed[str(self.config / source.relative_to(ROOT / "defaults"))] = {"default"}
         seen = set()
         for item in doc["entries"]:
             if not isinstance(item, dict) or not isinstance(item.get("path"), str):
@@ -283,7 +285,7 @@ class Context:
             if str(path) in seen:
                 raise Failure(f"duplicate manifest destination: {path}")
             seen.add(str(path))
-            if item.get("kind") not in {"link", "copy", "template", "loader", "config", "file"}:
+            if item.get("kind") not in {"link", "copy", "template", "default", "loader", "config", "file"}:
                 raise Failure("invalid manifest operation kind")
             if managed and item["kind"] not in allowed.get(str(path), set()):
                 raise Failure(f"manifest destination is not an owned Bloom resource: {path}")
@@ -332,7 +334,7 @@ class Context:
                 if step["mode"] == "loader":
                     if entry["kind"] != "loader" or step["after"] != "file:" + hashlib.sha256(step["text"].encode()).hexdigest():
                         raise Failure("invalid loader removal contents")
-                if step["mode"] == "keep" and entry["kind"] not in ("template", "config"):
+                if step["mode"] == "keep" and entry["kind"] not in ("template", "default", "config"):
                     raise Failure("invalid retained resource")
 
     def verify_backups(self, doc):
@@ -442,6 +444,9 @@ class Context:
             operations.append((self.config / "hypr/custom" / source.name, "template", source))
         operations.append((self.config / "hypr/hyprland.lua", "loader", self.hyprland_text()))
         operations.append((self.config / "kitty/kitty.conf", "loader", self.kitty_text()))
+        # App defaults: copied where the user has none, theirs from then on.
+        for source in sorted(p for p in (ROOT / "defaults").rglob("*") if p.is_file()):
+            operations.append((self.config / source.relative_to(ROOT / "defaults"), "default", source))
         if not (self.config / "bloom/settings.json").exists():
             # Beside ii, ii keeps its surfaces (the wallpaper among them); otherwise Bloom is the whole desktop.
             modules = ["notch", "dock"] if self.beside_ii() else MODULES
@@ -476,6 +481,12 @@ class Transaction:
         path = Path(path)
         current = signature(path)
         existing = self.entries.get(str(path))
+        interrupted = bool(existing) and "pending" in existing
+        if kind == "default" and not interrupted and (current and (not existing or current != existing["installed"])
+                                                      or existing and current is None):
+            # The user's own file, Bloom's copy they changed, or one they
+            # deleted: theirs, untouched.
+            return
         if kind == "template" and current:
             incoming = "file:" + digest(payload)
             if current == incoming:
@@ -493,7 +504,7 @@ class Transaction:
         if existing and current != existing["installed"] and kind != "loader" and not recovering_original:
             raise Failure(f"{path} changed since installation; kept it untouched")
         desired = "link:" + str(payload) if kind == "link" else (
-            "file:" + digest(payload) if kind in ("copy", "template") else
+            "file:" + digest(payload) if kind in ("copy", "template", "default") else
             "file:" + hashlib.sha256(payload.encode()).hexdigest())
         if current == desired:
             if existing and "pending" in existing:
@@ -854,7 +865,7 @@ def uninstall(ctx, remove_deps=False):
                 current = signature(path)
                 mode, text = "restore", None
                 after = signature(Path(item["backup"])) if item["backup"] else None
-                if item["kind"] in ("template", "config") and current not in (None, item["installed"]):
+                if item["kind"] in ("template", "default", "config") and current not in (None, item["installed"]):
                     mode, after = "keep", current
                 elif item["kind"] == "loader" and current not in (None, item["installed"]):
                     if path.is_symlink():

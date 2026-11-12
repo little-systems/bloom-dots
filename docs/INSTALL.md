@@ -95,7 +95,19 @@ kept and the supplied version is written beside them as `.new`. Existing
 settings and personal keybindings are kept. Shortcut examples are commented
 out until you choose them.
 
-Ensure `~/.local/bin` is on your PATH. Open Settings with `bloom settings`.
+kitty's `kitty.conf` starts with two lines from Bloom: its terminal settings
+(`kitty/bloom.conf`) and the colours Bloom's theme writes
+(`bloom-theme.conf`); your own lines come after and win. Uninstall removes
+just those lines, or the file if Bloom created it.
+
+App defaults from `defaults/` (Wayland and keyring flags for Chromium,
+Chrome, Brave, VS Code and Electron; the KDE file picker; mpv keeping the
+window open; Dolphin's full path) are copied only where you have no such
+file. From then on the file is yours: Bloom updates it only while you haven't
+touched it, never brings back one you deleted, and uninstall removes only
+untouched copies.
+
+Open Settings with `bloom settings`.
 The loader imports the Hyprland session environment into the user service
 manager at login, including your Qt theme, icon theme, XDG paths and PATH.
 On a bare Hyprland desktop, configure a Qt theme provider such as `qt6ct`
