@@ -9,7 +9,8 @@ local terminal = "kitty"
 local files = "nautilus --new-window"
 local browser = "firefox"
 
-hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+-- 100% on every screen; Settings > Display changes it per screen.
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 
