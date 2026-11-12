@@ -24,6 +24,16 @@ Item {
 		})))
 	signal focusRequested(string address)
 	signal closeRequested(string address)
+	// A window being closed from its card: its live capture stops first and
+	// the close follows a moment later, so the capture never outlives the
+	// window (a capture of a closing window ends the shell's Wayland session).
+	property string closing: ""
+	onCandidatesChanged: if (!root.candidates.some(c => c.address === root.closing)) root.closing = ""
+	Timer {
+		id: closeAfterCapture
+		interval: 120
+		onTriggered: root.closeRequested(root.closing)
+	}
 
 	width: Math.min(Tokens.dock.preview.maxVisible, candidates.length) * Tokens.dock.preview.width
 		+ Math.max(0, Math.min(Tokens.dock.preview.maxVisible, candidates.length) - 1) * Tokens.dock.preview.gap
@@ -82,6 +92,7 @@ Item {
 							id: capture
 							anchors.fill: parent
 							active: root.captureEnabled && root.opened && root.liveIndices.indexOf(card.index) >= 0 && !!card.candidate.toplevel
+								&& root.closing !== card.candidate.address
 							source: "DockCapture.qml"
 							onLoaded: {
 								capture.item.captureSource = card.candidate.toplevel;
@@ -126,7 +137,10 @@ Item {
 							anchors.fill: parent
 							cursorShape: Qt.PointingHandCursor
 							hoverEnabled: true
-							onClicked: root.closeRequested(card.candidate.address)
+							onClicked: {
+								root.closing = card.candidate.address;
+								closeAfterCapture.restart();
+							}
 						}
 					}
 				}

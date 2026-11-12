@@ -33,6 +33,9 @@ code. Each item lands as its own commit with targeted tests.
 7. **Lock and unlock leave the screen black** (owner report). Unlocking must
    bring the desktop back as designed: the lock fades out over the live
    desktop, panels and wallpaper intact.
+8. **Closing a window from its dock preview crashed the shell** (found in the
+   owner's log): the preview's live capture outlived the window. The card
+   stops its capture first and closes the window a moment later.
 
 Left out on purpose: Kvantum/Darkly/material-you (Bloom themes Qt itself),
 wlogout and fuzzel (Bloom has its own), shell prompts and fish/zsh/foot

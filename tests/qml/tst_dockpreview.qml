@@ -39,7 +39,11 @@ Item {
 			verify(button !== null);
 			const point = button.mapToItem(p, button.width / 2, button.height / 2);
 			mouseClick(p, point.x, point.y);
-			compare(close.count, 1);
+			// The window's live capture stops first; the close follows, so
+			// the capture never outlives the window (that crashed the shell).
+			compare(p.closing, "0xa");
+			compare(close.count, 0);
+			tryCompare(close, "count", 1);
 			compare(close.signalArguments[0][0], "0xa");
 			compare(focus.count, 0);
 			const card = findChild(p, "preview-card-0xa");
