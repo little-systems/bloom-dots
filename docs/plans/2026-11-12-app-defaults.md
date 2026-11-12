@@ -20,14 +20,19 @@ code. Each item lands as its own commit with targeted tests.
 4. **Session environment and integration packages.** Qt apps use the KDE
    platform theme (Bloom's `kdeglobals` colours, icons), KDE apps get an
    application menu (`XDG_MENU_PREFIX=arch-`), Electron apps run on Wayland,
-   and the cursor is Adwaita. Packages: plasma-integration,
-   archlinux-xdg-menu, xdg-desktop-portal-kde, ttf-jetbrains-mono-nerd.
+   and the cursor is Adwaita. The Qt platform theme also gives the shell its
+   icon theme: without it the dock extras (folders, Trash, drives) had no
+   icons. Packages: plasma-integration, archlinux-xdg-menu,
+   xdg-desktop-portal-kde, ttf-jetbrains-mono-nerd.
 5. **Floating dialogs.** Open/Save/upload dialogs, portal pickers, the volume
    mixer and network/Bluetooth editors float, centred.
 6. **App defaults copied once** (kept if the user has their own): Chromium,
    Chrome, VS Code and Electron flags (Wayland, keyring password store,
    Wayland input methods, touchpad history swipe), the KDE file picker for
    portals, mpv keeps the window open at the end, Dolphin shows full paths.
+7. **Lock and unlock leave the screen black** (owner report). Unlocking must
+   bring the desktop back as designed: the lock fades out over the live
+   desktop, panels and wallpaper intact.
 
 Left out on purpose: Kvantum/Darkly/material-you (Bloom themes Qt itself),
 wlogout and fuzzel (Bloom has its own), shell prompts and fish/zsh/foot

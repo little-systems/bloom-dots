@@ -11,8 +11,16 @@ local browser = "firefox"
 
 -- 100% on every screen; Settings > Display changes it per screen.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
+hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
+-- Qt apps (and Bloom's shell, for its icon theme) follow KDE's platform
+-- theme: Bloom's kdeglobals colours and Breeze icons. KDE apps such as
+-- Dolphin find their Open With menu through Arch's application menu.
+hl.env("QT_QPA_PLATFORMTHEME", "kde")
+hl.env("XDG_MENU_PREFIX", "arch-")
+-- Electron apps run on Wayland when they can.
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
 hl.config({
     general = {

@@ -3,7 +3,7 @@
 # makepkg reads the package metadata and supplies pkgdir.
 pkgname=bloom-shell-deps
 pkgver=0.1.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Runtime dependencies for the Bloom Hyprland shell'
 arch=('any')
 url='https://github.com/DhanushSantosh/bloom-dots'
@@ -16,7 +16,8 @@ depends=('quickshell' 'hyprland' 'python' 'python-gobject' 'jq' 'qt6-svg' 'qt6-i
          'brightnessctl' 'playerctl' 'libqalculate' 'inter-font' 'pipewire'
          'wireplumber' 'pipewire-pulse' 'libpulse' 'networkmanager' 'bluez' 'bluez-utils' 'libnotify' 'xdg-utils'
          'upower' 'power-profiles-daemon' 'polkit' 'adwaita-icon-theme'
-         'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk' 'gnome-keyring' 'libsecret')
+         'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk' 'gnome-keyring' 'libsecret'
+         'plasma-integration' 'archlinux-xdg-menu' 'xdg-desktop-portal-kde' 'ttf-jetbrains-mono-nerd')
 optdepends=('mpvpaper: video wallpapers' 'satty: screenshot annotation'
             'swappy: screenshot annotation alternative' 'songrec: music recognition'
             'translate-shell: translation' 'pacman-contrib: pending package updates'
