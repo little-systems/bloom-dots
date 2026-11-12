@@ -291,11 +291,14 @@ def _managed(root):
 def login():
     root = bsys.system_root()
     manager = bsys.display_manager(root)
-    themed = (root / bsys.DROPIN).is_file()
-    if manager == "sddm" and themed:
+    theme = bsys.login_theme(root)
+    if manager == "sddm" and theme == "bloom":
         return check("login", "ok", "the Bloom login screen (SDDM) is active")
     if manager not in (None, "sddm"):
         return check("login", "ok", f"login screen: {manager} (the Bloom login screen needs SDDM)")
+    if manager == "sddm" and (root / bsys.DROPIN).is_file():
+        return check("login", "degraded", f"SDDM shows the {theme} theme; another setting overrides Bloom's",
+                     "Remove the other Current= line in /etc/sddm.conf or /etc/sddm.conf.d")
     if not _managed(root):
         return check("login", "ok", "the login screen is not managed by Bloom")
     if manager == "sddm":

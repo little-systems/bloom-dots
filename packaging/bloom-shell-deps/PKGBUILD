@@ -3,7 +3,7 @@
 # makepkg reads the package metadata and supplies pkgdir.
 pkgname=bloom-shell-deps
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 pkgdesc='Runtime dependencies for the Bloom Hyprland shell'
 arch=('any')
 url='https://github.com/DhanushSantosh/bloom-dots'
@@ -14,7 +14,7 @@ depends=('quickshell' 'hyprland' 'python' 'python-gobject' 'jq' 'qt6-svg' 'qt6-i
          'matugen' 'cava' 'cliphist' 'wl-clipboard' 'grim' 'slurp' 'wf-recorder'
          'tesseract' 'tesseract-data-eng' 'hypridle' 'hyprsunset' 'hyprlock'
          'brightnessctl' 'playerctl' 'libqalculate' 'inter-font' 'pipewire'
-         'wireplumber' 'libpulse' 'networkmanager' 'bluez' 'bluez-utils' 'libnotify' 'xdg-utils'
+         'wireplumber' 'pipewire-pulse' 'libpulse' 'networkmanager' 'bluez' 'bluez-utils' 'libnotify' 'xdg-utils'
          'upower' 'power-profiles-daemon' 'polkit' 'adwaita-icon-theme'
          'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk')
 optdepends=('mpvpaper: video wallpapers' 'satty: screenshot annotation'

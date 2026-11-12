@@ -84,6 +84,36 @@ def installed(root, package):
     return package in names
 
 
+def dependency(root, package):
+    """Installed only because another package needs it, so pacman -Rns of
+    that package would take it too."""
+    for entry in (root / "var/lib/pacman/local").glob(f"{package}-*"):
+        if entry.name.rsplit("-", 2)[0] != package:
+            continue
+        try:
+            return "%REASON%\n1\n" in (entry / "desc").read_text()
+        except OSError:
+            return False
+    return False
+
+
+def login_theme(root):
+    """The theme SDDM shows: drop-ins in name order, then sddm.conf, last wins."""
+    theme = None
+    for path in [*sorted((root / "etc/sddm.conf.d").glob("*.conf")), root / "etc/sddm.conf"]:
+        try:
+            section = None
+            for line in path.read_text().splitlines():
+                line = line.strip()
+                if line.startswith("[") and line.endswith("]"):
+                    section = line[1:-1]
+                elif section == "Theme" and line.startswith("Current="):
+                    theme = line.split("=", 1)[1].strip()
+        except OSError:
+            pass
+    return theme
+
+
 def in_chroot():
     try:
         return subprocess.run(["systemd-detect-virt", "--chroot"], capture_output=True).returncode == 0
@@ -96,13 +126,22 @@ def in_chroot():
 SOURCE = Path(__file__).resolve().parent.parent
 MANIFEST = "var/lib/bloom/system-manifest.json"
 THEME = "usr/share/sddm/themes/bloom"
-DROPIN = "etc/sddm.conf.d/10-bloom.conf"
+# SDDM reads its drop-ins in name order and the last theme wins, so Bloom's
+# sorts last; 10-bloom.conf is the name earlier versions used.
+DROPIN = "etc/sddm.conf.d/zz-bloom.conf"
+OLD_DROPINS = ("etc/sddm.conf.d/10-bloom.conf",)
 LOGIN = "var/lib/bloom/login"
 # The greeter reads /var/lib/bloom/login/state.json as data; Qt only lets QML
 # read local files with QML_XHR_ALLOW_FILE_READ.
 DROPIN_TEXT = ("# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\n"
                "DefaultSession=hyprland.desktop\nGreeterEnvironment=QML_XHR_ALLOW_FILE_READ=1\n")
 SERVICES = ("bluetooth", "power-profiles-daemon")
+# Stock Arch shells don't put ~/.local/bin on PATH; this puts `bloom` there
+# for every account.
+LAUNCHER = "usr/local/bin/bloom"
+LAUNCHER_TEXT = ("#!/bin/sh\n# Bloom's command for every account; removed by bloom uninstall.\n"
+                 'if [ -x "$HOME/.local/bin/bloom" ]; then exec "$HOME/.local/bin/bloom" "$@"; fi\n'
+                 'echo "bloom: Bloom is not installed for $(id -un)" >&2\nexit 127\n')
 # Not "bloom": that is often someone's own user group.
 GROUP = "bloom-login"
 # Where Bloom is the whole desktop (no ii), a fresh machine gets these once.
@@ -205,11 +244,15 @@ def plan(root, user, deps=True):
     steps = []
     if deps and current.get("pkgbuild_hash") != pkgbuild_hash():
         steps.append({"kind": "packages", "label": "Install Bloom's packages (Quickshell, Hyprland and the rest)"})
-    if not current.get("apps_offered") and not beside_ii(root, user):
-        missing = [name for name in APPS if not installed(root, name)]
+    if not beside_ii(root, user):
+        missing = [] if current.get("apps_offered") else [name for name in APPS if not installed(root, name)]
+        adopt = [name for name in APPS if dependency(root, name)]
         if missing:
-            steps.append({"kind": "apps", "packages": missing,
+            steps.append({"kind": "apps", "packages": missing, "adopt": adopt,
                           "label": "Install the default apps (terminal, files, browser, text editor, image viewer, video player)"})
+        elif adopt:
+            steps.append({"kind": "apps", "packages": [], "adopt": adopt,
+                          "label": f"Keep {', '.join(adopt)} as your own apps (another package brought them in)"})
     manager = display_manager(root)
     if manager is None:
         steps.append({"kind": "install-sddm", "label": "Install the SDDM login screen"})
@@ -221,10 +264,27 @@ def plan(root, user, deps=True):
             dropin = (root / DROPIN).read_text()
         except OSError:
             dropin = None
-        if dropin != DROPIN_TEXT:
+        old = [path for path in OLD_DROPINS if path in current.get("files", {}) and (root / path).exists()]
+        if dropin != DROPIN_TEXT or old:
             steps.append({"kind": "dropin", "label": "Use the Bloom theme and Hyprland on the login screen"})
+        try:
+            chosen = [line.split("=", 1)[1].strip() for line in (root / "etc/sddm.conf").read_text().splitlines()
+                      if line.strip().startswith("Current=")]
+        except OSError:
+            chosen = []
+        if chosen and chosen[-1] != "bloom":
+            steps.append({"kind": "note", "label": f"Login screen: /etc/sddm.conf picks the {chosen[-1]} theme, "
+                                                   "which wins over Bloom's; remove its Current= line to use Bloom's"})
     else:
         steps.append({"kind": "note", "label": f"Login screen: {manager} stays as it is (the Bloom login screen needs SDDM)"})
+    try:
+        launcher = (root / LAUNCHER).read_text()
+    except OSError:
+        launcher = None
+    if launcher is None or (launcher != LAUNCHER_TEXT and LAUNCHER in current.get("files", {})):
+        steps.append({"kind": "launcher", "label": "Make the bloom command work in every terminal"})
+    elif launcher != LAUNCHER_TEXT:
+        steps.append({"kind": "note", "label": f"/{LAUNCHER} is someone else's and stays; run Bloom as ~/.local/bin/bloom"})
     network = enabled_network(root)
     if not network:
         steps.append({"kind": "enable", "unit": "NetworkManager", "label": "Turn on NetworkManager (Wi-Fi and network controls)"})
@@ -274,9 +334,12 @@ def apply(root, user, steps, booted, run, report=None):
                 doc["pkgbuild_hash"] = pkgbuild_hash()
             elif kind == "apps":
                 # Ordinary apps, not dependencies: they stay if Bloom goes.
-                run("pacman", "-S", "--noconfirm", "--needed", *step["packages"])
+                if step["packages"]:
+                    run("pacman", "-S", "--noconfirm", "--needed", *step["packages"])
+                    doc["apps"] = list(step["packages"])
+                if step.get("adopt"):
+                    run("pacman", "-D", "--asexplicit", *step["adopt"])
                 doc["apps_offered"] = True
-                doc["apps"] = list(step["packages"])
             elif kind == "install-sddm":
                 run("pacman", "-S", "--noconfirm", "--needed", "sddm")
                 doc["sddm_installed"] = True
@@ -301,6 +364,20 @@ def apply(root, user, steps, booted, run, report=None):
                 _write(path, DROPIN_TEXT, 0o644)
                 undo.append(("restore", path, before))
                 doc["files"][DROPIN] = _digest_bytes(DROPIN_TEXT.encode())
+                for name in OLD_DROPINS:
+                    old = root / name
+                    if name in doc["files"] and old.exists() and _digest_bytes(old.read_bytes()) == doc["files"][name]:
+                        undo.append(("restore", old, old.read_text()))
+                        old.unlink()
+                    doc["files"].pop(name, None)
+            elif kind == "launcher":
+                path = root / LAUNCHER
+                before = path.read_text() if path.exists() else None
+                path.parent.mkdir(parents=True, exist_ok=True)
+                _write(path, LAUNCHER_TEXT, 0o755)
+                os.chmod(path, 0o755)
+                undo.append(("restore", path, before))
+                doc["files"][LAUNCHER] = _digest_bytes(LAUNCHER_TEXT.encode())
             elif kind == "group":
                 if group_members(root, GROUP) is None:
                     run("groupadd", "-r", GROUP)
@@ -387,13 +464,20 @@ def uninstall(root, remove_deps, run):
     if not doc or doc.get("status") == "uninstalled":
         return []
     messages = []
-    path = root / DROPIN
-    if path.exists():
-        if _digest_bytes(path.read_bytes()) == doc["files"].get(DROPIN):
-            path.unlink()
-            messages.append("Login screen theme setting removed")
+    for name in (DROPIN, *OLD_DROPINS):
+        path = root / name
+        if path.exists() and name in doc["files"]:
+            if _digest_bytes(path.read_bytes()) == doc["files"][name]:
+                path.unlink()
+                messages.append("Login screen theme setting removed")
+            else:
+                messages.append(f"Kept {path}: it was edited after Bloom wrote it")
+    launcher = root / LAUNCHER
+    if launcher.exists() and LAUNCHER in doc["files"]:
+        if _digest_bytes(launcher.read_bytes()) == doc["files"][LAUNCHER]:
+            launcher.unlink()
         else:
-            messages.append(f"Kept {path}: it was edited after Bloom wrote it")
+            messages.append(f"Kept {launcher}: it was edited after Bloom wrote it")
     theme = root / THEME
     if theme.exists():
         if tree_digest(theme) == doc["files"].get(THEME):

@@ -153,7 +153,7 @@ class Phase(Facts):
         self.assertIn("install-sddm", self.kinds(steps))
         self.assertIn(["pacman", "-S", "--noconfirm", "--needed", "sddm"], self.calls())
         self.assertEqual(system.display_manager(self.root), "sddm")
-        dropin = (self.root / "etc/sddm.conf.d/10-bloom.conf").read_text()
+        dropin = (self.root / system.DROPIN).read_text()
         self.assertIn("Current=bloom", dropin)
         self.assertIn("DefaultSession=hyprland.desktop", dropin)
         # The greeter reads the login state as data, so it may read files.
@@ -187,7 +187,7 @@ class Phase(Facts):
         steps = self.install()
         self.assertNotIn("install-sddm", self.kinds(steps))
         self.assertIn("theme", self.kinds(steps))
-        self.assertIn("Current=bloom", (self.root / "etc/sddm.conf.d/10-bloom.conf").read_text())
+        self.assertIn("Current=bloom", (self.root / system.DROPIN).read_text())
 
     def test_other_display_manager_is_left_alone_with_a_note(self):
         (self.root / "etc/systemd/system/display-manager.service").symlink_to("/usr/lib/systemd/system/gdm.service")
@@ -243,6 +243,81 @@ class Phase(Facts):
         steps = system.plan(self.root, self.user, deps=True)
         self.assertEqual([s["packages"] for s in steps if s["kind"] == "apps"], [list(system.APPS[-1:])])
 
+    def dependency(self, name):
+        entry = self.root / "var/lib/pacman/local" / f"{name}-1.0-1"
+        entry.mkdir(parents=True)
+        (entry / "desc").write_text(f"%NAME%\n{name}\n\n%REASON%\n1\n\n")
+
+    # An app another package pulled in would go when that package goes
+    # (pacman -Rns): Bloom keeps it as the user's own app instead.
+    def test_default_apps_that_came_as_dependencies_are_kept(self):
+        for name in system.APPS:
+            self.dependency(name) if name == "kitty" else (self.root / "var/lib/pacman/local" / f"{name}-1.0-1").mkdir(parents=True)
+        steps = self.install()
+        apps = [s for s in steps if s["kind"] == "apps"]
+        self.assertEqual([(s["packages"], s["adopt"]) for s in apps], [([], ["kitty"])])
+        self.assertIn(["pacman", "-D", "--asexplicit", "kitty"], self.calls())
+        self.assertFalse([c for c in self.calls() if c[:2] == ["pacman", "-S"] and "kitty" in c])
+
+    def test_default_apps_are_kept_on_later_runs_too(self):
+        self.install()
+        self.dependency("kitty")
+        steps = system.plan(self.root, self.user, deps=True)
+        self.assertEqual([(s["packages"], s["adopt"]) for s in steps if s["kind"] == "apps"], [([], ["kitty"])])
+
+    def test_shell_dependencies_include_the_pulse_server(self):
+        # Bloom's audio events use pactl, which needs PipeWire's Pulse server.
+        pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text()
+        self.assertIn("'pipewire-pulse'", pkgbuild)
+
+    # Stock Arch shells don't have ~/.local/bin on PATH.
+    def test_bloom_command_is_on_every_path(self):
+        self.install()
+        launcher = self.root / system.LAUNCHER
+        self.assertEqual(launcher.stat().st_mode & 0o777, 0o755)
+        self.assertIn('"$HOME/.local/bin/bloom"', launcher.read_text())
+        system.uninstall(self.root, remove_deps=False, run=self.run_stub)
+        self.assertFalse(launcher.exists())
+
+    def test_someone_elses_bloom_command_is_left_alone(self):
+        launcher = self.root / system.LAUNCHER
+        launcher.parent.mkdir(parents=True)
+        launcher.write_text("#!/bin/sh\necho mine\n")
+        steps = self.install()
+        self.assertEqual(launcher.read_text(), "#!/bin/sh\necho mine\n")
+        self.assertTrue(any(s["kind"] == "note" and system.LAUNCHER in s["label"] for s in steps), steps)
+        system.uninstall(self.root, remove_deps=False, run=self.run_stub)
+        self.assertEqual(launcher.read_text(), "#!/bin/sh\necho mine\n")
+
+    # SDDM reads its drop-ins in name order and the last theme wins.
+    def test_login_theme_wins_over_other_dropins(self):
+        dropins = self.root / "etc/sddm.conf.d"
+        dropins.mkdir(parents=True)
+        (dropins / "theme.conf").write_text("[Theme]\nCurrent=ii-material-sddm\n")
+        self.install()
+        self.assertEqual(system.login_theme(self.root), "bloom")
+
+    def test_a_theme_in_sddm_conf_is_named_in_the_plan(self):
+        (self.root / "etc/sddm.conf").write_text("[Theme]\nCurrent=breeze\n")
+        steps = self.install()
+        self.assertTrue(any(s["kind"] == "note" and "breeze" in s["label"] for s in steps), steps)
+
+    def test_the_old_dropin_name_is_replaced(self):
+        old = self.root / "etc/sddm.conf.d/10-bloom.conf"
+        old.parent.mkdir(parents=True)
+        old.write_text(system.DROPIN_TEXT)
+        self.install()
+        doc = json.loads((self.root / system.MANIFEST).read_text())
+        doc["files"]["etc/sddm.conf.d/10-bloom.conf"] = system._digest_bytes(system.DROPIN_TEXT.encode())
+        doc["files"].pop(system.DROPIN)
+        (self.root / system.DROPIN).unlink()
+        (self.root / system.MANIFEST).write_text(json.dumps(doc))
+        self.install()
+        self.assertFalse(old.exists())
+        self.assertTrue((self.root / system.DROPIN).exists())
+        system.uninstall(self.root, remove_deps=False, run=self.run_stub)
+        self.assertFalse((self.root / system.DROPIN).exists())
+
     def test_beside_ii_no_apps_are_added(self):
         (self.root / "home/dhanush/.config/quickshell/ii").mkdir(parents=True)
         self.assertNotIn("apps", self.kinds(system.plan(self.root, self.user, deps=True)))
@@ -263,14 +338,14 @@ class Phase(Facts):
     def test_failed_package_step_rolls_back_files(self):
         with self.assertRaises(system.Failure):
             self.install(STUB_FAIL="pacman")
-        self.assertFalse((self.root / "etc/sddm.conf.d/10-bloom.conf").exists())
+        self.assertFalse((self.root / system.DROPIN).exists())
         self.assertFalse((self.root / "usr/share/sddm/themes/bloom").exists())
 
     def test_failure_after_enabling_disables_again(self):
         with self.assertRaises(system.Failure):
             self.install(STUB_FAIL="groupadd")
         self.assertIsNone(system.display_manager(self.root))
-        self.assertFalse((self.root / "etc/sddm.conf.d/10-bloom.conf").exists())
+        self.assertFalse((self.root / system.DROPIN).exists())
 
     def test_person_sddm_conf_is_never_touched(self):
         (self.root / "etc/sddm.conf").write_text("[Theme]\nCurrent=breeze\n")
@@ -283,7 +358,7 @@ class Phase(Facts):
         self.install()
         messages = system.uninstall(self.root, remove_deps=False, run=self.run_stub)
         self.assertIsNone(system.display_manager(self.root))
-        self.assertFalse((self.root / "etc/sddm.conf.d/10-bloom.conf").exists())
+        self.assertFalse((self.root / system.DROPIN).exists())
         self.assertFalse((self.root / "usr/share/sddm/themes/bloom").exists())
         self.assertFalse((self.root / "var/lib/bloom/login").exists())
         self.assertNotIn("bloom-login:", (self.root / "etc/group").read_text())

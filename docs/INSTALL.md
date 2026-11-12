@@ -51,8 +51,11 @@ only when you have installed the dependency package's contents yourself.
 - **Packages:** `packaging/bloom-shell-deps` is built and installed.
 - **Login screen:** with no display manager, SDDM is installed and enabled.
   An existing SDDM is switched to the Bloom theme through
-  `/etc/sddm.conf.d/10-bloom.conf` (your own `sddm.conf` is never edited).
+  `/etc/sddm.conf.d/zz-bloom.conf` (your own `sddm.conf` is never edited).
   GDM, greetd, LightDM and others are left alone.
+- **The `bloom` command:** `/usr/local/bin/bloom` runs your own
+  `~/.local/bin/bloom`, so `bloom` works in every terminal (stock Arch shells
+  don't have `~/.local/bin` on `PATH`). A `bloom` someone else put there stays.
 - **Services:** NetworkManager (only when no other network service is
   enabled; with systemd-networkd or iwd Bloom leaves networking alone and the
   Wi-Fi panel explains why its controls are unavailable), Bluetooth and power
@@ -61,7 +64,9 @@ only when you have installed the dependency package's contents yourself.
   so the login screen follows your wallpaper and colours without a password.
 - **Default apps** (only without ii, and only once): kitty, Nautilus, Firefox,
   GNOME Text Editor, Loupe and mpv. They are ordinary apps: uninstall keeps
-  them, and an update never reinstalls one you removed.
+  them, and an update never reinstalls one you removed. One that another
+  package brought in (ii, say) is marked as your own, so removing that
+  package doesn't take it along.
 
 Everything is recorded in `/var/lib/bloom/system-manifest.json`. A failed
 system step undoes this run's file and service changes (installed packages

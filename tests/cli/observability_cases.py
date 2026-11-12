@@ -233,6 +233,13 @@ class DoctorCases(Home):
         self.assertEqual(check["status"], "ok")
         self.assertIn("Bloom", check["summary"])
 
+    def test_another_theme_that_wins_is_reported(self):
+        root = self.system("sddm")
+        (root / "etc/sddm.conf.d").mkdir(parents=True)
+        (root / "etc/sddm.conf.d/zz-bloom.conf").write_text("[Theme]\nCurrent=bloom\n")
+        (root / "etc/sddm.conf").write_text("[Theme]\nCurrent=breeze\n")
+        self.assertEqual(self.check("login")["status"], "degraded")
+
     def test_sddm_without_the_bloom_theme_points_to_install(self):
         self.system("sddm")
         check = self.check("login")
