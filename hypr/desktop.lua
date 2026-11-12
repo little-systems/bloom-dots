@@ -55,6 +55,20 @@ hl.window_rule({
     no_focus = true,
 })
 
+-- File dialogs, pickers and small settings tools float in the middle instead
+-- of squeezing the tiled windows.
+local floating = {
+    { name = "bloom-float-file-dialogs",
+      match = { title = "^(Open|Open Files?|Open Folder|Save|Save File|Save As|Save Image|Select a File|Choose Files?|File Upload)( [-–—] .*)?$" } },
+    { name = "bloom-float-browser-prompts", match = { title = "^(Library|.* wants to (save|open))$" } },
+    { name = "bloom-float-portals", match = { class = "^(xdg-desktop-portal-(gtk|kde)|org\\.freedesktop\\.impl\\.portal\\..*)$" } },
+    { name = "bloom-float-tools",
+      match = { class = "^(pavucontrol|org\\.pulseaudio\\.pavucontrol|nm-connection-editor|blueman-manager|\\.blueman-manager-wrapped)$" } },
+}
+for _, rule in ipairs(floating) do
+    hl.window_rule({ name = rule.name, match = rule.match, float = true, center = true })
+end
+
 -- Clipboard history for the launcher's ";" mode.
 hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
