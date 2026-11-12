@@ -55,7 +55,7 @@ Item {
 	// state.json names its wallpaper beside itself.
 	function _wallpaper() {
 		const name = String(root._pick("wallpaper", ""));
-		if (name === "") return Qt.resolvedUrl("default-wallpaper.jpg");
+		if (name === "") return Qt.resolvedUrl("shell/assets/wallpaper-dark.jpg");
 		const base = String(root.stateUrl);
 		return base.slice(0, base.lastIndexOf("/") + 1) + name;
 	}

@@ -135,7 +135,7 @@ var SCHEMA = {
 	},
 	"bloom-wallpaper": {
 		type: "string", maxLength: 4096, default: "",
-		doc: "Wallpaper image or video. Empty uses the one set in ii."
+		doc: "Wallpaper image or video. Empty uses the one set in ii, else Bloom's own (light for the light theme, dark otherwise)."
 	},
 	"bloom-wallpaper-dir": {
 		type: "string", maxLength: 4096, default: "",
@@ -143,7 +143,7 @@ var SCHEMA = {
 	},
 	"bloom-lock-wallpaper": {
 		type: "string", maxLength: 4096, default: "",
-		doc: "Image behind the lock screen. Empty uses the desktop wallpaper, or black if there is none."
+		doc: "Image behind the lock screen. Empty uses the desktop wallpaper."
 	},
 	"bloom-lock-media-enabled": {
 		type: "bool", default: true,

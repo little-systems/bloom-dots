@@ -125,7 +125,7 @@ Item {
 		function test_login_state_values_are_validated() {
 			const g = make(oneUser, oneSession);
 			g.applyState(JSON.stringify({ wallpaper: "../../../etc/passwd", accent: "red", scale: 9e9, text: "#zzzzzz" }));
-			verify(String(part(g, "backdrop").source).endsWith("default-wallpaper.jpg"));
+			verify(String(part(g, "backdrop").source).endsWith("shell/assets/wallpaper-dark.jpg"));
 			compare(String(findChild(g, "confirm").color), "#007aff");
 			compare(findChild(g, "fieldBox").parent.scale, 1);
 			g.applyState("import QtQuick; Item {}");
@@ -140,7 +140,7 @@ Item {
 		}
 		function test_missing_login_state_uses_default_wallpaper() {
 			const g = make(oneUser, oneSession);
-			verify(String(part(g, "backdrop").source).endsWith("default-wallpaper.jpg"));
+			verify(String(part(g, "backdrop").source).endsWith("shell/assets/wallpaper-dark.jpg"));
 		}
 	}
 }

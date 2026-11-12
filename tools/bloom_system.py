@@ -115,7 +115,7 @@ def theme_sources():
     # The lock screen borrows the notch's blur and media parts; QML compiles
     # only the types it uses, so the rest of the folder is inert here.
     for relative in ("shell/common", "shell/modules/lock", "shell/modules/notch", "shell/assets/fonts",
-                     "shell/assets/bloom.png"):
+                     "shell/assets/bloom.png", "shell/assets/wallpaper-dark.jpg"):
         if (SOURCE / relative).exists():
             sources.append((SOURCE / relative, Path(relative)))
     return sources

@@ -11,6 +11,12 @@ function parseList(text) {
 	return Array.from(new Set(text.split(text.indexOf("\0") >= 0 ? "\0" : "\n").filter(p => PICTURES.test(p) || VIDEOS.test(p)))).sort((a, b) => a.localeCompare(b));
 }
 
+// Bloom's own wallpaper (shell/assets) when none is chosen: light for the
+// light theme, dark for the rest.
+function defaultFor(themeMode) {
+	return themeMode === "light" ? "wallpaper-light.jpg" : "wallpaper-dark.jpg";
+}
+
 function accentFrom(matugenJson) {
 	try {
 		const primary = JSON.parse(matugenJson).colors.primary;

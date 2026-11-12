@@ -6,13 +6,16 @@ import "../modules/wallpaper/wallpaper.js" as Logic
 import "../modules/lock/lock.js" as Ii
 
 // The wallpaper: which one, the picker, and the Adaptive accent. Until a
-// wallpaper is chosen here, ii's stays in use.
+// wallpaper is chosen here, ii's stays in use, then Bloom's own.
 Singleton {
 	id: root
 
 	readonly property string _own: Settings.values["bloom-wallpaper"]
-	readonly property string path: root._own || Ii.wallpaperFrom(iiConfig.text())
-	readonly property real zoom: root._own ? 1 : Ii.wallpaperZoomFrom(iiConfig.text())
+	readonly property string _ii: Ii.wallpaperFrom(iiConfig.text())
+	// Neither Bloom nor ii has one: Bloom's own, matching the theme.
+	readonly property string path: root._own || root._ii
+		|| Logic.localPath(Qt.resolvedUrl("../assets/" + Logic.defaultFor(Settings.values["bloom-theme-mode"])))
+	readonly property real zoom: root._own || !root._ii ? 1 : Ii.wallpaperZoomFrom(iiConfig.text())
 	readonly property bool video: Logic.isVideo(root.path)
 	readonly property string defaultFolder: Quickshell.env("HOME") + "/Pictures/Wallpapers"
 	readonly property string folder: Settings.values["bloom-wallpaper-dir"] || root.defaultFolder

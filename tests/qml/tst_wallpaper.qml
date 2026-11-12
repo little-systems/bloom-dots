@@ -30,6 +30,14 @@ TestCase {
 		compare(Logic.accentFrom("nope"), "");
 	}
 
+	function test_defaultFollowsThemeMode() {
+		compare(Logic.defaultFor("light"), "wallpaper-light.jpg");
+		compare(Logic.defaultFor("dark"), "wallpaper-dark.jpg");
+		compare(Logic.defaultFor("adaptive"), "wallpaper-dark.jpg");
+		compare(Logic.defaultFor("custom"), "wallpaper-dark.jpg");
+		compare(Logic.defaultFor(undefined), "wallpaper-dark.jpg");
+	}
+
 	function test_randomNeverRepeats() {
 		compare(Logic.pickOther(["a", "b", "c"], "a", 0), "b");
 		compare(Logic.pickOther(["a", "b", "c"], "a", 0.99), "c");
