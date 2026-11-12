@@ -563,6 +563,33 @@ m.main()
     def git(self, *args, cwd=None):
         return subprocess.check_output(["git", *args], cwd=cwd or self.root, stderr=subprocess.DEVNULL, text=True).strip()
 
+    def test_update_installs_with_the_new_revisions_installer(self):
+        self.git("init", "-b", "main")
+        self.git("config", "user.name", "Bloom Test")
+        self.git("config", "user.email", "test@example.invalid")
+        self.git("add", ".")
+        self.git("commit", "-m", "fixture")
+        bare = self.base / "remote.git"
+        self.git("clone", "--bare", str(self.root), str(bare))
+        self.git("remote", "add", "origin", str(bare))
+        self.git("fetch", "origin")
+        self.git("branch", "--set-upstream-to=origin/main", "main")
+        upstream = self.base / "upstream"
+        self.git("clone", str(bare), str(upstream))
+        self.git("config", "user.name", "Bloom Test", cwd=upstream)
+        self.git("config", "user.email", "test@example.invalid", cwd=upstream)
+        self.bloom("install")
+        lifecycle = upstream / "tools/bloom-lifecycle.py"
+        text = lifecycle.read_text()
+        anchor = '    ui.stage(total, total, "Your desktop")\n'
+        self.assertIn(anchor, text)
+        lifecycle.write_text(text.replace(anchor, anchor + '    ui.say("installed by the new revision")\n', 1))
+        self.git("add", ".", cwd=upstream)
+        self.git("commit", "-m", "new installer", cwd=upstream)
+        self.git("push", cwd=upstream)
+        result = self.bloom("update")
+        self.assertIn("installed by the new revision", result.stdout)
+
     def test_update_customized_template_and_rollback(self):
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Bloom Test")

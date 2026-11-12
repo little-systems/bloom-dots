@@ -21,6 +21,8 @@ import time
 ROOT = Path(__file__).resolve().parent.parent
 UNIT = "bloom-shell.service"
 MARKER = "-- bloom managed loader"
+# Set by update for the new revision's installer: it runs under update's lock.
+INHERITED_LOCK = "BLOOM_LIFECYCLE_LOCK_HELD_BY"
 # Bloom's desktop (hypr/desktop.lua), first in hyprland.lua where Bloom is the whole desktop.
 DESKTOP_MARKER = "-- bloom managed desktop"
 # Every surface; where Bloom is the whole desktop they all start on.
@@ -684,7 +686,7 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
             elif not service["active"]:
                 run("systemctl", "--user", "start", UNIT)
             for _ in range(50):
-                if run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.split()[-1:] == ["pong"]:
+                if answering():
                     break
                 time.sleep(0.1)
             else:
@@ -1018,6 +1020,10 @@ def validate_candidate(commit):
             raise Failure(f"candidate {commit[:12]} failed validation ({'; '.join(problems[:5])}); nothing was changed")
 
 
+def answering():
+    return run("qs", "-c", "bloom", "ipc", "call", "shell", "ping", check=False).stdout.split()[-1:] == ["pong"]
+
+
 def update(ctx, rollback=False, no_deps=False):
     """Validate, switch, verify health; roll back to the last good revision if needed."""
     if not ctx.manifest:
@@ -1058,9 +1064,19 @@ def update(ctx, rollback=False, no_deps=False):
             run("git", "checkout", "--detach", target, cwd=ROOT)
         else:
             run("git", "merge", "--ff-only", target, cwd=ROOT)
-        install(ctx, no_deps=no_deps, restart=True, yes=True)
+        # This process still runs the old installer; the new revision installs itself.
+        child = [sys.executable, str(ROOT / "tools/bloom-lifecycle.py"), "install", "--yes", "--restart"]
+        os.environ[INHERITED_LOCK] = str(os.getpid())
+        try:
+            if run(*child, *(["--no-deps"] if no_deps else []), check=False, capture=False).returncode:
+                raise Failure("the new version's installer failed")
+        finally:
+            os.environ.pop(INHERITED_LOCK, None)
+        ctx.verified = live_session() and answering()
     except BaseException as error:
         EVENTS.emit("lifecycle.candidate", level="error", stage="health", outcome="rolled-back", revision=target[:12])
+        # The child rewrote the manifest; read it again before restoring.
+        ctx = Context()
         try:
             restore_interrupted_update(ctx, pending)
             verdict = ("the previous version is running and answering again" if ctx.verified
@@ -1128,7 +1144,9 @@ def main():
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise Failure("another Bloom lifecycle operation is running; try again when it finishes") from exc
+            # Only update's own child may proceed: update holds the lock for it.
+            if not (args.command == "install" and os.environ.get(INHERITED_LOCK) == str(os.getppid())):
+                raise Failure("another Bloom lifecycle operation is running; try again when it finishes") from exc
         ctx = Context()
         # A dry run and a plain recovery inspection are queries: no effects, no log.
         EVENTS.enabled = not (getattr(args, "dry_run", False) or
