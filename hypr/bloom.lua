@@ -10,6 +10,20 @@ for _, name in ipairs({"bloom-colors", "bloom-settings", "bloom", "bloom-keybind
         dofile(path)
     end
 end
+-- Bloom's Reduce Motion turns the compositor's animations off too. It comes
+-- after the user's own files: it is an accessibility choice, so it wins. When
+-- it is off Bloom says nothing, leaving animations to desktop.lua, Settings
+-- and the user. The shell reloads Hyprland when the setting changes.
+local function reduce_motion()
+    local file = io.open(config .. "/bloom/settings.json", "r")
+    if not file then return false end
+    local ok, text = pcall(file.read, file, "*a")
+    file:close()
+    return ok and text ~= nil and text:find('"bloom%-reduce%-motion"%s*:%s*"?true"?') ~= nil
+end
+if reduce_motion() then
+    hl.config({ animations = { enabled = false } })
+end
 -- The lock screen fades over the live desktop on the way in and out, so the
 -- desktop must keep rendering under it (xray); if the lock surface crashes,
 -- the session stays locked and the restarted shell takes the lock back.

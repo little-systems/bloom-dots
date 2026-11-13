@@ -19,6 +19,7 @@ import "modules/wallpaper"
 import "modules/osk"
 import "modules/overlay"
 import "common/render"
+import "common/motion.js" as Motion
 
 // Bloom shell root: loads the core services, the surfaces enabled in
 // bloom-enabled-modules, and the IPC interface used by `bloom ipc` and keybinds.
@@ -60,6 +61,14 @@ ShellRoot {
 		target: Render
 		property: "reduceMotion"
 		value: Settings.values["bloom-reduce-motion"]
+	}
+	// Reduce Motion turns Hyprland's animations off too: hypr/bloom.lua reads
+	// the setting, so a reload applies it (only on a real change).
+	property var _motionSeen: undefined
+	readonly property var _reduceMotion: Settings._loaded ? Settings.values["bloom-reduce-motion"] : undefined
+	on_ReduceMotionChanged: {
+		if (Motion.reloadNeeded(shell._motionSeen, shell._reduceMotion)) Quickshell.execDetached(["hyprctl", "reload"]);
+		shell._motionSeen = shell._reduceMotion;
 	}
 	Binding {
 		target: Fonts

@@ -330,7 +330,7 @@ var SCHEMA = {
 	},
 	"bloom-reduce-motion": {
 		type: "bool", default: false,
-		doc: "Land every spring at once instead of animating it."
+		doc: "Land every spring at once instead of animating it, and turn off window animations."
 	},
 	"bloom-ai-model": {
 		type: "enum",

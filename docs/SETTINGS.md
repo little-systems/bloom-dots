@@ -70,7 +70,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-volume-edge-enabled` | bool | `true` | `true`, `false` | Slide the volume overlay in from the left edge on hover. |
 | `bloom-brightness-hud-enabled` | bool | `true` | `true`, `false` | Show the brightness overlay. |
 | `bloom-brightness-edge-enabled` | bool | `true` | `true`, `false` | Slide the brightness overlay in from the right edge on hover. |
-| `bloom-reduce-motion` | bool | `false` | `true`, `false` | Land every spring at once instead of animating it. |
+| `bloom-reduce-motion` | bool | `false` | `true`, `false` | Land every spring at once instead of animating it, and turn off window animations. |
 | `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |
 | `bloom-timer-sound-enabled` | bool | `true` | `true`, `false` | Play a chime when the timer finishes. |
 | `bloom-battery-sound-enabled` | bool | `true` | `true`, `false` | Play a sound when the battery reaches the alert level. |
