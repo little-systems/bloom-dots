@@ -21,7 +21,8 @@ feel, not the model.
   matching the shell's default `macos` animation style.
 - Polished tiling (owner's choice: tiling-first, option 1):
   - a lone tiled window fills its workspace (no gaps, no border, no rounding),
-  - a new window splits toward the side you're working on,
+  - a new window opens on the cursor's side and splits by the window's shape
+    (wide: side by side, tall: top and bottom), never into skinny columns,
   - Super+drag moves, swaps and resizes tiled windows with the same springs,
   - dialogs and small tools keep opening floating and centred (rules exist
     in `desktop.lua`; check they cover the common cases).
@@ -75,8 +76,8 @@ feel, not the model.
   200–250 ms, close in about 120–150 ms, no visible overshoot.
 - Window open style: a short fade with a slight scale (`popin` near 95%)
   rather than 87%; close as a quick fade. Workspaces slide horizontally.
-- How "split toward the side you're working on" maps to dwindle options
-  (`smart_split` or cursor-follow), verified live.
+- Split direction: dwindle's default (by window shape). `smart_split` was
+  tried and dropped: it follows the cursor's triangle and made skinny columns.
 - How Reduce Motion reaches Hyprland (the shell applies it at runtime when
   the setting changes and at start, reading the user's Animations preference
   to restore).

@@ -44,9 +44,11 @@ assert re.search(r'hl\.workspace_rule\(\{[^}]*"w\[tv1\]"[^}]*gaps_out = 0[^}]*\}
 rule = re.search(r'hl\.window_rule\(\{\s*name = "bloom-lone-window".*?\}\)\n', text, re.S)
 assert rule and "float = false" in rule[0] and 'workspace = "w[tv1]"' in rule[0], "the lone-window rule must skip floating windows"
 assert "border_size = 0" in rule[0] and "rounding = 0" in rule[0], "a lone window keeps its border or corners"
-assert re.search(r'dwindle = \{[^}]*smart_split = true', text), "new windows don't split toward the cursor"
+# smart_split picks the direction from the cursor, so tall windows split into
+# skinny columns; dwindle's default splits by the window's shape instead.
+assert not re.search(r'smart_split = true', text), "splits follow the cursor's triangle and make skinny columns"
 PY
-echo "ok - a lone tiled window fills its workspace; splits follow the cursor"
+echo "ok - a lone tiled window fills its workspace; splits follow each window's shape"
 if ! command -v Hyprland >/dev/null; then
 	echo "skipped: Hyprland is not installed"
 	exit 0

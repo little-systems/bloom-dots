@@ -37,8 +37,9 @@ hl.config({
         blur = { enabled = true, size = 6, passes = 2 },
     },
     animations = { enabled = true },
-    -- New windows split toward the side of the window the cursor is on.
-    dwindle = { preserve_split = true, smart_split = true },
+    -- A new window opens on the cursor's side; wide windows split side by
+    -- side and tall ones top and bottom, so nothing becomes a skinny column.
+    dwindle = { preserve_split = true },
     input = {
         kb_layout = "us",
         follow_mouse = 1,
