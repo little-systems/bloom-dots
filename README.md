@@ -90,6 +90,13 @@ system tray, workspace overview and keybinding cheatsheet.
 **Tools** — screenshots, annotation, OCR, translation, screen recording,
 wallpaper selection, an on-screen keyboard and a widget overlay.
 
+**Terminal** — kitty with a blurred background, Bloom's prompt and fastfetch
+with the Bloom logo in every new window.
+
+<p align="center">
+  <img src="docs/screenshots/terminal.png" alt="kitty with Bloom's fastfetch and prompt" />
+</p>
+
 <p align="center">
   <img src="docs/screenshots/launcher.png" width="45%" alt="The launcher" />
   <img src="docs/screenshots/session.png" width="45%" alt="The session menu" />
