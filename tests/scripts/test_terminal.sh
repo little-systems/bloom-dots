@@ -46,11 +46,36 @@ grep -qx "fastfetch --pipe" "$T/calls" || fail "typing fastfetch ignored the use
 rm -r "$T/.config"
 echo "ok - a fastfetch config of your own wins"
 
+# The layout follows the window: the logo needs room, a narrow or short window
+# gets the compact layout, and a tiny one stays quiet until asked.
+: > "$T/calls"
+shell KITTY_WINDOW_ID=6 COLUMNS=120 LINES=40
+grep -q "^fastfetch --config $ROOT/terminal/fastfetch.jsonc --logo " "$T/calls" || fail "a roomy window didn't get the full layout"
+: > "$T/calls"
+shell KITTY_WINDOW_ID=6 COLUMNS=60 LINES=30
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch-compact.jsonc" "$T/calls" || fail "a narrow window didn't get the compact layout"
+: > "$T/calls"
+shell KITTY_WINDOW_ID=6 COLUMNS=120 LINES=16
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch-compact.jsonc" "$T/calls" || fail "a short window didn't get the compact layout"
+: > "$T/calls"
+shell KITTY_WINDOW_ID=6 COLUMNS=49 LINES=11
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch-compact.jsonc" "$T/calls" || fail "a 49x11 window didn't get the compact layout"
+: > "$T/calls"
+shell KITTY_WINDOW_ID=6 COLUMNS=30 LINES=10
+if grep -q '^fastfetch' "$T/calls"; then fail "a tiny window showed fastfetch at startup"; fi
+NESTED="fastfetch" shell KITTY_WINDOW_ID=6 BLOOM_FASTFETCH_WINDOW=6 COLUMNS=30 LINES=10
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch-compact.jsonc" "$T/calls" || fail "typing fastfetch in a tiny window showed nothing"
+echo "ok - the layout fits the window"
+
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$ROOT/terminal/bloom.omp.json" || fail "the prompt theme isn't valid JSON"
 if command -v fastfetch >/dev/null; then
 	out="$(fastfetch --config "$ROOT/terminal/fastfetch.jsonc" --logo-type none --pipe 2>&1)" || fail "fastfetch rejects Bloom's config: $out"
 	grep -q 'Bloom for Linux' <<<"$out" || fail "fastfetch printed nothing useful: $out"
 	echo "ok - fastfetch accepts Bloom's layout"
+	out="$(fastfetch --config "$ROOT/terminal/fastfetch-compact.jsonc" --pipe 2>&1)" || fail "fastfetch rejects the compact layout: $out"
+	width="$(awk '{ if (length > w) w = length } END { print w + 0 }' <<<"$out")"
+	(( $(wc -l <<<"$out") <= 8 && width <= 40 )) || fail "the compact layout doesn't fit 40x10 with the prompt ($(wc -l <<<"$out") lines, $width wide)"
+	echo "ok - the compact layout fits a small window"
 
 # kitty stretches the logo to the box the layout gives it. Bloom's kitty font
 # (JetBrainsMono Nerd Font 11) has cells about 9 px wide and 20 px tall, so
