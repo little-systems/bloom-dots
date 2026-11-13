@@ -82,3 +82,22 @@ feel, not the model.
   to restore).
 - Tests: the config loads in the session test stand-in, the Reduce Motion
   path has a test, and the owner does the final feel check live.
+
+## Measured (2026-11-13, UHD 620, 1920x1080 at 60 Hz)
+
+Recorded with `wf-recorder` on empty workspaces, from the first to the last
+visibly changed frame (the notch and dock cropped out). Hyprland ignores
+`speed` for springs (speed 0.5 and 10 measured the same), so stiffness alone
+sets the timing; every spring stays critically damped.
+
+| Moment | Stock Hyprland | Bloom |
+|---|---|---|
+| Open a window (`bloomWindow`, k 500) | 650 ms | 200–250 ms |
+| Switch workspace (`bloomSlide`, k 1800) | 667–767 ms | 200–233 ms |
+| Open a second window, split (`bloomMove`, k 1200) | 650 ms | 233–267 ms |
+| Close it, the other grows back | 683 ms | 217–283 ms |
+| Close the last window (`bloomQuick`, k 4500) | 150 ms | 133–150 ms |
+
+Live behavior: a lone tiled window fills 1920x1080 from 0,0 with no border
+or corners; two windows get their gaps back; a lone floating window keeps
+its corners and border. Idle CPU (Hyprland + shell, cursor still): 0.7–1.0%.

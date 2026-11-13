@@ -49,22 +49,27 @@ hl.config({
 })
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
--- Motion: Bloom's springs (stiffness from shell/common/tokens.js), critically
--- damped like the shell's macos style, so windows land fast without bounce.
+-- Motion: critically damped springs, like the shell's macos style, so windows
+-- land fast without bounce. Hyprland ignores speed for springs: stiffness
+-- alone sets the timing, measured on the desktop (docs/specs/2026-11-13-
+-- window-motion-design.md): open ~200-250 ms, workspace ~200-230 ms, close
+-- ~130-150 ms. Stock Hyprland took 650-770 ms.
 hl.curve("bloomWindow", { type = "spring", mass = 1, stiffness = 500, damping = 44.73 })
-hl.curve("bloomQuick", { type = "spring", mass = 1, stiffness = 1000, damping = 63.25 })
-hl.animation({ leaf = "windows", enabled = true, speed = 2.5, spring = "bloomWindow" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 2.5, spring = "bloomWindow", style = "popin 95%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, spring = "bloomQuick", style = "popin 95%" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 2.5, spring = "bloomWindow" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2.5, spring = "bloomWindow", style = "slide" })
-hl.animation({ leaf = "border", enabled = true, speed = 2.5, spring = "bloomWindow" })
-hl.animation({ leaf = "layers", enabled = true, speed = 2.5, spring = "bloomWindow" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, spring = "bloomWindow", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, spring = "bloomQuick", style = "fade" })
-hl.animation({ leaf = "fade", enabled = true, speed = 1.5, spring = "bloomQuick" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.5, spring = "bloomQuick" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.5, spring = "bloomQuick" })
+hl.curve("bloomMove", { type = "spring", mass = 1, stiffness = 1200, damping = 69.29 })
+hl.curve("bloomSlide", { type = "spring", mass = 1, stiffness = 1800, damping = 84.86 })
+hl.curve("bloomQuick", { type = "spring", mass = 1, stiffness = 4500, damping = 134.17 })
+hl.animation({ leaf = "windows", enabled = true, speed = 2, spring = "bloomWindow" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 2, spring = "bloomWindow", style = "popin 95%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, spring = "bloomQuick", style = "popin 95%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 2, spring = "bloomMove" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2, spring = "bloomSlide", style = "slide" })
+hl.animation({ leaf = "border", enabled = true, speed = 2, spring = "bloomWindow" })
+hl.animation({ leaf = "layers", enabled = true, speed = 2, spring = "bloomWindow" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 2, spring = "bloomWindow", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 2, spring = "bloomQuick", style = "fade" })
+hl.animation({ leaf = "fade", enabled = true, speed = 2, spring = "bloomQuick" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, spring = "bloomQuick" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 2, spring = "bloomQuick" })
 
 hl.window_rule({ name = "bloom-suppress-maximize", match = { class = ".*" }, suppress_event = "maximize" })
 hl.window_rule({
