@@ -52,6 +52,7 @@ for setting in ("gaps_in = 4", "gaps_out = 5", "gaps_workspaces = 50", "resize_o
 blur = re.search(r'blur = \{(.*?)\},\n', text, re.S)[1]
 for setting in ("size = 6", "passes = 2", "brightness = 1", "vibrancy = 0.1696", "noise = 0.0117", "xray = false"):
     assert setting in blur, f"blur is missing {setting}"
+assert re.search(r'hl\.layer_rule\(\{\s*match = \{\s*namespace = "\^bloom:screen-corners\$"\s*\},\s*animation = "popin 120%"\s*\}\)', text), "screen corners don't pop in like ii's"
 assert "bloom-lone-window" not in text and "w[tv1]" not in text, "illogical-impulse doesn't make a lone window fill the screen"
 PY
 echo "ok - window motion and behavior match illogical-impulse, with the owner's blur"

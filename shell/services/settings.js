@@ -328,6 +328,10 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Slide the brightness overlay in from the right edge on hover."
 	},
+	"bloom-corners-enabled": {
+		type: "bool", default: true,
+		doc: "Round the screen's four corners (hidden over a fullscreen window)."
+	},
 	"bloom-reduce-motion": {
 		type: "bool", default: false,
 		doc: "Land every spring at once instead of animating it, and turn off window animations."

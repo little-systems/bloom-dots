@@ -2,7 +2,7 @@ import QtQuick
 import "../common/render"
 import "../common/tokens.js" as Tokens
 
-// Bloom's AppearanceTab. Screen Corners stays out: Hyprland rounds them.
+// Bloom's AppearanceTab.
 Column {
 	id: root
 	property QtObject theme
@@ -72,6 +72,15 @@ Column {
 			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
 			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
 			SSlider { accessibleName: "Background Brightness"; theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
+		}
+	}
+
+	SGroupLabel { theme: root.theme; text: "Screen" }
+	SGroup {
+		theme: root.theme
+		SRow {
+			theme: root.theme; icon: "square"; label: "Screen Corners"; desc: "Rounded corners, hidden over fullscreen"; divider: false
+			SToggle { objectName: "screenCorners"; accessibleName: "Screen Corners"; theme: root.theme; checked: root.store.values["bloom-corners-enabled"]; onToggled: value => root.store.set("bloom-corners-enabled", value) }
 		}
 	}
 

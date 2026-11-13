@@ -116,6 +116,8 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 7, bezier = "menu_de
 hl.animation({ leaf = "specialWorkspaceIn", enabled = true, speed = 2.8, bezier = "emphasizedDecel", style = "slidevert" })
 hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1.2, bezier = "emphasizedAccel", style = "slidevert" })
 hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3, bezier = "standardDecel" })
+-- Bloom's rounded screen corners pop in as ii's did.
+hl.layer_rule({ match = { namespace = "^bloom:screen-corners$" }, animation = "popin 120%" })
 
 hl.window_rule({ name = "bloom-suppress-maximize", match = { class = ".*" }, suppress_event = "maximize" })
 hl.window_rule({

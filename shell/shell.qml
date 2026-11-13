@@ -108,6 +108,19 @@ ShellRoot {
 		component: Scope { Component.onCompleted: CalendarState.remaining() }
 	}
 
+	// Rounded screen corners (bloom-corners-enabled), one set per screen.
+	LazyLoader {
+		id: cornersLoader
+		active: Settings.values["bloom-corners-enabled"] === true
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/corners/ScreenCorners.qml"), { modelData: modelData })
+			}
+		}
+	}
+
 	LazyLoader {
 		id: launcherLoader
 		active: _modules.indexOf("launcher") >= 0
@@ -381,6 +394,17 @@ ShellRoot {
 		function check(): string {
 			Updates.check();
 			return "ok";
+		}
+	}
+
+	IpcHandler {
+		target: "corners"
+
+		// One state object per screen with corners, in screen order; [] when off.
+		function state(): string {
+			const variants = cornersLoader.item;
+			const sets = variants ? variants.instances.map(loader => loader.item).filter(Boolean) : [];
+			return JSON.stringify(sets.map(set => set.stateObject()));
 		}
 	}
 

@@ -266,6 +266,8 @@ var settings = {
 // The on-screen keyboard and the overlay (Phase 7).
 var osk = { width: 760, height: 280, margin: 12, radius: 18, gap: 6, key: 44, keyRadius: 9, text: 15 };
 var overlay = { dim: 0.45, radius: 14, padding: 14, crosshair: 18 };
+// Screen corners (illogical-impulse's screen rounding).
+var screenCorners = { radius: 23 };
 
 // Scrolling everywhere: slightly underdamped, so it settles with a small bounce.
 var scroll = { stiffness: 180, damping: 21, wheelStep: 100, resistance: 0.3, overscroll: 56, settleMs: 70, friction: 5.5, maxVelocity: 2400, stopVelocity: 12 };
