@@ -113,3 +113,19 @@ fixed durations: windows, moves and workspaces 250 ms, closing and fades
 split 250 ms, close ~167 ms (each including a frame or two of measuring
 slack). A damping-ratio-0.8 spring was tried first and dropped: its overshoot
 read as a bounce.
+
+### Matched to illogical-impulse (owner decision, same day)
+
+Neither the springs nor the ease-in-out felt right; the owner wanted exactly
+what illogical-impulse had, and chose to lift the project's "no ii code reuse"
+rule for this (both projects are GPL-3.0; `desktop.lua` credits it). Window
+behavior and motion now use ii's values: Material 3 emphasized-decelerate
+curves (windows open 300 ms from popin 80%, close 200 ms from 90%, moves
+300 ms), a 700 ms decelerating workspace slide, vertical scratch workspace,
+18 px corners at power 2.5, 5% dimming of inactive windows, snapping and
+border resizing, unanimated mouse drags, ii's blur and shadow, and its touchpad
+gestures. The lone-window rule is gone (ii has none); Bloom keeps its border
+colours, the floating-dialog rules and Reduce Motion. ii's shadow
+`render_power` of 10 is above Hyprland 0.57's maximum, so it is 4. An A/B
+on the owner's machine showed no CPU difference between ii's blur and
+Bloom's earlier lighter one.

@@ -17,44 +17,39 @@ assert all(floats(t) for t in ("Open File", "Save As", "Open — Kate", "Save Fi
 assert not any(floats(t) for t in ("OpenAI - Google Chrome", "Save the date", "My Library", "Opened")), "an ordinary window floats"
 PY
 echo "ok - file dialogs float, look-alike windows don't"
-# Windows, workspaces, fades and layers ease in and out on Bloom's curves:
-# a gentle start, a gentle landing and no overshoot, at fixed durations.
-python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion doesn't ease gently"
+# Window motion and behavior match illogical-impulse exactly (the owner's
+# choice): its curves, timings, styles, corners, dimming, snapping and splits.
+python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion or behavior doesn't match illogical-impulse"
 import re, sys
 text = open(sys.argv[1]).read()
 curves = {m[0]: tuple(float(v) for v in m[1:]) for m in re.findall(
-    r'hl\.curve\("(bloom\w*)",\s*\{\s*type = "bezier",\s*points = \{\s*\{([\d.]+),\s*([\d.]+)\},\s*\{([\d.]+),\s*([\d.]+)\}\s*\}\s*\}\)', text)}
-anims = {m[0]: (float(m[1]), m[2]) for m in re.findall(
-    r'hl\.animation\(\{\s*leaf = "(\w+)",\s*enabled = true,\s*speed = ([\d.]+),\s*bezier = "(\w+)"[^}]*\}\)', text)}
-leaves = {"windows", "windowsIn", "windowsOut", "windowsMove", "workspaces", "fade", "fadeIn", "fadeOut", "layers", "layersIn", "layersOut", "border"}
-assert leaves <= set(anims), f"leaves left on Hyprland's defaults: {sorted(leaves - set(anims))}"
-for leaf, (speed, curve) in anims.items():
-    assert curve in curves, f"{leaf} uses {curve}, not one of Bloom's curves"
-    x1, y1, x2, y2 = curves[curve]
-    assert all(0 <= v <= 1 for v in (y1, y2)), f"{curve} overshoots"
-    assert x1 >= 0.25 and y1 <= 0.1, f"{curve} starts abruptly"
-    assert x2 <= 0.3 and y2 == 1, f"{curve} lands abruptly"
-for leaf in ("windowsIn", "windowsMove", "workspaces"):
-    assert 2 <= anims[leaf][0] <= 2.5, f"{leaf} isn't 200-250 ms"
-for leaf in ("windowsOut", "fadeOut", "layersOut"):
-    assert anims[leaf][0] <= 1.5, f"{leaf} closes slower than 150 ms"
-assert re.search(r'leaf = "windowsIn"[^}]*style = "popin 95%"', text), "windows don't open with popin 95%"
-assert re.search(r'leaf = "workspaces"[^}]*style = "slide"', text), "workspaces don't slide"
+    r'hl\.curve\("(\w+)",\s*\{\s*type = "bezier",\s*points = \{\s*\{(-?[\d.]+),\s*(-?[\d.]+)\},\s*\{(-?[\d.]+),\s*(-?[\d.]+)\}\s*\}\s*\}\)', text)}
+anims = {m[0]: (float(m[1]), m[2], m[3]) for m in re.findall(
+    r'hl\.animation\(\{\s*leaf = "(\w+)",\s*enabled = true,\s*speed = ([\d.]+),\s*bezier = "(\w+)"(?:,\s*style = "([^"]+)")?\s*\}\)', text)}
+want_curves = {"expressiveFastSpatial": (0.42, 1.67, 0.21, 0.90), "expressiveSlowSpatial": (0.39, 1.29, 0.35, 0.98),
+    "expressiveDefaultSpatial": (0.38, 1.21, 0.22, 1.00), "emphasizedDecel": (0.05, 0.7, 0.1, 1),
+    "emphasizedAccel": (0.3, 0, 0.8, 0.15), "standardDecel": (0, 0, 0, 1), "menu_decel": (0.1, 1, 0, 1),
+    "menu_accel": (0.52, 0.03, 0.72, 0.08), "stall": (1, -0.1, 0.7, 0.85)}
+want = {"windowsIn": (3, "emphasizedDecel", "popin 80%"), "fadeIn": (3, "emphasizedDecel", ""),
+    "windowsOut": (2, "emphasizedDecel", "popin 90%"), "fadeOut": (2, "emphasizedDecel", ""),
+    "windowsMove": (3, "emphasizedDecel", "slide"), "border": (10, "emphasizedDecel", ""),
+    "layersIn": (2.7, "emphasizedDecel", "popin 93%"), "layersOut": (2.4, "menu_accel", "popin 94%"),
+    "fadeLayersIn": (0.5, "menu_decel", ""), "fadeLayersOut": (2.7, "stall", ""),
+    "workspaces": (7, "menu_decel", "slide"), "specialWorkspaceIn": (2.8, "emphasizedDecel", "slidevert"),
+    "specialWorkspaceOut": (1.2, "emphasizedAccel", "slidevert"), "zoomFactor": (3, "standardDecel", "")}
+for name, points in want_curves.items():
+    assert curves.get(name) == points, f"curve {name} is {curves.get(name)}, not {points}"
+for leaf, value in want.items():
+    assert anims.get(leaf) == value, f"{leaf} is {anims.get(leaf)}, not {value}"
+for setting in ("gaps_in = 4", "gaps_out = 5", "gaps_workspaces = 50", "resize_on_border = true",
+        "rounding = 18", "rounding_power = 2.5", "dim_inactive = true", "dim_strength = 0.05", "dim_special = 0.2",
+        "smart_split = false", "smart_resizing = false", "animate_manual_resizes = false",
+        "animate_mouse_windowdragging = false", "hide_special_on_workspace_change = true",
+        "enabled = true, window_gap = 4, monitor_gap = 5, respect_gaps = true"):
+    assert setting in text, f"missing: {setting}"
+assert "bloom-lone-window" not in text and "w[tv1]" not in text, "illogical-impulse doesn't make a lone window fill the screen"
 PY
-echo "ok - windows ease in and out gently, with no overshoot"
-# A lone tiled window fills its workspace; floating ones keep their corners.
-python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "tiling isn't polished"
-import re, sys
-text = open(sys.argv[1]).read()
-assert re.search(r'hl\.workspace_rule\(\{[^}]*"w\[tv1\]"[^}]*gaps_out = 0[^}]*\}\)', text), "a lone window keeps its gaps"
-rule = re.search(r'hl\.window_rule\(\{\s*name = "bloom-lone-window".*?\}\)\n', text, re.S)
-assert rule and "float = false" in rule[0] and 'workspace = "w[tv1]"' in rule[0], "the lone-window rule must skip floating windows"
-assert "border_size = 0" in rule[0] and "rounding = 0" in rule[0], "a lone window keeps its border or corners"
-# smart_split picks the direction from the cursor, so tall windows split into
-# skinny columns; dwindle's default splits by the window's shape instead.
-assert not re.search(r'smart_split = true', text), "splits follow the cursor's triangle and make skinny columns"
-PY
-echo "ok - a lone tiled window fills its workspace; splits follow each window's shape"
+echo "ok - window motion and behavior match illogical-impulse"
 if ! command -v Hyprland >/dev/null; then
 	echo "skipped: Hyprland is not installed"
 	exit 0

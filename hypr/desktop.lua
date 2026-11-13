@@ -22,51 +22,98 @@ hl.env("XDG_MENU_PREFIX", "arch-")
 -- Electron apps run on Wayland when they can.
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
+-- Window behavior and motion are illogical-impulse's (end-4/dots-hyprland,
+-- GPL-3.0, like Bloom), at the owner's request: same gaps, corners, dimming,
+-- snapping, splits, gestures, curves and timings. Bloom keeps its own border
+-- colours (from the theme), the floating-dialog rules and Reduce Motion.
 hl.config({
     general = {
         gaps_in = 4,
-        gaps_out = 8,
+        gaps_out = 5,
+        gaps_workspaces = 50,
         border_size = 1,
         col = { active_border = "rgba(ffffff40)", inactive_border = "rgba(ffffff14)" },
         layout = "dwindle",
+        resize_on_border = true,
+        no_focus_fallback = true,
+        allow_tearing = true,
+        snap = { enabled = true, window_gap = 4, monitor_gap = 5, respect_gaps = true },
     },
     decoration = {
-        rounding = 14,
-        rounding_power = 2,
-        shadow = { enabled = true, range = 18, render_power = 3, color = 0x40000000 },
-        blur = { enabled = true, size = 6, passes = 2 },
+        rounding = 18,
+        rounding_power = 2.5,
+        blur = {
+            enabled = true, xray = true, special = false, new_optimizations = true,
+            size = 10, passes = 3, brightness = 1, noise = 0.05, contrast = 0.89,
+            vibrancy = 0.5, vibrancy_darkness = 0.5,
+            popups = false, popups_ignorealpha = 0.6, input_methods = true, input_methods_ignorealpha = 0.8,
+        },
+        -- ii sets render_power 10; Hyprland 0.57 caps it at 4.
+        shadow = { enabled = true, range = 20, offset = {0, 2}, render_power = 4, color = "rgba(00000020)" },
+        dim_inactive = true,
+        dim_strength = 0.05,
+        dim_special = 0.2,
     },
     animations = { enabled = true },
-    -- A new window opens on the cursor's side; wide windows split side by
-    -- side and tall ones top and bottom, so nothing becomes a skinny column.
-    dwindle = { preserve_split = true },
+    -- A new window splits by the window's shape (wide: side by side, tall: top
+    -- and bottom), on the cursor's side.
+    dwindle = { preserve_split = true, smart_split = false, smart_resizing = false },
+    gestures = {
+        workspace_swipe_distance = 700,
+        workspace_swipe_cancel_ratio = 0.2,
+        workspace_swipe_min_speed_to_force = 5,
+        workspace_swipe_direction_lock = true,
+        workspace_swipe_direction_lock_threshold = 10,
+        workspace_swipe_create_new = true,
+    },
     input = {
         kb_layout = "us",
         follow_mouse = 1,
         touchpad = { natural_scroll = true, tap_to_click = true },
     },
-    -- Bloom draws the wallpaper; Hyprland's own would flash in first.
-    misc = { force_default_wallpaper = 0, disable_hyprland_logo = true, disable_splash_rendering = true },
+    misc = {
+        -- Bloom draws the wallpaper; Hyprland's own would flash in first.
+        force_default_wallpaper = 0, disable_hyprland_logo = true, disable_splash_rendering = true,
+        -- Dragging and resizing with the mouse follow it exactly.
+        animate_manual_resizes = false,
+        animate_mouse_windowdragging = false,
+        on_focus_under_fullscreen = 2,
+        initial_workspace_tracking = false,
+        focus_on_activate = true,
+    },
+    binds = { hide_special_on_workspace_change = true },
 })
-hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+hl.gesture({ fingers = 3, direction = "swipe", action = "move" })
+hl.gesture({ fingers = 3, direction = "pinch", action = "fullscreen" })
+hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
+hl.gesture({ fingers = 4, direction = "up", action = function() hl.dispatch(ipc("overview open")) end })
+hl.gesture({ fingers = 4, direction = "down", action = function() hl.dispatch(ipc("overview close")) end })
 
--- Motion: every move eases in and out (the standard UI curve,
--- cubic-bezier(0.4, 0, 0.2, 1)): a gentle start, a gentle landing and no
--- overshoot. Speed is tenths of a second: windows and workspaces take 250 ms,
--- closing and fades 150 ms. Stock Hyprland took 650-770 ms.
-hl.curve("bloomEase", { type = "bezier", points = { {0.4, 0}, {0.2, 1} } })
-hl.animation({ leaf = "windows", enabled = true, speed = 2.5, bezier = "bloomEase" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 2.5, bezier = "bloomEase", style = "popin 95%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "bloomEase", style = "popin 95%" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 2.5, bezier = "bloomEase" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2.5, bezier = "bloomEase", style = "slide" })
-hl.animation({ leaf = "border", enabled = true, speed = 2.5, bezier = "bloomEase" })
-hl.animation({ leaf = "layers", enabled = true, speed = 2.5, bezier = "bloomEase" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, bezier = "bloomEase", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "bloomEase", style = "fade" })
-hl.animation({ leaf = "fade", enabled = true, speed = 1.5, bezier = "bloomEase" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.5, bezier = "bloomEase" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.5, bezier = "bloomEase" })
+-- Curves (Material 3's emphasized and expressive curves, and ii's menu ones).
+hl.curve("expressiveFastSpatial", { type = "bezier", points = { {0.42, 1.67}, {0.21, 0.90} } })
+hl.curve("expressiveSlowSpatial", { type = "bezier", points = { {0.39, 1.29}, {0.35, 0.98} } })
+hl.curve("expressiveDefaultSpatial", { type = "bezier", points = { {0.38, 1.21}, {0.22, 1.00} } })
+hl.curve("emphasizedDecel", { type = "bezier", points = { {0.05, 0.7}, {0.1, 1} } })
+hl.curve("emphasizedAccel", { type = "bezier", points = { {0.3, 0}, {0.8, 0.15} } })
+hl.curve("standardDecel", { type = "bezier", points = { {0, 0}, {0, 1} } })
+hl.curve("menu_decel", { type = "bezier", points = { {0.1, 1}, {0, 1} } })
+hl.curve("menu_accel", { type = "bezier", points = { {0.52, 0.03}, {0.72, 0.08} } })
+hl.curve("stall", { type = "bezier", points = { {1, -0.1}, {0.7, 0.85} } })
+-- Speed is tenths of a second.
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 3, bezier = "emphasizedDecel", style = "popin 80%" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 3, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, bezier = "emphasizedDecel", style = "popin 90%" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 2, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 3, bezier = "emphasizedDecel", style = "slide" })
+hl.animation({ leaf = "border", enabled = true, speed = 10, bezier = "emphasizedDecel" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 2.7, bezier = "emphasizedDecel", style = "popin 93%" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 2.4, bezier = "menu_accel", style = "popin 94%" })
+hl.animation({ leaf = "fadeLayersIn", enabled = true, speed = 0.5, bezier = "menu_decel" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 2.7, bezier = "stall" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 7, bezier = "menu_decel", style = "slide" })
+hl.animation({ leaf = "specialWorkspaceIn", enabled = true, speed = 2.8, bezier = "emphasizedDecel", style = "slidevert" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1.2, bezier = "emphasizedAccel", style = "slidevert" })
+hl.animation({ leaf = "zoomFactor", enabled = true, speed = 3, bezier = "standardDecel" })
 
 hl.window_rule({ name = "bloom-suppress-maximize", match = { class = ".*" }, suppress_event = "maximize" })
 hl.window_rule({
@@ -88,16 +135,6 @@ local floating = {
 for _, rule in ipairs(floating) do
     hl.window_rule({ name = rule.name, match = rule.match, float = true, center = true })
 end
-
--- A lone tiled window fills its workspace: no gaps, border or rounded corners.
--- Floating windows keep theirs.
-hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
-hl.window_rule({
-    name = "bloom-lone-window",
-    match = { float = false, workspace = "w[tv1]" },
-    border_size = 0,
-    rounding = 0,
-})
 
 -- Clipboard history for the launcher's ";" mode.
 hl.on("hyprland.start", function()
