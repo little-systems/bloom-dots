@@ -17,7 +17,7 @@ var SCHEMA = {
 		type: "enum",
 		values: ["dark", "light", "custom", "adaptive"],
 		default: "dark",
-		doc: "Theme mode. Adaptive follows the wallpaper; until wallpaper theming exists it falls back to dark."
+		doc: "Theme mode. Adaptive follows the wallpaper."
 	},
 	"bloom-theme-color": {
 		type: "color",

@@ -7,7 +7,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | Key | Type | Default | Allowed | Description |
 |---|---|---|---|---|
 | `bloom-animation-style` | enum | `"macos"` | `macos`, `bloom` | Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement. |
-| `bloom-theme-mode` | enum | `"dark"` | `dark`, `light`, `custom`, `adaptive` | Theme mode. Adaptive follows the wallpaper; until wallpaper theming exists it falls back to dark. |
+| `bloom-theme-mode` | enum | `"dark"` | `dark`, `light`, `custom`, `adaptive` | Theme mode. Adaptive follows the wallpaper. |
 | `bloom-theme-color` | color | `"#007aff"` | `#rgb` or `#rrggbb` | Accent colour for the custom theme (#rgb or #rrggbb). |
 | `bloom-theme-opacity` | number | `0.8` | 0.1 to 1 | Opacity of Bloom surfaces, including open panels. Application opacity is unchanged. |
 | `bloom-theme-saturation` | number | `0.5` | 0 to 1 | Background saturation for the custom and adaptive themes. |

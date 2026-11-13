@@ -2,8 +2,8 @@
 # shellcheck shell=bash disable=SC2034,SC2154
 # makepkg reads the package metadata and supplies pkgdir.
 pkgname=bloom-shell-deps
-pkgver=0.1.0
-pkgrel=4
+pkgver=1.0.0
+pkgrel=1
 pkgdesc='Runtime dependencies for the Bloom Hyprland shell'
 arch=('any')
 url='https://github.com/DhanushSantosh/bloom-dots'

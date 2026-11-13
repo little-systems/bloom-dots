@@ -136,7 +136,8 @@ notification daemon is running, choose which service should own each surface
 before enabling replacements.
 
 Read [installation and recovery](docs/INSTALL.md) for requirements, customization,
-updates, rollback and uninstall. Make sure `~/.local/bin` is on your PATH.
+updates, rollback and uninstall. What changed in each release is in the
+[changelog](CHANGELOG.md).
 
 ```sh
 bloom settings
