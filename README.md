@@ -25,6 +25,10 @@ desktop.
 The same visual identity, interactions and attention to motion, built around
 Linux's desktop services.
 
+<p align="center">
+  <img src="docs/screenshots/desktop.png" alt="The Bloom desktop: the island at the top and the dock at the bottom, on Bloom's wallpaper" />
+</p>
+
 ---
 
 ## The Island
@@ -44,6 +48,14 @@ and brightness.
 
 Choose **Fixed**, **Smart** or **Peek** behavior. Open the panels you need, then
 let the island settle back into your desktop.
+
+<p align="center">
+  <img src="docs/screenshots/calendar.png" width="49%" alt="The calendar panel with a focus timer" />
+  <img src="docs/screenshots/command-center.png" width="40%" alt="Command Center with Wi-Fi, Bluetooth, volume and brightness" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/devices.png" width="40%" alt="Connected devices with battery levels" />
+</p>
 
 ---
 
@@ -77,6 +89,17 @@ system tray, workspace overview and keybinding cheatsheet.
 
 **Tools** — screenshots, annotation, OCR, translation, screen recording,
 wallpaper selection, an on-screen keyboard and a widget overlay.
+
+<p align="center">
+  <img src="docs/screenshots/launcher.png" width="45%" alt="The launcher" />
+  <img src="docs/screenshots/session.png" width="45%" alt="The session menu" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/settings.png" alt="Bloom Settings on the Display page" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/cheatsheet.png" alt="The keybinding cheatsheet" />
+</p>
 
 ---
 
