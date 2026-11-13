@@ -341,3 +341,20 @@ update (healthy update, broken candidate refused, rollback) and uninstall
 H6 still needs the checks the VM can't provide: suspend/resume and hotplug on
 physical hardware, a password-entry greeter, a UWSM login and real power loss.
 
+
+## Release gates for v1.0.0 (2026-11-13)
+
+- **VM acceptance at `2fb28bb`:** 48 of 48, `ACCEPTANCE_FAILURES=0`. The run
+  before it, at `2a66def`, found one regression (`install --no-deps` without
+  Quickshell was no longer refused), fixed in `2fb28bb`. The fresh install from
+  an archinstall-style chroot passed at `2a66def` (`CHROOT_INSTALL=ok`).
+- **Idle CPU on the owner's Intel UHD 620 machine:** 0.91% of one core,
+  averaged over 30 ten-second windows (301 s) in which the pointer and the
+  focused window did not move; the busiest window was 3.4%. While the desktop
+  is in use the shell takes 0.7–4%, with short bursts while surfaces animate.
+- **Soak:** waived by the owner for this release.
+- **Physical checks** (suspend/resume, monitor hotplug, UWSM login, power
+  loss): the owner runs these on the live host. The password greeter is in
+  daily use on that machine.
+- **Owner live check** after the app-defaults work: lock fade, dock extras
+  icons, kitty and the idle backend confirmed.
