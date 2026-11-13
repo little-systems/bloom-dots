@@ -67,6 +67,22 @@ NESTED="fastfetch" shell KITTY_WINDOW_ID=6 BLOOM_FASTFETCH_WINDOW=6 COLUMNS=30 L
 grep -qx "fastfetch --config $ROOT/terminal/fastfetch-compact.jsonc" "$T/calls" || fail "typing fastfetch in a tiny window showed nothing"
 echo "ok - the layout fits the window"
 
+# Until the first command, the welcome refits when the window is resized (a
+# moment later, after kitty redraws its prompt); after it, resizes leave the
+# screen alone and the shell's own traps come back.
+: > "$T/calls"
+NESTED='kill -WINCH $$; sleep 1' shell KITTY_WINDOW_ID=7 COLUMNS=120 LINES=40
+[[ $(grep -c '^fastfetch' "$T/calls") == 2 ]] || fail "a resize before the first command didn't refit the welcome"
+: > "$T/calls"
+NESTED='__bloom_fresh=0; kill -WINCH $$; sleep 1' shell KITTY_WINDOW_ID=7 COLUMNS=120 LINES=40
+[[ $(grep -c '^fastfetch' "$T/calls") == 1 ]] || fail "a resize after the first command redrew the welcome"
+out="$(env -i HOME="$T" PATH="$T/bin:/usr/bin:/bin" KITTY_WINDOW_ID=7 bash --norc --noprofile -i -c "trap 'echo mine' WINCH; . '$ROOT/terminal/bloom.bash'; __bloom_fresh=0; kill -WINCH \$\$; sleep 1; trap -p WINCH" 2>/dev/null)"
+grep -q "trap -- 'echo mine' SIGWINCH" <<<"$out" || fail "the shell's own resize trap didn't come back: $out"
+: > "$T/calls"
+NESTED='kill -WINCH $$; sleep 1' shell
+if grep -q '^fastfetch' "$T/calls"; then fail "a resize outside kitty showed fastfetch"; fi
+echo "ok - the welcome refits on resize until the first command"
+
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$ROOT/terminal/bloom.omp.json" || fail "the prompt theme isn't valid JSON"
 if command -v fastfetch >/dev/null; then
 	out="$(fastfetch --config "$ROOT/terminal/fastfetch.jsonc" --logo-type none --pipe 2>&1)" || fail "fastfetch rejects Bloom's config: $out"
