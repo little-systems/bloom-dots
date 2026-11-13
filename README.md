@@ -67,6 +67,10 @@ for app actions and custom icons.
 Fixed mode reserves room for your app windows. Smart mode gets out of their
 way. Peek mode keeps the dock at the screen edge until you need it.
 
+<p align="center">
+  <img src="docs/screenshots/dock.png" width="100%" alt="The dock with workspaces, pinned apps and a window preview on hover" />
+</p>
+
 ---
 
 ## The Rest of Your Desktop
