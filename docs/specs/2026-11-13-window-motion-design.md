@@ -102,3 +102,11 @@ sets the timing; every spring stays critically damped.
 Live behavior: a lone tiled window fills 1920x1080 from 0,0 with no border
 or corners; two windows get their gaps back; a lone floating window keeps
 its corners and border. Idle CPU (Hyprland + shell, cursor still): 0.7–1.0%.
+
+### Soft landing (owner request, same day)
+
+Critical damping stopped too abruptly on the stiff springs. Open, move and
+workspace springs now use a damping ratio of 0.8 (about 1.5% overshoot that
+settles back, like Hyprland's own default spring); closing and fades stay
+critically damped. Measured: open ~150 ms, workspace ~120–170 ms, split
+~185–215 ms, each followed by a short visible settle; close ~130–150 ms.

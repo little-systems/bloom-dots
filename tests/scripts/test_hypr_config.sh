@@ -17,8 +17,8 @@ assert all(floats(t) for t in ("Open File", "Save As", "Open — Kate", "Save Fi
 assert not any(floats(t) for t in ("OpenAI - Google Chrome", "Save the date", "My Library", "Opened")), "an ordinary window floats"
 PY
 echo "ok - file dialogs float, look-alike windows don't"
-# Windows, workspaces, fades and layers move on Bloom's springs: stiffness
-# from tokens.js, critically damped like the shell's macos style (no bounce).
+# Windows, workspaces, fades and layers move on Bloom's springs, tuned to the
+# timings measured in docs/specs/2026-11-13-window-motion-design.md.
 python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion isn't on Bloom's springs"
 import math, re, sys
 text = open(sys.argv[1]).read()
@@ -29,13 +29,18 @@ leaves = {"windows", "windowsIn", "windowsOut", "windowsMove", "workspaces", "fa
 assert leaves <= set(anims), f"leaves left on Hyprland's defaults: {sorted(leaves - set(anims))}"
 for leaf, curve in anims.items():
     assert curve in curves, f"{leaf} uses an undefined spring {curve}"
-for name, (mass, k, c) in curves.items():
-    assert 1.0 <= c / (2 * math.sqrt(k * mass)) <= 1.02, f"{name} isn't critically damped (it bounces or drags)"
+ratio = {name: c / (2 * math.sqrt(k * mass)) for name, (mass, k, c) in curves.items()}
+# Moving things land with a soft overshoot (damping ratio about 0.8, like
+# Hyprland's own default spring); closing and fades never bounce.
+for leaf in ("windowsIn", "windowsMove", "workspaces"):
+    assert 0.75 <= ratio[anims[leaf]] <= 0.85, f"{leaf} doesn't land softly (ratio {ratio[anims[leaf]]:.2f})"
+for leaf in ("windowsOut", "fade", "fadeIn", "fadeOut", "layersOut"):
+    assert 1.0 <= ratio[anims[leaf]] <= 1.02, f"{leaf} bounces or drags (ratio {ratio[anims[leaf]]:.2f})"
 assert re.search(r'leaf = "windowsIn"[^}]*style = "popin 95%"', text), "windows don't open with popin 95%"
 assert re.search(r'leaf = "workspaces"[^}]*style = "slide"', text), "workspaces don't slide"
 assert "linear" not in re.findall(r'leaf = "windowsOut"[^}]*', text)[0], "windows close on a linear curve"
 PY
-echo "ok - windows move on Bloom's critically damped springs"
+echo "ok - windows land softly on Bloom's springs; closing never bounces"
 # A lone tiled window fills its workspace; floating ones keep their corners.
 python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "tiling isn't polished"
 import re, sys

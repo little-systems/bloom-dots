@@ -50,14 +50,15 @@ hl.config({
 })
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
--- Motion: critically damped springs, like the shell's macos style, so windows
--- land fast without bounce. Hyprland ignores speed for springs: stiffness
--- alone sets the timing, measured on the desktop (docs/specs/2026-11-13-
--- window-motion-design.md): open ~200-250 ms, workspace ~200-230 ms, close
--- ~130-150 ms. Stock Hyprland took 650-770 ms.
-hl.curve("bloomWindow", { type = "spring", mass = 1, stiffness = 500, damping = 44.73 })
-hl.curve("bloomMove", { type = "spring", mass = 1, stiffness = 1200, damping = 69.29 })
-hl.curve("bloomSlide", { type = "spring", mass = 1, stiffness = 1800, damping = 84.86 })
+-- Motion: springs that land fast with a soft overshoot (damping ratio 0.8,
+-- like Hyprland's own default), so nothing stops harshly; closing and fades
+-- are critically damped and never bounce. Hyprland ignores speed for springs:
+-- stiffness sets the timing, measured on the desktop (docs/specs/2026-11-13-
+-- window-motion-design.md): open and workspace ~150-170 ms plus a short
+-- settle, close ~130-150 ms. Stock Hyprland took 650-770 ms.
+hl.curve("bloomWindow", { type = "spring", mass = 1, stiffness = 500, damping = 35.78 })
+hl.curve("bloomMove", { type = "spring", mass = 1, stiffness = 1200, damping = 55.43 })
+hl.curve("bloomSlide", { type = "spring", mass = 1, stiffness = 1800, damping = 67.88 })
 hl.curve("bloomQuick", { type = "spring", mass = 1, stiffness = 4500, damping = 134.17 })
 hl.animation({ leaf = "windows", enabled = true, speed = 2, spring = "bloomWindow" })
 hl.animation({ leaf = "windowsIn", enabled = true, speed = 2, spring = "bloomWindow", style = "popin 95%" })
