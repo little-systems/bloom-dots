@@ -34,6 +34,8 @@ step "shellcheck"
 if need shellcheck; then
 	mapfile -d '' sh_files < <(find "$ROOT/bin" "$ROOT/tests" "$ROOT/shell/scripts" -type f \( -name '*.sh' -o -name bloom \) -print0 2>/dev/null)
 	shellcheck -x -P SCRIPTDIR --severity=warning "${sh_files[@]}"
+	# Sourced into bash, so no shebang: name the shell.
+	shellcheck -s bash --severity=warning "$ROOT"/terminal/*.bash
 	echo "ok"
 fi
 
