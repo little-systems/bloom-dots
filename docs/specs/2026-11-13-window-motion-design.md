@@ -103,10 +103,13 @@ Live behavior: a lone tiled window fills 1920x1080 from 0,0 with no border
 or corners; two windows get their gaps back; a lone floating window keeps
 its corners and border. Idle CPU (Hyprland + shell, cursor still): 0.7–1.0%.
 
-### Soft landing (owner request, same day)
+### Ease in and out (owner request, same day)
 
-Critical damping stopped too abruptly on the stiff springs. Open, move and
-workspace springs now use a damping ratio of 0.8 (about 1.5% overshoot that
-settles back, like Hyprland's own default spring); closing and fades stay
-critically damped. Measured: open ~150 ms, workspace ~120–170 ms, split
-~185–215 ms, each followed by a short visible settle; close ~130–150 ms.
+The owner wanted no bounce and no harsh edges: a gentle start and a gentle
+landing. Springs always start at full acceleration, so window motion moved to
+one ease-in-out curve, `cubic-bezier(0.4, 0, 0.2, 1)` (`bloomEase`), with
+fixed durations: windows, moves and workspaces 250 ms, closing and fades
+150 ms. Measured on a settled desktop: open ~280 ms, workspace 267–283 ms,
+split 250 ms, close ~167 ms (each including a frame or two of measuring
+slack). A damping-ratio-0.8 spring was tried first and dropped: its overshoot
+read as a bounce.

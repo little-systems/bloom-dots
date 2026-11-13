@@ -50,28 +50,23 @@ hl.config({
 })
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
--- Motion: springs that land fast with a soft overshoot (damping ratio 0.8,
--- like Hyprland's own default), so nothing stops harshly; closing and fades
--- are critically damped and never bounce. Hyprland ignores speed for springs:
--- stiffness sets the timing, measured on the desktop (docs/specs/2026-11-13-
--- window-motion-design.md): open and workspace ~150-170 ms plus a short
--- settle, close ~130-150 ms. Stock Hyprland took 650-770 ms.
-hl.curve("bloomWindow", { type = "spring", mass = 1, stiffness = 500, damping = 35.78 })
-hl.curve("bloomMove", { type = "spring", mass = 1, stiffness = 1200, damping = 55.43 })
-hl.curve("bloomSlide", { type = "spring", mass = 1, stiffness = 1800, damping = 67.88 })
-hl.curve("bloomQuick", { type = "spring", mass = 1, stiffness = 4500, damping = 134.17 })
-hl.animation({ leaf = "windows", enabled = true, speed = 2, spring = "bloomWindow" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 2, spring = "bloomWindow", style = "popin 95%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 2, spring = "bloomQuick", style = "popin 95%" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 2, spring = "bloomMove" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 2, spring = "bloomSlide", style = "slide" })
-hl.animation({ leaf = "border", enabled = true, speed = 2, spring = "bloomWindow" })
-hl.animation({ leaf = "layers", enabled = true, speed = 2, spring = "bloomWindow" })
-hl.animation({ leaf = "layersIn", enabled = true, speed = 2, spring = "bloomWindow", style = "fade" })
-hl.animation({ leaf = "layersOut", enabled = true, speed = 2, spring = "bloomQuick", style = "fade" })
-hl.animation({ leaf = "fade", enabled = true, speed = 2, spring = "bloomQuick" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 2, spring = "bloomQuick" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 2, spring = "bloomQuick" })
+-- Motion: every move eases in and out (the standard UI curve,
+-- cubic-bezier(0.4, 0, 0.2, 1)): a gentle start, a gentle landing and no
+-- overshoot. Speed is tenths of a second: windows and workspaces take 250 ms,
+-- closing and fades 150 ms. Stock Hyprland took 650-770 ms.
+hl.curve("bloomEase", { type = "bezier", points = { {0.4, 0}, {0.2, 1} } })
+hl.animation({ leaf = "windows", enabled = true, speed = 2.5, bezier = "bloomEase" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 2.5, bezier = "bloomEase", style = "popin 95%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, bezier = "bloomEase", style = "popin 95%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 2.5, bezier = "bloomEase" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2.5, bezier = "bloomEase", style = "slide" })
+hl.animation({ leaf = "border", enabled = true, speed = 2.5, bezier = "bloomEase" })
+hl.animation({ leaf = "layers", enabled = true, speed = 2.5, bezier = "bloomEase" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, bezier = "bloomEase", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, bezier = "bloomEase", style = "fade" })
+hl.animation({ leaf = "fade", enabled = true, speed = 1.5, bezier = "bloomEase" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.5, bezier = "bloomEase" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.5, bezier = "bloomEase" })
 
 hl.window_rule({ name = "bloom-suppress-maximize", match = { class = ".*" }, suppress_event = "maximize" })
 hl.window_rule({

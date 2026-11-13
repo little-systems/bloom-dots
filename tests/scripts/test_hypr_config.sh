@@ -17,30 +17,31 @@ assert all(floats(t) for t in ("Open File", "Save As", "Open — Kate", "Save Fi
 assert not any(floats(t) for t in ("OpenAI - Google Chrome", "Save the date", "My Library", "Opened")), "an ordinary window floats"
 PY
 echo "ok - file dialogs float, look-alike windows don't"
-# Windows, workspaces, fades and layers move on Bloom's springs, tuned to the
-# timings measured in docs/specs/2026-11-13-window-motion-design.md.
-python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion isn't on Bloom's springs"
-import math, re, sys
+# Windows, workspaces, fades and layers ease in and out on Bloom's curves:
+# a gentle start, a gentle landing and no overshoot, at fixed durations.
+python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion doesn't ease gently"
+import re, sys
 text = open(sys.argv[1]).read()
-curves = {m[0]: (float(m[1]), float(m[2]), float(m[3])) for m in re.findall(
-    r'hl\.curve\("(\w+)",\s*\{\s*type = "spring",\s*mass = ([\d.]+),\s*stiffness = ([\d.]+),\s*damping = ([\d.]+)\s*\}\)', text)}
-anims = dict(re.findall(r'hl\.animation\(\{\s*leaf = "(\w+)",[^}]*?spring = "(\w+)"[^}]*\}\)', text))
+curves = {m[0]: tuple(float(v) for v in m[1:]) for m in re.findall(
+    r'hl\.curve\("(bloom\w*)",\s*\{\s*type = "bezier",\s*points = \{\s*\{([\d.]+),\s*([\d.]+)\},\s*\{([\d.]+),\s*([\d.]+)\}\s*\}\s*\}\)', text)}
+anims = {m[0]: (float(m[1]), m[2]) for m in re.findall(
+    r'hl\.animation\(\{\s*leaf = "(\w+)",\s*enabled = true,\s*speed = ([\d.]+),\s*bezier = "(\w+)"[^}]*\}\)', text)}
 leaves = {"windows", "windowsIn", "windowsOut", "windowsMove", "workspaces", "fade", "fadeIn", "fadeOut", "layers", "layersIn", "layersOut", "border"}
 assert leaves <= set(anims), f"leaves left on Hyprland's defaults: {sorted(leaves - set(anims))}"
-for leaf, curve in anims.items():
-    assert curve in curves, f"{leaf} uses an undefined spring {curve}"
-ratio = {name: c / (2 * math.sqrt(k * mass)) for name, (mass, k, c) in curves.items()}
-# Moving things land with a soft overshoot (damping ratio about 0.8, like
-# Hyprland's own default spring); closing and fades never bounce.
+for leaf, (speed, curve) in anims.items():
+    assert curve in curves, f"{leaf} uses {curve}, not one of Bloom's curves"
+    x1, y1, x2, y2 = curves[curve]
+    assert all(0 <= v <= 1 for v in (y1, y2)), f"{curve} overshoots"
+    assert x1 >= 0.25 and y1 <= 0.1, f"{curve} starts abruptly"
+    assert x2 <= 0.3 and y2 == 1, f"{curve} lands abruptly"
 for leaf in ("windowsIn", "windowsMove", "workspaces"):
-    assert 0.75 <= ratio[anims[leaf]] <= 0.85, f"{leaf} doesn't land softly (ratio {ratio[anims[leaf]]:.2f})"
-for leaf in ("windowsOut", "fade", "fadeIn", "fadeOut", "layersOut"):
-    assert 1.0 <= ratio[anims[leaf]] <= 1.02, f"{leaf} bounces or drags (ratio {ratio[anims[leaf]]:.2f})"
+    assert 2 <= anims[leaf][0] <= 2.5, f"{leaf} isn't 200-250 ms"
+for leaf in ("windowsOut", "fadeOut", "layersOut"):
+    assert anims[leaf][0] <= 1.5, f"{leaf} closes slower than 150 ms"
 assert re.search(r'leaf = "windowsIn"[^}]*style = "popin 95%"', text), "windows don't open with popin 95%"
 assert re.search(r'leaf = "workspaces"[^}]*style = "slide"', text), "workspaces don't slide"
-assert "linear" not in re.findall(r'leaf = "windowsOut"[^}]*', text)[0], "windows close on a linear curve"
 PY
-echo "ok - windows land softly on Bloom's springs; closing never bounces"
+echo "ok - windows ease in and out gently, with no overshoot"
 # A lone tiled window fills its workspace; floating ones keep their corners.
 python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "tiling isn't polished"
 import re, sys
