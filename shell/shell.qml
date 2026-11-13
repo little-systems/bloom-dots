@@ -108,10 +108,11 @@ ShellRoot {
 		component: Scope { Component.onCompleted: CalendarState.remaining() }
 	}
 
-	// Rounded screen corners (bloom-corners-enabled), one set per screen.
+	// Rounded screen corners (bloom-corners-enabled), one set per screen. They
+	// are layer surfaces, so only on Wayland (never in an offscreen shell).
 	LazyLoader {
 		id: cornersLoader
-		active: Settings.values["bloom-corners-enabled"] === true
+		active: Settings.values["bloom-corners-enabled"] === true && Qt.platform.pluginName === "wayland"
 		component: Variants {
 			model: Quickshell.screens
 			delegate: Loader {
