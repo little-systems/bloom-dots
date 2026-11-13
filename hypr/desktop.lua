@@ -37,7 +37,8 @@ hl.config({
         blur = { enabled = true, size = 6, passes = 2 },
     },
     animations = { enabled = true },
-    dwindle = { preserve_split = true },
+    -- New windows split toward the side of the window the cursor is on.
+    dwindle = { preserve_split = true, smart_split = true },
     input = {
         kb_layout = "us",
         follow_mouse = 1,
@@ -85,6 +86,16 @@ local floating = {
 for _, rule in ipairs(floating) do
     hl.window_rule({ name = rule.name, match = rule.match, float = true, center = true })
 end
+
+-- A lone tiled window fills its workspace: no gaps, border or rounded corners.
+-- Floating windows keep theirs.
+hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
+hl.window_rule({
+    name = "bloom-lone-window",
+    match = { float = false, workspace = "w[tv1]" },
+    border_size = 0,
+    rounding = 0,
+})
 
 -- Clipboard history for the launcher's ";" mode.
 hl.on("hyprland.start", function()
