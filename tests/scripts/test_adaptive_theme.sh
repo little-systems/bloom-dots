@@ -42,7 +42,8 @@ for f in .config/gtk-3.0/gtk.css .config/gtk-4.0/gtk.css .config/kitty/bloom-the
 	if grep -q '{{' "$T/home/$f"; then fail "$f has an unfilled colour"; fi
 done
 grep -qE '@define-color accent_color #[0-9a-f]{6};' "$T/home/.config/gtk-4.0/gtk.css" || fail "no accent in GTK 4"
-grep -qE '^background #[0-9a-f]{6}$' "$T/home/.config/kitty/bloom-theme.conf" || fail "kitty colour format"
+grep -qE '^cursor #[0-9a-f]{6}$' "$T/home/.config/kitty/bloom-theme.conf" || fail "kitty accent format"
+if grep -qE '^(background|foreground) ' "$T/home/.config/kitty/bloom-theme.conf"; then fail "kitty follows the wallpaper's light/dark"; fi
 grep -qE 'active_border += "rgba\([0-9a-f]{8}\)"' "$T/home/.config/hypr/custom/bloom-colors.lua" || fail "Hyprland colour format"
 grep -qx BloomAdaptiveA "$T/plasma" || fail "the Qt scheme wasn't applied"
 echo "ok - every app's colours are written from the wallpaper"

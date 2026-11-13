@@ -29,7 +29,9 @@ apply() {
 apply '{"surface":{"r":245,"g":245,"b":247},"text":{"r":28,"g":28,"b":30},"accent":{"r":0,"g":122,"b":255},"light":true}'
 grep -q 'window_bg_color #f5f5f7;' "$T/home/.config/gtk-4.0/gtk.css" || fail 'light GTK palette'
 grep -q 'accent_color #007aff;' "$T/home/.config/gtk-4.0/gtk.css" || fail 'selected accent'
-grep -q '^background #f5f5f7$' "$T/home/.config/kitty/bloom-theme.conf" || fail 'light terminal'
+grep -q '^cursor #007aff$' "$T/home/.config/kitty/bloom-theme.conf" || fail 'terminal accent'
+# kitty keeps Bloom's own blurred palette in every mode: the theme sets only the accent.
+if grep -qE '^(background|foreground|color[0-9]+) ' "$T/home/.config/kitty/bloom-theme.conf"; then fail 'terminal follows light/dark'; fi
 grep -q 'BackgroundNormal=#f5f5f7' "$T/home/.config/kdeglobals" || fail 'Qt palette'
 grep -q 'prefer-light' "$T/calls" || fail 'desktop color scheme'
 grep -q 'gtk-application-prefer-dark-theme=false' "$T/home/.config/gtk-3.0/settings.ini" || fail 'GTK preference'
