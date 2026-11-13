@@ -103,7 +103,8 @@ just those lines, or the file if Bloom created it.
 Bloom's terminal: one managed line at the end of `~/.bashrc` loads
 `terminal/bloom.bash`, which starts Bloom's prompt (Oh My Posh, theme
 `terminal/bloom.omp.json`) and shows fastfetch with the Bloom logo once in
-each new kitty window. Oh My Posh is only in the AUR, so the system part
+each new kitty window. Typing `fastfetch` shows Bloom's layout too, unless
+you keep your own `~/.config/fastfetch/config.jsonc`. Oh My Posh is only in the AUR, so the system part
 builds `oh-my-posh-bin` from it with makepkg (as you, never as root) and
 rebuilds it when the AUR has a newer version; if the AUR can't be reached,
 that step reports it and the rest of the install carries on. Uninstall

@@ -31,6 +31,21 @@ env -i HOME="$T" PATH="$T/bin:/usr/bin:/bin" KITTY_WINDOW_ID=4 bash --norc --nop
 [[ ! -s "$T/calls" ]] || fail "a script (non-interactive shell) ran Bloom's terminal"
 echo "ok - scripts are left alone"
 
+: > "$T/calls"
+NESTED="fastfetch --pipe" shell KITTY_WINDOW_ID=5 BLOOM_FASTFETCH_WINDOW=5
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch.jsonc --logo $ROOT/terminal/bloom-logo.png --logo-type kitty-direct --pipe" "$T/calls" || fail "typing fastfetch in kitty didn't use Bloom's layout and logo"
+: > "$T/calls"
+NESTED="fastfetch" shell
+grep -qx "fastfetch --config $ROOT/terminal/fastfetch.jsonc" "$T/calls" || fail "typing fastfetch outside kitty didn't use Bloom's layout"
+echo "ok - typing fastfetch shows Bloom's layout"
+
+: > "$T/calls"
+mkdir -p "$T/.config/fastfetch" && : > "$T/.config/fastfetch/config.jsonc"
+NESTED="fastfetch --pipe" shell KITTY_WINDOW_ID=5 BLOOM_FASTFETCH_WINDOW=5
+grep -qx "fastfetch --pipe" "$T/calls" || fail "typing fastfetch ignored the user's own fastfetch config"
+rm -r "$T/.config"
+echo "ok - a fastfetch config of your own wins"
+
 python3 -c 'import json,sys; json.load(open(sys.argv[1]))' "$ROOT/terminal/bloom.omp.json" || fail "the prompt theme isn't valid JSON"
 if command -v fastfetch >/dev/null; then
 	out="$(fastfetch --config "$ROOT/terminal/fastfetch.jsonc" --logo-type none --pipe 2>&1)" || fail "fastfetch rejects Bloom's config: $out"
