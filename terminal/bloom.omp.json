@@ -24,7 +24,7 @@
           "trailing_diamond": "",
           "foreground": "#e6e7eb",
           "background": "#2a2b31",
-          "template": "  {{ .HEAD }}{{ if .Working.Changed }} ●{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }} ",
+          "template": "{{ if .HEAD }}  {{ .HEAD }}{{ if .Working.Changed }} ●{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }} {{ end }}",
           "properties": { "fetch_status": true, "branch_icon": "" }
         },
         {

@@ -108,4 +108,9 @@ if command -v oh-my-posh >/dev/null; then
 	[[ $prompt == *bloom-branch* ]] || fail "the prompt doesn't show the git branch"
 	[[ $prompt != *$'\ue0a0'* ]] || fail "the git branch shows two branch icons"
 	echo "ok - the git branch has one icon"
+	stray="$(mktemp -d)" && mkdir "$stray/.git"
+	prompt="$(cd "$stray" && oh-my-posh print primary --config "$ROOT/terminal/bloom.omp.json" --shell bash)"
+	rm -rf "$stray"
+	[[ $prompt != *$'\ue725'* ]] || fail "an empty .git folder shows an empty git pill"
+	echo "ok - no git pill without a branch"
 fi
