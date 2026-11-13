@@ -625,6 +625,9 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
     if ctx.manifest:
         ctx.verify_backups(ctx.manifest)
     ctx.preflight()
+    if no_deps:
+        # Nothing will install Quickshell or Hyprland: they must be here already.
+        ctx.preflight_desktop()
     root = bsys.system_root()
     steps = [] if skip_system else bsys.plan(root, current_user(ctx), deps=not no_deps)
     work = [step for step in steps if step["kind"] != "note"]

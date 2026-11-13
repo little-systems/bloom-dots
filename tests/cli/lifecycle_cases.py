@@ -769,6 +769,20 @@ raise SystemExit(status)
         self.assertIn("pacman", names)
         self.assertNotIn("missing qs", result.stderr)
 
+    # With --no-deps nothing will install Quickshell, so even a dry run refuses.
+    def test_no_deps_without_quickshell_is_refused_before_effects(self):
+        (self.bin / "qs").unlink()
+        # Only what the CLI itself needs, so the machine's own qs can't answer.
+        tools = self.base / "tools"
+        tools.mkdir()
+        for tool in ("bash", "env", "python3", "git", "dirname", "readlink", "cat", "jq", "timeout"):
+            (tools / tool).symlink_to(shutil.which(tool))
+        before = self.snapshot()
+        for args in (("--no-deps", "--dry-run"), ("--no-deps", "--yes")):
+            result = self.bloom("install", *args, success=False, PATH=f"{self.bin}:{tools}")
+            self.assertIn("missing qs", result.stderr)
+            self.assertEqual(before, self.snapshot())
+
     def test_root_install_runs_system_then_user_phase_as_the_user(self):
         result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
         calls = self.calls()
