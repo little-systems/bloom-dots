@@ -157,6 +157,10 @@ var ROWS = [
 		"tab": "appearance"
 	},
 	{
+		"label": "Screen Corners",
+		"tab": "appearance"
+	},
+	{
 		"label": "Font",
 		"tab": "appearance"
 	},
