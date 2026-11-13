@@ -25,7 +25,7 @@
           "foreground": "#e6e7eb",
           "background": "#2a2b31",
           "template": "  {{ .HEAD }}{{ if .Working.Changed }} ●{{ end }}{{ if gt .Ahead 0 }} ↑{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} ↓{{ .Behind }}{{ end }} ",
-          "properties": { "fetch_status": true }
+          "properties": { "fetch_status": true, "branch_icon": "" }
         },
         {
           "type": "executiontime",

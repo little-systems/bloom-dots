@@ -40,4 +40,9 @@ fi
 if command -v oh-my-posh >/dev/null; then
 	oh-my-posh print primary --config "$ROOT/terminal/bloom.omp.json" --shell bash >/dev/null || fail "Oh My Posh rejects Bloom's theme"
 	echo "ok - Oh My Posh accepts Bloom's theme"
+	git -C "$T" init -q -b bloom-branch
+	prompt="$(cd "$T" && oh-my-posh print primary --config "$ROOT/terminal/bloom.omp.json" --shell bash)"
+	[[ $prompt == *bloom-branch* ]] || fail "the prompt doesn't show the git branch"
+	[[ $prompt != *$'\ue0a0'* ]] || fail "the git branch shows two branch icons"
+	echo "ok - the git branch has one icon"
 fi
