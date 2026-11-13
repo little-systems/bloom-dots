@@ -36,6 +36,13 @@ if command -v fastfetch >/dev/null; then
 	out="$(fastfetch --config "$ROOT/terminal/fastfetch.jsonc" --logo-type none --pipe 2>&1)" || fail "fastfetch rejects Bloom's config: $out"
 	grep -q 'Bloom for Linux' <<<"$out" || fail "fastfetch printed nothing useful: $out"
 	echo "ok - fastfetch accepts Bloom's layout"
+
+# kitty stretches the logo to the box the layout gives it. Bloom's kitty font
+# (JetBrainsMono Nerd Font 11) has cells about 9 px wide and 20 px tall, so
+# the square logo needs a box about 20/9 times wider in cells than it is tall.
+read -r logo_w logo_h < <(sed 's|^[[:space:]]*//.*||' "$ROOT/terminal/fastfetch.jsonc" | python3 -c 'import json,sys; l=json.load(sys.stdin)["logo"]; print(l["width"], l["height"])')
+python3 -c "import sys; w, h = $logo_w * 9, $logo_h * 20; sys.exit(abs(w - h) > 0.03 * h)" || fail "the logo box is ${logo_w}x${logo_h} cells, so kitty squashes the square logo"
+echo "ok - the logo keeps its shape"
 fi
 if command -v oh-my-posh >/dev/null; then
 	oh-my-posh print primary --config "$ROOT/terminal/bloom.omp.json" --shell bash >/dev/null || fail "Oh My Posh rejects Bloom's theme"
