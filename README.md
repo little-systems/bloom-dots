@@ -51,10 +51,8 @@ let the island settle back into your desktop.
 
 <p align="center">
   <img src="docs/screenshots/calendar.png" width="49%" alt="The calendar panel with a focus timer" />
-  <img src="docs/screenshots/command-center.png" width="40%" alt="Command Center with Wi-Fi, Bluetooth, volume and brightness" />
-</p>
-<p align="center">
-  <img src="docs/screenshots/devices.png" width="40%" alt="Connected devices with battery levels" />
+  <img src="docs/screenshots/command-center.png" width="49%" alt="Command Center with Wi-Fi, Bluetooth, volume and brightness" />
+  <img src="docs/screenshots/devices.png" width="49%" alt="Connected devices with battery levels" />
 </p>
 
 ---
@@ -94,18 +92,18 @@ wallpaper selection, an on-screen keyboard and a widget overlay.
 with the Bloom logo in every new window.
 
 <p align="center">
-  <img src="docs/screenshots/terminal.png" alt="kitty with Bloom's fastfetch and prompt" />
+  <img src="docs/screenshots/terminal.png" width="100%" alt="kitty with Bloom's fastfetch and prompt" />
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/launcher.png" width="45%" alt="The launcher" />
-  <img src="docs/screenshots/session.png" width="45%" alt="The session menu" />
+  <img src="docs/screenshots/launcher.png" width="49%" alt="The launcher" />
+  <img src="docs/screenshots/session.png" width="49%" alt="The session menu" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/settings.png" alt="Bloom Settings on the Display page" />
+  <img src="docs/screenshots/settings.png" width="100%" alt="Bloom Settings on the Display page" />
 </p>
 <p align="center">
-  <img src="docs/screenshots/cheatsheet.png" alt="The keybinding cheatsheet" />
+  <img src="docs/screenshots/cheatsheet.png" width="100%" alt="The keybinding cheatsheet" />
 </p>
 
 ---
