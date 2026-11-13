@@ -5,6 +5,7 @@ import Quickshell.Services.Pam
 import Quickshell.Wayland
 import qs.services
 import "."
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "lock.js" as Lock
 
@@ -52,6 +53,8 @@ Scope {
 	property bool _capsLock: false
 	property string _layout: ""
 	property string _text: ""
+	// Rounded screen corners drawn on each lock surface (bloom-corners-enabled).
+	readonly property int _corners: Settings.values["bloom-corners-enabled"] ? 4 : 0
 	readonly property string _wallpaper: Settings.values["bloom-lock-wallpaper"] || Wallpaper.path
 	property string _message: ""
 	property bool _messageIsError: false
@@ -98,7 +101,8 @@ Scope {
 	function status() {
 		return {
 			enabled: true, locked: session.locked, preparing: root.preparing, secure: session.secure, busy: root._busy,
-			leaving: root._leaving, covered: root._covered, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message
+			leaving: root._leaving, covered: root._covered, capsLock: root._capsLock, layout: root._layout, wallpaper: root._wallpaper, message: root._message,
+			corners: root._corners
 		};
 	}
 	function submit(response) {
@@ -285,6 +289,20 @@ Scope {
 				Connections {
 					target: root
 					function onFailed() { view.shake(); }
+				}
+			}
+
+			// The lock covers the corner surfaces' layer, so it draws the
+			// rounded screen corners itself while they are on.
+			Repeater {
+				model: root._corners
+				ScreenCorner {
+					required property int index
+					radius: Tokens.screenCorners.radius
+					isLeft: index % 2 === 0
+					isTop: index < 2
+					x: isLeft ? 0 : surface.width - radius
+					y: isTop ? 0 : surface.height - radius
 				}
 			}
 		}

@@ -1,8 +1,8 @@
 import QtQuick
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Wayland
 import qs.services
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "../notch/notch.js" as NotchLogic
 
@@ -52,24 +52,7 @@ Scope {
 			// An empty input region: clicks pass through to whatever is below.
 			mask: Region {}
 
-			// Black outside a quarter circle centred on the corner's inner point.
-			Shape {
-				anchors.fill: parent
-				preferredRendererType: Shape.CurveRenderer
-				ShapePath {
-					strokeWidth: -1
-					fillColor: "black"
-					startX: win.left ? 0 : root.radius
-					startY: win.top ? 0 : root.radius
-					PathLine { x: win.left ? 0 : root.radius; y: win.top ? root.radius : 0 }
-					PathArc {
-						x: win.left ? root.radius : 0; y: win.top ? 0 : root.radius
-						radiusX: root.radius; radiusY: root.radius
-						direction: (win.left === win.top) ? PathArc.Clockwise : PathArc.Counterclockwise
-					}
-					PathLine { x: win.left ? 0 : root.radius; y: win.top ? 0 : root.radius }
-				}
-			}
+			ScreenCorner { radius: root.radius; isLeft: win.left; isTop: win.top }
 		}
 	}
 }

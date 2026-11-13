@@ -77,16 +77,23 @@ pass "locking moves the screen to an empty workspace"
 wait_for "the backdrop to cover the screen" is .covered true
 sleep 0.5
 grim -t ppm -o HEADLESS-1 "$TEST_TMP/locked.ppm"
-corner="$(python3 - "$TEST_TMP/locked.ppm" <<'PY'
+pixel() { python3 - "$TEST_TMP/locked.ppm" "$1" "$2" <<'PY'
 import sys
 d = open(sys.argv[1], "rb").read()
-parts = d.split(maxsplit=4)
-print(parts[4][0], parts[4][1], parts[4][2])
+_, w, _, _, data = d.split(maxsplit=4)
+i = (int(sys.argv[3]) * int(w) + int(sys.argv[2])) * 3
+print(data[i], data[i + 1], data[i + 2])
 PY
-)"
-read -r red green blue <<<"$corner"
-(( red > 120 && green < 20 && blue < 20 )) || fail "the corner isn't the dimmed wallpaper: $corner"
+}
+inside="$(pixel 40 40)"
+read -r red green blue <<<"$inside"
+(( red > 120 && green < 20 && blue < 20 )) || fail "the screen isn't the dimmed wallpaper: $inside"
 pass "the backdrop is the wallpaper, blurred and dimmed"
+# The screen corners stay rounded while locked (bloom-corners-enabled is on
+# by default): the lock surface draws them, since it covers the corner layer.
+assert_eq "$(state .corners)" "4" "the lock screen draws four corners"
+assert_eq "$(pixel 0 0)" "0 0 0" "the screen's corner pixel is black"
+pass "the lock screen keeps the rounded screen corners"
 
 enter wrong
 wait_for "the failure" is .message "Incorrect password"
