@@ -129,3 +129,7 @@ colours, the floating-dialog rules and Reduce Motion. ii's shadow
 `render_power` of 10 is above Hyprland 0.57's maximum, so it is 4. An A/B
 on the owner's machine showed no CPU difference between ii's blur and
 Bloom's earlier lighter one.
+
+Blur, compared live by the owner: Bloom's strength (size 6, 2 passes),
+colour (vibrancy 0.1696), grain (noise 0.0117) and no xray, with ii's
+brightness (1.0).
