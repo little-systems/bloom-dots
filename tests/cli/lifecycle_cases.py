@@ -25,7 +25,7 @@ class Lifecycle(unittest.TestCase):
         self.root = self.base / "checkout with spaces"
         self.root.mkdir()
         shutil.copy2(ROOT / ".gitignore", self.root / ".gitignore")
-        for relative in ("bin", "systemd", "share", "hypr", "kitty", "defaults", "packaging"):
+        for relative in ("bin", "systemd", "share", "hypr", "kitty", "defaults", "terminal", "packaging"):
             shutil.copytree(ROOT / relative, self.root / relative)
         (self.root / "tools").mkdir()
         for tool in ("bloom-lifecycle.py", "bloom_system.py", "bloom_ui.py"):
@@ -332,6 +332,32 @@ elif name == 'systemctl':
         self.assertFalse(flags.exists())
         self.assertTrue(portals.read_text().endswith("# mine now\n"))
         self.assertEqual(mine.read_text(), "volume=50\n")
+
+    # One managed line at the end of ~/.bashrc loads Bloom's terminal.
+    def test_bashrc_gains_one_bloom_line_and_loses_it_on_uninstall(self):
+        bashrc = self.home / ".bashrc"
+        bashrc.write_text("alias ll='ls -l'\nPS1='$ '\n")
+        self.bloom("install")
+        lines = bashrc.read_text().splitlines()
+        self.assertEqual(lines[:2], ["alias ll='ls -l'", "PS1='$ '"])
+        self.assertTrue(lines[-1].endswith("# bloom managed shell"), lines[-1])
+        self.assertIn("terminal/bloom.bash", lines[-1])
+        source = subprocess.run(["bash", "-c", lines[-1].split(" && ")[0] + " && echo found"],
+                                capture_output=True, text=True).stdout
+        self.assertEqual(source.strip(), "found", "the line points at a file that doesn't exist")
+        self.bloom("install")
+        self.assertEqual(bashrc.read_text().splitlines(), lines)
+        self.bloom("uninstall")
+        self.assertEqual(bashrc.read_text(), "alias ll='ls -l'\nPS1='$ '\n")
+
+    def test_bashrc_keeps_the_users_later_edits_on_uninstall(self):
+        bashrc = self.home / ".bashrc"
+        self.bloom("install")
+        self.assertTrue(bashrc.read_text().rstrip().endswith("# bloom managed shell"))
+        with bashrc.open("a") as stream:
+            stream.write("export EDITOR=nano\n")
+        self.bloom("uninstall")
+        self.assertEqual(bashrc.read_text(), "export EDITOR=nano\n")
 
     def test_dry_run_and_preflight_never_change_files(self):
         before = self.snapshot()

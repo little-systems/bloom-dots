@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -33,10 +34,13 @@ MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", "ses
 # kitty.conf takes no trailing comments, so its managed lines are known by
 # what they include: Bloom's settings, then the colours Bloom's theme writes.
 KITTY_THEME_LINE = "include bloom-theme.conf"
+# ~/.bashrc's one line that loads Bloom's terminal (terminal/bloom.bash).
+SHELL_MARKER = "# bloom managed shell"
 
 
 def managed(line):
-    return (line.endswith(MARKER) or line.endswith(DESKTOP_MARKER) or line == KITTY_THEME_LINE
+    return (line.endswith(MARKER) or line.endswith(DESKTOP_MARKER) or line.endswith(SHELL_MARKER)
+            or line == KITTY_THEME_LINE
             or re.fullmatch(r"include /.*/kitty/bloom\.conf", line) is not None)
 MANIFEST_VERSION = 2
 
@@ -262,6 +266,7 @@ class Context:
             str(self.data / "applications/bloom-settings.desktop"): {"file"},
             str(self.config / "hypr/hyprland.lua"): {"loader"},
             str(self.config / "kitty/kitty.conf"): {"loader"},
+            str(self.home / ".bashrc"): {"loader"},
             str(self.config / "bloom/settings.json"): {"config"},
         }
         for source in (ROOT / "systemd").glob("*.service"):
@@ -280,7 +285,8 @@ class Context:
                 raise Failure("invalid manifest entry")
             path = Path(item["path"])
             roots = (self.config, self.data, self.state, self.home / ".local/bin")
-            if not within(path, roots):
+            # ~/.bashrc is the one file Bloom touches outside those folders.
+            if not within(path, roots) and path != self.home / ".bashrc":
                 raise Failure(f"manifest destination is outside Bloom's managed directories: {path}")
             if str(path) in seen:
                 raise Failure(f"duplicate manifest destination: {path}")
@@ -430,6 +436,14 @@ class Context:
         own = "".join(line + "\n" for line in own.splitlines() if not managed(line))
         return f"include {ROOT / 'kitty/bloom.conf'}\n{KITTY_THEME_LINE}\n" + own
 
+    def bashrc_text(self):
+        """~/.bashrc with Bloom's terminal loaded last, after the user's own lines."""
+        config = self.home / ".bashrc"
+        own = config.read_text() if config.is_file() else ""
+        own = "".join(line + "\n" for line in own.splitlines() if not managed(line))
+        script = shlex.quote(str(ROOT / "terminal/bloom.bash"))
+        return own + f"[ -f {script} ] && . {script} {SHELL_MARKER}\n"
+
     def plan(self):
         operations = [(self.config / "quickshell/bloom", "link", str(ROOT / "shell")),
                       (self.home / ".local/bin/bloom", "link", str(ROOT / "bin/bloom"))]
@@ -444,6 +458,7 @@ class Context:
             operations.append((self.config / "hypr/custom" / source.name, "template", source))
         operations.append((self.config / "hypr/hyprland.lua", "loader", self.hyprland_text()))
         operations.append((self.config / "kitty/kitty.conf", "loader", self.kitty_text()))
+        operations.append((self.home / ".bashrc", "loader", self.bashrc_text()))
         # App defaults: copied where the user has none, theirs from then on.
         for source in sorted(p for p in (ROOT / "defaults").rglob("*") if p.is_file()):
             operations.append((self.config / source.relative_to(ROOT / "defaults"), "default", source))
