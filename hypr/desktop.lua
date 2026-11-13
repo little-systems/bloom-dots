@@ -48,6 +48,23 @@ hl.config({
 })
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
+-- Motion: Bloom's springs (stiffness from shell/common/tokens.js), critically
+-- damped like the shell's macos style, so windows land fast without bounce.
+hl.curve("bloomWindow", { type = "spring", mass = 1, stiffness = 500, damping = 44.73 })
+hl.curve("bloomQuick", { type = "spring", mass = 1, stiffness = 1000, damping = 63.25 })
+hl.animation({ leaf = "windows", enabled = true, speed = 2.5, spring = "bloomWindow" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 2.5, spring = "bloomWindow", style = "popin 95%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 1.5, spring = "bloomQuick", style = "popin 95%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 2.5, spring = "bloomWindow" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 2.5, spring = "bloomWindow", style = "slide" })
+hl.animation({ leaf = "border", enabled = true, speed = 2.5, spring = "bloomWindow" })
+hl.animation({ leaf = "layers", enabled = true, speed = 2.5, spring = "bloomWindow" })
+hl.animation({ leaf = "layersIn", enabled = true, speed = 2.5, spring = "bloomWindow", style = "fade" })
+hl.animation({ leaf = "layersOut", enabled = true, speed = 1.5, spring = "bloomQuick", style = "fade" })
+hl.animation({ leaf = "fade", enabled = true, speed = 1.5, spring = "bloomQuick" })
+hl.animation({ leaf = "fadeIn", enabled = true, speed = 1.5, spring = "bloomQuick" })
+hl.animation({ leaf = "fadeOut", enabled = true, speed = 1.5, spring = "bloomQuick" })
+
 hl.window_rule({ name = "bloom-suppress-maximize", match = { class = ".*" }, suppress_event = "maximize" })
 hl.window_rule({
     name = "bloom-fix-xwayland-drags",

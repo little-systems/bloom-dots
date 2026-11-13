@@ -17,6 +17,25 @@ assert all(floats(t) for t in ("Open File", "Save As", "Open — Kate", "Save Fi
 assert not any(floats(t) for t in ("OpenAI - Google Chrome", "Save the date", "My Library", "Opened")), "an ordinary window floats"
 PY
 echo "ok - file dialogs float, look-alike windows don't"
+# Windows, workspaces, fades and layers move on Bloom's springs: stiffness
+# from tokens.js, critically damped like the shell's macos style (no bounce).
+python3 - "$ROOT/hypr/desktop.lua" <<'PY' || fail "window motion isn't on Bloom's springs"
+import math, re, sys
+text = open(sys.argv[1]).read()
+curves = {m[0]: (float(m[1]), float(m[2]), float(m[3])) for m in re.findall(
+    r'hl\.curve\("(\w+)",\s*\{\s*type = "spring",\s*mass = ([\d.]+),\s*stiffness = ([\d.]+),\s*damping = ([\d.]+)\s*\}\)', text)}
+anims = dict(re.findall(r'hl\.animation\(\{\s*leaf = "(\w+)",[^}]*?spring = "(\w+)"[^}]*\}\)', text))
+leaves = {"windows", "windowsIn", "windowsOut", "windowsMove", "workspaces", "fade", "fadeIn", "fadeOut", "layers", "layersIn", "layersOut", "border"}
+assert leaves <= set(anims), f"leaves left on Hyprland's defaults: {sorted(leaves - set(anims))}"
+for leaf, curve in anims.items():
+    assert curve in curves, f"{leaf} uses an undefined spring {curve}"
+for name, (mass, k, c) in curves.items():
+    assert 1.0 <= c / (2 * math.sqrt(k * mass)) <= 1.02, f"{name} isn't critically damped (it bounces or drags)"
+assert re.search(r'leaf = "windowsIn"[^}]*style = "popin 95%"', text), "windows don't open with popin 95%"
+assert re.search(r'leaf = "workspaces"[^}]*style = "slide"', text), "workspaces don't slide"
+assert "linear" not in re.findall(r'leaf = "windowsOut"[^}]*', text)[0], "windows close on a linear curve"
+PY
+echo "ok - windows move on Bloom's critically damped springs"
 if ! command -v Hyprland >/dev/null; then
 	echo "skipped: Hyprland is not installed"
 	exit 0
