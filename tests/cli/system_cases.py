@@ -83,6 +83,9 @@ if os.environ.get('STUB_FAIL') == name:
     sys.exit(1)
 if name == 'pacman' and args[0] == '-T':
     sys.exit(0 if os.environ.get('STUB_PROVIDED') else 127)
+if name == 'pacman' and args[0] == '-U':
+    # Like pacman: the package is now in the local database.
+    (root / 'var/lib/pacman/local' / Path(args[-1]).name.rsplit('-', 1)[0]).mkdir(parents=True, exist_ok=True)
 units = root / 'etc/systemd/system'
 if name == 'systemctl':
     unit = args[-1] if args[-1].endswith('.service') else args[-1] + '.service'
@@ -95,7 +98,13 @@ if name == 'systemctl':
 elif name == 'runuser':
     os.execvp(args[args.index('--') + 1], args[args.index('--') + 1:])
 elif name == 'makepkg':
-    Path('bloom-shell-deps-1-1-any.pkg.tar.zst').write_text('package')
+    if os.environ.get('STUB_FAIL') == 'makepkg-aur' and 'bloom-shell-deps' not in Path('PKGBUILD').read_text():
+        sys.exit(1)
+    built = 'bloom-shell-deps' if 'bloom-shell-deps' in Path('PKGBUILD').read_text() else Path.cwd().name
+    Path(built + '-1-1-any.pkg.tar.zst').write_text('package')
+elif name == 'git' and args[0] == 'clone':
+    target = Path(args[-1]); target.mkdir(parents=True)
+    (target / 'PKGBUILD').write_text('pkgname=' + target.name + chr(10))
 elif name == 'groupadd':
     with (root / 'etc/group').open('a') as f: f.write(args[-1] + ':x:960:\n')
 elif name == 'usermod':
@@ -117,11 +126,15 @@ class Phase(Facts):
         self.bin.mkdir()
         self.addCleanup(shutil.rmtree, self.bin)
         self.addCleanup(lambda: (self.root.parent / "calls").unlink(missing_ok=True))
-        for name in ("systemctl", "pacman", "runuser", "makepkg", "groupadd", "usermod", "groupdel", "chown"):
+        for name in ("systemctl", "pacman", "runuser", "makepkg", "groupadd", "usermod", "groupdel", "chown", "git"):
             path = self.bin / name
             path.write_text(STUB)
             path.chmod(0o755)
         self.env = {"BLOOM_SYSTEM_ROOT": str(self.root), "PATH": f"{self.bin}:{os.environ['PATH']}"}
+        # Tests never reach the AUR: it is unreachable unless a test says otherwise.
+        original = system.aur_version
+        self.addCleanup(setattr, system, "aur_version", original)
+        system.aur_version = lambda name: None
         self.user = system.choose_user(self.root, None, ask=None)
 
     def run_stub(self, *args, check=True):
@@ -273,6 +286,41 @@ class Phase(Facts):
         self.dependency("kitty")
         steps = system.plan(self.root, self.user, deps=True)
         self.assertEqual([(s["packages"], s["adopt"]) for s in steps if s["kind"] == "apps"], [([], ["kitty"])])
+
+    def test_shell_dependencies_include_fastfetch(self):
+        pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
+        self.assertIn("'fastfetch'", pkgbuild)
+
+    # Oh My Posh (Bloom's prompt) is only in the AUR: built as the user, installed by pacman.
+    def test_oh_my_posh_is_built_from_the_aur_as_the_user(self):
+        system.aur_version = lambda name: "1-1"
+        steps = self.install()
+        self.assertIn("aur", self.kinds(steps))
+        calls = self.calls()
+        clone = next(c for c in calls if c[0] == "git")
+        self.assertIn("https://aur.archlinux.org/oh-my-posh-bin.git", clone)
+        self.assertTrue(any(c[:3] == ["runuser", "-u", "dhanush"] and "makepkg" in c for c in calls))
+        self.assertTrue(any(c[:2] == ["pacman", "-U"] and "oh-my-posh-bin-1-1-any.pkg.tar.zst" in c[-1] for c in calls))
+
+    def test_installed_oh_my_posh_is_rebuilt_only_when_the_aur_has_a_newer_one(self):
+        (self.root / "var/lib/pacman/local/oh-my-posh-bin-1-1").mkdir(parents=True)
+        system.aur_version = lambda name: "1-1"
+        self.assertNotIn("aur", self.kinds(system.plan(self.root, self.user, deps=True)))
+        system.aur_version = lambda name: "2-1"
+        steps = [s for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "aur"]
+        self.assertEqual(len(steps), 1)
+        self.assertIn("Update", steps[0]["label"])
+        system.aur_version = lambda name: None
+        self.assertNotIn("aur", self.kinds(system.plan(self.root, self.user, deps=True)))
+
+    def test_an_aur_failure_doesnt_undo_the_rest(self):
+        system.aur_version = lambda name: "1-1"
+        steps = self.install(STUB_FAIL="makepkg-aur")
+        self.assertTrue((self.root / system.DROPIN).exists())
+        doc = json.loads((self.root / system.MANIFEST).read_text())
+        self.assertEqual(doc["status"], "complete")
+        self.assertIn("oh-my-posh-bin", doc.get("aur_failed", []))
+        self.assertIn("aur", self.kinds(steps))
 
     def test_shell_dependencies_include_a_keyring(self):
         # The AI key is stored with secret-tool, which needs a Secret Service.

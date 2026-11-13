@@ -100,6 +100,16 @@ kitty's `kitty.conf` starts with two lines from Bloom: its terminal settings
 (`bloom-theme.conf`); your own lines come after and win. Uninstall removes
 just those lines, or the file if Bloom created it.
 
+Bloom's terminal: one managed line at the end of `~/.bashrc` loads
+`terminal/bloom.bash`, which starts Bloom's prompt (Oh My Posh, theme
+`terminal/bloom.omp.json`) and shows fastfetch with the Bloom logo once in
+each new kitty window. Oh My Posh is only in the AUR, so the system part
+builds `oh-my-posh-bin` from it with makepkg (as you, never as root) and
+rebuilds it when the AUR has a newer version; if the AUR can't be reached,
+that step reports it and the rest of the install carries on. Uninstall
+removes the line and keeps the package. kitty uses one blurred Bloom palette
+in every theme mode; only its cursor and selection follow your accent.
+
 App defaults from `defaults/` (Wayland and keyring flags for Chromium,
 Chrome, Brave, VS Code and Electron; the KDE file picker; mpv keeping the
 window open; Dolphin's full path) are copied only where you have no such

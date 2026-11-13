@@ -49,6 +49,8 @@ class Lifecycle(unittest.TestCase):
         self.bin.mkdir()
         (self.base / "os-release").write_text("ID=arch\n")
         self.env = os.environ.copy()
+        # Never reach the real AUR from a test.
+        self.env["BLOOM_AUR_URL"] = ""
         self.env.update(HOME=str(self.home), XDG_CONFIG_HOME=str(self.config),
                         XDG_STATE_HOME=str(self.home / ".local/state"),
                         XDG_DATA_HOME=str(self.home / ".local/share"),

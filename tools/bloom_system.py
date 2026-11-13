@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import urllib.request
 import os
 from pathlib import Path
 import shutil
@@ -97,6 +98,25 @@ def dependency(root, package):
     return False
 
 
+def local_version(root, package):
+    """The installed version (pkgver-pkgrel), or None."""
+    for entry in (root / "var/lib/pacman/local").glob(f"{package}-*"):
+        name, version, release = entry.name.rsplit("-", 2)
+        if name == package:
+            return f"{version}-{release}"
+    return None
+
+
+def aur_version(package):
+    """The AUR's current version, or None when the AUR can't be reached."""
+    try:
+        with urllib.request.urlopen(f"{AUR_URL}/rpc/v5/info?arg[]={package}", timeout=5) as reply:
+            results = json.load(reply).get("results") or []
+    except (OSError, ValueError):
+        return None
+    return results[0].get("Version") if results else None
+
+
 def login_theme(root):
     """The theme SDDM shows: drop-ins in name order, then sddm.conf, last wins."""
     theme = None
@@ -146,6 +166,11 @@ LAUNCHER_TEXT = ("#!/bin/sh\n# Bloom's command for every account; removed by blo
 GROUP = "bloom-login"
 # Where Bloom is the whole desktop (no ii), a fresh machine gets these once.
 APPS = ("kitty", "dolphin", "firefox", "gnome-text-editor", "loupe", "mpv")
+# Only in the AUR: built with makepkg as the user, installed by pacman, and
+# rebuilt when the AUR has a newer version. Oh My Posh draws Bloom's prompt.
+AUR = ("oh-my-posh-bin",)
+# Where AUR packages come from; empty turns AUR packages off (tests do).
+AUR_URL = os.environ.get("BLOOM_AUR_URL", "https://aur.archlinux.org")
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
 
 
@@ -256,6 +281,12 @@ def plan(root, user, deps=True):
                       else "apps (they came with other packages)")
             steps.append({"kind": "apps", "packages": [], "adopt": adopt,
                           "label": f"Keep {names} as your own {reason}"})
+    for package in AUR if AUR_URL else ():
+        have, latest = local_version(root, package), aur_version(package)
+        if have is None:
+            steps.append({"kind": "aur", "package": package, "label": "Build Oh My Posh from the AUR (Bloom's prompt)"})
+        elif latest and latest != have:
+            steps.append({"kind": "aur", "package": package, "label": f"Update Oh My Posh from the AUR ({have} to {latest})"})
     manager = display_manager(root)
     if manager is None:
         steps.append({"kind": "install-sddm", "label": "Install the SDDM login screen"})
@@ -343,6 +374,17 @@ def apply(root, user, steps, booted, run, report=None):
                 if step.get("adopt"):
                     run("pacman", "-D", "--asexplicit", *step["adopt"])
                 doc["apps_offered"] = True
+            elif kind == "aur":
+                # Bloom's prompt is optional: a failed build is reported, the rest stays.
+                try:
+                    _aur(user, step["package"], run)
+                    doc["aur_failed"] = [p for p in doc.get("aur_failed", []) if p != step["package"]]
+                except (Failure, OSError) as error:
+                    doc["aur_failed"] = sorted(set(doc.get("aur_failed", [])) | {step["package"]})
+                    save_manifest(root, doc)
+                    if report:
+                        report(step, False, str(error))
+                    continue
             elif kind == "install-sddm":
                 run("pacman", "-S", "--noconfirm", "--needed", "sddm")
                 doc["sddm_installed"] = True
@@ -461,6 +503,25 @@ def _packages(user, run):
         run("pacman", "-U", "--noconfirm", "--needed", str(packages[-1]))
 
 
+def _aur(user, package, run):
+    """Clone the AUR package, build it as the user (makepkg refuses root), install as root."""
+    with tempfile.TemporaryDirectory(prefix="bloom-aur-") as temporary:
+        run("chown", f"{user['name']}:", temporary)
+        folder = Path(temporary) / package
+        run("runuser", "-u", user["name"], "--", "git", "clone", "--depth", "1",
+            f"{AUR_URL}/{package}.git", str(folder))
+        previous = os.getcwd()
+        os.chdir(folder)
+        try:
+            run("runuser", "-u", user["name"], "--", "makepkg", "--noconfirm")
+        finally:
+            os.chdir(previous)
+        built = sorted(p for p in folder.glob(f"{package}-*.pkg.tar.*") if "-debug-" not in p.name)
+        if not built:
+            raise Failure(f"building {package} produced nothing")
+        run("pacman", "-U", "--noconfirm", "--needed", str(built[-1]))
+
+
 def uninstall(root, remove_deps, run):
     """Undo what the manifest records. Returns plain-language lines to show."""
     doc = read_manifest(root)
@@ -496,6 +557,8 @@ def uninstall(root, remove_deps, run):
         messages.append("Left enabled: " + ", ".join(kept))
     if doc.get("apps"):
         messages.append("Kept the default apps: " + ", ".join(doc["apps"]))
+    if any(local_version(root, package) for package in AUR):
+        messages.append("Kept Oh My Posh (built from the AUR)")
     if doc.get("group_created"):
         run("groupdel", GROUP)
     if remove_deps:
