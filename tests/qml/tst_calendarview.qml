@@ -302,23 +302,25 @@ Item {
 			compare(digits(), "2500");
 			verify(!part(cal, "digit-m3").visible);
 			const d = part(cal, "digit-m1");
-			compare(d.width, 34);
+			compare(d.width, 23);
+			compare(d.height, 52);
 			compare(d.compact, false);
 			const colon = part(cal, "colon");
 			compare(colon.text, ":");
 			compare(colon.font.pixelSize, 32);
 			compare(colon.opacity, 0.3);
-			// gap 5 between the digits and the colon (2 px padding each side).
+			// No gap between the digits and the colon (1 px padding each side).
 			const m1 = at(d).x;
-			fuzzyCompare(at(part(cal, "digit-m2")).x, m1 - 5 - 34, 0.01);
-			fuzzyCompare(at(colon).x, m1 + 34 + 5, 0.01);
-			compare(colon.width, Math.ceil(colon.implicitWidth) + 4);
+			fuzzyCompare(at(part(cal, "digit-m2")).x, m1 - 23, 0.01);
+			fuzzyCompare(at(colon).x, m1 + 23, 0.01);
+			compare(colon.width, Math.ceil(colon.implicitWidth) + 2);
 			compare(part(cal, "clockPointer").cursorShape, Qt.IBeamCursor);
 			cal.durationSec = 100 * 60;
 			compare(digits(), "10000");
 			verify(part(cal, "digit-m3").visible);
 			compare(part(cal, "digit-m1").compact, true);
-			compare(part(cal, "digit-m1").width, 26);
+			compare(part(cal, "digit-m1").width, 18);
+			compare(part(cal, "digit-m1").height, 44);
 			// Paused shows the time left; finished shows 0:00.
 			cal.durationSec = 1500;
 			cal.remainingSec = 65;
@@ -435,21 +437,21 @@ Item {
 
 		function test_verticalCentring() {
 			// The timer section is centred in the column: status 14 + 4 + clock
-			// 58, 18, controls 44, 18, presets.
+			// 52, 18, controls 44, 18, presets.
 			const status = part(cal, "status");
 			const preset = part(cal, "preset-0");
 			const top = at(status).y;
 			const bottom = at(preset).y + preset.height;
 			fuzzyCompare(at(part(cal, "digit-m1")).y, top + 14 + 4, 0.5);
-			fuzzyCompare(at(part(cal, "play")).y, top + 14 + 4 + 58 + 18, 0.5);
-			fuzzyCompare(at(preset).y, top + 14 + 4 + 58 + 18 + 44 + 18, 0.5);
+			fuzzyCompare(at(part(cal, "play")).y, top + 14 + 4 + 52 + 18, 0.5);
+			fuzzyCompare(at(preset).y, top + 14 + 4 + 52 + 18 + 44 + 18, 0.5);
 			fuzzyCompare((top + bottom) / 2, 17 + (237 - 1 - 32) / 2, 0.5);
 		}
 
 		function test_edit() {
 			mouseClick(part(cal, "clock"));
 			verify(cal.editing);
-			compare(part(cal, "status").text, "Set duration");
+			compare(part(cal, "status").text, "Type to set duration");
 			compare(digits(), "2500");
 			const underline = part(cal, "underline");
 			tryCompare(underline, "opacity", 0.3, 1000);
@@ -537,6 +539,27 @@ Item {
 
 		// Bloom ignores the wheel over the calendar grid and the timer: it
 		// doesn't reach the notch to switch panels.
+		function test_escapeDiscards() {
+			mouseClick(part(cal, "clock"));
+			keyClick(Qt.Key_5);
+			keyClick(Qt.Key_Escape);
+			verify(!cal.editing);
+			compare(commits.count, 0);
+		}
+
+		function test_invalidStartKeepsEditing() {
+			mouseClick(part(cal, "clock"));
+			keyClick(Qt.Key_1);
+			keyClick(Qt.Key_9);
+			keyClick(Qt.Key_0);
+			keyClick(Qt.Key_Return);
+			verify(cal.editing, "1:90 is not a duration");
+			compare(commits.count, 0);
+			mouseClick(part(cal, "play"));
+			verify(cal.editing);
+			compare(commits.count, 0);
+		}
+
 		function test_wheelDoesNotLeaveTheCalendar() {
 			host.notchWheels = 0;
 			const day = part(cal, "day-10");

@@ -37,8 +37,8 @@ Item {
 		}
 
 		function test_geometry() {
-			compare(digit.width, 34);
-			compare(digit.height, 58);
+			compare(digit.width, 23);
+			compare(digit.height, 52);
 			verify(digit.clip, "overflow: hidden");
 			const num = part(digit, "current");
 			compare(num.text, digit.value);
@@ -46,8 +46,8 @@ Item {
 			compare(num.font.weight, Font.DemiBold);
 			compare(num.font.letterSpacing, -0.5);
 			compare(num.color, Qt.color("#f0f0f0"));
-			compare(small.width, 26);
-			compare(small.height, 46);
+			compare(small.width, 18);
+			compare(small.height, 44);
 			compare(part(small, "current").font.pixelSize, 28);
 		}
 
@@ -67,16 +67,16 @@ Item {
 			compare(leaving.text, "5");
 			verify(leaving.visible);
 			// The first frame: the new digit 72% below, faded out and tilted.
-			fuzzyCompare(entering.y, 58 * 0.72, 2);
+			fuzzyCompare(entering.y, 52 * 0.72, 2);
 			verify(entering.opacity < 0.1);
 			fuzzyCompare(entering.tilt, Math.cos(50 * Math.PI / 180), 0.05);
 			wait(150);
-			verify(entering.y > 0 && entering.y < 58 * 0.72, `rolling in at ${entering.y}`);
+			verify(entering.y > 0 && entering.y < 52 * 0.72, `rolling in at ${entering.y}`);
 			verify(leaving.y < 0, `rolling out at ${leaving.y}`);
 			tryCompare(entering, "y", 0, 1000);
 			compare(entering.opacity, 1);
 			compare(entering.tilt, 1);
-			fuzzyCompare(leaving.y, -58 * 0.72, 0.5);
+			fuzzyCompare(leaving.y, -52 * 0.72, 0.5);
 			verify(!leaving.visible);
 		}
 

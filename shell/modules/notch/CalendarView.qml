@@ -119,8 +119,13 @@ Item {
 	function commitEdit(start) {
 		if (!root.editing)
 			return;
-		root.editing = false;
 		const total = Calendar.timerDigits(root.editDigits);
+		// Starting needs a valid duration: the editor stays open (8a8d6a9).
+		if (total === null && start) {
+			editor.forceActiveFocus();
+			return;
+		}
+		root.editing = false;
 		if (total === null)
 			return;
 		const base = root.remainingSec > 0 ? root.remainingSec : root.durationSec;
@@ -149,7 +154,7 @@ Item {
 			} else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
 				root.commitEdit(true);
 			} else if (event.key === Qt.Key_Escape) {
-				root.commitEdit(false);
+				root.cancelEdit();
 			}
 			event.accepted = true;
 		}

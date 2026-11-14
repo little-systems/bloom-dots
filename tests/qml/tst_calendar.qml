@@ -32,8 +32,14 @@ TestCase {
 		compare(Calendar.timerDigits("130"), 90);
 		compare(Calendar.timerDigits("2500"), 1500);
 		compare(Calendar.timerDigits("45"), 45);
-		// Bloom doesn't cap the typed seconds at 59: 99:99 is 6039 s.
-		compare(Calendar.timerDigits("9999"), 99 * 60 + 99);
+		// Seconds must be under 60 (Bloom 8a8d6a9), and m:ss is accepted.
+		compare(Calendar.timerDigits("9999"), null);
+		compare(Calendar.timerDigits("190"), null);
+		compare(Calendar.timerDigits("1230"), 750);
+		compare(Calendar.timerDigits("12:30"), 750);
+		compare(Calendar.timerDigits("1:5"), 65);
+		compare(Calendar.timerDigits("1:60"), null);
+		compare(Calendar.timerDigits("1234:00"), null);
 		compare(Calendar.timerDigits("18000"), 180 * 60);
 		compare(Calendar.timerDigits("18001"), null);
 		compare(Calendar.timerDigits("0"), null);
@@ -87,7 +93,7 @@ TestCase {
 	}
 	function test_statusText() {
 		const now = new Date(2026, 9, 29, 14, 30, 0);
-		compare(Calendar.status({ editing: true }, now, false), "Set duration");
+		compare(Calendar.status({ editing: true }, now, false), "Type to set duration");
 		compare(Calendar.status({ finished: true, remaining: 0 }, now, false), "Time's up");
 		compare(Calendar.status({ running: true, remaining: 600 }, now, false), "ends 02:40 PM");
 		compare(Calendar.status({ running: true, remaining: 600 }, now, true), "ends 14:40");

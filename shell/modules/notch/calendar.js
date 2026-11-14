@@ -26,14 +26,15 @@ function shiftMonth(year, month, by) {
 
 var MAX_TIMER_SECONDS = 180 * 60;
 
-// Bloom's right-to-left timer digits: "130" = 1:30, "2500" = 25:00. The last
-// two digits are seconds as typed (Bloom doesn't cap them at 59).
-function timerDigits(digits) {
-	if (!/^\d{1,5}$/.test(digits || "")) return null;
-	const seconds = parseInt(digits.slice(-2) || "0", 10);
-	const minutes = parseInt(digits.slice(0, -2) || "0", 10);
-	const total = minutes * 60 + seconds;
-	return total > 0 && total <= MAX_TIMER_SECONDS ? total : null;
+// Bloom's timerDigitsToSeconds: m:ss, or compact digits filling from the
+// right ("130" = 1:30, "2500" = 25:00). Seconds must be under 60.
+function timerDigits(value) {
+	value = value || "";
+	if (!/^\d{1,5}$/.test(value) && !/^\d{1,3}:\d{1,2}$/.test(value)) return null;
+	const parts = value.includes(":") ? value.split(":") : [value.slice(0, -2) || "0", value.slice(-2)];
+	const seconds = Number(parts[1]);
+	const total = Number(parts[0]) * 60 + seconds;
+	return seconds < 60 && total > 0 && total <= MAX_TIMER_SECONDS ? total : null;
 }
 
 // The digits being typed as a clock ("130" -> "1:30").
@@ -66,7 +67,7 @@ function clockDigits(text) {
 
 // The line above the clock. `t` is { editing, finished, running, remaining }.
 function status(t, now, use24h) {
-	if (t.editing) return "Set duration";
+	if (t.editing) return "Type to set duration";
 	if (t.finished) return "Time's up";
 	if (t.remaining > 0) {
 		const ends = new Date(now.getTime() + t.remaining * 1000);

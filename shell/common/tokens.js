@@ -419,9 +419,9 @@ var calendar = {
 var timer = {
 	sectionGap: 18, mainGap: 4, // .timer-section-new, .timer-main
 	status: { height: 14, text: 10, tracking: 0.2, opacity: 0.4, finishedOpacity: 0.9 }, // .timer-status
-	digit: { width: 34, height: 58, text: 36, tracking: -0.5, gap: 5 }, // .roll-digit, .roll-num, .timer-clock gap
-	compact: { width: 26, height: 46, text: 28 }, // .roll-digit.compact
-	colon: { text: 32, opacity: 0.3, padH: 2 }, // .timer-colon
+	digit: { width: 23, height: 52, text: 36, tracking: -0.5, gap: 0 }, // .roll-digit, .roll-num, .timer-clock gap
+	compact: { width: 18, height: 44, text: 28 }, // .roll-digit.compact
+	colon: { text: 32, opacity: 0.3, padH: 1 }, // .timer-colon
 	roll: { travel: 0.72, angle: 50, ms: 400, ease: [0.22, 1, 0.36, 1] }, // RollDigit
 	underline: { height: 2, width: 0.74, opacity: 0.3, ms: 250 }, // .timer-edit-underline
 	controls: { gap: 8, spacer: 32 }, // .timer-controls-row
