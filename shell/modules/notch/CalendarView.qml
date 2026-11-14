@@ -204,6 +204,7 @@ Item {
 
 		// Bloom changes month on the wheel and never switches panels from here:
 		// |delta| under 5 is ignored, and one change per 300 ms.
+		// cursor: default — the whole calendar column (Bloom's .calendar-container has no cursor); it takes focus and the wheel
 		MouseArea {
 			anchors.fill: parent
 			acceptedButtons: Qt.LeftButton
