@@ -52,7 +52,8 @@ Item {
 	Rectangle {
 		objectName: "background"
 		anchors.fill: parent
-		radius: Tokens.cc.tile.radius
+		// .cc-pill-tile: border-radius 999px, a full pill.
+		radius: height / 2
 		border.width: 1
 		border.color: root.active ? root.theme.text : root.theme.border
 		color: root.active ? root.theme.text : pointer.hovered ? root.theme.border : root.theme.groupBg

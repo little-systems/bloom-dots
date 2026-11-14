@@ -23,6 +23,7 @@ Item {
 	property bool dnd: false
 	property bool energySaver: false
 	property real volume: 0
+	property bool muted: false
 	// A whole percent, or -1 when there's no backlight to set.
 	property int brightness: -1
 
@@ -39,6 +40,33 @@ Item {
 	signal restartRequested()
 	signal volumeChosen(real value)
 	signal brightnessChosen(int percent)
+
+	// Bloom's displayVolume, and the levels the icons restore (Bloom's
+	// previousVolume / previousBrightness: the level before the last change).
+	readonly property real _displayVolume: root.muted ? 0 : root.volume
+	property real _previousVolume: 0.5
+	property int _previousBrightness: 50
+
+	function volumeIcon(v, muted) {
+		const shown = muted ? 0 : v;
+		return shown === 0 ? "volume-x" : shown < 0.33 ? "volume" : shown < 0.67 ? "volume-1" : "volume-2";
+	}
+
+	function brightnessIcon(p) {
+		return p < 34 ? "sun-dim" : p < 67 ? "sun-medium" : "sun";
+	}
+
+	function _chooseVolume(v) {
+		if (root.volume > 0 && !root.muted)
+			root._previousVolume = root.volume;
+		root.volumeChosen(v);
+	}
+
+	function _chooseBrightness(p) {
+		if (root.brightness > 0)
+			root._previousBrightness = root.brightness;
+		root.brightnessChosen(p);
+	}
 
 	function _modeName(mode) {
 		return mode === "fixed" ? "Fixed" : mode === "smart" ? "Smart" : "Peek";
@@ -182,10 +210,12 @@ Item {
 			theme: root.theme
 			light: root.light
 			label: "Volume"
-			icon: "sf-speaker.wave.1.fill"
-			value: root.volume
-			percentText: Math.round(root.volume * 100) + "%"
-			onChosen: fraction => root.volumeChosen(fraction)
+			icon: root.volumeIcon(root.volume, root.muted)
+			value: root._displayVolume
+			percentText: Math.round(root._displayVolume * 100) + "%"
+			pressedLevel: root._displayVolume === 0
+			onChosen: fraction => root._chooseVolume(fraction)
+			onToggled: root._chooseVolume(root._displayVolume > 0 ? 0 : root.muted && root.volume > 0 ? root.volume : root._previousVolume)
 		}
 
 		CcSlider {
@@ -194,11 +224,13 @@ Item {
 			theme: root.theme
 			light: root.light
 			label: "Brightness"
-			icon: "bloom-brightness-low"
+			icon: root.brightnessIcon(root.brightness)
 			available: root.brightness >= 0
 			value: root.brightness / 100
 			percentText: root.brightness >= 0 ? root.brightness + "%" : "—"
-			onChosen: fraction => root.brightnessChosen(Math.round(fraction * 100))
+			pressedLevel: root.brightness === 0
+			onChosen: fraction => root._chooseBrightness(Math.round(fraction * 100))
+			onToggled: root._chooseBrightness(root.brightness > 0 ? 0 : root._previousBrightness)
 		}
 	}
 }

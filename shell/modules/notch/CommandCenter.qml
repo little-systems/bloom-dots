@@ -26,6 +26,7 @@ CommandCenterView {
 	dnd: !!Settings.values["bloom-notifications-dnd"]
 	energySaver: Battery.energySaver
 	volume: Audio.volume
+	muted: Audio.muted
 	brightness: Brightness.available ? Brightness.percent : -1
 
 	Component.onCompleted: {

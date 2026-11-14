@@ -20,9 +20,13 @@ Item {
 	property real value: 0
 	property bool available: true
 	property string percentText: ""
+	// The level is at zero (Bloom's aria-pressed): the toggle stays lit.
+	property bool pressedLevel: false
 
 	// The chosen fraction, already on Bloom's step (0.01).
 	signal chosen(real fraction)
+	// The icon was clicked: mute or dim, or restore the level.
+	signal toggled()
 
 	readonly property bool _hover: rowHover.hovered
 
@@ -37,14 +41,31 @@ Item {
 		anchors.verticalCenter: parent.verticalCenter
 		spacing: Tokens.cc.sliders.labelGap
 
-		SvgIcon {
-			objectName: "glyph"
+		// .cc-level-toggle: a 22 px button around the 12 px icon.
+		Rectangle {
+			objectName: "levelToggle"
+			readonly property bool pressedLevel: root.pressedLevel
 			anchors.verticalCenter: parent.verticalCenter
-			name: root.icon
-			size: Tokens.cc.sliders.glyph
-			// Both of Bloom's slider icons set opacity 0.5 inline.
-			opacity: 0.5
-			color: root.light ? root.theme.text : root.theme.textMuted
+			width: Tokens.cc.sliders.toggle
+			height: Tokens.cc.sliders.toggle
+			radius: Tokens.cc.sliders.toggleRadius
+			color: toggleArea.hovered || root.pressedLevel ? Qt.alpha(root.theme.text, Tokens.cc.sliders.toggleHover) : "transparent"
+
+			SvgIcon {
+				objectName: "glyph"
+				anchors.centerIn: parent
+				name: root.icon
+				size: Tokens.cc.sliders.glyph
+				opacity: Tokens.cc.sliders.glyphOpacity
+				color: root.light ? root.theme.text : root.theme.textMuted
+			}
+
+			PointerArea {
+				id: toggleArea
+				anchors.fill: parent
+				enabled: root.available
+				onClicked: root.toggled()
+			}
 		}
 
 		Text {

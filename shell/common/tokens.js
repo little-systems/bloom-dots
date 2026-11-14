@@ -393,12 +393,12 @@ var bh = {
 var cc = {
 	padding: { v: 12, h: 14 },
 	grid: { gap: 10, height: 78 }, // .cc-pills-grid
-	tile: { height: 34, padV: 5, padH: 8, gap: 8, radius: 10, hoverLift: -0.5, pressScale: 0.98, ms: 150 }, // .cc-pill-tile
+	tile: { height: 34, padV: 5, padH: 8, gap: 8, hoverLift: -0.5, pressScale: 0.98, ms: 150 }, // .cc-pill-tile
 	tileIcon: { size: 20, glyph: 12 }, // .cc-pill-icon-wrapper
 	title: 9, status: 7.5, lineHeight: 1.15, activeStatusAlpha: 0.5, // .cc-pill-title/status
 	more: { size: 18, radius: 6, glyph: 12, opacity: 0.55 }, // .cc-pill-more
 	round: { size: 32, glyph: 14, hoverLift: -1, pressScale: 0.95, ms: 200, sidePad: 4 }, // .cc-circular-*
-	sliders: { gap: 8, rowHeight: 18, rowGap: 10, label: 75, labelGap: 6, text: 9, glyph: 12, glyphOpacity: 0.7, track: 6, trackRadius: 3, percent: 28 }, // .cc-classic-*
+	sliders: { gap: 8, rowHeight: 18, rowGap: 10, label: 86, labelGap: 6, text: 9, glyph: 12, glyphOpacity: 0.7, toggle: 22, toggleRadius: 5, toggleHover: 0.12, track: 6, trackRadius: 3, percent: 28 }, // .cc-classic-*
 	easeOut: [0.16, 1, 0.3, 1] // cubic-bezier(0.16, 1, 0.3, 1)
 };
 

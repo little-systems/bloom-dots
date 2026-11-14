@@ -25,8 +25,8 @@ function cycle(current, direction, enabled) {
 // devicesHeight: the Devices panel's measured content (Bloom DEVICES_MIN/MAX_HEIGHT).
 function size(panel, calendarRows, devicesHeight, shelfCount) {
 	if (panel === "calendar") return { width: 480, height: 112 + calendarRows * 30 };
-	if (panel === "command-center") return { width: 350, height: 230 };
-	if (panel === "wifi" || panel === "bluetooth") return { width: 350, height: 300 };
+	if (panel === "command-center") return { width: 375, height: 230 };
+	if (panel === "wifi" || panel === "bluetooth") return { width: 375, height: 300 };
 	if (panel === "devices") return { width: 350, height: Math.max(150, Math.min(300, Math.ceil(devicesHeight || 0))) };
 	if (panel === "shelf") return { width: 380, height: shelfCount > 1 ? 190 : shelfCount === 1 ? 176 : 130 };
 	return null;

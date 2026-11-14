@@ -96,6 +96,7 @@ Item {
 			cc.energySaver = false;
 			cc.volume = 0.25;
 			cc.brightness = 40;
+			cc.muted = false;
 			[wifiToggled, wifiOpened, btToggled, btOpened, dockCycled, notchCycled, dnd, saver, tray, settings, restart, volumeChosen, brightnessChosen].forEach(s => s.clear());
 		}
 
@@ -114,6 +115,7 @@ Item {
 				compare(at(t).y, spots[i][1], t.objectName);
 				compare(t.width, w);
 				compare(t.height, 34);
+				compare(part(t, "background").radius, 17, "a full pill");
 			});
 		}
 
@@ -152,7 +154,7 @@ Item {
 			fuzzyCompare(at(title).y - at(tile).y + (title.height + status.height) / 2, 17, 0.5);
 			compare(part(tile, "background").color, colours.groupBg);
 			compare(part(tile, "background").border.color, colours.border);
-			compare(part(tile, "background").radius, 10);
+			compare(part(tile, "background").radius, 17);
 		}
 
 		function test_statuses() {
@@ -331,8 +333,8 @@ Item {
 			compare(row.height, 18);
 			compare(row.width, 322);
 			const track = part(row, "track");
-			compare(at(track).x, 75 + 10);
-			compare(track.width, 322 - 75 - 10 - 10 - 28);
+			compare(at(track).x, 86 + 10);
+			compare(track.width, 322 - 86 - 10 - 10 - 28);
 			compare(track.height, 6);
 			compare(track.radius, 3);
 			compare(track.color, colours.groupBg);
@@ -343,11 +345,15 @@ Item {
 			compare(label.font.pixelSize, 9);
 			compare(label.font.weight, Font.DemiBold);
 			compare(label.color, colours.textMuted);
-			compare(at(label).x, 12 + 6);
+			compare(at(label).x, 22 + 6);
+			const toggle = part(row, "levelToggle");
+			compare(toggle.width, 22);
+			compare(toggle.height, 22);
+			compare(toggle.radius, 5);
 			const icon = part(row, "glyph");
-			compare(icon.name, "sf-speaker.wave.1.fill");
+			compare(icon.name, "volume");
 			compare(icon.size, 12);
-			compare(icon.opacity, 0.5);
+			fuzzyCompare(icon.opacity, 0.7, 0.001);
 			const percent = part(row, "percent");
 			compare(percent.text, "25%");
 			compare(percent.width, 28);
@@ -356,8 +362,49 @@ Item {
 			compare(percent.color, colours.textMuted);
 			const bright = part(cc, "slider-brightness");
 			compare(part(bright, "percent").text, "40%");
-			compare(part(bright, "glyph").name, "bloom-brightness-low");
-			compare(part(bright, "glyph").opacity, 0.5);
+			compare(part(bright, "glyph").name, "sun-medium");
+			fuzzyCompare(part(bright, "glyph").opacity, 0.7, 0.001);
+		}
+
+		function test_levelIcons() {
+			compare([0, 0.2, 0.5, 0.9].map(v => cc.volumeIcon(v, false)), ["volume-x", "volume", "volume-1", "volume-2"]);
+			compare(cc.volumeIcon(0.9, true), "volume-x");
+			compare([10, 50, 90].map(p => cc.brightnessIcon(p)), ["sun-dim", "sun-medium", "sun"]);
+		}
+
+		function test_volumeToggleRemembersLevel() {
+			const toggle = part(part(cc, "slider-volume"), "levelToggle");
+			cc.volume = 0.6;
+			mouseClick(toggle);
+			compare(volumeChosen.signalArguments[0][0], 0);
+			verify(!toggle.pressedLevel, "not pressed while sound plays");
+			cc.volume = 0;
+			verify(toggle.pressedLevel);
+			mouseClick(toggle);
+			fuzzyCompare(volumeChosen.signalArguments[1][0], 0.6, 0.001);
+			cc.volume = 0.25;
+		}
+
+		function test_mutedRestoresItsVolume() {
+			const toggle = part(part(cc, "slider-volume"), "levelToggle");
+			cc.volume = 0.4;
+			cc.muted = true;
+			compare(part(part(cc, "slider-volume"), "percent").text, "0%");
+			mouseClick(toggle);
+			fuzzyCompare(volumeChosen.signalArguments[0][0], 0.4, 0.001);
+			cc.muted = false;
+			cc.volume = 0.25;
+		}
+
+		function test_brightnessToggleRemembersLevel() {
+			const toggle = part(part(cc, "slider-brightness"), "levelToggle");
+			cc.brightness = 70;
+			mouseClick(toggle);
+			compare(brightnessChosen.signalArguments[0][0], 0);
+			cc.brightness = 0;
+			mouseClick(toggle);
+			compare(brightnessChosen.signalArguments[1][0], 70);
+			cc.brightness = 40;
 		}
 
 		function test_sliderHover() {
