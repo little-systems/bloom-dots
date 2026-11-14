@@ -185,6 +185,10 @@ var ROWS = [
 		"tab": "notch"
 	},
 	{
+		"label": "Monday-first Calendar",
+		"tab": "notch"
+	},
+	{
 		"label": "Timer Sound",
 		"tab": "notch"
 	},

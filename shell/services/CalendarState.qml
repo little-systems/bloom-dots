@@ -17,6 +17,10 @@ Singleton {
 	property bool finished: false
 	property string error: ""
 	readonly property bool running: deadlineMs > 0
+	// The month the calendar shows (Bloom's calendarMonth): kept while the
+	// shell runs, not saved.
+	property int viewYear: new Date().getFullYear()
+	property int viewMonth: new Date().getMonth()
 
 	function remaining() {
 		return Logic.remaining(root.deadlineMs, root.pausedSec, Date.now());

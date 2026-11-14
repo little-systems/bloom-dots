@@ -28,6 +28,7 @@ Item {
 		now: new Date(2026, 9, 29, 14, 30, 0)
 		durationSec: 1500
 		remainingSec: 0
+		onMonthChosen: (year, month) => { cal.viewYear = year; cal.viewMonth = month; }
 	}
 
 	// The notch's wheel handler, beneath the panel.
@@ -38,6 +39,7 @@ Item {
 	SignalSpy { id: resets; target: cal; signalName: "resetRequested" }
 	SignalSpy { id: presets; target: cal; signalName: "presetChosen" }
 	SignalSpy { id: commits; target: cal; signalName: "durationCommitted" }
+	SignalSpy { id: months; target: cal; signalName: "monthChosen" }
 
 	TestCase {
 		name: "CalendarView"
@@ -87,7 +89,14 @@ Item {
 			cal.finished = false;
 			cal.use24h = false;
 			cal.cancelEdit();
-			[primary, resets, presets, commits].forEach(s => s.clear());
+			cal.closeMonthPicker();
+			cal.mondayFirst = false;
+			cal.viewYear = 2026;
+			cal.viewMonth = 9;
+			host.forceActiveFocus();
+			mouseMove(host, 515, 295);
+			wait(350);
+			[primary, resets, presets, commits, months].forEach(s => s.clear());
 		}
 
 		function cleanup() {
@@ -113,10 +122,123 @@ Item {
 		function test_monthHeader() {
 			const month = part(cal, "month");
 			compare(month.text, "October 2026");
-			compare(month.font.pixelSize, 13);
+			compare(month.font.pixelSize, 12);
 			compare(month.font.weight, Font.DemiBold);
-			compare(month.opacity, 0.9);
-			fuzzyCompare(month.height, 13 * 1.3, 0.01);
+			compare(month.opacity, 1);
+			compare(part(cal, "calendarHeader").height, 24);
+			compare(at(part(cal, "dayNames")).y - at(part(cal, "calendarColumn")).y, 24 + 8);
+			const today = part(cal, "todayButton");
+			compare(today.width, 34);
+			const nav = part(cal, "monthNav");
+			compare(nav.width, 46);
+			compare(nav.height, 24);
+			compare(nav.border.color, colours.border);
+			compare(nav.color, colours.groupBg);
+			compare(part(cal, "nextMonth").width, 22);
+		}
+
+		function test_dayNamesAreThreeLetters() {
+			const names = () => part(cal, "dayNames").children.filter(c => c.text !== undefined).map(c => c.text);
+			compare(names(), ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]);
+			cal.mondayFirst = true;
+			compare(names(), ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+			// October 2026 starts on a Thursday: three blanks Monday-first.
+			compare(part(cal, "day-3").label, "1");
+		}
+
+		function test_rowsFollowViewedMonth() {
+			cal.viewYear = 2026;
+			cal.viewMonth = 1;
+			compare(cal.rows, 4);
+			cal.mondayFirst = true;
+			compare(cal.rows, 5);
+			cal.viewMonth = 7;
+			compare(cal.rows, 6);
+		}
+
+		function test_arrowsChangeMonth() {
+			mouseMove(part(cal, "calendarColumn"), 20, 60);
+			tryCompare(part(cal, "monthNav"), "opacity", 1);
+			mouseClick(part(cal, "nextMonth"));
+			compare(months.count, 1);
+			compare(Array.from(months.signalArguments[0]), [2026, 10]);
+			mouseClick(part(cal, "previousMonth"));
+			compare(Array.from(months.signalArguments[1]), [2026, 9]);
+		}
+
+		function test_navigationHiddenUntilHover() {
+			compare(part(cal, "monthNav").opacity, 0);
+			mouseMove(part(cal, "calendarColumn"), 20, 60);
+			tryCompare(part(cal, "monthNav"), "opacity", 1);
+		}
+
+		function test_todayOnlyAwayFromCurrentMonth() {
+			verify(!part(cal, "todayButton").visible);
+			cal.viewMonth = 11;
+			verify(part(cal, "todayButton").visible);
+			compare(part(cal, "todayLabel").font.pixelSize, 9);
+			fuzzyCompare(part(cal, "todayLabel").opacity, 0.65, 0.001);
+			mouseClick(part(cal, "todayButton"));
+			compare(Array.from(months.signalArguments[0]), [2026, 9]);
+			cal.viewMonth = 9;
+			verify(part(cal, "day-" + (4 + 28)).today);
+		}
+
+		function test_wheelThrottled() {
+			const day = part(cal, "day-10");
+			mouseWheel(day, 5, 5, 0, -120);
+			mouseWheel(day, 5, 5, 0, -120);
+			compare(months.count, 1);
+			compare(Array.from(months.signalArguments[0]), [2026, 10]);
+			wait(320);
+			mouseWheel(day, 5, 5, 0, 3);
+			compare(months.count, 1, "tiny deltas ignored");
+			mouseWheel(day, 5, 5, 0, 120, Qt.NoButton, Qt.ShiftModifier);
+			compare(Array.from(months.signalArguments[1]), [2025, 10]);
+		}
+
+		function test_pageKeys() {
+			mouseClick(part(cal, "day-10"));
+			keyClick(Qt.Key_PageDown);
+			compare(Array.from(months.signalArguments[0]), [2026, 10]);
+			keyClick(Qt.Key_PageUp, Qt.ShiftModifier);
+			compare(Array.from(months.signalArguments[1]), [2025, 10]);
+			keyClick(Qt.Key_Home);
+			compare(Array.from(months.signalArguments[2]), [2026, 9]);
+		}
+
+		function test_headingOpensPicker() {
+			mouseClick(part(cal, "month"));
+			verify(part(cal, "monthPicker").visible);
+			const year = part(cal, "yearField");
+			compare(year.text, "2026");
+			compare(year.width, 49);
+			year.forceActiveFocus();
+			year.selectAll();
+			keyClick(Qt.Key_1); keyClick(Qt.Key_9); keyClick(Qt.Key_9); keyClick(Qt.Key_9);
+			keyClick(Qt.Key_Return);
+			compare(Array.from(months.signalArguments[0]), [1999, 9]);
+			verify(!part(cal, "monthPicker").visible, "Enter closes the picker");
+			mouseClick(part(cal, "month"));
+			const y2 = part(cal, "yearField");
+			y2.forceActiveFocus();
+			y2.selectAll();
+			keyClick(Qt.Key_5); keyClick(Qt.Key_0);
+			keyClick(Qt.Key_Return);
+			compare(months.count, 1, "year 50 is out of range");
+			compare(part(cal, "yearField").text, "1999");
+			mouseClick(part(cal, "month"));
+			keyClick(Qt.Key_Escape);
+			verify(!part(cal, "monthPicker").visible);
+		}
+
+		function test_monthListChoosesMonth() {
+			mouseClick(part(cal, "month"));
+			mouseClick(part(cal, "monthSelect"));
+			mouseClick(part(cal, "monthOption-2"));
+			compare(Array.from(months.signalArguments[0]), [2026, 2]);
+			mouseClick(part(cal, "pickerDone"));
+			verify(!part(cal, "monthPicker").visible);
 		}
 
 		function test_grid() {
@@ -125,7 +247,7 @@ Item {
 			const labels = names.children.filter(c => c.text !== undefined);
 			compare(labels.length, 7);
 			const first = labels[0];
-			compare(first.text, "S");
+			compare(first.text, "Sun");
 			compare(first.font.pixelSize, 9);
 			compare(first.font.weight, Font.DemiBold);
 			compare(first.opacity, 0.4);
@@ -137,7 +259,7 @@ Item {
 			const one = part(cal, "day-4");
 			compare(one.label, "1");
 			fuzzyCompare(one.width, cell, 0.01);
-			compare(one.height, one.width);
+			compare(one.height, 28);
 			compare(one.radius, 4);
 			compare(part(one, "dayText").font.pixelSize, 10);
 			compare(part(one, "dayText").font.weight, Font.Normal);

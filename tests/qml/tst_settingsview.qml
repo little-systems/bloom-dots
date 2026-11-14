@@ -263,6 +263,16 @@ Item {
 			compare(fakeStore.sets, [["bloom-corners-enabled", false]]);
 		}
 
+		function test_mondayFirstToggle() {
+			const v = make("notch");
+			reveal(v, "mondayFirst");
+			verify(!part(v, "mondayFirst").checked, "off by default");
+			click(v, "mondayFirst");
+			compare(fakeStore.sets, [["bloom-calendar-monday-first", true]]);
+			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-calendar-enabled": false });
+			verify(!findChild(v, "mondayFirstRow").visible, "hidden without the calendar");
+		}
+
 		function test_edgeShineToggle() {
 			const v = make("appearance");
 			reveal(v, "edgeShine");

@@ -10,6 +10,24 @@ TestCase {
 		compare(Calendar.monthGrid(2026, 7)[0], { day: -5, inMonth: false });
 		compare(Calendar.monthRows(2026, 7), 6);
 	}
+	function test_mondayFirstOffset() {
+		compare(Calendar.offset(2026, 10, false), 0);
+		compare(Calendar.offset(2026, 10, true), 6);
+		compare(Calendar.monthGrid(2026, 10, true)[6], { day: 1, inMonth: true });
+	}
+
+	function test_rowsFollowWeekStart() {
+		compare(Calendar.monthRows(2026, 1, false), 4);
+		compare(Calendar.monthRows(2026, 1, true), 5);
+	}
+
+	function test_shiftMonth() {
+		compare(Calendar.shiftMonth(2026, 11, 1), { year: 2027, month: 0 });
+		compare(Calendar.shiftMonth(2026, 11, -12), { year: 2025, month: 11 });
+		compare(Calendar.shiftMonth(9999, 11, 1), null);
+		compare(Calendar.shiftMonth(100, 0, -1), null);
+	}
+
 	function test_timerDigitsAndDeadline() {
 		compare(Calendar.timerDigits("130"), 90);
 		compare(Calendar.timerDigits("2500"), 1500);

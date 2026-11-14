@@ -13,6 +13,21 @@ CalendarView {
 	running: CalendarState.running
 	finished: CalendarState.finished
 	remainingSec: Calendar.remaining(CalendarState.deadlineMs, CalendarState.pausedSec, root.now.getTime())
+	viewYear: CalendarState.viewYear
+	viewMonth: CalendarState.viewMonth
+	mondayFirst: Settings.values["bloom-calendar-monday-first"] === true
+	onMonthChosen: (year, month) => {
+		CalendarState.viewYear = year;
+		CalendarState.viewMonth = month;
+	}
+
+	// Bloom refreshes "today" every minute.
+	Timer {
+		interval: 60000
+		repeat: true
+		running: root.visible
+		onTriggered: root.now = new Date()
+	}
 
 	// Ticks while a run counts down (the clock and its "ends" time).
 	Timer {

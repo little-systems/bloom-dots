@@ -33,8 +33,54 @@ Item {
 	// The edit opens with the duration selected: the first digit replaces it.
 	property bool _fresh: false
 
-	readonly property var _grid: Calendar.monthGrid(root.now.getFullYear(), root.now.getMonth())
+	// The month shown (Bloom's calendarMonth) and the week start. The owner
+	// keeps the month; monthChosen asks for another.
+	property int viewYear: root.now.getFullYear()
+	property int viewMonth: root.now.getMonth()
+	property bool mondayFirst: false
+	signal monthChosen(int year, int month)
+
+	readonly property var _grid: Calendar.monthGrid(root.viewYear, root.viewMonth, root.mondayFirst)
 	readonly property int rows: root._grid.length / 7
+	readonly property bool _isCurrentMonth: root.viewYear === root.now.getFullYear() && root.viewMonth === root.now.getMonth()
+	property bool pickingMonth: false
+	property bool _monthListOpen: false
+
+	function changeMonth(by) {
+		const next = Calendar.shiftMonth(root.viewYear, root.viewMonth, by);
+		if (next)
+			root.monthChosen(next.year, next.month);
+	}
+
+	function goToday() {
+		root.monthChosen(root.now.getFullYear(), root.now.getMonth());
+	}
+
+	function openMonthPicker() {
+		yearField.text = String(root.viewYear);
+		root._monthListOpen = false;
+		root.pickingMonth = true;
+		yearField.forceActiveFocus();
+	}
+
+	function closeMonthPicker() {
+		root.pickingMonth = false;
+		yearField.focus = false;
+		root._monthListOpen = false;
+	}
+
+	// Bloom's year field: 100 to 9999, otherwise it shows the year again.
+	function commitYear(text) {
+		if (!root.pickingMonth)
+			return;
+		const value = Number(text);
+		if (Number.isInteger(value) && value >= 100 && value <= 9999) {
+			if (value !== root.viewYear)
+				root.monthChosen(value, root.viewMonth);
+		} else {
+			yearField.text = String(root.viewYear);
+		}
+	}
 
 	readonly property string _state: root.editing ? "idle"
 		: root.finished ? "finished"
@@ -121,45 +167,259 @@ Item {
 	readonly property real _timerWidth: root._free - root._calWidth
 	readonly property real _cell: (root._calWidth - Tokens.calendar.grid.gap * 6) / 7
 
-	Item {
+	// The calendar column (Bloom's Calendar component): a month you can browse
+	// with the arrows, the wheel (Shift: a year), Page Up / Page Down and Home,
+	// or by picking a month and typing a year.
+	FocusScope {
+		id: calendarColumn
 		objectName: "calendarColumn"
 		x: Tokens.calendar.padding
 		y: root._top
 		width: root._calWidth
 		height: root._innerHeight
 
-		// Bloom ignores the wheel over the calendar and the timer: it doesn't
-		// switch panels from here.
-		MouseArea {
-			anchors.fill: parent
-			acceptedButtons: Qt.NoButton
-			onWheel: wheel => wheel.accepted = true
+		readonly property bool _shown: columnHover.hovered || calendarColumn.activeFocus
+		property real _lastWheel: 0
+
+		HoverHandler { id: columnHover }
+
+		Keys.onPressed: event => {
+			if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
+				root.changeMonth((event.key === Qt.Key_PageUp ? -1 : 1) * (event.modifiers & Qt.ShiftModifier ? 12 : 1));
+				event.accepted = true;
+			} else if (event.key === Qt.Key_Home) {
+				root.goToday();
+				event.accepted = true;
+			}
 		}
 
-		Text {
-			id: month
-			objectName: "month"
+		// Bloom changes month on the wheel and never switches panels from here:
+		// |delta| under 5 is ignored, and one change per 300 ms.
+		MouseArea {
+			anchors.fill: parent
+			acceptedButtons: Qt.LeftButton
+			onPressed: mouse => { calendarColumn.forceActiveFocus(); mouse.accepted = false; }
+			onWheel: wheel => {
+				wheel.accepted = true;
+				if (root.pickingMonth)
+					return;
+				const dx = -wheel.angleDelta.x, dy = -wheel.angleDelta.y;
+				const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+				const now = Date.now();
+				if (Math.abs(delta) < 5 || now - calendarColumn._lastWheel < 300)
+					return;
+				calendarColumn._lastWheel = now;
+				root.changeMonth((delta > 0 ? 1 : -1) * (wheel.modifiers & Qt.ShiftModifier ? 12 : 1));
+			}
+		}
+
+		// .calendar-header: 24 px, 4 px gaps, 8 px above the day names.
+		Item {
+			id: header
+			objectName: "calendarHeader"
 			width: parent.width
-			height: Tokens.calendar.month.text * 1.3
-			lineHeightMode: Text.FixedHeight
-			lineHeight: height
-			verticalAlignment: Text.AlignVCenter
-			text: Qt.locale().standaloneMonthName(root.now.getMonth(), Locale.LongFormat) + " " + root.now.getFullYear()
-			color: root.theme.text
-			opacity: Tokens.calendar.month.opacity
-			font.family: Fonts.familyFor(Font.DemiBold)
-			font.pixelSize: Fonts.px(Tokens.calendar.month.text)
-			font.weight: Font.DemiBold
+			height: Tokens.calendar.header.height
+
+			// The month and year: click to pick them.
+			Rectangle {
+				id: headingButton
+				visible: !root.pickingMonth
+				width: Math.min(month.implicitWidth + Tokens.calendar.header.buttonPad, todayButton.x - Tokens.calendar.header.gap)
+				height: parent.height
+				radius: Tokens.calendar.header.radius
+				color: headingArea.hovered ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+				Text {
+					id: month
+					objectName: "month"
+					height: parent.height
+					verticalAlignment: Text.AlignVCenter
+					text: Qt.locale().standaloneMonthName(root.viewMonth, Locale.LongFormat) + " " + root.viewYear
+					color: root.theme.text
+					font.family: Fonts.familyFor(Font.DemiBold)
+					font.pixelSize: Fonts.px(Tokens.calendar.header.heading)
+					font.weight: Font.DemiBold
+				}
+
+				PointerArea {
+					id: headingArea
+					anchors.fill: parent
+					onClicked: root.openMonthPicker()
+				}
+			}
+
+			// .calendar-month-picker: the month list, the year and Done.
+			Row {
+				id: picker
+				objectName: "monthPicker"
+				visible: root.pickingMonth
+				height: parent.height
+				width: todayButton.x - Tokens.calendar.header.gap
+				spacing: Tokens.calendar.picker.gap
+
+				Rectangle {
+					id: monthSelect
+					objectName: "monthSelect"
+					width: picker.width - yearField.width - doneButton.width - picker.spacing * 2
+					height: parent.height
+					radius: Tokens.calendar.header.radius
+					color: monthSelectArea.hovered || root._monthListOpen ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+					Text {
+						x: 1
+						height: parent.height
+						verticalAlignment: Text.AlignVCenter
+						text: Qt.locale().standaloneMonthName(root.viewMonth, Locale.LongFormat)
+						color: root.theme.text
+						font.family: Fonts.familyFor(Font.DemiBold)
+						font.pixelSize: Fonts.px(Tokens.calendar.picker.text)
+						font.weight: Font.DemiBold
+					}
+
+					PointerArea {
+						id: monthSelectArea
+						anchors.fill: parent
+						onClicked: root._monthListOpen = !root._monthListOpen
+					}
+				}
+
+				TextInput {
+					id: yearField
+					objectName: "yearField"
+					width: Tokens.calendar.picker.year
+					height: parent.height
+					verticalAlignment: TextInput.AlignVCenter
+					leftPadding: 1
+					rightPadding: 1
+					maximumLength: 4
+					validator: IntValidator { bottom: 0; top: 9999 }
+					color: root.theme.text
+					selectionColor: Qt.alpha(root.theme.text, 0.3)
+					selectedTextColor: root.theme.text
+					font.family: Fonts.familyFor(Font.DemiBold)
+					font.pixelSize: Fonts.px(Tokens.calendar.picker.text)
+					font.weight: Font.DemiBold
+					onEditingFinished: root.commitYear(yearField.text)
+					Keys.onReturnPressed: { root.commitYear(yearField.text); root.closeMonthPicker(); }
+					Keys.onEnterPressed: { root.commitYear(yearField.text); root.closeMonthPicker(); }
+					Keys.onEscapePressed: root.closeMonthPicker()
+				}
+
+				Rectangle {
+					id: doneButton
+					objectName: "pickerDone"
+					width: Tokens.calendar.header.minButton
+					height: parent.height
+					radius: Tokens.calendar.header.radius
+					color: doneArea.hovered ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+					SvgIcon {
+						anchors.centerIn: parent
+						name: "check"
+						size: Tokens.calendar.header.glyph
+						color: root.theme.text
+					}
+
+					PointerArea {
+						id: doneArea
+						anchors.fill: parent
+						onClicked: root.closeMonthPicker()
+					}
+				}
+			}
+
+			// "Today": only away from the current month (visibility: hidden,
+			// so the row keeps its layout).
+			Rectangle {
+				id: todayButton
+				objectName: "todayButton"
+				visible: !root._isCurrentMonth
+				x: monthNav.x - Tokens.calendar.header.gap - width
+				width: Tokens.calendar.header.today
+				height: parent.height
+				radius: Tokens.calendar.header.radius
+				color: todayArea.hovered ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+				Text {
+					objectName: "todayLabel"
+					anchors.centerIn: parent
+					text: "Today"
+					color: root.theme.text
+					opacity: Tokens.calendar.header.todayOpacity
+					font.family: Fonts.familyFor(Font.Normal)
+					font.pixelSize: Fonts.px(Tokens.calendar.header.todayText)
+				}
+
+				PointerArea {
+					id: todayArea
+					anchors.fill: parent
+					onClicked: { root.goToday(); root.closeMonthPicker(); }
+				}
+			}
+
+			// .calendar-navigation: a pill with the arrows, shown on hover or
+			// focus.
+			Rectangle {
+				id: monthNav
+				objectName: "monthNav"
+				visible: !root.pickingMonth
+				x: parent.width - width
+				width: Tokens.calendar.nav.width
+				height: parent.height
+				radius: height / 2
+				color: root.theme.groupBg
+				border.width: 1
+				border.color: root.theme.border
+				opacity: calendarColumn._shown ? 1 : 0
+				Behavior on opacity {
+					NumberAnimation {
+						duration: Tokens.calendar.nav.fadeMs
+						easing.type: Easing.BezierSpline
+						easing.bezierCurve: [0.25, 0.1, 0.25, 1, 1, 1]
+					}
+				}
+
+				Row {
+					anchors.centerIn: parent
+
+					Repeater {
+						model: [{ name: "previousMonth", icon: "chevron-left", by: -1 }, { name: "nextMonth", icon: "chevron-right", by: 1 }]
+
+						Rectangle {
+							required property var modelData
+							objectName: modelData.name
+							width: Tokens.calendar.nav.button
+							height: Tokens.calendar.nav.button
+							radius: height / 2
+							color: arrowArea.hovered ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+							SvgIcon {
+								anchors.centerIn: parent
+								name: parent.modelData.icon
+								size: Tokens.calendar.header.glyph
+								color: root.theme.text
+							}
+
+							PointerArea {
+								id: arrowArea
+								anchors.fill: parent
+								enabled: monthNav.opacity > 0
+								onClicked: root.changeMonth(parent.modelData.by)
+							}
+						}
+					}
+				}
+			}
 		}
 
 		Row {
 			id: dayNames
 			objectName: "dayNames"
-			y: month.height + Tokens.calendar.month.below
+			y: header.height + Tokens.calendar.header.below
 			spacing: Tokens.calendar.grid.gap
 
 			Repeater {
-				model: ["S", "M", "T", "W", "T", "F", "S"]
+				model: root.mondayFirst ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 				Text {
 					required property string modelData
@@ -187,12 +447,12 @@ Item {
 				Rectangle {
 					required property int index
 					readonly property var info: root._grid[index]
-					readonly property bool today: info.inMonth && info.day === root.now.getDate()
+					readonly property bool today: root._isCurrentMonth && info.inMonth && info.day === root.now.getDate()
 					readonly property string label: info.inMonth ? String(info.day) : ""
 
 					objectName: "day-" + index
 					width: root._cell
-					height: root._cell
+					height: Tokens.calendar.day.height
 					radius: Tokens.calendar.day.radius
 					color: today ? root.theme.text : "transparent"
 
@@ -204,6 +464,57 @@ Item {
 						font.family: Fonts.familyFor(parent.today ? Font.DemiBold : Font.Normal)
 						font.pixelSize: Fonts.px(Tokens.calendar.day.text)
 						font.weight: parent.today ? Font.DemiBold : Font.Normal
+					}
+				}
+			}
+		}
+
+		// The month list (Bloom's <select>), over the grid.
+		Rectangle {
+			objectName: "monthList"
+			visible: root.pickingMonth && root._monthListOpen
+			z: 10
+			y: header.height + 2
+			width: monthSelect.width + yearField.width
+			height: monthColumn.height + 4
+			radius: Tokens.calendar.header.radius
+			color: root.theme.bgExpanded
+			border.width: 1
+			border.color: root.theme.border
+
+			Column {
+				id: monthColumn
+				y: 2
+				width: parent.width
+
+				Repeater {
+					model: 12
+
+					Rectangle {
+						required property int index
+						objectName: "monthOption-" + index
+						width: monthColumn.width
+						height: Tokens.calendar.picker.option
+						color: optionArea.hovered || index === root.viewMonth ? Qt.alpha(root.theme.text, 0.12) : "transparent"
+
+						Text {
+							x: 6
+							height: parent.height
+							verticalAlignment: Text.AlignVCenter
+							text: Qt.locale().standaloneMonthName(parent.index, Locale.LongFormat)
+							color: root.theme.text
+							font.family: Fonts.familyFor(Font.Normal)
+							font.pixelSize: Fonts.px(Tokens.calendar.picker.text)
+						}
+
+						PointerArea {
+							id: optionArea
+							anchors.fill: parent
+							onClicked: {
+								root.monthChosen(root.viewYear, parent.index);
+								root._monthListOpen = false;
+							}
+						}
 					}
 				}
 			}

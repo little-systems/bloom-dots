@@ -1,6 +1,12 @@
-function monthGrid(year, month) {
+// Bloom's calendarOffset: blank cells before the 1st, weeks starting on
+// Sunday or, with bloom-calendar-monday-first, Monday.
+function offset(year, month, mondayFirst) {
+	return (new Date(year, month, 1).getDay() + (mondayFirst ? 6 : 0)) % 7;
+}
+
+function monthGrid(year, month, mondayFirst) {
 	if (!Number.isInteger(year) || !Number.isInteger(month) || month < 0 || month > 11) return [];
-	const first = new Date(year, month, 1).getDay();
+	const first = offset(year, month, mondayFirst === true);
 	const days = new Date(year, month + 1, 0).getDate();
 	const rows = Math.ceil((first + days) / 7);
 	return Array.from({ length: rows * 7 }, (_, index) => {
@@ -9,7 +15,14 @@ function monthGrid(year, month) {
 	});
 }
 
-function monthRows(year, month) { return monthGrid(year, month).length / 7; }
+function monthRows(year, month, mondayFirst) { return monthGrid(year, month, mondayFirst).length / 7; }
+
+// Bloom's changeMonth: the month `by` months away, within years 100 to 9999.
+function shiftMonth(year, month, by) {
+	const next = new Date(year, month + by, 1);
+	const y = next.getFullYear();
+	return y >= 100 && y <= 9999 ? { year: y, month: next.getMonth() } : null;
+}
 
 var MAX_TIMER_SECONDS = 180 * 60;
 

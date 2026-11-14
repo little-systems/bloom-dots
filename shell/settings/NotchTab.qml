@@ -56,6 +56,12 @@ Column {
 			SToggle { accessibleName: "Calendar & Timer"; objectName: "calendar"; theme: root.theme; enabled: !(root._calendar && root._lastPanel); checked: root._calendar; onToggled: value => root.set("bloom-calendar-enabled", value) }
 		}
 		SRow {
+			objectName: "mondayFirstRow"
+			visible: root._calendar
+			theme: root.theme; icon: "calendar"; label: "Monday-first Calendar"; desc: "Start each week on Monday instead of Sunday"
+			SToggle { objectName: "mondayFirst"; accessibleName: "Monday-first Calendar"; theme: root.theme; checked: root._v["bloom-calendar-monday-first"]; onToggled: value => root.set("bloom-calendar-monday-first", value) }
+		}
+		SRow {
 			objectName: "timerSound"
 			visible: root._calendar
 			theme: root.theme; icon: "bell-ring"; label: "Timer Sound"; desc: "Play a chime when the timer finishes"

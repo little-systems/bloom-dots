@@ -35,8 +35,9 @@ TestCase {
 		for (const panel of ["", "command-center", "devices"]) verify(!Panels.wantsKeyboard(panel), panel);
 	}
 	function test_sizes() {
-		compare(Panels.size("calendar", 5, 0), { width: 480, height: 273 });
-		compare(Panels.size("calendar", 6, 0), { width: 480, height: 305 });
+		compare(Panels.size("calendar", 4, 0), { width: 480, height: 232 });
+		compare(Panels.size("calendar", 5, 0), { width: 480, height: 262 });
+		compare(Panels.size("calendar", 6, 0), { width: 480, height: 292 });
 		compare(Panels.size("command-center", 0, 0), { width: 350, height: 230 });
 		compare(Panels.size("wifi", 0, 0), { width: 350, height: 300 });
 		// Devices: the content's measured height, kept within 150..300.
