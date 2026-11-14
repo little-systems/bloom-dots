@@ -25,7 +25,7 @@ desktop.
 The same visual identity, interactions and attention to motion, built around
 Linux's desktop services.
 
-<video width="1920" height="1080" src="https://github.com/user-attachments/assets/f48af2d9-30b9-424e-bb0d-819f418207ca">
+<video width="1920" height="1080" src="https://github.com/user-attachments/assets/f48af2d9-30b9-424e-bb0d-819f418207ca"></video>
 
 <p align="center">
   <img src="docs/screenshots/desktop.png" alt="The Bloom desktop: the island at the top and the dock at the bottom, on Bloom's wallpaper" />
