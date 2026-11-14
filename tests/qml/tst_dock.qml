@@ -87,6 +87,22 @@ TestCase {
 		compare(slots[2].backgroundDot, true);
 	}
 
+	function test_backgroundAppsHidden() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [] }], unpinned: [] };
+		const tray = [{ key: "sni1", title: "Chat", icon: "icon:chat" }];
+		compare(Dock.slots(items, true, [], [], "off", tray, false).map(x => x.key), ["a"]);
+	}
+
+	function test_pinnedLoseDotOnly() {
+		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [], hasTray: true }],
+			unpinned: [{ id: "b", name: "B", icon: "", windows: [{}], hasTray: true }] };
+		const on = Dock.slots(items, false, [], [], "off", [], true);
+		compare(on[0].backgroundDot, true);
+		const off = Dock.slots(items, false, [], [], "off", [], false);
+		compare(off.map(x => x.key), ["a", "b"], "apps stay");
+		compare(off[0].backgroundDot, false);
+	}
+
 	function test_mergedAppMenuShowsEachTrayHandle() {
 		const menu = Dock.menuFor({ kind: "app", pinned: false, pinnable: true, running: true, windows: 1,
 			actions: [], trays: [{ key: "one", title: "Inbox", hasMenu: true }, { key: "two", title: "Calls", hasMenu: true }] });

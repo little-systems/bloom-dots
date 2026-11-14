@@ -273,6 +273,10 @@ var ROWS = [
 		"tab": "dock"
 	},
 	{
+		"label": "Show Background Apps",
+		"tab": "dock"
+	},
+	{
 		"label": "Icon Only",
 		"tab": "dock"
 	},

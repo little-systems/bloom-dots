@@ -273,6 +273,14 @@ Item {
 			verify(!findChild(v, "mondayFirstRow").visible, "hidden without the calendar");
 		}
 
+		function test_backgroundAppsToggle() {
+			const v = make("dock");
+			reveal(v, "backgroundApps");
+			verify(part(v, "backgroundApps").checked, "on by default");
+			click(v, "backgroundApps");
+			compare(fakeStore.sets, [["bloom-dock-show-background-apps", false]]);
+		}
+
 		function test_edgeShineToggle() {
 			const v = make("appearance");
 			reveal(v, "edgeShine");
@@ -428,12 +436,13 @@ Item {
 			v.drives = [{ id: "sda1", label: "Data" }];
 			const d = part(v, "disclosure:Manage dock extras");
 			d.open = true;
-			part(v, "page").contentY = 420;
+			reveal(v, "folder:documents");
 			click(v, "folder:documents");
 			compare(fakeStore.values["bloom-dock-extras-folders"], "downloads,documents");
+			reveal(v, "drive:sda1");
 			click(v, "drive:sda1");
 			compare(fakeStore.values["bloom-dock-extras-hidden-drives"], '["sda1"]');
-			part(v, "page").contentY = 600;
+			reveal(v, "removeFolder:/code");
 			click(v, "removeFolder:/code");
 			compare(fakeStore.values["bloom-dock-extras-custom-folders"], "[]");
 		}

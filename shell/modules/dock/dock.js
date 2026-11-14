@@ -56,10 +56,12 @@ var workspacesKey = "|workspaces|";
 
 // What the row shows: the workspace segment (D7) and its divider, pinned
 // apps, Bloom's divider when both app groups have something, then the other
-// running apps.
-function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly) {
+// running apps. showBackground false (bloom-dock-show-background-apps) drops
+// the tray-only apps and the background dot; tray actions stay in the menus.
+function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly, showBackground) {
+	const background = showBackground !== false;
 	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon,
-		windows: i.windows.length, backgroundDot: !!i.hasTray && i.windows.length === 0 });
+		windows: i.windows.length, backgroundDot: background && !!i.hasTray && i.windows.length === 0 });
 	const extra = e => ({ key: "extra:" + e.key, kind: "extra", extraKind: e.kind, count: e.count || 0,
 		pinned: false, name: e.name, icon: e.icon, windows: 0 });
 	const tray = t => ({ key: "tray:" + t.key, kind: "tray", pinned: false, name: t.title || t.id || "Tray app",
@@ -81,7 +83,7 @@ function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly)
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
 		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 	out.push.apply(out, items.unpinned.map(app(false)));
-	if (trayOnly && trayOnly.length > 0) {
+	if (background && trayOnly && trayOnly.length > 0) {
 		if (appsCount > 0) out.push({ key: dividerKey + "tray", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 		out.push.apply(out, trayOnly.map(tray));
 	}

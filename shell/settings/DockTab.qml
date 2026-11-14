@@ -63,6 +63,10 @@ Column {
 				SToggle { accessibleName: "Show App Previews"; theme: root.theme; checked: root._v["bloom-dock-preview-enabled"]; onToggled: value => root.set("bloom-dock-preview-enabled", value) }
 			}
 			SRow {
+				theme: root.theme; icon: "layers"; label: "Show Background Apps"; desc: "Keep apps in the dock when they close to the system tray"
+				SToggle { objectName: "backgroundApps"; accessibleName: "Show Background Apps"; theme: root.theme; checked: root._v["bloom-dock-show-background-apps"]; onToggled: value => root.set("bloom-dock-show-background-apps", value) }
+			}
+			SRow {
 				theme: root.theme; icon: "circle"; label: "Icon Only"; desc: "Remove icon background and padding"
 				SToggle { accessibleName: "Icon Only"; theme: root.theme; checked: root._v["bloom-dock-icon-only"]; onToggled: value => root.set("bloom-dock-icon-only", value) }
 			}

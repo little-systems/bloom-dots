@@ -30,6 +30,8 @@ Item {
 	property var extraItems: []
 	property string extrasPosition: "off"
 	property var trayOnlyItems: []
+	// bloom-dock-show-background-apps.
+	property bool showBackgroundApps: true
 	property var workspaceCells: []
 	property var menuTarget: id => ({ kind: "background" })
 	property var apps: []
@@ -299,7 +301,7 @@ Item {
 		const ordered = root._dragOrder.length > 0
 			? Object.assign({}, root.items, { [root._dragPinned ? "pinned" : "unpinned"]: root._dragOrder.map(id => (root._dragPinned ? root.items.pinned : root.items.unpinned).find(i => i.id === id)).filter(Boolean) })
 			: root.items;
-		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition, root.trayOnlyItems);
+		const next = Dock.slots(ordered, root.separatorEnabled, root.workspaceCells, root.extraItems, root.extrasPosition, root.trayOnlyItems, root.showBackgroundApps);
 		const byKey = {};
 		for (const s of next)
 			byKey[s.key] = s;
@@ -367,6 +369,7 @@ Item {
 	onExtraItemsChanged: root._sync()
 	onExtrasPositionChanged: root._sync()
 	onTrayOnlyItemsChanged: root._sync()
+	onShowBackgroundAppsChanged: root._sync()
 	onWorkspaceCellsChanged: root._sync()
 	onSeparatorEnabledChanged: root._sync()
 	Component.onCompleted: root._sync()
