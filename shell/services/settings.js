@@ -69,6 +69,10 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Show the Calendar and timer panel in the notch."
 	},
+	"bloom-calendar-monday-first": {
+		type: "bool", default: false,
+		doc: "Start calendar weeks on Monday; Sunday remains the default. Grid padding and notch height follow this setting."
+	},
 	"bloom-notch-command-center-enabled": {
 		type: "bool", default: true,
 		doc: "Show Command Center and its Wi-Fi/Bluetooth subpanels in the notch."
@@ -217,6 +221,10 @@ var SCHEMA = {
 		type: "bool", default: true,
 		doc: "Show live previews of an app's windows after hovering its dock icon."
 	},
+	"bloom-dock-show-background-apps": {
+		type: "bool", default: true,
+		doc: "Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear and pinned apps lose their gray dot."
+	},
 	"bloom-dock-extras-position": {
 		type: "enum", values: ["off", "left", "right"], default: "off",
 		doc: "Show drive, trash and folder extras beside the dock apps."
@@ -327,6 +335,10 @@ var SCHEMA = {
 	"bloom-brightness-edge-enabled": {
 		type: "bool", default: true,
 		doc: "Slide the brightness overlay in from the right edge on hover."
+	},
+	"bloom-edge-shine-enabled": {
+		type: "bool", default: true,
+		doc: "Reflective hairline around the dock and notch. Turn off if animations feel less smooth."
 	},
 	"bloom-corners-enabled": {
 		type: "bool", default: true,

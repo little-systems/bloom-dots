@@ -16,6 +16,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-notch-mode` | enum | `"fixed"` | `fixed`, `smart`, `peek` (`auto-hide` = `smart`) | Notch visibility. fixed = always shown; smart = hides while the focused window sits under it; peek = hidden until hovered or an event shows it briefly. |
 | `bloom-notch-edge-delay` | number | `200` | 0 to 2000 | In smart and peek mode, how long (ms) the pointer must rest on the top edge before a hidden notch appears. 0 reveals it at once. |
 | `bloom-calendar-enabled` | bool | `true` | `true`, `false` | Show the Calendar and timer panel in the notch. |
+| `bloom-calendar-monday-first` | bool | `false` | `true`, `false` | Start calendar weeks on Monday; Sunday remains the default. Grid padding and notch height follow this setting. |
 | `bloom-notch-command-center-enabled` | bool | `true` | `true`, `false` | Show Command Center and its Wi-Fi/Bluetooth subpanels in the notch. |
 | `bloom-notch-devices-enabled` | bool | `true` | `true`, `false` | Show the Connected Devices panel in the notch. |
 | `bloom-notch-default-panel` | enum | `"calendar"` | `calendar`, `command-center`, `devices` | Tool panel opened by clicking the collapsed notch when panel memory is off or unavailable. |
@@ -45,6 +46,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-win-number-enabled` | bool | `true` | `true`, `false` | Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows. |
 | `bloom-dock-workspaces-enabled` | bool | `true` | `true`, `false` | Show this monitor's workspaces at the start of the dock (Hyprland). |
 | `bloom-dock-preview-enabled` | bool | `true` | `true`, `false` | Show live previews of an app's windows after hovering its dock icon. |
+| `bloom-dock-show-background-apps` | bool | `true` | `true`, `false` | Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear and pinned apps lose their gray dot. |
 | `bloom-dock-extras-position` | enum | `"off"` | `off`, `left`, `right` | Show drive, trash and folder extras beside the dock apps. |
 | `bloom-dock-extras-drives` | bool | `true` | `true`, `false` | Include removable and user-mounted drives in dock extras. |
 | `bloom-dock-extras-recycle-bin` | bool | `true` | `true`, `false` | Include the XDG trash in dock extras. |
@@ -70,6 +72,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-volume-edge-enabled` | bool | `true` | `true`, `false` | Slide the volume overlay in from the left edge on hover. |
 | `bloom-brightness-hud-enabled` | bool | `true` | `true`, `false` | Show the brightness overlay. |
 | `bloom-brightness-edge-enabled` | bool | `true` | `true`, `false` | Slide the brightness overlay in from the right edge on hover. |
+| `bloom-edge-shine-enabled` | bool | `true` | `true`, `false` | Reflective hairline around the dock and notch. Turn off if animations feel less smooth. |
 | `bloom-corners-enabled` | bool | `true` | `true`, `false` | Round the screen's four corners (hidden over a fullscreen window). |
 | `bloom-reduce-motion` | bool | `false` | `true`, `false` | Land every spring at once instead of animating it, and turn off window animations. |
 | `bloom-ai-model` | enum | `"gemini-2.5-flash"` | `gemini-2.5-flash`, `gemini-2.5-pro` | Gemini model for chat in the launcher. |

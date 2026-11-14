@@ -27,6 +27,15 @@ TestCase {
 		compare(Object.keys(d).sort(), Settings.keys().sort());
 	}
 
+	function test_upstream3102Defaults() {
+		const d = Settings.defaults();
+		compare(d["bloom-edge-shine-enabled"], true);
+		compare(d["bloom-calendar-monday-first"], false);
+		compare(d["bloom-dock-show-background-apps"], true);
+		for (const key of ["bloom-edge-shine-enabled", "bloom-calendar-monday-first", "bloom-dock-show-background-apps"])
+			compare(Settings.validateOne(key, "false"), { ok: true, value: false }, key);
+	}
+
 	function test_defaultsAreFreshCopies() {
 		Settings.defaults()["bloom-enabled-modules"].push("notch");
 		Settings.defaults()["bloom-status-widgets"].left.push("cpu");
