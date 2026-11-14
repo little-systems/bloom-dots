@@ -25,6 +25,8 @@ desktop.
 The same visual identity, interactions and attention to motion, built around
 Linux's desktop services.
 
+<video width="1920" height="1080" src="https://github.com/user-attachments/assets/db395911-1dc6-41dc-9db1-41e4a1381591" controls muted></video>
+
 <p align="center">
   <img src="docs/screenshots/desktop.png" alt="The Bloom desktop: the island at the top and the dock at the bottom, on Bloom's wallpaper" />
 </p>
@@ -211,7 +213,7 @@ Tests use disposable configuration and isolated compositors. GitHub CI runs the
 checks in Arch Linux. See [the installation guide](docs/INSTALL.md#development)
 for the development workflow.
 
-Licensed under [GPLv3](LICENSE). Bundled third-party notices live in [licenses](licenses/) (Lucide icons and the OFL fonts: Inter, Selawik, Syne).
+Licensed under [GPLv3](LICENSE). Bundled third-party notices live in [licenses](licenses/) (Lucide icons and the OFL fonts: Inter, Selawik, Syne). Demo video music: "Free (rock instrumental)" by Starfish Stories, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 
 ---
 
