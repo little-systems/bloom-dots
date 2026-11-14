@@ -22,6 +22,7 @@ Item {
 	property string notchMode: "smart"
 	property bool dnd: false
 	property bool energySaver: false
+	property bool powerAvailable: true
 	property real volume: 0
 	property bool muted: false
 	// A whole percent, or -1 when there's no backlight to set.
@@ -35,7 +36,7 @@ Item {
 	signal notchModeCycled()
 	signal dndToggled()
 	signal energySaverToggled()
-	signal trayRequested()
+	signal powerRequested()
 	signal settingsRequested()
 	signal restartRequested()
 	signal volumeChosen(real value)
@@ -174,11 +175,11 @@ Item {
 		}
 
 		CcRoundButton {
-			objectName: "round-tray"
+			objectName: "round-restart"
 			x: roundRow.step * 2
 			theme: root.theme
-			icon: "bloom-tray"
-			onClicked: root.trayRequested()
+			icon: "bloom-reload"
+			onClicked: root.restartRequested()
 		}
 
 		CcRoundButton {
@@ -191,11 +192,13 @@ Item {
 		}
 
 		CcRoundButton {
-			objectName: "round-restart"
+			objectName: "round-power"
 			x: roundRow.step * 4
 			theme: root.theme
-			icon: "bloom-reload"
-			onClicked: root.restartRequested()
+			icon: "power"
+			enabled: root.powerAvailable
+			opacity: enabled ? 1 : 0.4
+			onClicked: root.powerRequested()
 		}
 	}
 

@@ -46,7 +46,7 @@ Item {
 	SignalSpy { id: notchCycled; target: cc; signalName: "notchModeCycled" }
 	SignalSpy { id: dnd; target: cc; signalName: "dndToggled" }
 	SignalSpy { id: saver; target: cc; signalName: "energySaverToggled" }
-	SignalSpy { id: tray; target: cc; signalName: "trayRequested" }
+	SignalSpy { id: power; target: cc; signalName: "powerRequested" }
 	SignalSpy { id: settings; target: cc; signalName: "settingsRequested" }
 	SignalSpy { id: restart; target: cc; signalName: "restartRequested" }
 	SignalSpy { id: volumeChosen; target: cc; signalName: "volumeChosen" }
@@ -97,7 +97,7 @@ Item {
 			cc.volume = 0.25;
 			cc.brightness = 40;
 			cc.muted = false;
-			[wifiToggled, wifiOpened, btToggled, btOpened, dockCycled, notchCycled, dnd, saver, tray, settings, restart, volumeChosen, brightnessChosen].forEach(s => s.clear());
+			[wifiToggled, wifiOpened, btToggled, btOpened, dockCycled, notchCycled, dnd, saver, restart, settings, power, volumeChosen, brightnessChosen].forEach(s => s.clear());
 		}
 
 		function cleanup() {
@@ -277,8 +277,8 @@ Item {
 		}
 
 		function test_roundButtons() {
-			const names = ["dnd", "energy", "tray", "settings", "restart"];
-			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-tray", "bloom-settings", "bloom-reload"];
+			const names = ["dnd", "energy", "restart", "settings", "power"];
+			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-reload", "bloom-settings", "power"];
 			const sizes = [18, 18, 14, 14, 14];
 			const buttons = names.map(n => part(cc, "round-" + n));
 			// padding 0 4, justify-content space-between.
@@ -296,7 +296,7 @@ Item {
 				compare(part(b, "background").border.color, colours.border);
 			});
 			compare(part(buttons[3], "glyph").opacity, 0.9);
-			const spies = [dnd, saver, tray, settings, restart];
+			const spies = [dnd, saver, restart, settings, power];
 			buttons.forEach((b, i) => {
 				mouseClick(b);
 				compare(spies[i].count, 1, names[i]);
@@ -317,7 +317,7 @@ Item {
 		}
 
 		function test_roundButtonHover() {
-			const b = part(cc, "round-tray");
+			const b = part(cc, "round-restart");
 			const p = centre(b);
 			mouseMove(host, p.x, p.y);
 			tryCompare(part(b, "background"), "color", colours.border, 1000);

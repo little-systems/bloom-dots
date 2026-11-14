@@ -28,6 +28,11 @@ Singleton {
 
 	signal settingChanged(string key)
 
+	// A separate process keeps Settings failures isolated from the shell.
+	function openApp() {
+		Quickshell.execDetached(["qs", "--no-duplicate", "-p", Quickshell.shellPath("settings-app.qml")]);
+	}
+
 	function get(key) {
 		return root.values[key];
 	}

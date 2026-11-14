@@ -1,6 +1,5 @@
 import QtQuick
 import qs.services
-import "../../common/tokens.js" as Tokens
 
 // The Command Center panel: binds CommandCenterView to the services and runs
 // its actions (notification history now lives at the top-right corner).
@@ -25,6 +24,7 @@ CommandCenterView {
 	notchMode: Settings.values["bloom-notch-mode"]
 	dnd: !!Settings.values["bloom-notifications-dnd"]
 	energySaver: Battery.energySaver
+	powerAvailable: Settings.values["bloom-enabled-modules"].includes("session")
 	volume: Audio.volume
 	muted: Audio.muted
 	brightness: Brightness.available ? Brightness.percent : -1
@@ -46,9 +46,8 @@ CommandCenterView {
 	onNotchModeCycled: Settings.set("bloom-notch-mode", root._nextMode(root.notchMode))
 	onDndToggled: Settings.set("bloom-notifications-dnd", !root.dnd)
 	onEnergySaverToggled: Battery.setEnergySaver(!root.energySaver)
-	onTrayRequested: Dock.reveal(Tokens.dock.revealMs)
-	// Bloom Settings is Phase 7; until then the button opens settings.json.
-	onSettingsRequested: Apps.run(["xdg-open", Settings.path], "bloom-settings")
+	onPowerRequested: Session.show()
+	onSettingsRequested: Settings.openApp()
 	onRestartRequested: Dock.restartShell()
 	onVolumeChosen: value => Audio.setVolume(value)
 	onBrightnessChosen: percent => Brightness.setPercent(percent)

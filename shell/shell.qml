@@ -308,9 +308,8 @@ ShellRoot {
 			return Settings.set("bloom-theme-mode", Theme.isLight ? "dark" : "light") || "ok";
 		}
 
-		// The settings app, its own process so a crash there leaves the shell up.
 		function open(): string {
-			Quickshell.execDetached(["qs", "--no-duplicate", "-p", Quickshell.shellPath("settings-app.qml")]);
+			Settings.openApp();
 			return "ok";
 		}
 
