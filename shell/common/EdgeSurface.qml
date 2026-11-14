@@ -136,13 +136,23 @@ Item {
 		readonly property string _key: [rim._path, rim._scale, rim._colors.line, rim._colors.side, rim._colors.highlight].join("|")
 		property string _drawn: ""
 
+		// Bloom keeps the backing store's capacity across spring frames: it
+		// only grows, in 64 px steps, so a resize doesn't reallocate it.
+		property real _capW: 0
+		property real _capH: 0
+		function _fit() {
+			rim._capW = Math.max(rim._capW, Math.ceil(root.width * rim._scale / 64) * 64);
+			rim._capH = Math.max(rim._capH, Math.ceil(root.height * rim._scale / 64) * 64);
+		}
+
 		visible: root.reflective && root.horizontal && root.width > 26 && root.height > 0
-		width: root.width * rim._scale
-		height: root.height * rim._scale
+		width: rim._capW
+		height: rim._capH
 		transformOrigin: Item.TopLeft
 		scale: 1 / rim._scale
-		on_KeyChanged: if (rim.visible) rim.requestPaint()
-		onVisibleChanged: if (rim.visible) rim.requestPaint()
+		on_KeyChanged: if (rim.visible) { rim._fit(); rim.requestPaint(); }
+		onVisibleChanged: if (rim.visible) { rim._fit(); rim.requestPaint(); }
+		Component.onCompleted: rim._fit()
 
 		onPaint: {
 			const ctx = getContext("2d");

@@ -246,6 +246,15 @@ Item {
 			verify(cal.editing);
 		}
 
+		function test_wheelOverGridBrowsesWhilePicking() {
+			mouseClick(part(cal, "month"));
+			mouseWheel(part(cal, "calendarHeader"), 20, 12, 0, -120);
+			compare(months.count, 0, "not over the picker");
+			wait(320);
+			mouseWheel(part(cal, "day-10"), 5, 5, 0, -120);
+			compare(Array.from(months.signalArguments[0]), [2026, 10], "the grid still browses");
+		}
+
 		function test_pageKeysIgnoredWhilePicking() {
 			mouseClick(part(cal, "month"));
 			keyClick(Qt.Key_PageUp, Qt.ShiftModifier);

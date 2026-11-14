@@ -1,6 +1,7 @@
 import QtQuick
 import QtTest
 import "../../shell/common"
+import "../../shell/common/render"
 
 Item {
 	id: host
@@ -38,6 +39,21 @@ Item {
 		edge: "top"
 		pillWidth: 200
 		pillHeight: 36
+		edgeRadius: 0
+		farRadius: 18
+		color: "black"
+		edgeColor: "white"
+		reflective: true
+	}
+
+	// A dock: the bottom edge, its free edge on top.
+	EdgeSurface {
+		id: dockRim
+		x: 300
+		y: 20
+		edge: "bottom"
+		pillWidth: 150
+		pillHeight: 40
 		edgeRadius: 0
 		farRadius: 18
 		color: "black"
@@ -136,6 +152,40 @@ Item {
 			const oldSide = img.pixel(shiny.x + 13 + 199, shiny.y + 18);
 			verify(lum(newEnd) > 0.1, `lit at the new end: ${newEnd}`);
 			verify(lum(oldSide) < 0.03, `nothing left at the old side: ${oldSide}`);
+			shiny.pillWidth = 200;
+		}
+
+		function test_bottomEdgeLightsItsTop() {
+			wait(100);
+			const img = grabImage(host);
+			const free = img.pixel(dockRim.x + 13 + 75, dockRim.y);
+			const inside = img.pixel(dockRim.x + 13 + 75, dockRim.y + 20);
+			verify(lum(free) > lum(inside) + 0.1, `the dock's top is lit: ${free}`);
+			// The highlight sits on the free edge: the top is brighter than the sides near the screen edge.
+			const side = img.pixel(dockRim.x + 13, dockRim.y + 30);
+			verify(lum(free) > lum(side), `highlight on top ${free} vs side ${side}`);
+		}
+
+		function test_rimAtFractionalScale() {
+			const rim = findChild(shiny, "rim");
+			Render.scale = 1.15;
+			wait(100);
+			fuzzyCompare(rim.width * rim.scale, Math.ceil(shiny.width * 1.15 / 64) * 64 / 1.15, 0.01);
+			const img = grabImage(host);
+			const edge = img.pixel(shiny.x + 13 + 100, shiny.y + 35);
+			verify(lum(edge) > 0.1, `still lit at 1.15: ${edge}`);
+			Render.scale = 1;
+			wait(50);
+		}
+
+		function test_rimKeepsItsCapacity() {
+			const rim = findChild(shiny, "rim");
+			wait(100);
+			const before = rim.width;
+			verify(before >= shiny.width && before % 64 === 0, `rounded up to 64: ${before}`);
+			shiny.pillWidth = 210;
+			wait(50);
+			compare(rim.width, before, "a small resize reuses the canvas");
 			shiny.pillWidth = 200;
 		}
 

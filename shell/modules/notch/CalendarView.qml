@@ -219,7 +219,8 @@ Item {
 			}
 			onWheel: wheel => {
 				wheel.accepted = true;
-				if (root.pickingMonth)
+				// Bloom ignores the wheel only over the picker's own fields.
+				if (root.pickingMonth && (wheel.y < header.height || root._monthListOpen))
 					return;
 				const dx = -wheel.angleDelta.x, dy = -wheel.angleDelta.y;
 				const delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;

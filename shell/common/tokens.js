@@ -406,7 +406,6 @@ var cc = {
 var calendar = {
 	padding: 16, gap: 16, topMargin: 1, bottomRadius: 28, // .calendar-timer-content.split-view
 	columns: [1.2, 1], // .calendar-column flex 1.2, .timer-column flex 1
-	month: { text: 13, opacity: 0.9, below: 8 }, // .month-year, .calendar-header margin
 	header: { height: 24, below: 8, gap: 4, heading: 12, radius: 5, buttonPad: 3, minButton: 20, glyph: 13, today: 34, todayText: 9, todayOpacity: 0.65 }, // .calendar-header and its buttons
 	nav: { width: 46, button: 22, fadeMs: 120 }, // .calendar-navigation
 	picker: { gap: 2, text: 11, year: 49, option: 20 }, // .calendar-month-picker
