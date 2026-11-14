@@ -61,6 +61,7 @@ Item {
 		root._monthListOpen = false;
 		root.pickingMonth = true;
 		yearField.forceActiveFocus();
+		yearField.selectAll();
 	}
 
 	function closeMonthPicker() {
@@ -189,6 +190,9 @@ Item {
 		HoverHandler { id: columnHover }
 
 		Keys.onPressed: event => {
+			// Bloom ignores the keys while you type in the picker.
+			if (root.pickingMonth)
+				return;
 			if (event.key === Qt.Key_PageUp || event.key === Qt.Key_PageDown) {
 				root.changeMonth((event.key === Qt.Key_PageUp ? -1 : 1) * (event.modifiers & Qt.ShiftModifier ? 12 : 1));
 				event.accepted = true;
@@ -203,7 +207,15 @@ Item {
 		MouseArea {
 			anchors.fill: parent
 			acceptedButtons: Qt.LeftButton
-			onPressed: mouse => { calendarColumn.forceActiveFocus(); mouse.accepted = false; }
+			onPressed: mouse => {
+				// Leaving the header closes the picker and keeps the typed year.
+				if (root.pickingMonth) {
+					root.commitYear(yearField.text);
+					root.closeMonthPicker();
+				}
+				calendarColumn.forceActiveFocus();
+				mouse.accepted = false;
+			}
 			onWheel: wheel => {
 				wheel.accepted = true;
 				if (root.pickingMonth)
@@ -229,7 +241,8 @@ Item {
 			Rectangle {
 				id: headingButton
 				visible: !root.pickingMonth
-				width: Math.min(month.implicitWidth + Tokens.calendar.header.buttonPad, todayButton.x - Tokens.calendar.header.gap)
+				// .calendar-heading: flex 1, up to "Today".
+				width: todayButton.x - Tokens.calendar.header.gap
 				height: parent.height
 				radius: Tokens.calendar.header.radius
 				color: headingArea.hovered ? Qt.alpha(root.theme.text, 0.12) : "transparent"
@@ -305,6 +318,10 @@ Item {
 					font.pixelSize: Fonts.px(Tokens.calendar.picker.text)
 					font.weight: Font.DemiBold
 					onEditingFinished: root.commitYear(yearField.text)
+					onActiveFocusChanged: if (!activeFocus && root.pickingMonth) {
+						root.commitYear(yearField.text);
+						root.closeMonthPicker();
+					}
 					Keys.onReturnPressed: { root.commitYear(yearField.text); root.closeMonthPicker(); }
 					Keys.onEnterPressed: { root.commitYear(yearField.text); root.closeMonthPicker(); }
 					Keys.onEscapePressed: root.closeMonthPicker()
@@ -339,7 +356,8 @@ Item {
 				id: todayButton
 				objectName: "todayButton"
 				visible: !root._isCurrentMonth
-				x: monthNav.x - Tokens.calendar.header.gap - width
+				// The arrows leave while picking, so "Today" ends the row.
+				x: root.pickingMonth ? parent.width - width : monthNav.x - Tokens.calendar.header.gap - width
 				width: Tokens.calendar.header.today
 				height: parent.height
 				radius: Tokens.calendar.header.radius

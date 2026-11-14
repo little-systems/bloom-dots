@@ -213,16 +213,11 @@ Item {
 			const year = part(cal, "yearField");
 			compare(year.text, "2026");
 			compare(year.width, 49);
-			year.forceActiveFocus();
-			year.selectAll();
 			keyClick(Qt.Key_1); keyClick(Qt.Key_9); keyClick(Qt.Key_9); keyClick(Qt.Key_9);
 			keyClick(Qt.Key_Return);
 			compare(Array.from(months.signalArguments[0]), [1999, 9]);
 			verify(!part(cal, "monthPicker").visible, "Enter closes the picker");
 			mouseClick(part(cal, "month"));
-			const y2 = part(cal, "yearField");
-			y2.forceActiveFocus();
-			y2.selectAll();
 			keyClick(Qt.Key_5); keyClick(Qt.Key_0);
 			keyClick(Qt.Key_Return);
 			compare(months.count, 1, "year 50 is out of range");
@@ -230,6 +225,41 @@ Item {
 			mouseClick(part(cal, "month"));
 			keyClick(Qt.Key_Escape);
 			verify(!part(cal, "monthPicker").visible);
+		}
+
+		function test_typingReplacesTheYear() {
+			mouseClick(part(cal, "month"));
+			keyClick(Qt.Key_1); keyClick(Qt.Key_9); keyClick(Qt.Key_9); keyClick(Qt.Key_9);
+			keyClick(Qt.Key_Return);
+			compare(Array.from(months.signalArguments[0]), [1999, 9]);
+		}
+
+		function test_clickingAwayClosesThePicker() {
+			mouseClick(part(cal, "month"));
+			keyClick(Qt.Key_2); keyClick(Qt.Key_0); keyClick(Qt.Key_3); keyClick(Qt.Key_0);
+			mouseClick(part(cal, "day-10"));
+			verify(!part(cal, "monthPicker").visible, "a click in the grid closes it");
+			compare(Array.from(months.signalArguments[0]), [2030, 9], "and keeps the typed year");
+			mouseClick(part(cal, "month"));
+			mouseClick(part(cal, "clock"));
+			verify(!part(cal, "monthPicker").visible, "opening the timer editor closes it");
+			verify(cal.editing);
+		}
+
+		function test_pageKeysIgnoredWhilePicking() {
+			mouseClick(part(cal, "month"));
+			keyClick(Qt.Key_PageUp, Qt.ShiftModifier);
+			compare(months.count, 0);
+		}
+
+		function test_headerLayoutWhilePicking() {
+			const header = part(cal, "calendarHeader");
+			const today = part(cal, "todayButton");
+			cal.viewMonth = 11;
+			fuzzyCompare(part(cal, "month").parent.width, today.x - 4, 0.01);
+			mouseClick(part(cal, "month"));
+			fuzzyCompare(today.x, header.width - 34, 0.01);
+			fuzzyCompare(part(cal, "monthPicker").width, header.width - 34 - 4, 0.01);
 		}
 
 		function test_monthListChoosesMonth() {
