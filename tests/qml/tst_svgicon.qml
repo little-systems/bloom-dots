@@ -12,6 +12,7 @@ Item {
 	SvgIcon { id: red; name: "sun"; color: "#ff0000"; size: 24 }
 	SvgIcon { id: thick; x: 30; name: "cpu"; color: "white"; size: 24; strokeWidth: 2.2 }
 	Component { id: missingComponent; SvgIcon { name: "no-such-icon" } }
+	Component { id: probeComponent; SvgIcon { name: "sun" } }
 
 	// Bloom's muted icons: white at 0.6 (the theme's textMuted).
 	SvgIcon { id: muted; x: 56; name: "plus"; color: Qt.rgba(1, 1, 1, 0.6); size: 24 }
@@ -40,6 +41,15 @@ Item {
 
 		function test_strokeWidthIsApplied() {
 			verify(thick.source.toString().indexOf(encodeURIComponent('stroke-width="2.2"')) > 0);
+		}
+
+		// Every icon the Bloom 3.10.2 port names (calendar header, Command
+		// Center sliders, settings rows) is in the generated set.
+		function test_portIconsExist() {
+			for (const name of ["check", "chevron-left", "chevron-right", "volume", "volume-1", "volume-2", "volume-x", "sun-dim", "sun-medium", "sun", "sparkles", "layers", "calendar"]) {
+				const icon = createTemporaryObject(probeComponent, host, { name: name });
+				verify(icon.source.toString() !== "", name);
+			}
 		}
 
 		function test_unknownIconIsEmpty() {

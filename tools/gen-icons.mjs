@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const ICONS = [
-	"sun", "sun-dim", "volume", "volume-1", "volume-x", "moon", "cloud", "cloud-fog", "cloud-drizzle", "cloud-rain", "cloud-snow", "cloud-lightning", "thermometer",
+	"sun", "sun-dim", "check", "volume", "volume-1", "volume-x", "moon", "cloud", "cloud-fog", "cloud-drizzle", "cloud-rain", "cloud-snow", "cloud-lightning", "thermometer",
 	"cpu", "memory-stick", "hard-drive", "arrow-up-down", "search", "sliders-horizontal",
 	"chevron-left", "chevron-right", "x", "wifi", "wifi-off", "bluetooth", "volume-2",
 	"calendar-days", "timer", "folder", "usb", "mic", "screen-share", "bell-off", "bell", "rotate-ccw", "lock-keyhole", "monitor-smartphone", "laptop",
