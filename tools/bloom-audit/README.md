@@ -2,6 +2,8 @@
 
 These run Bloom's own React UI (the Windows app, `~/Projects/bloom` @ b5fb962) in a headless browser to measure it and record it. Nothing here ships.
 
+The last ported upstream commit is `cd04ac9` (Bloom v3.10.2 + 2; `docs/specs/2026-11-14-upstream-3.10.2-port-design.md`). Port the next release by diffing upstream from there.
+
 ## Setup
 
 1. Copy the fork without `.git`, `src-tauri`, `node_modules` and `website`. Then run `npm install` in the copy.
