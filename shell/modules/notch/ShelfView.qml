@@ -29,6 +29,9 @@ Item {
 	signal activated(int index)
 	signal filesDropped(var paths)
 	signal textDropped(string text)
+	property bool acceptsDrops: true
+	signal fileDragStarted()
+	signal fileDragFinished()
 
 	readonly property real _tileWidth: 116
 	readonly property real _gap: 8
@@ -61,6 +64,7 @@ Item {
 	Component.onCompleted: root._sync()
 
 	DropArea {
+		enabled: root.acceptsDrops
 		anchors.fill: parent
 		onDropped: drop => {
 			if (drop.urls.length) {
@@ -220,6 +224,7 @@ Item {
 
 							Text {
 								objectName: "body"
+								textFormat: Text.PlainText
 								width: parent.width
 								height: parent.height
 								text: !tile.item ? "" : tile.item.kind === "text" ? root._collapse(tile.item.value) : root._collapse(tile.preview ? tile.preview.text : "")
@@ -271,6 +276,7 @@ Item {
 					// .shelf-tile-name
 					Text {
 						objectName: "caption"
+						textFormat: Text.PlainText
 						x: 6
 						y: 94
 						width: 104
@@ -287,18 +293,21 @@ Item {
 						id: dragProxy
 						width: tile.width
 						height: tile.height
-						Drag.active: tileArea.drag.active
+						readonly property bool bloomShelfDrag: true
+						Drag.active: tileArea.drag.active && tile.item?.kind === "file"
 						Drag.dragType: Drag.Automatic
-						Drag.supportedActions: Qt.CopyAction
-						Drag.mimeData: !tile.item ? ({}) : tile.item.kind === "file"
-							? ({ "text/uri-list": Logic.fileUrl(tile.item.value) }) : ({ "text/plain": tile.item.value })
+						Drag.supportedActions: Qt.CopyAction | Qt.MoveAction
+						Drag.mimeData: ({ "text/uri-list": tile.item?.kind === "file" ? Logic.fileUrl(tile.item.value) + "\r\n" : "" })
+						Drag.onDragStarted: root.fileDragStarted()
+						Drag.onDragFinished: _ => root.fileDragFinished()
 					}
 					MouseArea {
 						id: tileArea
 						anchors.fill: parent
 						enabled: !tile.leaving
 						cursorShape: Qt.PointingHandCursor
-						drag.target: dragProxy
+						drag.target: tile.item?.kind === "file" ? dragProxy : null
+						drag.threshold: 6
 						onClicked: if (tile.slot >= 0) root.activated(tile.slot)
 						onReleased: { dragProxy.x = 0; dragProxy.y = 0; }
 					}
@@ -345,13 +354,35 @@ Item {
 			radius: 3
 			color: Qt.rgba(root.theme.text.r, root.theme.text.g, root.theme.text.b, 0.08)
 
+			MouseArea {
+				id: scrollDrag
+				anchors.fill: parent
+				anchors.topMargin: -3
+				anchors.bottomMargin: -3
+				hoverEnabled: true
+				cursorShape: Qt.PointingHandCursor
+				property real offset: 0
+				function position(x) {
+					const travel = width - barThumb.width;
+					if (travel <= 0) return;
+					strip.contentX = Math.max(0, Math.min(1, (x - offset) / travel))
+						* Math.max(0, strip.contentWidth - strip.width);
+				}
+				onPressed: event => {
+					strip.cancelFlick();
+					offset = event.x >= barThumb.x && event.x <= barThumb.x + barThumb.width
+						? event.x - barThumb.x : barThumb.width / 2;
+					position(event.x);
+				}
+				onPositionChanged: event => { if (pressed) position(event.x); }
+			}
 			Rectangle {
+				id: barThumb
 				x: strip.visibleArea.xPosition * parent.width
 				width: strip.visibleArea.widthRatio * parent.width
 				height: parent.height
 				radius: 3
-				color: Qt.rgba(root.theme.text.r, root.theme.text.g, root.theme.text.b, barHover.hovered ? 0.55 : 0.35)
-				HoverHandler { id: barHover }
+				color: Qt.rgba(root.theme.text.r, root.theme.text.g, root.theme.text.b, scrollDrag.containsMouse || scrollDrag.pressed ? 0.55 : 0.35)
 			}
 		}
 	}

@@ -6,12 +6,12 @@
 // Like the Dynamic Island, the collapsed pill shows one live activity: music
 // while a session is live (and for 5 s after it pauses), else the clock.
 function collapsedMode(s) {
-	return s.enabled && s.compactNotch && s.hasMedia && s.activityVisible ? "music" : "status";
+	return !s.timerActive && s.enabled && s.compactNotch && s.hasMedia && s.activityVisible ? "music" : "status";
 }
 
 // A session that faded from the pill stays reachable by hovering it.
 function musicOnStatusHover(s) {
-	return !s.open && s.hovered && s.mode === "status" && s.enabled && s.hasMedia && (!s.activityVisible || !s.compactNotch);
+	return !s.timerActive && !s.open && s.hovered && s.mode === "status" && s.enabled && s.hasMedia && (!s.activityVisible || !s.compactNotch);
 }
 
 // Bloom getDynamicWidth, in its order.

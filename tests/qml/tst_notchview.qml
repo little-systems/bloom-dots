@@ -65,6 +65,47 @@ Item {
 
 		function centre(v) { return { x: 500, y: v.target.height / 2 }; }
 
+		function test_activityBubblesFollowTheTimerAndOpenTheirOwnViews() {
+			const v = make({ media: playing(), shelfCount: 2, albumArtEnabled: false });
+			settle(v);
+			compare(v.collapsedMode, "music");
+			verify(v.stateObject().shelfBubble);
+			verify(!v.stateObject().musicBubble);
+			v.timer = { active: true, seconds: 60, finished: false };
+			compare(v.collapsedMode, "status");
+			verify(v.stateObject().musicBubble);
+			v.compactNotch = false;
+			mouseMove(v, 500, 18);
+			tryCompare(v, "statusHover", true);
+			verify(!v.musicOnHover, "timer keeps the regular hover widgets");
+			compare(v.target.width, 300);
+			v.compactNotch = true;
+			findChild(v, "musicBubble").activated();
+			verify(v.open);
+			verify(!v.stateObject().musicBubble);
+			verify(!v.stateObject().shelfBubble);
+			v.closeForLock();
+			v.userVisible = false;
+			verify(!v.stateObject().shelfBubble);
+			verify(!v.stateObject().musicBubble);
+		}
+
+		function test_shelfDragRestoresPreviousViewAndClosesAfterDrop() {
+			const v = make();
+			settle(v);
+			v.openPanel("calendar");
+			v.shelfDragEnter();
+			compare(v.panel, "shelf");
+			v.shelfDragLeave();
+			compare(v.panel, "calendar");
+			const drops = spy(v, "shelfTextDropped");
+			v.shelfDragEnter();
+			v.shelfDrop([], "selected text");
+			compare(drops.count, 1);
+			compare(v.panel, "shelf");
+			tryCompare(v, "panel", "", 2500);
+		}
+
 		function test_startupDropIn() {
 			const v = make();
 			compare(v.target.y, 250, "parked below before ready");

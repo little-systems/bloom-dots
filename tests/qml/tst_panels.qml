@@ -26,7 +26,7 @@ TestCase {
 		compare(Panels.inset("bluetooth"), 12);
 		compare(Panels.inset("devices"), 12);
 		compare(Panels.inset("command-center"), 14);
-		compare(Panels.inset("shelf"), 12);
+		compare(Panels.inset("shelf"), 0);
 		compare(Panels.inset("calendar"), 0);
 	}
 	// Panels with a field take the keyboard; Bluetooth's asks for a PIN.
@@ -47,6 +47,7 @@ TestCase {
 		compare(Panels.size("devices", 0, 220.4), { width: 350, height: 221 });
 		compare(Panels.size("shelf", 0, 0, 0), { width: 380, height: 130 });
 		compare(Panels.size("shelf", 0, 0, 1), { width: 380, height: 176 });
-		compare(Panels.size("shelf", 0, 0, 2), { width: 380, height: 190 });
+		compare(Panels.size("shelf", 0, 0, 2), { width: 380, height: 176 });
+		compare(Panels.size("shelf", 0, 0, 3), { width: 380, height: 190 });
 	}
 }

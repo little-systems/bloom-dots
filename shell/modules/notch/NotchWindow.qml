@@ -39,6 +39,8 @@ PanelWindow {
 
 	mask: Region {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
+		Region { item: view.shelfBubbleHit }
+		Region { item: view.musicBubbleHit }
 	}
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
@@ -126,6 +128,8 @@ PanelWindow {
 		lastPanel: PanelState.lastPanel
 		rememberPanel: Settings.values["bloom-notch-panel-memory"]
 		shelfCount: ShelfState.items.length
+		onShelfFilesDropped: paths => ShelfState.addFiles(paths)
+		onShelfTextDropped: text => ShelfState.addText(text)
 		privacy: Devices.privacy
 		deviceAlert: Devices.alert
 		enabledPanels: ({ calendar: Settings.values["bloom-calendar-enabled"], "command-center": Settings.values["bloom-notch-command-center-enabled"], devices: Settings.values["bloom-notch-devices-enabled"] })

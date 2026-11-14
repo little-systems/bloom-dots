@@ -28,7 +28,7 @@ function size(panel, calendarRows, devicesHeight, shelfCount) {
 	if (panel === "command-center") return { width: 375, height: 230 };
 	if (panel === "wifi" || panel === "bluetooth") return { width: 375, height: 300 };
 	if (panel === "devices") return { width: 350, height: Math.max(150, Math.min(300, Math.ceil(devicesHeight || 0))) };
-	if (panel === "shelf") return { width: 380, height: shelfCount > 1 ? 190 : shelfCount === 1 ? 176 : 130 };
+	if (panel === "shelf") return { width: 380, height: shelfCount >= 3 ? 190 : shelfCount > 0 ? 176 : 130 };
 	return null;
 }
 
@@ -37,7 +37,7 @@ function size(panel, calendarRows, devicesHeight, shelfCount) {
 // itself 14 × 12) sit inside it; the Command Center uses 14; the calendar
 // lays out edge to edge.
 function inset(panel) {
-	if (panel === "calendar") return 0;
+	if (panel === "calendar" || panel === "shelf") return 0;
 	if (panel === "command-center") return 14;
 	return 12;
 }

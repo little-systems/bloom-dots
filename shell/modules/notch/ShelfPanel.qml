@@ -4,6 +4,7 @@ import qs.services
 // The shelf panel: binds ShelfView to the shelf service.
 ShelfView {
 	theme: Theme
+	acceptsDrops: false
 	items: ShelfState.items
 	previews: ShelfState.previews
 	newIds: ShelfState.newIds

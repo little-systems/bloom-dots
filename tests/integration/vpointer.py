@@ -3,7 +3,7 @@
 Usage: vpointer.py W H x y wheel|touch N   (run with the test WAYLAND_DISPLAY)
        vpointer.py W H x y hover MILLISECONDS
        vpointer.py W H x y click 1
-       vpointer.py W H x y drag DX
+       vpointer.py W H x y drag DX [DY]
 Moves to x,y, waits, then scrolls or drags horizontally by DX screen pixels."""
 import os, socket, struct, sys, time
 
@@ -67,8 +67,9 @@ if mode == "drag":
     w.send(vp, 2, struct.pack("<III", t(), 272, 1))
     w.send(vp, 4)
     time.sleep(0.15)
+    dy = int(sys.argv[7]) if len(sys.argv) > 7 else 0
     for step in range(1, 41):
-        w.send(vp, 1, struct.pack("<IIIII", t(), round(x + 1 + n * step / 40), y, W_, H))
+        w.send(vp, 1, struct.pack("<IIIII", t(), round(x + 1 + n * step / 40), round(y + dy * step / 40), W_, H))
         w.send(vp, 4)
         time.sleep(0.025)
     w.send(vp, 2, struct.pack("<III", t(), 272, 0))

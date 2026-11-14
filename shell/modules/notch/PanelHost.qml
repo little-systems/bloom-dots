@@ -18,6 +18,8 @@ Item {
 	signal nextRequested()
 	signal previousRequested()
 	signal subpanelRequested(string name)
+	signal shelfDragStarted()
+	signal shelfDragFinished()
 	readonly property int calendarRowCount: root.panel === "calendar" ? (content.item?.rows ?? 5) : 5
 	// The open panel is being typed into (it says so with `pinned`).
 	readonly property bool pinned: content.item?.pinned ?? false
@@ -79,6 +81,8 @@ Item {
 		target: content.item
 		ignoreUnknownSignals: true
 		function onSubpanelRequested(name) { root.subpanelRequested(name); }
+		function onFileDragStarted() { root.shelfDragStarted(); }
+		function onFileDragFinished() { root.shelfDragFinished(); }
 	}
 	Text {
 		anchors.centerIn: content

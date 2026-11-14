@@ -8,6 +8,7 @@ import "notch.js" as Logic
 import "music.js" as Music
 import "pulses.js" as Pulses
 import "panels.js" as Panels
+import "shelf.js" as Shelf
 import "../../common/render"
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
@@ -80,6 +81,59 @@ Item {
 	// How far the open panel's list is scrolled.
 	property real panelScroll: 0
 	property int shelfCount: 0
+	signal shelfFilesDropped(var paths)
+	signal shelfTextDropped(string text)
+	property bool _shelfDragOpened: false
+	property bool _shelfDraggingOut: false
+	property bool _shelfDroppedHere: false
+	property string _beforeShelfPanel: ""
+	property bool _beforeShelfMusic: false
+	readonly property Item shelfBubbleHit: shelfBubble.hitEnabled ? shelfBubble : null
+	readonly property Item musicBubbleHit: musicBubble.hitEnabled ? musicBubble : null
+	readonly property bool _showActivities: root.ready && root.expanded && root.surfaceVisible && !root.hidden
+		&& !root.open && root.panel === ""
+	readonly property bool _showShelfBubble: root._showActivities && root.shelfCount > 0
+	readonly property bool _showMusicBubble: root._showActivities && root.timer.active && root.musicEnabled
+		&& root.compactNotch && root.media.hasMedia && root.musicActivityVisible
+
+	function shelfDragEnter() {
+		if (root._shelfDraggingOut || root.panel === "shelf" || root.alertVisible) return;
+		scriptedPanelClose.stop();
+		root._beforeShelfPanel = root.panel;
+		if (root.hidden) root.edgeArmed = true;
+		root._beforeShelfMusic = root.open;
+		root._shelfDragOpened = true;
+		root.openPanel("shelf");
+	}
+	function shelfDragLeave() {
+		if (!root._shelfDragOpened) return;
+		root._shelfDragOpened = false;
+		root.edgeArmed = false;
+		if (root.panel !== "shelf") return;
+		if (root._beforeShelfMusic) root.openMusic();
+		else if (root._beforeShelfPanel) root.openPanel(root._beforeShelfPanel);
+		else root.closePanel();
+	}
+	function shelfDrop(paths, text) {
+		root._shelfDragOpened = false;
+		root._shelfDroppedHere = root._shelfDraggingOut;
+		root.edgeArmed = false;
+		scriptedPanelClose.stop();
+		if (paths.length) root.shelfFilesDropped(paths);
+		else if (text) root.shelfTextDropped(text);
+		else return;
+		if (!root.alertVisible) {
+			root.openPanel("shelf");
+			shelfCollapse.restart();
+		}
+	}
+	onShelfCountChanged: if (root.shelfCount === 0 && root.panel === "shelf" && !root._shelfDragOpened)
+		root.openPanel("")
+	Timer {
+		id: shelfCollapse
+		interval: 1800
+		onTriggered: if (root.panel === "shelf") root.closePanel()
+	}
 	property var privacy: ({ microphone: false, screen: false })
 	property var deviceAlert: null
 	signal deviceAlertDismissed()
@@ -99,10 +153,11 @@ Item {
 		root.open = false;
 		root.panel = choice;
 		if (Panels.ORDER.indexOf(choice) >= 0 && root.rememberPanel) root.panelRemembered(choice);
-		if (!root.pillHovered) scriptedPanelClose.restart();
+		if (!root.pillHovered && !root._shelfDragOpened) scriptedPanelClose.restart();
 		return "ok";
 	}
 	function closePanel() {
+		shelfCollapse.stop();
 		if (root.panel !== "") panelLinger.restart();
 		root.panel = "";
 		scriptedPanelClose.stop();
@@ -146,12 +201,12 @@ Item {
 	property bool musicActivityVisible: false
 	property bool volumeExpanded: false
 	readonly property string collapsedMode: Music.collapsedMode({
-		enabled: root.musicEnabled, compactNotch: root.compactNotch,
+		enabled: root.musicEnabled, compactNotch: root.compactNotch, timerActive: root.timer.active,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible
 	})
 	readonly property string bloomMode: root.panel || (root.alertVisible ? "device-alert" : root.open ? "music" : root.collapsedMode)
 	readonly property bool musicOnHover: Music.musicOnStatusHover({
-		open: root.open, hovered: root.statusHover, mode: root.bloomMode, enabled: root.musicEnabled,
+		open: root.open, hovered: root.statusHover, mode: root.bloomMode, enabled: root.musicEnabled, timerActive: root.timer.active,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible, compactNotch: root.compactNotch
 	})
 	// Bloom showCompactMusicIcons: the collapsed row shows music, not widgets.
@@ -194,7 +249,7 @@ Item {
 			})
 		}))
 
-	readonly property Item hitItem: pillArea
+	readonly property Item hitItem: root._shelfDragOpened ? shelfDropArea : pillArea
 	readonly property Item bandItem: band
 	// A fullscreen app on this monitor: the top edge is the app's (Bloom drops
 	// its edge input while a fullscreen window is in front).
@@ -351,7 +406,7 @@ Item {
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, deviceAlert: root.deviceAlert,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, shelfBubble: root._showShelfBubble && !root.alertVisible, musicBubble: root._showMusicBubble, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
@@ -400,8 +455,10 @@ Item {
 	// An open player counts too, so a hidden notch shows while it is open.
 	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked
 		&& !(root.mode === "smart" && root.suppressed)
-		&& (root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
+		&& (root._shelfDragOpened || root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
 	function closeForLock() {
+		root._shelfDragOpened = false;
+		root._shelfDraggingOut = false;
 		root.closePanel();
 		root.open = false;
 		root.edgeArmed = false;
@@ -438,22 +495,24 @@ Item {
 	// After an edge reveal the pill takes over once the pointer reaches it; if
 	// it never does (no movement), the reveal lets go after the hand-off time.
 	onBandActiveChanged: if (!root.bandActive && root.edgeArmed) handoff.restart()
+	Timer { id: activityHandoff; interval: 400 }
 	onPillHoveredChanged: {
 		if (root.pillHovered) {
+			shelfCollapse.stop();
 			handoff.stop();
 			scriptedClose.stop();
 			scriptedPanelClose.stop();
 			root.edgeArmed = false;
-		} else {
+		} else if (!activityHandoff.running) {
 			root.open = false;
 			// Bloom's handleMouseLeave: a panel closes as the pointer leaves,
 			// unless it's being typed into; then it closes once released.
-			if (root.panel !== "" && !root.panelPinned) root.closePanel();
+			if (root.panel !== "" && !root.panelPinned && !root._shelfDragOpened && !root._shelfDraggingOut && !shelfCollapse.running) root.closePanel();
 		}
 	}
 	// A panel being typed into (a Wi-Fi password) holds the notch open.
 	property bool panelPinned: false
-	onPanelPinnedChanged: if (!root.panelPinned && !root.pillHovered && root.panel !== "") root.closePanel()
+	onPanelPinnedChanged: if (!root.panelPinned && !root.pillHovered && root.panel !== "" && root.panel !== "shelf") root.closePanel()
 
 
 	Timer {
@@ -889,6 +948,15 @@ Item {
 				function onSubpanelRequested(name) {
 					root.openPanel(name);
 				}
+				function onShelfDragStarted() {
+					shelfCollapse.stop();
+					root._shelfDraggingOut = true;
+					root._shelfDroppedHere = false;
+				}
+				function onShelfDragFinished() {
+					root._shelfDraggingOut = false;
+					if (!root._shelfDroppedHere) root.closePanel();
+				}
 				function onCalendarRowCountChanged() { root.calendarRows = panelLoader.item?.calendarRowCount ?? 5; }
 			}
 		}
@@ -897,6 +965,65 @@ Item {
 		// doesn't make the notch jitter.
 		readonly property real _needed: Logic.fitWidth(clock.textWidth, leftGroup.implicitWidth, rightGroup.implicitWidth)
 		on_NeededChanged: if (root.statusHover && stage._needed > root.fitWidth) root.fitWidth = stage._needed
+
+		ActivityBubble {
+			id: shelfBubble
+			objectName: "shelfBubble"
+			leading: true
+			shown: root._showShelfBubble && !root.alertVisible
+			x: pillArea.x - width - 8
+			y: pillArea.y + 3
+			color: root.statusHover ? root.bgExpanded : root.bg
+			ink: root.textColor
+			icon: "inbox"
+			label: String(root.shelfCount)
+			description: "Open shelf: " + root.shelfCount + (root.shelfCount === 1 ? " item" : " items")
+			onActivated: { activityHandoff.restart(); root.openPanel("shelf"); }
+		}
+		ActivityBubble {
+			id: musicBubble
+			objectName: "musicBubble"
+			shown: root._showMusicBubble
+			x: pillArea.x + pillArea.width + 8
+			y: pillArea.y + 3
+			color: root.statusHover ? root.bgExpanded : root.bg
+			ink: root.textColor
+			icon: "music"
+			art: root.albumArtEnabled ? root.media.artUrl || "" : ""
+			description: root.media.title ? "Open music: " + root.media.title : "Open music"
+			onActivated: { activityHandoff.restart(); root.openMusic(); }
+		}
+		DropArea {
+			id: shelfDropArea
+			// Keep one target across the morph so Qt retains the drag session.
+			x: root.bandActive ? band.x : Math.min(pillArea.x, root._shelfDragOpened ? band.x : pillArea.x)
+			y: root.bandActive || root._shelfDragOpened ? 0 : pillArea.y
+			width: root.bandActive ? band.width : Math.max(pillArea.width, root._shelfDragOpened ? band.width : 0)
+			height: root.bandActive ? band.height : Math.max(pillArea.height, root._shelfDragOpened ? band.height : 0)
+			enabled: root.surfaceVisible && (!root.hidden || root.bandActive) && !root.suppressed
+			function paths(event) {
+				return (event.urls || []).map(url => Shelf.filePath(url.toString())).filter(Boolean);
+			}
+			onEntered: event => {
+				// Wayland delivers MIME bytes only when dropped.
+				if ((!event.hasUrls && !event.hasText) || !(event.supportedActions & Qt.CopyAction))
+					event.accepted = false;
+				else {
+					event.accept(Qt.CopyAction);
+					root.shelfDragEnter();
+				}
+			}
+			onExited: root.shelfDragLeave()
+			onDropped: event => {
+				const files = paths(event);
+				const snippet = event.hasUrls ? "" : event.text;
+				if (files.length || snippet) root.shelfDrop(files, snippet);
+				else root.shelfDragLeave();
+				// The shelf stores a reference; it never moves the source file.
+				if ((files.length || snippet) && (event.supportedActions & Qt.CopyAction))
+					event.accept(Qt.CopyAction);
+			}
+		}
 
 		StatusTooltip {
 			id: tooltip
