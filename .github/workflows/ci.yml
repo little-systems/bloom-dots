@@ -3,7 +3,12 @@ on:
   push:
   pull_request:
 jobs:
-  checks:
+  suite:
+    name: ${{ matrix.group }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [quick, qml, integration, cli]
     runs-on: ubuntu-latest
     container: archlinux:latest
     steps:
@@ -16,6 +21,10 @@ jobs:
             libpulse pipewire wireplumber libnotify brightnessctl networkmanager \
             cava playerctl wl-clipboard cliphist libqalculate bluez-utils libsecret \
             qt6ct adwaita-icon-theme
+      - uses: actions/checkout@v4
+      - name: Start integration system bus
+        if: matrix.group == 'integration'
+        run: |
           # Arch's sway binary asks for cap_sys_nice, which the CI container
           # cannot grant. Headless pixman tests do not need that capability.
           setcap -r /usr/bin/sway
@@ -24,40 +33,54 @@ jobs:
           mkdir -p /run/dbus
           dbus-uuidgen --ensure
           dbus-daemon --system --fork
-      - uses: actions/checkout@v4
-      - name: Run all checks
+      - name: Run ${{ matrix.group }} checks
+        env:
+          TEST_GROUP: ${{ matrix.group }}
         run: |
-          for tool in qs patch hyprctl pactl wpctl notify-send brightnessctl nmcli cava grim wtype kitty matugen; do
-            command -v "$tool" >/dev/null || exit 1
-          done
-          # Keep daemon parents in the same step as their consumers and check
-          # bus ownership before spending several minutes on the QML suite.
-          # The container denies D-Bus setuid-helper activation; UPower needs
-          # PolicyKit already running when it initializes its authority.
-          /usr/lib/polkit-1/polkitd --no-debug > /tmp/polkit.log 2>&1 &
-          for attempt in $(seq 1 50); do
-            if busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then break; fi
-            sleep 0.1
-          done
-          if ! busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then
-            cat /tmp/polkit.log
-            exit 1
-          fi
-          /usr/lib/upowerd > /tmp/upower.log 2>&1 &
-          /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
-          for service in org.freedesktop.UPower org.freedesktop.UPower.PowerProfiles; do
-            ready=false
-            for attempt in $(seq 1 50); do
-              if busctl --system status "$service" >/dev/null 2>&1; then ready=true; break; fi
+          if [ "$TEST_GROUP" = integration ]; then
+            for tool in qs patch hyprctl pactl wpctl notify-send brightnessctl nmcli cava grim wtype kitty matugen; do
+              command -v "$tool" >/dev/null || exit 1
+            done
+            # Keep daemon parents in the same step as their consumers and check
+            # bus ownership before starting the integration tests.
+            # The container denies D-Bus setuid-helper activation; UPower needs
+            # PolicyKit already running when it initializes its authority.
+            /usr/lib/polkit-1/polkitd --no-debug > /tmp/polkit.log 2>&1 &
+            for _ in $(seq 1 50); do
+              if busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then break; fi
               sleep 0.1
             done
-            if [ "$ready" != true ]; then
-              cat /tmp/upower.log /tmp/power-profiles.log
+            if ! busctl --system status org.freedesktop.PolicyKit1 >/dev/null 2>&1; then
+              cat /tmp/polkit.log
               exit 1
             fi
-          done
+            /usr/lib/upowerd > /tmp/upower.log 2>&1 &
+            /usr/lib/power-profiles-daemon > /tmp/power-profiles.log 2>&1 &
+            for service in org.freedesktop.UPower org.freedesktop.UPower.PowerProfiles; do
+              ready=false
+              for _ in $(seq 1 50); do
+                if busctl --system status "$service" >/dev/null 2>&1; then ready=true; break; fi
+                sleep 0.1
+              done
+              if [ "$ready" != true ]; then
+                cat /tmp/upower.log /tmp/power-profiles.log
+                exit 1
+              fi
+            done
+          fi
           useradd -m -s /bin/bash ci
           chown -R ci:ci "$GITHUB_WORKSPACE"
           # Qt's generic headless platform theme has no filesystem icon search
           # paths. Give themed-icon tests an explicit provider and icon set.
-          runuser -u ci -- env CI=true LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Adwaita GITHUB_WORKSPACE="$GITHUB_WORKSPACE" bash -c 'cd "$GITHUB_WORKSPACE" && tests/run-all.sh'
+          runuser -u ci -- env CI=true LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe QT_QPA_PLATFORMTHEME=qt6ct QS_ICON_THEME=Adwaita "$GITHUB_WORKSPACE/tests/run-all.sh" "$TEST_GROUP"
+
+  # Keep the existing status check name for branch protection.
+  checks:
+    runs-on: ubuntu-latest
+    needs: suite
+    if: ${{ always() }}
+    steps:
+      - name: Require every test group to pass
+        env:
+          SUITE_RESULT: ${{ needs.suite.result }}
+        run: test "$SUITE_RESULT" = success
