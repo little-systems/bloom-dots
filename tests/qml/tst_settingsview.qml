@@ -21,7 +21,7 @@ Item {
 	}
 	readonly property var defaults: ({
 		"bloom-lock-media-enabled": true,
-		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-corners-enabled": true, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
+		"bloom-show-update-indicator": true, "bloom-reduce-motion": false, "bloom-corners-enabled": true, "bloom-edge-shine-enabled": true, "bloom-calendar-monday-first": false, "bloom-dock-show-background-apps": true, "bloom-night-light": false, "bloom-night-temperature": 4500, "bloom-translate-to": "en", "bloom-timer-sound-enabled": true, "bloom-battery-sound-enabled": true, "bloom-font-family": "", "bloom-ai-model": "gemini-2.5-flash",
 		"bloom-osd-timeout": 2000, "bloom-volume-protection-enabled": false, "bloom-volume-max-jump": 10, "bloom-volume-max-level": 99,
 		"bloom-notifications-dnd": false, "bloom-notifications-timeout": 2500, "bloom-notifications-history-limit": 200,
 		"bloom-media-visualizer-enabled": true, "bloom-media-album-art-enabled": true, "bloom-time-format-24h": false, "bloom-low-power": "off",
@@ -261,6 +261,14 @@ Item {
 			verify(part(v, "screenCorners").checked, "on by default");
 			click(v, "screenCorners");
 			compare(fakeStore.sets, [["bloom-corners-enabled", false]]);
+		}
+
+		function test_edgeShineToggle() {
+			const v = make("appearance");
+			reveal(v, "edgeShine");
+			verify(part(v, "edgeShine").checked, "on by default");
+			click(v, "edgeShine");
+			compare(fakeStore.sets, [["bloom-edge-shine-enabled", false]]);
 		}
 
 		function test_sliderSnapsToSteps() {

@@ -157,6 +157,10 @@ var ROWS = [
 		"tab": "appearance"
 	},
 	{
+		"label": "Edge shine",
+		"tab": "appearance"
+	},
+	{
 		"label": "Screen Corners",
 		"tab": "appearance"
 	},

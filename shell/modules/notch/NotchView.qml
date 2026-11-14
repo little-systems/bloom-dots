@@ -31,6 +31,8 @@ Item {
 	property color bg: Qt.rgba(0, 0, 0, 0.8)
 	property color bgExpanded: Qt.rgba(0, 0, 0, 0.92)
 	property color textColor: "white"
+	// bloom-edge-shine-enabled: the reflective rim around the notch.
+	property bool edgeShine: false
 	property color textMuted: Qt.rgba(1, 1, 1, 0.6)
 	property var now: new Date()
 	property var weather: ({ shown: false, label: "", icon: "thermometer", tooltip: "" })
@@ -534,6 +536,8 @@ Item {
 				edgeRadius: rS.value
 				farRadius: farS.value
 				flares: root.impacted
+				reflective: root.edgeShine
+				edgeColor: root.textColor
 				color: root.statusHover || root.open || root.panel !== "" || root.alertVisible ? root.bgExpanded : root.bg
 				Behavior on color {
 					ColorAnimation {

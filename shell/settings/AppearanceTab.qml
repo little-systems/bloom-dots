@@ -79,6 +79,10 @@ Column {
 	SGroup {
 		theme: root.theme
 		SRow {
+			theme: root.theme; icon: "sparkles"; label: "Edge shine"; desc: "Soft reflections around the dock and notch. Turn off if animations feel less smooth."
+			SToggle { objectName: "edgeShine"; accessibleName: "Edge shine"; theme: root.theme; checked: root.store.values["bloom-edge-shine-enabled"]; onToggled: value => root.store.set("bloom-edge-shine-enabled", value) }
+		}
+		SRow {
 			theme: root.theme; icon: "square"; label: "Screen Corners"; desc: "Rounded corners, hidden over fullscreen"; divider: false
 			SToggle { objectName: "screenCorners"; accessibleName: "Screen Corners"; theme: root.theme; checked: root.store.values["bloom-corners-enabled"]; onToggled: value => root.store.set("bloom-corners-enabled", value) }
 		}

@@ -44,6 +44,8 @@ Item {
 	property color textMuted: Qt.rgba(1, 1, 1, 0.6)
 	property color accent: "#007aff"
 	property color textColor: "white"
+	// bloom-edge-shine-enabled: the reflective rim around the dock.
+	property bool edgeShine: false
 	property color tooltipBg: Qt.rgba(0, 0, 0, Tokens.dock.tooltip.alpha)
 	property color tooltipText: "white"
 	property color tooltipBorder: "transparent"
@@ -432,6 +434,8 @@ Item {
 				edgeRadius: edgeR.value
 				farRadius: farR.value
 				flares: root.expanded && !root.hidden
+				reflective: root.edgeShine
+				edgeColor: root.textColor
 				color: root.bg
 			}
 		}

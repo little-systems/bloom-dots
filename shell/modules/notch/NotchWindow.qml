@@ -143,6 +143,7 @@ PanelWindow {
 		bg: Theme.bg
 		bgExpanded: Theme.bgExpanded
 		textColor: Theme.text
+		edgeShine: Settings.values["bloom-edge-shine-enabled"] !== false
 		textMuted: Theme.textMuted
 		weather: ({ shown: Weather.shown, label: Weather.label, icon: Weather.icon, tooltip: Weather.tooltip })
 		battery: ({ available: Battery.available, ready: Battery.ready, level: Battery.level, charging: Battery.charging, pluggedIn: Battery.pluggedIn, threshold: Battery.threshold, tooltip: Battery.tooltip })

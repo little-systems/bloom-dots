@@ -4,8 +4,8 @@ import "../../shell/common"
 
 Item {
 	id: host
-	width: 400
-	height: 200
+	width: 500
+	height: 220
 
 	Rectangle { anchors.fill: parent; color: "white" }
 
@@ -30,6 +30,35 @@ Item {
 		color: Qt.rgba(0, 0, 0, 0.8)
 		flares: false
 	}
+
+	EdgeSurface {
+		id: shiny
+		x: 100
+		y: 130
+		edge: "top"
+		pillWidth: 200
+		pillHeight: 36
+		edgeRadius: 0
+		farRadius: 18
+		color: "black"
+		edgeColor: "white"
+		reflective: true
+	}
+
+	// The same surface without the rim, for differences.
+	EdgeSurface {
+		id: plain
+		x: 100
+		y: 175
+		edge: "top"
+		pillWidth: 200
+		pillHeight: 36
+		edgeRadius: 0
+		farRadius: 18
+		color: "black"
+	}
+
+	SignalSpy { id: paints; signalName: "painted" }
 
 	TestCase {
 		name: "EdgeSurface"
@@ -69,6 +98,58 @@ Item {
 		function test_flaresOff() {
 			const img = grabImage(host);
 			verify(Qt.colorEqual(img.pixel(0 + 1, 80 + 2), "white"), "left surface has no flares");
+		}
+
+		function lum(c) { return c.r + c.g + c.b; }
+
+		function test_rimOffByDefault() {
+			const rim = findChild(top, "rim");
+			verify(!rim || !rim.visible, "no rim unless reflective");
+		}
+
+		function test_rimPaintsTheFreeEdge() {
+			wait(100);
+			const img = grabImage(host);
+			const edge = img.pixel(shiny.x + 13 + 100, shiny.y + 35);
+			const inside = img.pixel(shiny.x + 13 + 100, shiny.y + 20);
+			verify(lum(edge) > lum(inside) + 0.1, `edge ${edge} vs fill ${inside}`);
+			compare(lum(inside), 0, "the fill keeps its colour away from the rim");
+		}
+
+		function test_rimFadesIntoTheScreenEdge() {
+			wait(100);
+			const img = grabImage(host);
+			const diff = (dx, dy) => Math.abs(lum(img.pixel(shiny.x + dx, shiny.y + dy)) - lum(img.pixel(plain.x + dx, plain.y + dy)));
+			const side = diff(13, 15);
+			let outer = 0;
+			for (let dy = 0; dy < 3; dy++)
+				outer = Math.max(outer, diff(3, dy));
+			verify(side > 0.1, `the pill's side is lit: ${side}`);
+			verify(outer < side * 0.35, `faded near the screen edge: ${outer} vs ${side}`);
+		}
+
+		function test_rimFollowsResize() {
+			shiny.pillWidth = 300;
+			wait(100);
+			const img = grabImage(host);
+			const newEnd = img.pixel(shiny.x + 13 + 290, shiny.y + 35);
+			const oldSide = img.pixel(shiny.x + 13 + 199, shiny.y + 18);
+			verify(lum(newEnd) > 0.1, `lit at the new end: ${newEnd}`);
+			verify(lum(oldSide) < 0.03, `nothing left at the old side: ${oldSide}`);
+			shiny.pillWidth = 200;
+		}
+
+		function test_rimRepaintsOnlyOnChange() {
+			wait(300);
+			paints.target = findChild(shiny, "rim");
+			paints.clear();
+			shiny.pillWidth = 200;
+			shiny.flares = true;
+			wait(50);
+			compare(paints.count, 0, "same geometry, no repaint");
+			shiny.farRadius = 12;
+			tryVerify(() => paints.count > 0);
+			shiny.farRadius = 18;
 		}
 	}
 }
