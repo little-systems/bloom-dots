@@ -196,8 +196,8 @@ Column {
 		height: dhanush.height
 		spacing: 5
 		CreditText { text: "Made with" }
-		// Bloom's red ❤️ emoji: no colour emoji font is installed, so a red heart.
-		CreditText { objectName: "creditHeart"; text: "\u2764\uFE0E"; color: Tokens.settings.about.heart }
+		// Bloom's ❤️, in colour from noto-fonts-emoji (bloom-shell-deps).
+		CreditText { objectName: "creditHeart"; text: "\u2764\uFE0F" }
 		CreditText { text: "by" }
 		AuthorPill { id: dhanush; objectName: "credit:dhanush"; author: "Dhanush"; link: "https://github.com/DhanushSantosh" }
 		CreditText { text: "&" }

@@ -328,6 +328,11 @@ class Phase(Facts):
         self.assertIn("'gnome-keyring'", pkgbuild)
         self.assertIn("'libsecret'", pkgbuild)
 
+    def test_shell_dependencies_include_a_colour_emoji_font(self):
+        # The About credit's ❤️ and the launcher's emoji picker need colour emoji.
+        pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
+        self.assertIn("'noto-fonts-emoji'", pkgbuild)
+
     def test_shell_dependencies_include_the_pulse_server(self):
         # Bloom's audio events use pactl, which needs PipeWire's Pulse server.
         pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text()

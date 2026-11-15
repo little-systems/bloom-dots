@@ -355,7 +355,7 @@ Item {
 			const link = spy(v, "linkRequested");
 			compare(part(v, "credit:dhanush").author, "Dhanush");
 			compare(part(v, "credit:sehaz").author, "Sehaz");
-			verify(Qt.colorEqual(part(v, "creditHeart").color, "#ff453a"), "a red heart, as Bloom's emoji");
+			compare(part(v, "creditHeart").text, "\u2764\uFE0F", "Bloom's colour ❤️ emoji");
 			// Centred on the page, under both the Bloom and the distribution identity.
 			v.sys = { osInfo: { name: "Arch Linux", release: "Rolling release" } };
 			const credit = part(v, "credit"), distro = part(v, "distributionIdentity");
