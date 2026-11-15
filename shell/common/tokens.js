@@ -259,7 +259,7 @@ var settings = {
 	select: { size: 13, radius: 6, paddingV: 4, paddingH: 8, minWidth: 80, itemHeight: 28 },
 	scale: { size: 13, radius: 6, button: 20, value: 60, gap: 8, paddingV: 2, paddingH: 4 },
 	color: { size: 28, gap: 8, text: 13 },
-	about: { padding: [10, 4], top: 14, bottom: 20, logo: 68, logoGap: 14, title: 40, version: 12, credit: 13.5 },
+	about: { padding: [10, 4], top: 14, bottom: 20, logo: 68, logoGap: 14, title: 40, version: 12, credit: 11.5, heart: "#ff453a" },
 	danger: "#ff453a"
 };
 

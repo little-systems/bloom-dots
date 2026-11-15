@@ -349,6 +349,20 @@ Item {
 			compare([exported.count, imported.count], [1, 1]);
 		}
 
+		// Bloom's "Made with ❤️ by" credit, both authors linked to GitHub.
+		function test_aboutCreditsLinkToTheAuthors() {
+			const v = make("about");
+			const link = spy(v, "linkRequested");
+			compare(part(v, "credit:dhanush").author, "Dhanush");
+			compare(part(v, "credit:sehaz").author, "Sehaz");
+			verify(Qt.colorEqual(part(v, "creditHeart").color, "#ff453a"), "a red heart, as Bloom's emoji");
+			click(v, "credit:dhanush");
+			click(v, "credit:sehaz");
+			compare(link.count, 2);
+			compare(String(link.signalArguments[0][0]), "https://github.com/DhanushSantosh");
+			compare(String(link.signalArguments[1][0]), "https://github.com/SehajveerSingh2005");
+		}
+
 		function test_aboutSystemMetadataOmitsUnavailableFields() {
 			const v = make("about");
 			v.sys = { osInfo: { name: "Arch Linux", release: "Rolling release" }, kernel: "7.0-fixture", architecture: "x86_64" };

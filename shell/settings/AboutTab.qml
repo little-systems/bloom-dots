@@ -29,6 +29,54 @@ Column {
 	property string importLabel: "Import Settings"
 	signal exportRequested()
 	signal importRequested()
+	signal linkRequested(url link)
+
+	// Bloom .about-author: a GitHub pill that turns the accent colour on hover.
+	component AuthorPill: Rectangle {
+		id: pill
+		required property string author
+		required property url link
+		readonly property color ink: pillHover.hovered ? (root.theme.accent ?? "#0a84ff") : root.theme.text
+		anchors.verticalCenter: parent.verticalCenter
+		width: pillContent.implicitWidth + 14
+		height: pillContent.implicitHeight + 4
+		radius: height / 2
+		color: pillHover.hovered ? root.theme.border : root.theme.groupBg
+		Behavior on color { ColorAnimation { duration: 150 } }
+		Accessible.role: Accessible.Link
+		Accessible.name: pill.author + " on GitHub"
+		Row {
+			id: pillContent
+			anchors.centerIn: parent
+			spacing: 4
+			SvgIcon {
+				anchors.verticalCenter: parent.verticalCenter
+				name: "bloom-github"
+				size: 12
+				color: pill.ink
+				opacity: pillHover.hovered ? 1 : 0.65
+				Behavior on opacity { NumberAnimation { duration: 150 } }
+			}
+			Text {
+				anchors.verticalCenter: parent.verticalCenter
+				text: pill.author
+				color: pill.ink
+				font.family: Fonts.uiFor(Font.DemiBold)
+				font.pixelSize: Fonts.px(Tokens.settings.about.credit)
+				font.weight: Font.DemiBold
+			}
+		}
+		HoverHandler { id: pillHover; cursorShape: Qt.PointingHandCursor }
+		TapHandler { onTapped: root.linkRequested(pill.link) }
+	}
+
+	component CreditText: Text {
+		anchors.verticalCenter: parent.verticalCenter
+		color: root.theme.textMuted
+		font.family: Fonts.ui
+		font.pixelSize: Fonts.px(Tokens.settings.about.credit)
+		font.letterSpacing: 0.01 * Tokens.settings.about.credit
+	}
 
 	x: Tokens.settings.about.padding[1]
 	width: parent.width - 2 * Tokens.settings.about.padding[1]
@@ -85,6 +133,21 @@ Column {
 					font.letterSpacing: 0.08 * Tokens.settings.about.version
 					font.capitalization: Font.AllUppercase
 				}
+			}
+			Item { width: 1; height: 14 }
+			// Bloom .about-credit: "Made with ❤️ by" and the authors' GitHub pills.
+			Row {
+				objectName: "credit"
+				x: (parent.width - width) / 2
+				height: dhanush.height
+				spacing: 5
+				CreditText { text: "Made with" }
+				// Bloom's red ❤️ emoji: no colour emoji font is installed, so a red heart.
+				CreditText { objectName: "creditHeart"; text: "\u2764\uFE0E"; color: Tokens.settings.about.heart }
+				CreditText { text: "by" }
+				AuthorPill { id: dhanush; objectName: "credit:dhanush"; author: "Dhanush"; link: "https://github.com/DhanushSantosh" }
+				CreditText { text: "&" }
+				AuthorPill { objectName: "credit:sehaz"; author: "Sehaz"; link: "https://github.com/SehajveerSingh2005" }
 			}
 		}
 

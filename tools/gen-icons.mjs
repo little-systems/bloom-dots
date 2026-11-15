@@ -43,7 +43,8 @@ for (const name of SF) {
 
 // Bloom's own Command Center icons, see third_party/bloom-icons/README.md.
 const BLOOM = [
-	"wifi", "bluetooth", "dock", "notch", "moon", "battery-saver", "tray", "bell", "settings", "reload", "brightness-low", "sun"
+	"wifi", "bluetooth", "dock", "notch", "moon", "battery-saver", "tray", "bell", "settings", "reload", "brightness-low", "sun",
+	"github"
 ];
 for (const name of BLOOM) {
 	const raw = readFileSync(new URL(`third_party/bloom-icons/${name}.svg`, root), "utf8");

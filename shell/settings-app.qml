@@ -150,6 +150,7 @@ ShellRoot {
 			onRestartRequested: app.run(["systemctl", "--user", "restart", "bloom-shell"])
 			onQuitRequested: app.run(["systemctl", "--user", "stop", "bloom-shell"])
 			onExportRequested: if (!exportCopy.running) app.openExport()
+			onLinkRequested: link => Qt.openUrlExternally(link)
 			onImportRequested: if (app.importLabel !== "Importing…" && !importFile.running) importDialog.open()
 			onColorRequested: colorDialog.open()
 			cityResults: app.cityResults

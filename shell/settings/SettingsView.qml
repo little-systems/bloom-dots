@@ -46,6 +46,7 @@ Rectangle {
 	signal restartRequested()
 	signal quitRequested()
 	signal exportRequested()
+	signal linkRequested(url link)
 	signal importRequested()
 	signal colorRequested()
 
@@ -529,6 +530,7 @@ Rectangle {
 		AboutTab {
 			theme: root.theme; version: root.version; osInfo: root.sys?.osInfo ?? ({}); distroLogo: root.sys?.distroLogo ?? ""; kernel: root.sys?.kernel ?? ""; architecture: root.sys?.architecture ?? ""; hostname: root.sys?.hostname ?? ""; cpu: root.sys?.cpu ?? ""; memory: root.sys?.memory ?? ""; exportLabel: root.exportLabel; importLabel: root.importLabel
 			onExportRequested: root.exportRequested()
+			onLinkRequested: link => root.linkRequested(link)
 			onImportRequested: root.importRequested()
 		}
 	}
