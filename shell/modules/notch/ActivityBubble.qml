@@ -32,7 +32,8 @@ Rectangle {
 		enabled: !Render.reduceMotion
 		NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
 	}
-	Behavior on color { NumberAnimation { duration: Render.reduceMotion ? 0 : 300 } }
+	// ColorAnimation: a NumberAnimation on a colour drops its alpha to 1.
+	Behavior on color { ColorAnimation { duration: Render.reduceMotion ? 0 : 300 } }
 	border.width: root.activeFocus ? 2 : 0
 	border.color: root.ink
 	Keys.onReturnPressed: root.activated()

@@ -90,6 +90,22 @@ Item {
 			verify(!v.stateObject().musicBubble);
 		}
 
+		// The pills share the island's fill, transparency included (notch opacity).
+		function test_activityBubblesKeepTheIslandsTransparency() {
+			const v = make({ media: playing(), shelfCount: 2, albumArtEnabled: false,
+				bg: Qt.rgba(0, 0, 0, 0.5), bgExpanded: Qt.rgba(0, 0, 0, 0.7) });
+			settle(v);
+			v.timer = { active: true, seconds: 60, finished: false };
+			for (const name of ["shelfBubble", "musicBubble"]) {
+				const bubble = findChild(v, name);
+				tryVerify(() => Math.abs(bubble.color.a - 0.5) < 0.01, 1000, name + " collapsed alpha " + bubble.color.a);
+			}
+			v.compactNotch = false;
+			mouseMove(v, 500, 18);
+			tryCompare(v, "statusHover", true);
+			tryVerify(() => Math.abs(findChild(v, "shelfBubble").color.a - 0.7) < 0.01, 1000, "hover alpha");
+		}
+
 		function test_shelfDragRestoresPreviousViewAndClosesAfterDrop() {
 			const v = make();
 			settle(v);
