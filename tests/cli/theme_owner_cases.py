@@ -190,6 +190,14 @@ class ThemeOwnerCases(unittest.TestCase):
         self.assertEqual(self.run_owner("restore").returncode, 3)
         self.assertEqual((self.t / "gs" / key).read_text(), "'default'\n")
 
+    def test_cursor_theme_is_a_desktop_setting_bloom_can_own(self):
+        key = "cursor-theme"
+        (self.t / "gs" / key).write_text("'Adwaita'\n")
+        self.assertEqual(self.run_owner("gsettings", key, "Bibata-Modern-Classic").returncode, 0)
+        self.assertEqual((self.t / "gs" / key).read_text(), "Bibata-Modern-Classic\n")
+        self.run_owner("restore")
+        self.assertEqual((self.t / "gs" / key).read_text(), "'Adwaita'\n")
+
     def test_ledger_is_private_and_records_fingerprints(self):
         self.stage({CSS: "bloom css\n"})
         self.assertEqual(self.ledger.stat().st_mode & 0o777, 0o600)

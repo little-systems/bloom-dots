@@ -153,7 +153,10 @@ OLD_DROPINS = ("etc/sddm.conf.d/10-bloom.conf",)
 LOGIN = "var/lib/bloom/login"
 # The greeter reads /var/lib/bloom/login/state.json as data; Qt only lets QML
 # read local files with QML_XHR_ALLOW_FILE_READ.
-DROPIN_TEXT = ("# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n\n[General]\n"
+# Bloom's cursor (bibata-cursor-theme-bin, below), also on the login screen.
+CURSOR_THEME = "Bibata-Modern-Classic"
+DROPIN_TEXT = ("# Bloom's login screen; removed by bloom uninstall.\n[Theme]\nCurrent=bloom\n"
+               f"CursorTheme={CURSOR_THEME}\nCursorSize=24\n\n[General]\n"
                "DefaultSession=hyprland.desktop\nGreeterEnvironment=QML_XHR_ALLOW_FILE_READ=1\n")
 SERVICES = ("bluetooth", "power-profiles-daemon")
 # Stock Arch shells don't put ~/.local/bin on PATH; this puts `bloom` there
@@ -167,8 +170,11 @@ GROUP = "bloom-login"
 # Where Bloom is the whole desktop (no ii), a fresh machine gets these once.
 APPS = ("kitty", "dolphin", "firefox", "gnome-text-editor", "loupe", "mpv")
 # Only in the AUR: built with makepkg as the user, installed by pacman, and
-# rebuilt when the AUR has a newer version. Oh My Posh draws Bloom's prompt.
-AUR = ("oh-my-posh-bin",)
+# rebuilt when the AUR has a newer version. Oh My Posh draws Bloom's prompt;
+# Bibata Modern Classic is Bloom's cursor.
+AUR = ("oh-my-posh-bin", "bibata-cursor-theme-bin")
+AUR_NAMES = {"oh-my-posh-bin": ("Oh My Posh", "Bloom's prompt"),
+             "bibata-cursor-theme-bin": ("the Bibata cursors", "Bloom's cursor")}
 # Where AUR packages come from; empty turns AUR packages off (tests do).
 AUR_URL = os.environ.get("BLOOM_AUR_URL", "https://aur.archlinux.org")
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
@@ -283,10 +289,11 @@ def plan(root, user, deps=True):
                           "label": f"Keep {names} as your own {reason}"})
     for package in AUR if AUR_URL else ():
         have, latest = local_version(root, package), aur_version(package)
+        name, role = AUR_NAMES[package]
         if have is None:
-            steps.append({"kind": "aur", "package": package, "label": "Build Oh My Posh from the AUR (Bloom's prompt)"})
+            steps.append({"kind": "aur", "package": package, "label": f"Build {name} from the AUR ({role})"})
         elif latest and latest != have:
-            steps.append({"kind": "aur", "package": package, "label": f"Update Oh My Posh from the AUR ({have} to {latest})"})
+            steps.append({"kind": "aur", "package": package, "label": f"Update {name} from the AUR ({have} to {latest})"})
     manager = display_manager(root)
     if manager is None:
         steps.append({"kind": "install-sddm", "label": "Install the SDDM login screen"})

@@ -302,11 +302,24 @@ class Phase(Facts):
         self.assertTrue(any(c[:3] == ["runuser", "-u", "dhanush"] and "makepkg" in c for c in calls))
         self.assertTrue(any(c[:2] == ["pacman", "-U"] and "oh-my-posh-bin-1-1-any.pkg.tar.zst" in c[-1] for c in calls))
 
+    # Bloom's cursor, Bibata Modern Classic, is only in the AUR too.
+    def test_bibata_cursors_are_built_from_the_aur(self):
+        system.aur_version = lambda name: "1-1"
+        steps = [s for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "aur"]
+        self.assertEqual([s["package"] for s in steps], ["oh-my-posh-bin", "bibata-cursor-theme-bin"])
+        self.assertIn("Bibata", steps[1]["label"])
+        self.assertIn("Oh My Posh", steps[0]["label"])
+
+    def test_the_login_screen_uses_bloom_s_cursor(self):
+        self.assertIn("CursorTheme=Bibata-Modern-Classic", system.DROPIN_TEXT)
+        self.assertIn("CursorSize=24", system.DROPIN_TEXT)
+
     def test_installed_oh_my_posh_is_rebuilt_only_when_the_aur_has_a_newer_one(self):
         (self.root / "var/lib/pacman/local/oh-my-posh-bin-1-1").mkdir(parents=True)
+        (self.root / "var/lib/pacman/local/bibata-cursor-theme-bin-1-1").mkdir(parents=True)
         system.aur_version = lambda name: "1-1"
         self.assertNotIn("aur", self.kinds(system.plan(self.root, self.user, deps=True)))
-        system.aur_version = lambda name: "2-1"
+        system.aur_version = lambda name: "2-1" if name == "oh-my-posh-bin" else "1-1"
         steps = [s for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "aur"]
         self.assertEqual(len(steps), 1)
         self.assertIn("Update", steps[0]["label"])

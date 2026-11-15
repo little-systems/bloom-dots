@@ -56,6 +56,29 @@ assert re.search(r'hl\.layer_rule\(\{\s*match = \{\s*namespace = "\^bloom:screen
 assert "bloom-lone-window" not in text and "w[tv1]" not in text, "illogical-impulse doesn't make a lone window fill the screen"
 PY
 echo "ok - window motion and behavior match illogical-impulse, with the owner's blur"
+# Bloom's cursor is Bibata Modern Classic wherever it is installed; without it,
+# Adwaita (so a failed AUR build never leaves a bare X cursor).
+if command -v lua >/dev/null; then
+	cursor_for() {
+		HOME="$1" XDG_DATA_HOME="" XDG_DATA_DIRS="$1/share" lua - "$ROOT/hypr/desktop.lua" <<'LUA'
+local env = {}
+local any = setmetatable({}, { __call = function() return {} end, __index = function(self) return self end })
+hl = setmetatable({ env = function(k, v) env[k] = v end }, { __index = function() return any end })
+dofile(arg[1])
+print(env.XCURSOR_THEME)
+LUA
+	}
+	home="$(mktemp -d)"
+	trap 'rm -rf "$home"' EXIT
+	[[ "$(cursor_for "$home")" == Adwaita ]] || fail "without Bibata the cursor isn't Adwaita"
+	mkdir -p "$home/share/icons/Bibata-Modern-Classic/cursors"
+	printf '[Icon Theme]\nName=Bibata-Modern-Classic\n' > "$home/share/icons/Bibata-Modern-Classic/index.theme"
+	[[ "$(cursor_for "$home")" == Bibata-Modern-Classic ]] || fail "an installed Bibata isn't the cursor"
+	rm -rf "$home/share/icons"; mkdir -p "$home/.icons/Bibata-Modern-Classic/cursors"
+	printf '[Icon Theme]\nName=Bibata-Modern-Classic\n' > "$home/.icons/Bibata-Modern-Classic/index.theme"
+	[[ "$(cursor_for "$home")" == Bibata-Modern-Classic ]] || fail "a Bibata in ~/.icons isn't the cursor"
+	echo "ok - the cursor is Bibata Modern Classic when installed, else Adwaita"
+fi
 if ! command -v Hyprland >/dev/null; then
 	echo "skipped: Hyprland is not installed"
 	exit 0

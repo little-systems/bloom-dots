@@ -43,7 +43,7 @@ TARGETS = (
     ".local/share/color-schemes/BloomAdaptiveA.colors",
     ".local/share/color-schemes/BloomAdaptiveB.colors",
 )
-GSETTINGS_KEYS = ("color-scheme", "gtk-theme")
+GSETTINGS_KEYS = ("color-scheme", "gtk-theme", "cursor-theme")
 SCHEMA = "org.gnome.desktop.interface"
 
 

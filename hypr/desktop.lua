@@ -11,7 +11,23 @@ local browser = "firefox"
 
 -- 100% on every screen; Settings > Display changes it per screen.
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
-hl.env("XCURSOR_THEME", "Adwaita")
+-- Bloom's cursor, Bibata Modern Classic (from the AUR), wherever the cursor
+-- spec looks for themes; Adwaita when it isn't installed.
+local function cursor_theme(name)
+	local home = os.getenv("HOME") or ""
+	local data = os.getenv("XDG_DATA_HOME")
+	local dirs = { home .. "/.icons", ((data and data ~= "") and data or home .. "/.local/share") .. "/icons" }
+	local system = os.getenv("XDG_DATA_DIRS")
+	for dir in ((system and system ~= "") and system or "/usr/local/share:/usr/share"):gmatch("[^:]+") do
+		dirs[#dirs + 1] = dir .. "/icons"
+	end
+	for _, dir in ipairs(dirs) do
+		local found = io.open(dir .. "/" .. name .. "/cursors/default", "r") or io.open(dir .. "/" .. name .. "/index.theme", "r")
+		if found then found:close(); return name end
+	end
+	return "Adwaita"
+end
+hl.env("XCURSOR_THEME", cursor_theme("Bibata-Modern-Classic"))
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 -- Qt apps (and Bloom's shell, for its icon theme) follow KDE's platform

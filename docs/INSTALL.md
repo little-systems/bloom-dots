@@ -64,6 +64,11 @@ only when you have installed the dependency package's contents yourself.
   enabled; with systemd-networkd or iwd Bloom leaves networking alone and the
   Wi-Fi panel explains why its controls are unavailable), Bluetooth and power
   profiles.
+- **Cursor:** Bibata Modern Classic, built from the AUR like Oh My Posh
+  (`bibata-cursor-theme-bin`, rebuilt when the AUR has a newer one), for
+  Hyprland, GTK and Qt apps and the login screen. Without it (the AUR
+  unreachable, say) everything keeps Adwaita. Uninstall keeps the package and
+  gives GTK back the cursor it had before.
 - **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom-login` group,
   so the login screen follows your wallpaper and colours without a password.
 - **Default apps** (only without ii, and only once): kitty, Dolphin, Firefox,

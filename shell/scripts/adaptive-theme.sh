@@ -61,11 +61,22 @@ apply_qt() {
 	fi
 }
 
+# Bloom's cursor for GTK apps, as hypr/desktop.lua picks it for the compositor.
+cursor_installed() {
+	local dir dirs="$HOME/.icons:${XDG_DATA_HOME:-$HOME/.local/share}/icons"
+	local system="${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+	dirs="$dirs:${system//:/\/icons:}/icons"
+	local IFS=:
+	for dir in $dirs; do [[ -f "$dir/$1/index.theme" ]] && return 0; done
+	return 1
+}
+
 desktop_mode() {
 	[[ "${BLOOM_THEME_NO_RELOAD:-0}" == 1 ]] && return 0
 	command -v gsettings >/dev/null || return 0
 	note owner gsettings color-scheme "prefer-$1"
 	note owner gsettings gtk-theme "$(python3 "$here/app-theme.py" --gtk-theme "$1")"
+	if cursor_installed Bibata-Modern-Classic; then note owner gsettings cursor-theme Bibata-Modern-Classic; fi
 }
 
 # Render into a staging copy of the current targets, then install owned files.
