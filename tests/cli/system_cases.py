@@ -306,8 +306,9 @@ class Phase(Facts):
     def test_bibata_cursors_are_built_from_the_aur(self):
         system.aur_version = lambda name: "1-1"
         steps = [s for s in system.plan(self.root, self.user, deps=True) if s["kind"] == "aur"]
-        self.assertEqual([s["package"] for s in steps], ["oh-my-posh-bin", "bibata-cursor-theme-bin"])
+        self.assertEqual([s["package"] for s in steps], ["oh-my-posh-bin", "bibata-cursor-theme-bin", "ttf-twemoji"])
         self.assertIn("Bibata", steps[1]["label"])
+        self.assertIn("Twemoji", steps[2]["label"])
         self.assertIn("Oh My Posh", steps[0]["label"])
 
     def test_the_login_screen_uses_bloom_s_cursor(self):
@@ -317,6 +318,7 @@ class Phase(Facts):
     def test_installed_oh_my_posh_is_rebuilt_only_when_the_aur_has_a_newer_one(self):
         (self.root / "var/lib/pacman/local/oh-my-posh-bin-1-1").mkdir(parents=True)
         (self.root / "var/lib/pacman/local/bibata-cursor-theme-bin-1-1").mkdir(parents=True)
+        (self.root / "var/lib/pacman/local/ttf-twemoji-1-1").mkdir(parents=True)
         system.aur_version = lambda name: "1-1"
         self.assertNotIn("aur", self.kinds(system.plan(self.root, self.user, deps=True)))
         system.aur_version = lambda name: "2-1" if name == "oh-my-posh-bin" else "1-1"
@@ -345,6 +347,15 @@ class Phase(Facts):
         # The About credit's ❤️ and the launcher's emoji picker need colour emoji.
         pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
         self.assertIn("'noto-fonts-emoji'", pkgbuild)
+
+    # Twemoji (crisp vector colour emoji) comes first for emoji; Noto Color
+    # Emoji stays installed for anything Twemoji lacks.
+    def test_emoji_prefer_twemoji_then_noto(self):
+        import xml.etree.ElementTree as ET
+        conf = ROOT / "defaults/fontconfig/conf.d/60-bloom-emoji.conf"
+        aliases = ET.parse(conf).getroot().findall("alias")
+        emoji = next(a for a in aliases if a.findtext("family") == "emoji")
+        self.assertEqual([f.text for f in emoji.find("prefer").findall("family")], ["Twemoji", "Noto Color Emoji"])
 
     def test_shell_dependencies_include_the_pulse_server(self):
         # Bloom's audio events use pactl, which needs PipeWire's Pulse server.

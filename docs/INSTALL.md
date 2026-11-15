@@ -69,6 +69,10 @@ only when you have installed the dependency package's contents yourself.
   Hyprland, GTK and Qt apps and the login screen. Without it (the AUR
   unreachable, say) everything keeps Adwaita. Uninstall keeps the package and
   gives GTK back the cursor it had before.
+- **Emoji:** Twemoji (`ttf-twemoji`, vector colour emoji that stay sharp at
+  any size), built from the AUR the same way, with Noto Color Emoji from the
+  dependency package for anything Twemoji lacks or when the AUR is
+  unreachable.
 - **Login wallpaper:** `/var/lib/bloom/login`, writable by the `bloom-login` group,
   so the login screen follows your wallpaper and colours without a password.
 - **Default apps** (only without ii, and only once): kitty, Dolphin, Firefox,
@@ -123,7 +127,8 @@ in every theme mode; only its cursor and selection follow your accent.
 
 App defaults from `defaults/` (Wayland and keyring flags for Chromium,
 Chrome, Brave, VS Code and Electron; the KDE file picker; mpv keeping the
-window open; Dolphin's full path) are copied only where you have no such
+window open; Dolphin's full path; Twemoji first for emoji, in
+`~/.config/fontconfig/conf.d/60-bloom-emoji.conf`) are copied only where you have no such
 file. From then on the file is yours: Bloom updates it only while you haven't
 touched it, never brings back one you deleted, and uninstall removes only
 untouched copies.

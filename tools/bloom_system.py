@@ -171,10 +171,12 @@ GROUP = "bloom-login"
 APPS = ("kitty", "dolphin", "firefox", "gnome-text-editor", "loupe", "mpv")
 # Only in the AUR: built with makepkg as the user, installed by pacman, and
 # rebuilt when the AUR has a newer version. Oh My Posh draws Bloom's prompt;
-# Bibata Modern Classic is Bloom's cursor.
-AUR = ("oh-my-posh-bin", "bibata-cursor-theme-bin")
+# Bibata Modern Classic is Bloom's cursor; Twemoji is Bloom's emoji
+# (defaults/fontconfig puts it first, Noto Color Emoji after it).
+AUR = ("oh-my-posh-bin", "bibata-cursor-theme-bin", "ttf-twemoji")
 AUR_NAMES = {"oh-my-posh-bin": ("Oh My Posh", "Bloom's prompt"),
-             "bibata-cursor-theme-bin": ("the Bibata cursors", "Bloom's cursor")}
+             "bibata-cursor-theme-bin": ("the Bibata cursors", "Bloom's cursor"),
+             "ttf-twemoji": ("Twemoji", "Bloom's emoji")}
 # Where AUR packages come from; empty turns AUR packages off (tests do).
 AUR_URL = os.environ.get("BLOOM_AUR_URL", "https://aur.archlinux.org")
 PROVIDERS = (("jack", "pipewire-jack"), ("tesseract-data", "tesseract-data-eng"), ("ttf-font", "noto-fonts"))
