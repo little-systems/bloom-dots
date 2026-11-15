@@ -147,9 +147,10 @@ elif name == 'systemctl':
             path.write_text(stub)
             path.chmod(0o755)
 
-    def bloom(self, *args, success=True, **variables):
+    def bloom(self, *args, success=True, checkout=None, **variables):
         env = dict(self.env, **variables)
-        result = subprocess.run([str(self.root / "bin/bloom"), *args], env=env, text=True, capture_output=True, timeout=30)
+        result = subprocess.run([str((checkout or self.root) / "bin/bloom"), *args], env=env, text=True,
+                                capture_output=True, timeout=30)
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         else:
@@ -826,6 +827,53 @@ raise SystemExit(status)
         self.assertEqual(owned, [], "the checkout is already the user's in this fixture")
         self.assertTrue(all(c[0] != "chown" or c[-1] != str(self.home) for c in self.calls()))
 
+    # Cloned anywhere as root (say /tmp/bloom in arch-chroot): Bloom places
+    # itself in the account and runs the desktop part from there.
+    def placed(self):
+        return self.home / ".local/share/bloom"
+
+    def user_phase(self):
+        return [c for c in self.calls() if c[:3] == ["runuser", "-u", self.user]]
+
+    def test_root_install_from_outside_the_home_places_bloom_in_the_account(self):
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.assertTrue((self.placed() / "bin/bloom").is_file())
+        self.assertTrue((self.placed() / "tools/bloom-lifecycle.py").is_file())
+        self.assertIn(str(self.placed() / "bin/bloom"), self.user_phase()[-1])
+        self.assertIn(["chown", "-R", f"{os.getuid()}:{os.getgid()}", str(self.placed())], self.calls())
+
+    def test_root_install_keeps_the_clones_origin_for_updates(self):
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        subprocess.run(["git", "-C", str(self.root), "add", "-A"], check=True)
+        subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t",
+                        "commit", "-qm", "fixture"], check=True)
+        origin = "https://github.com/little-systems/bloom-dots"
+        subprocess.run(["git", "-C", str(self.root), "remote", "add", "origin", origin], check=True)
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        url = subprocess.run(["git", "-C", str(self.placed()), "remote", "get-url", "origin"],
+                             capture_output=True, text=True, check=True).stdout.strip()
+        self.assertEqual(url, origin)
+
+    def test_root_install_uses_the_accounts_existing_checkout(self):
+        shutil.copytree(self.root, self.placed())
+        (self.placed() / "kept").write_text("mine\n")
+        self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.assertEqual((self.placed() / "kept").read_text(), "mine\n")
+        self.assertIn(str(self.placed() / "bin/bloom"), self.user_phase()[-1])
+
+    def test_root_install_refuses_a_foreign_folder_where_bloom_goes(self):
+        self.placed().mkdir(parents=True)
+        (self.placed() / "notes.txt").write_text("not bloom\n")
+        result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1", success=False)
+        self.assertIn(str(self.placed()), result.stderr)
+        self.assertFalse((self.sysroot / "var/lib/bloom/system-manifest.json").exists())
+        self.assertEqual(sorted(p.name for p in self.placed().iterdir()), ["notes.txt"])
+
+    def test_root_install_dry_run_names_the_copy_and_changes_nothing(self):
+        result = self.bloom("install", "--dry-run", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
+        self.assertIn(str(self.placed()), result.stdout)
+        self.assertFalse(self.placed().exists())
+
     def test_chroot_install_leaves_a_first_login_marker(self):
         result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
         self.assertTrue((self.state / "first-login-pending").exists())
@@ -840,17 +888,17 @@ raise SystemExit(status)
 
     def test_first_login_enables_and_clears_the_marker(self):
         self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
-        self.bloom("first-login", "--start")
+        self.bloom("first-login", "--start", checkout=self.placed())
         self.assertFalse((self.state / "first-login-pending").exists())
         service = json.loads((self.base / "service").read_text())
         self.assertTrue(service["enabled"] and service["active"])
         before = len(self.calls())
-        self.bloom("first-login")
+        self.bloom("first-login", checkout=self.placed())
         self.assertEqual(len(self.calls()), before, "no marker, nothing to do")
 
     def test_first_login_failure_keeps_the_marker(self):
         self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
-        self.bloom("first-login", "--start", success=False, STUB_PING="dead")
+        self.bloom("first-login", "--start", success=False, checkout=self.placed(), STUB_PING="dead")
         self.assertTrue((self.state / "first-login-pending").exists())
         self.assertIn("notify-send", [c[0] for c in self.calls()])
 

@@ -772,6 +772,41 @@ def hand_over(user):
         path = path.parent
 
 
+def placement(user):
+    """The checkout the account runs Bloom from, and whether it still has to be
+    copied there. A clone made elsewhere (say /tmp/bloom in arch-chroot) goes
+    to ~/.local/share/bloom; a Bloom already there is used as it is."""
+    home = Path(user["home"])
+    if ROOT.is_relative_to(home) and ROOT != home:
+        return ROOT, False
+    target = home / ".local/share/bloom"
+    if not target.exists():
+        return target, True
+    if (target / "bin/bloom").is_file() and (target / "tools/bloom-lifecycle.py").is_file():
+        return target, False
+    raise Failure(f"{target} exists and is not Bloom; move it away, then run bloom install again")
+
+
+def place_checkout(user, target):
+    """Copy this checkout into the account. A Git clone keeps the original
+    origin, so bloom update still pulls from where Bloom was cloned."""
+    home = Path(user["home"])
+    created = [path for path in reversed(target.parents)
+               if path.is_relative_to(home) and path != home and not path.exists()]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if (ROOT / ".git").exists():
+        run("git", "clone", "--quiet", "--no-hardlinks", str(ROOT), str(target))
+        origin = run("git", "-C", str(ROOT), "remote", "get-url", "origin", check=False)
+        if origin.returncode == 0 and origin.stdout.strip():
+            run("git", "-C", str(target), "remote", "set-url", "origin", origin.stdout.strip())
+    else:
+        shutil.copytree(ROOT, target, symlinks=True)
+    owner = f"{user['uid']}:{user['gid']}"
+    for path in created:
+        run("chown", owner, str(path))
+    run("chown", "-R", owner, str(target))
+
+
 def root_install(args):
     """`bloom install` as root, typically inside arch-chroot after archinstall."""
     ui = UI(yes=args.yes)
@@ -784,15 +819,18 @@ def root_install(args):
         user = bsys.choose_user(root, args.user, ask if ui.interactive else None)
     except bsys.Failure as error:
         raise Failure(str(error)) from error
+    checkout, copying = placement(user)
     steps = bsys.plan(root, user, deps=not args.no_deps)
     chroot = bsys.in_chroot()
     ui.title(f"Bloom will set up this machine for {user['name']}")
     show_system_plan(ui, steps, False)
     show_desktop_plan(ui, False)
+    if copying:
+        ui.item(f"Put Bloom in {checkout}")
     phase = ["runuser", "-u", user["name"], "--", "env", "-u", "BLOOM_AS_ROOT", "-u", "XDG_CONFIG_HOME",
              "-u", "XDG_DATA_HOME", "-u", "XDG_STATE_HOME", "-u", "XDG_RUNTIME_DIR",
              f"HOME={user['home']}", f"USER={user['name']}", f"LOGNAME={user['name']}",
-             str(ROOT / "bin/bloom"), "install", "--yes", "--skip-system", "--no-deps"]
+             str(checkout / "bin/bloom"), "install", "--yes", "--skip-system", "--no-deps"]
     if args.dry_run:
         print("dry run: nothing was changed")
         return
@@ -802,7 +840,11 @@ def root_install(args):
     apply_system(ui, root, user, steps)
     if not [step for step in steps if step["kind"] != "note"]:
         ui.step("Already set up")
-    hand_over(user)
+    if copying:
+        place_checkout(user, checkout)
+        ui.step(f"Put Bloom in {checkout}")
+    else:
+        hand_over(user)
     if run(*phase, check=False, capture=False).returncode:
         raise Failure(f"the desktop part failed for {user['name']}; the system part stays installed. "
                       f"Run bloom install again (as {user['name']} after rebooting, or here as root)")

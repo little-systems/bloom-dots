@@ -137,15 +137,17 @@ services its controls use. You only need `git`.
 
 **On a fresh Arch install (archinstall, before the first boot):** after
 archinstall finishes, choose to chroot into the new system (or run
-`arch-chroot /mnt`), then, replacing `you` with the account you created:
+`arch-chroot /mnt`), then:
 
 ```sh
 pacman -S --needed git
-git clone https://github.com/little-systems/bloom-dots /home/you/.local/share/bloom
-/home/you/.local/share/bloom/bin/bloom install
+git clone https://github.com/little-systems/bloom-dots /tmp/bloom
+/tmp/bloom/bin/bloom install
 exit
 reboot
 ```
+
+The installer finds the account you created and puts Bloom in its home.
 
 The machine boots to the Bloom login screen; logging in finishes the setup.
 Bloom is then the whole desktop: every surface is on, Bloom's shortcuts are set

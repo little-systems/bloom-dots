@@ -10,12 +10,12 @@ controls use. Only `git` has to be there to clone Bloom.
 ### From archinstall, before the first boot
 
 After archinstall, chroot into the new system (archinstall offers this at the
-end, or run `arch-chroot /mnt`). Replace `you` with the account you created:
+end, or run `arch-chroot /mnt`):
 
 ```sh
 pacman -S --needed git
-git clone https://github.com/little-systems/bloom-dots /home/you/.local/share/bloom
-/home/you/.local/share/bloom/bin/bloom install
+git clone https://github.com/little-systems/bloom-dots /tmp/bloom
+/tmp/bloom/bin/bloom install
 ```
 
 Run as root, the installer:
@@ -25,7 +25,11 @@ Run as root, the installer:
 2. sets up the system: Bloom's packages (built as that user, installed with
    pacman), the SDDM login screen with the Bloom theme, NetworkManager,
    Bluetooth and power profiles, and the login wallpaper folder;
-3. hands the clone to that account and installs the desktop part as them.
+3. puts Bloom in that account's `~/.local/share/bloom`, cloned from the
+   checkout you ran so `bloom update` still pulls from GitHub (a Bloom already
+   there is used as it is, a clone made inside the account's home is used in
+   place, and anything else there stops the install before it changes
+   anything), then installs the desktop part as that account.
 
 Nothing that needs a running session happens in the chroot. Exit and reboot:
 the Bloom login screen appears, and your first login finishes the setup
