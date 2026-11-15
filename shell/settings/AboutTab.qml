@@ -86,7 +86,7 @@ Column {
 		id: identity
 		width: parent.width
 		topPadding: Tokens.settings.about.top
-		bottomPadding: Tokens.settings.about.bottom
+		bottomPadding: 14
 		spacing: 24
 		readonly property bool paired: !!root.osInfo.name && width >= 600
 		readonly property real columnWidth: paired ? (width - spacing) / 2 : width
@@ -133,21 +133,6 @@ Column {
 					font.letterSpacing: 0.08 * Tokens.settings.about.version
 					font.capitalization: Font.AllUppercase
 				}
-			}
-			Item { width: 1; height: 14 }
-			// Bloom .about-credit: "Made with ❤️ by" and the authors' GitHub pills.
-			Row {
-				objectName: "credit"
-				x: (parent.width - width) / 2
-				height: dhanush.height
-				spacing: 5
-				CreditText { text: "Made with" }
-				// Bloom's red ❤️ emoji: no colour emoji font is installed, so a red heart.
-				CreditText { objectName: "creditHeart"; text: "\u2764\uFE0E"; color: Tokens.settings.about.heart }
-				CreditText { text: "by" }
-				AuthorPill { id: dhanush; objectName: "credit:dhanush"; author: "Dhanush"; link: "https://github.com/DhanushSantosh" }
-				CreditText { text: "&" }
-				AuthorPill { objectName: "credit:sehaz"; author: "Sehaz"; link: "https://github.com/SehajveerSingh2005" }
 			}
 		}
 
@@ -202,6 +187,23 @@ Column {
 			}
 		}
 	}
+
+	// Bloom .about-credit: "Made with ❤️ by" and the authors' GitHub pills,
+	// centred under both identities.
+	Row {
+		objectName: "credit"
+		x: (parent.width - width) / 2
+		height: dhanush.height
+		spacing: 5
+		CreditText { text: "Made with" }
+		// Bloom's red ❤️ emoji: no colour emoji font is installed, so a red heart.
+		CreditText { objectName: "creditHeart"; text: "\u2764\uFE0E"; color: Tokens.settings.about.heart }
+		CreditText { text: "by" }
+		AuthorPill { id: dhanush; objectName: "credit:dhanush"; author: "Dhanush"; link: "https://github.com/DhanushSantosh" }
+		CreditText { text: "&" }
+		AuthorPill { objectName: "credit:sehaz"; author: "Sehaz"; link: "https://github.com/SehajveerSingh2005" }
+	}
+	Item { width: 1; height: Tokens.settings.about.bottom }
 
 	SGroupLabel { objectName: "systemLabel"; theme: root.theme; text: "System"; above: 0; visible: root.systemRows.length > 0
 		readonly property real aboveGroup: Tokens.settings.group.label.top }

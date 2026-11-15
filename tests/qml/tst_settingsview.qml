@@ -356,6 +356,12 @@ Item {
 			compare(part(v, "credit:dhanush").author, "Dhanush");
 			compare(part(v, "credit:sehaz").author, "Sehaz");
 			verify(Qt.colorEqual(part(v, "creditHeart").color, "#ff453a"), "a red heart, as Bloom's emoji");
+			// Centred on the page, under both the Bloom and the distribution identity.
+			v.sys = { osInfo: { name: "Arch Linux", release: "Rolling release" } };
+			const credit = part(v, "credit"), distro = part(v, "distributionIdentity");
+			tryVerify(() => distro.visible, 1000, "the distribution identity");
+			fuzzyCompare(credit.x + credit.width / 2, credit.parent.width / 2, 1);
+			verify(credit.mapToItem(null, 0, 0).y > distro.mapToItem(null, 0, distro.height).y, "below both identities");
 			click(v, "credit:dhanush");
 			click(v, "credit:sehaz");
 			compare(link.count, 2);
