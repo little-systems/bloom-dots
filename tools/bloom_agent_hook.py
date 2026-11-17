@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Bloom's agent hook: `bloom agent-hook <claude|codex>`, run by the agent with
-the event JSON on stdin. Maps it exactly as Bloom's integrations/agent-hook.ps1
+the event JSON on stdin (or `opencode-event`, run by Bloom's OpenCode plugin
+with an event it already mapped). Maps it exactly as Bloom's integrations/agent-hook.ps1
 (63a9bf5) and hands it to the running shell with `qs ipc call agents event`.
 
 Advisory only: it never decides anything for the agent, always prints {} (Codex
@@ -15,6 +16,8 @@ import sys
 import time
 
 AGENTS = ("claude", "codex")
+KINDS = ("working", "ready", "attention", "error", "resolved", "stopped")
+ACTIVITIES = ("thinking", "reading", "editing", "running", "working", "checking")
 MAX_PAYLOAD = 4096
 SEND_TIMEOUT = 2
 # Processes that only relay a hook to us, never the agent itself (Bloom's
@@ -78,6 +81,25 @@ def build_payload(agent, event, at, owner):
     return payload
 
 
+def opencode_payload(event, at, owner):
+    """An event the OpenCode plugin already mapped, if it is allow-listed
+    exactly (Bloom's AgentAlert::validate, with no unknown fields)."""
+    if not isinstance(event, dict) or not set(event) <= {"agent", "session", "project", "kind", "activity"}:
+        return None
+    session, kind, activity = event.get("session"), event.get("kind"), event.get("activity")
+    if event.get("agent", "opencode") != "opencode" or kind not in KINDS or not isinstance(session, str) \
+            or not 0 < len(session) <= 256 or (activity is not None and activity not in ACTIVITIES):
+        return None
+    project = "".join(c for c in str(event.get("project") or "") if c.isprintable())[:64]
+    payload = {"agent": "opencode", "session": session, "project": project, "kind": kind}
+    if activity:
+        payload["activity"] = activity
+    payload["at"] = at
+    if isinstance(owner, dict):
+        payload.update(owner)
+    return payload
+
+
 def _stat(pid, proc):
     """(comm, ppid, starttime) from /proc/<pid>/stat, or None."""
     try:
@@ -125,11 +147,12 @@ def main(argv):
     at = int(time.time() * 1000)
     try:
         agent = argv[1] if len(argv) > 1 else ""
-        if agent in AGENTS:
+        if agent in AGENTS or agent == "opencode-event":
             event = json.loads(sys.stdin.read(1 << 20) or "null")
             if isinstance(event, dict):
                 owner = find_owner(os.getpid(), os.environ.get("BLOOM_PROC", "/proc"))
-                payload = build_payload(agent, event, at, owner)
+                payload = opencode_payload(event, at, owner) if agent == "opencode-event" \
+                    else build_payload(agent, event, at, owner)
                 if payload is not None:
                     if owner == "ended":
                         payload["kind"] = "stopped"
