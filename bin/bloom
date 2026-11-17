@@ -196,6 +196,13 @@ main() {
 	support) cmd_doctor --support "$@" ;;
 	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
 	install | update | uninstall | recover | first-login) need_python; exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
+	# Run by agents (Claude Code, Codex) for every hooked event: never fails,
+	# never prompts, and answers {} even without Python.
+	agent-hook)
+		command -v python3 >/dev/null && exec python3 -I "$BLOOM_ROOT/tools/bloom_agent_hook.py" "$@"
+		printf '{}'
+		exit 0
+		;;
 	dev) cmd_dev "$@" ;;
 	version) cmd_version ;;
 	help | -h | --help) usage ;;
