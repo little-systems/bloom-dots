@@ -588,6 +588,18 @@ ShellRoot {
 		}
 	}
 
+	// Agent live activities: bloom agent-hook calls event(<json>).
+	IpcHandler {
+		target: "agents"
+
+		function event(json: string): string { return AgentAlerts.event(json); }
+		function test(agent: string, kind: string): string { return AgentAlerts.test(agent, kind, kind === "working" ? "thinking" : ""); }
+		function state(): string {
+			return JSON.stringify({ enabled: AgentAlerts.enabled, entries: AgentAlerts.state.entries.length,
+				active: AgentAlerts.active ? { agent: AgentAlerts.active.agent, kind: AgentAlerts.active.kind, activity: AgentAlerts.active.activity ?? "" } : null });
+		}
+	}
+
 	IpcHandler {
 		target: "osk"
 

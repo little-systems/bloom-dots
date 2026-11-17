@@ -277,6 +277,10 @@ var SCHEMA = {
 		type: "bool", default: false,
 		doc: "Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear."
 	},
+	"bloom-agent-alerts-enabled": {
+		type: "bool", default: true,
+		doc: "Show Claude Code, Codex and OpenCode activity in the Island (connect them in Settings > Integrations or with bloom agents connect). Turning it off clears current activities."
+	},
 	"bloom-notifications-timeout": {
 		type: "number", min: 1000, max: 60000, default: 2500,
 		doc: "Maximum time for an ordinary notification banner in milliseconds; senders may request less or a persistent alert."
