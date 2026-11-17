@@ -164,7 +164,10 @@ Item {
 	property string interaction: "none"
 
 	readonly property bool pillHovered: pillHover.hovered
-	readonly property bool hidden: Dock.isHidden(root.mode, root.overlapped, root.interaction, root.startupAnimating)
+	// The first-run guide shows the real Dock while introducing it (Bloom
+	// useOnboardingReveal); the saved mode is untouched.
+	property bool guideReveal: false
+	readonly property bool hidden: !root.guideReveal && Dock.isHidden(root.mode, root.overlapped, root.interaction, root.startupAnimating)
 	readonly property real naturalWidth: root._layout.width + 2 * Tokens.dock.padding
 	readonly property bool adaptive: root.adaptiveEnabled && root.mode === "fixed" && root.maximized
 		&& root.expanded && !root.hidden && root.surfaceVisible

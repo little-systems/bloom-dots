@@ -134,6 +134,7 @@ PanelWindow {
 		accent: Theme.accent
 		textColor: Theme.text
 		edgeShine: Settings.values["bloom-edge-shine-enabled"] !== false
+		guideReveal: Onboarding.reveal === "dock"
 		light: Theme.isLight
 		tooltipBg: Theme.isLight ? Theme.bgExpanded : Qt.rgba(0, 0, 0, Tokens.dock.tooltip.alpha)
 		tooltipText: Theme.text

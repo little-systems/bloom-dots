@@ -101,6 +101,17 @@ Item {
 
 		// The Command Center's System Tray button reveals a hidden dock for a
 		// while; it hides again after the grace if the pointer never comes.
+		function test_guideRevealShowsTheDockWithoutChangingItsMode() {
+			const v = make({ mode: "peek" });
+			settle(v);
+			tryCompare(v, "hidden", true, 3000);
+			v.guideReveal = true;
+			compare(v.hidden, false);
+			compare(v.mode, "peek");
+			v.guideReveal = false;
+			compare(v.hidden, true);
+		}
+
 		function test_revealShowsAHiddenDock() {
 			const v = make({ mode: "peek" });
 			settle(v);

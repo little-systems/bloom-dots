@@ -10,12 +10,16 @@ Singleton {
 	id: root
 
 	property bool opened: false
+	// The surface the guide is introducing ("island" or "dock"); its window
+	// shows it even in Smart or Peek mode while this is set.
+	property string reveal: ""
 	readonly property bool pending: state.loaded && Logic.pending(JSON.stringify(state.value))
 	property bool _offered: false
 
 	function open() { root.opened = true; }
 	function close() {
 		root.opened = false;
+		root.reveal = "";
 		if (root.pending)
 			state.save({ completed: true });
 	}

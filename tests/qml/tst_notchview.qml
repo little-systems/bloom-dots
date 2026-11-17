@@ -195,6 +195,19 @@ Item {
 			tryCompare(tip, "shown", false, 500);
 		}
 
+		// The first-run guide shows the real Island while it introduces it, even
+		// in Smart or Peek mode, without changing the saved mode (Bloom useOnboardingReveal).
+		function test_guideRevealShowsTheIslandWithoutChangingItsMode() {
+			const v = make({ mode: "peek" });
+			settle(v);
+			verify(v.hidden);
+			v.guideReveal = true;
+			verify(!v.hidden);
+			compare(v.mode, "peek");
+			v.guideReveal = false;
+			verify(v.hidden);
+		}
+
 		function test_peekModeHidesUntilShown() {
 			const v = make({ mode: "peek" });
 			settle(v);

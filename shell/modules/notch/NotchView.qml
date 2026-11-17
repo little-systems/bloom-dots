@@ -229,8 +229,11 @@ Item {
 	property real fitWidth: 0
 
 	readonly property bool pillHovered: pillHover.hovered
-	readonly property bool hidden: (root.mode === "smart" && root.suppressed)
-		|| Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating)
+	// The first-run guide shows the real Island while introducing it (Bloom
+	// useOnboardingReveal); the saved mode is untouched.
+	property bool guideReveal: false
+	readonly property bool hidden: !root.guideReveal && ((root.mode === "smart" && root.suppressed)
+		|| Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating))
 	// Bloom isHovered: the strip opens on the shown, expanded pill.
 	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.surfaceVisible
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
