@@ -71,6 +71,7 @@ quick_tests() {
 	step "language catalogs are up to date"
 	if need node; then
 		node "$ROOT/tools/gen-i18n.mjs" --check
+		node "$ROOT/tools/check-i18n.mjs" --check
 	fi
 
 	step "settings search index is up to date"

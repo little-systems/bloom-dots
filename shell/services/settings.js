@@ -9,6 +9,10 @@ var MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", 
 var WIDGETS = ["weather", "battery", "cpu", "ram", "disk", "net"];
 
 var SCHEMA = {
+	"bloom-language": {
+		type: "enum", values: ["system", "en", "ru", "fr", "es", "pt-BR", "pt-PT"], default: "system",
+		doc: "Display language. system follows LC_ALL, LC_MESSAGES, then LANG. Changes apply live. Untranslated text uses English, message by message; translations are Bloom's (shared) plus Linux-only text in shell/i18n/linux."
+	},
 	"bloom-animation-style": {
 		type: "enum", values: ["macos", "bloom"], default: "macos",
 		doc: "Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement."

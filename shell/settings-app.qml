@@ -12,6 +12,7 @@ import Quickshell.Io
 import qs.services
 import "settings"
 import "common/render"
+import "common/i18n"
 import "common"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
@@ -23,6 +24,7 @@ import "modules/dock/extras.js" as Extras
 ShellRoot {
 	id: app
 	Binding { target: Fonts; property: "override"; value: Settings.values["bloom-font-family"] }
+	Binding { target: I18n; property: "environment"; value: ({ LC_ALL: Quickshell.env("LC_ALL") || "", LC_MESSAGES: Quickshell.env("LC_MESSAGES") || "", LANG: Quickshell.env("LANG") || "" }) }
 	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
 	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
 

@@ -33,6 +33,14 @@ var ROWS = [
 		"tab": "general"
 	},
 	{
+		"label": "Language",
+		"tab": "general"
+	},
+	{
+		"label": "System default",
+		"tab": "general"
+	},
+	{
 		"label": "Launch at Login",
 		"tab": "general"
 	},

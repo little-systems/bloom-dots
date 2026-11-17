@@ -19,6 +19,7 @@ import "modules/wallpaper"
 import "modules/osk"
 import "modules/overlay"
 import "common/render"
+import "common/i18n"
 import "common/motion.js" as Motion
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -44,6 +45,8 @@ ShellRoot {
 	}
 	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
 	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
+	Binding { target: I18n; property: "setting"; value: Settings.values["bloom-language"] ?? "system" }
+	Binding { target: I18n; property: "environment"; value: ({ LC_ALL: Quickshell.env("LC_ALL") || "", LC_MESSAGES: Quickshell.env("LC_MESSAGES") || "", LANG: Quickshell.env("LANG") || "" }) }
 
 	Binding { target: Theme; property: "syncApps"; value: true }
 	Binding {

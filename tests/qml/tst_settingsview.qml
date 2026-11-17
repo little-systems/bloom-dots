@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import "../../shell/settings"
 import "../../shell/common/render"
+import "../../shell/common/i18n"
 
 Item {
 	id: host
@@ -291,6 +292,7 @@ Item {
 
 		function test_sliderSnapsToSteps() {
 			const v = make();
+			reveal(v, "battery");
 			const s = findChild(part(v, "battery"), "sliderTrack");
 			waitForRendering(host);
 			const p = s.mapToItem(host, s.width, s.height / 2);
@@ -347,6 +349,21 @@ Item {
 			reveal(v, "import");
 			click(v, "import");
 			compare([exported.count, imported.count], [1, 1]);
+		}
+
+		// Bloom's Language row (GeneralTab.tsx): first in System, System default
+		// plus each language in its own name; the choice applies live.
+		function test_languageRow() {
+			const v = make("general");
+			const select = part(v, "language");
+			compare(select.options.map(o => o.label), ["System default", "English", "Русский", "Français", "Español",
+				"Português (Brasil)", "Português (Portugal)"]);
+			compare(select.options.map(o => o.value), ["system", "en", "ru", "fr", "es", "pt-BR", "pt-PT"]);
+			compare(select.value, "system");
+			select.activated("ru");
+			compare(v.store.values["bloom-language"], "ru");
+			tryCompare(I18n, "language", "ru");
+			select.activated("system");
 		}
 
 		// Bloom's "Made with ❤️ by" credit, both authors linked to GitHub.

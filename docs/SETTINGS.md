@@ -6,6 +6,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 
 | Key | Type | Default | Allowed | Description |
 |---|---|---|---|---|
+| `bloom-language` | enum | `"system"` | `system`, `en`, `ru`, `fr`, `es`, `pt-BR`, `pt-PT` | Display language. system follows LC_ALL, LC_MESSAGES, then LANG. Changes apply live. Untranslated text uses English, message by message; translations are Bloom's (shared) plus Linux-only text in shell/i18n/linux. |
 | `bloom-animation-style` | enum | `"macos"` | `macos`, `bloom` | Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement. |
 | `bloom-theme-mode` | enum | `"dark"` | `dark`, `light`, `custom`, `adaptive` | Theme mode. Adaptive follows the wallpaper. |
 | `bloom-theme-color` | color | `"#007aff"` | `#rgb` or `#rrggbb` | Accent colour for the custom theme (#rgb or #rrggbb). |

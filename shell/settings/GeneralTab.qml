@@ -1,5 +1,6 @@
 import QtQuick
 import "../common/tokens.js" as Tokens
+import "../common/i18n"
 
 // Bloom's GeneralTab, with low-power mode added: it's Linux Bloom's own setting.
 Column {
@@ -22,6 +23,17 @@ Column {
 	SGroupLabel { theme: root.theme; text: "System"; above: 0 }
 	SGroup {
 		theme: root.theme
+		// Bloom's Language row (GeneralTab.tsx, clock icon included).
+		SRow {
+			theme: root.theme; icon: "clock"; label: I18n.t("settings.general.language"); desc: I18n.t("settings.general.languageFallbackDesc")
+			SSelect {
+				objectName: "language"; accessibleName: I18n.t("settings.general.language"); theme: root.theme; popup: root.popup
+				options: [{ value: "system", label: I18n.t("settings.general.languageSystem") }]
+					.concat(I18n.locales.map(locale => ({ value: locale.code, label: locale.nativeName })))
+				value: root.store.values["bloom-language"] ?? "system"
+				onActivated: value => root.store.set("bloom-language", value)
+			}
+		}
 		SRow {
 			theme: root.theme; icon: "power"; label: "Launch at Login"; desc: "Open Bloom automatically"
 			SToggle { accessibleName: "Launch at Login"; objectName: "autostart"; theme: root.theme; checked: root.autostart; onToggled: value => root.autostartToggled(value) }

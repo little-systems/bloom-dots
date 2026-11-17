@@ -5,15 +5,19 @@ import { readFileSync, writeFileSync } from "node:fs";
 const root = new URL("../shell/settings/", import.meta.url);
 const TABS = { GeneralTab: "general", AppearanceTab: "appearance", NotchTab: "notch", DockTab: "dock", OverlaysTab: "overlays", AboutTab: "about" };
 const rows = [];
-const LABEL = /\blabel: "([^"]+)"/g;
+// Literal labels, and translated ones (I18n.t("key")) by their English text.
+const LABEL = /\blabel: (?:"([^"]+)"|I18n\.t\("([^"]+)"\))/g;
+const english = JSON.parse(readFileSync(new URL("../i18n/locales/en.json", root), "utf8"));
+english.linux = JSON.parse(readFileSync(new URL("../i18n/linux/en.json", root), "utf8")).linux;
+const text = m => m[1] ?? m[2].split(".").reduce((node, part) => node?.[part], english);
 
 for (const [file, tab] of Object.entries(TABS)) {
-	for (const m of readFileSync(new URL(file + ".qml", root), "utf8").matchAll(LABEL)) rows.push({ label: m[1], tab });
+	for (const m of readFileSync(new URL(file + ".qml", root), "utf8").matchAll(LABEL)) rows.push({ label: text(m), tab });
 }
 const pages = readFileSync(new URL("SystemPages.qml", root), "utf8").split(/pageId: "/).slice(1);
 for (const page of pages) {
 	const tab = page.slice(0, page.indexOf('"'));
-	for (const m of page.matchAll(LABEL)) rows.push({ label: m[1], tab });
+	for (const m of page.matchAll(LABEL)) rows.push({ label: text(m), tab });
 }
 for (const [tab, labels] of Object.entries({ network: ["Wi-Fi", "Scan Again", "Networks"], bluetooth: ["Bluetooth", "My Devices", "Add a Device"] })) {
 	for (const label of labels) rows.push({ label, tab });

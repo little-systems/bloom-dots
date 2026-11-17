@@ -1,6 +1,7 @@
 import QtQuick
 import "../common"
 import "../common/render"
+import "../common/i18n"
 import "../common/tokens.js" as Tokens
 import "../modules/notch/qp"
 import "."
@@ -21,6 +22,8 @@ Rectangle {
 		property color scrollbarThumb: Qt.rgba(1, 1, 1, 0.1)
 	}
 	required property var store
+	// This process's text follows bloom-language live (the shell binds its own).
+	Binding { target: I18n; property: "setting"; value: root.store.values["bloom-language"] ?? "system" }
 	property string tab: "general"
 	property bool autostart: false
 	property string version: ""
