@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 
 const root = new URL("../shell/settings/", import.meta.url);
-const TABS = { GeneralTab: "general", AppearanceTab: "appearance", NotchTab: "notch", DockTab: "dock", OverlaysTab: "overlays", AboutTab: "about" };
+const TABS = { GeneralTab: "general", AppearanceTab: "appearance", NotchTab: "notch", DockTab: "dock", OverlaysTab: "overlays", IntegrationsTab: "integrations", AboutTab: "about" };
 const rows = [];
 // Literal labels, and translated ones (I18n.t("key")) by their English text.
 const LABEL = /\blabel: (?:"([^"]+)"|I18n\.t\("([^"]+)"\))/g;

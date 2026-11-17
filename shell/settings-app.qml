@@ -138,6 +138,7 @@ ShellRoot {
 				Translate { y: appEntrance.rise }
 			]
 			theme: Theme
+			agentIntegrations: integrationStore
 			store: checkedStore
 			saveError: app.saveError
 			onErrorDismissed: app.saveError = ""
@@ -193,6 +194,8 @@ ShellRoot {
 			importFile.running = true;
 		}
 	}
+	AgentIntegrationStore { id: integrationStore }
+
 	Process {
 		id: exportCopy
 		property string destination: ""

@@ -393,6 +393,14 @@ var ROWS = [
 		"tab": "overlays"
 	},
 	{
+		"label": "Notch Notifications",
+		"tab": "integrations"
+	},
+	{
+		"label": "Test notch",
+		"tab": "integrations"
+	},
+	{
 		"label": "Device Name",
 		"tab": "about"
 	},

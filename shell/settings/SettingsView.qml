@@ -34,6 +34,7 @@ Rectangle {
 	property var sys
 	property var net
 	property var bt
+	property var agentIntegrations
 	signal cheatsheetRequested()
 	signal setupRequested()
 
@@ -79,12 +80,13 @@ Rectangle {
 			{ id: "notch", label: "Notch", icon: "panel-top", copy: "Choose what appears at the top of your screen." },
 			{ id: "dock", label: "Dock", icon: "monitor", copy: "Shape the taskbar replacement around your workflow." },
 			{ id: "overlays", label: "Overlays", icon: "layers", copy: "Keep quick controls visible only when you need them." },
+			{ id: "integrations", label: I18n.t("settings.tabs.integrations"), icon: "bell", copy: I18n.t("integrations.agentsDescription") },
 			{ id: "about", label: "About", icon: "info", copy: "Bloom, your system and settings data." }
 		] }
 	]
 	readonly property var _tabs: root._groups.reduce((all, g) => all.concat(g.tabs), [])
 	readonly property var _active: root._tabs.find(t => t.id === root.tab)
-	readonly property bool _system: ["general", "appearance", "notch", "dock", "overlays", "about"].indexOf(root.tab) < 0
+	readonly property bool _system: ["general", "appearance", "notch", "dock", "overlays", "integrations", "about"].indexOf(root.tab) < 0
 
 	OpeningMotion { id: pageEntrance; initial: 1; target: 1 }
 	onTabChanged: {
@@ -497,7 +499,7 @@ Rectangle {
 				Loader {
 					width: parent.width
 					height: item ? item.implicitHeight : 0
-					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, about: aboutTab })[root.tab] ?? null
+					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, integrations: integrationsTab, about: aboutTab })[root.tab] ?? null
 				}
 			}
 		}
@@ -529,6 +531,10 @@ Rectangle {
 	Component {
 		id: overlaysTab
 		OverlaysTab { theme: root.theme; store: root.store }
+	}
+	Component {
+		id: integrationsTab
+		IntegrationsTab { theme: root.theme; store: root.store; popup: selectPopup; backend: root.agentIntegrations }
 	}
 	Component {
 		id: aboutTab

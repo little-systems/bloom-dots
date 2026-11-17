@@ -49,7 +49,7 @@ function files(dir, out = []) {
 }
 for (const path of files(join(root, "shell"))) {
 	const text = readFileSync(path, "utf8");
-	for (const m of text.matchAll(/I18n\.(t|tCount)\(\s*"([^"]+)"/g)) {
+	for (const m of text.matchAll(/I18n\.(t|tCount)\(\s*"([^"]+)"(?=\s*[,\)])/g)) {
 		const [, fn, key] = m;
 		const known = fn === "tCount" ? english.has(key + "_other") || english.has(key) : english.has(key);
 		if (!known) errors.push(`${relative(root, path)}: ${key} is not in the English catalog`);

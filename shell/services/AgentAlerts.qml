@@ -50,7 +50,11 @@ Singleton {
 		const alert = { agent: agent, session: "bloom-preview", project: "Bloom preview", kind: kind };
 		if (activity)
 			alert.activity = activity;
-		return root.event(JSON.stringify(alert));
+		const parsed = Logic.parse(JSON.stringify(alert));
+		if (!parsed) return "invalid";
+		if (!root.enabled) return "off";
+		root._dispatch({ type: "receive", alert: parsed, now: Date.now() });
+		return "ok";
 	}
 
 	function dismiss() {
@@ -89,9 +93,12 @@ Singleton {
 	}
 	// A finished activity holds the Island, then steps aside.
 	Timer {
-		interval: Logic.holdMs(root.state.active ? root.state.active.kind : "")
-		running: !!root.state.active && root.state.active.kind !== "working" && !root.blocked
-		onTriggered: root._dispatch({ type: "finish" })
+		interval: root.state.active?.session === "bloom-preview" && root.state.active?.kind === "working" ? 4000 : Logic.holdMs(root.state.active ? root.state.active.kind : "")
+		running: !!root.state.active && (root.state.active.kind !== "working" || root.state.active.session === "bloom-preview") && !root.blocked
+		onTriggered: {
+			if (root.state.active.kind === "working") root.dismiss();
+			else root._dispatch({ type: "finish" });
+		}
 	}
 	Timer {
 		interval: 1000

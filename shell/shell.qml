@@ -602,6 +602,10 @@ ShellRoot {
 		target: "agents"
 
 		function event(json: string): string { return AgentAlerts.event(json); }
+		function preview(agent: string, value: string): string {
+			const working = ["thinking", "reading", "editing", "running", "working"].includes(value);
+			return AgentAlerts.test(agent, working ? "working" : value, working ? value : "");
+		}
 		function test(agent: string, kind: string): string { return AgentAlerts.test(agent, kind, kind === "working" ? "thinking" : ""); }
 		function state(): string {
 			return JSON.stringify({ enabled: AgentAlerts.enabled, entries: AgentAlerts.state.entries.length,

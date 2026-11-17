@@ -20,6 +20,13 @@ start_shell
 state() { ipc agents state; }
 active_is() { state | jq -e --arg k "$1" --arg a "$2" '.active.kind == $k and .active.activity == $a' >/dev/null; }
 
+assert_eq "$(ipc agents preview codex editing)" "ok" "preview"
+wait_for "the preview to enter the Island" active_is working editing
+[[ ! -e "$XDG_STATE_HOME/bloom/agents.json" ]] || fail "preview marked a connection verified"
+inactive() { state | jq -e '.active == null' >/dev/null; }
+wait_for "the working preview to expire" inactive
+pass "a preview expires and does not mark the agent connected"
+
 out="$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"s1","cwd":"/home/u/bloom","tool_input":{"file_path":"/secret"}}' | "$ROOT/bin/bloom" agent-hook claude)"
 assert_eq "$out" "{}" "the hook answers {}"
 wait_for "the Island to show Claude editing" active_is working editing

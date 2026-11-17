@@ -10,6 +10,7 @@ if ! command -v sway >/dev/null; then
 	exit 0
 fi
 bloom_env
+export CLAUDE_CONFIG_DIR="$TEST_TMP/claude" CODEX_HOME="$TEST_TMP/codex"
 start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom" "$TEST_TMP/bin"
 printf '{"bloom-enabled-modules":["notch"],"bloom-weather-enabled":false,"bloom-time-format-24h":true,"bloom-wallpaper":"/keep.png"}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
@@ -37,6 +38,19 @@ for page in sound power storage input hyprland apps time updates network bluetoo
 	assert_eq "$(call tab "$page")" "ok" "open $page"
 done
 pass "every system page opens"
+assert_eq "$(call tab integrations)" "ok" "open integrations"
+sleep 0.5
+if [[ -n "${BLOOM_INTEGRATIONS_SCREENSHOT:-}" ]]; then
+	grim -o HEADLESS-1 "$BLOOM_INTEGRATIONS_SCREENSHOT"
+fi
+# The fixture uses a 1920x1080 output and the default Settings size.
+agent_installed() { "$ROOT/bin/bloom" agents status | jq -e --argjson installed "$1" '.integrations[] | select(.agent == "claude") | .installed == $installed' >/dev/null; }
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1472 577 click 0
+wait_for "Claude hooks installed from Settings" agent_installed true
+sleep 0.5
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 1472 577 click 0
+wait_for "Claude hooks disconnected from Settings" agent_installed false
+pass "the Integrations page connects and disconnects Claude in an isolated config"
 assert_eq "$(call tab about)" "ok" "switch tab"
 assert_eq "$(call state | jq -r .tab)" "about" "tab"
 pass "tabs switch"
