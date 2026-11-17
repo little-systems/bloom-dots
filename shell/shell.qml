@@ -590,6 +590,13 @@ ShellRoot {
 	}
 
 	IpcHandler {
+		target: "onboarding"
+		function open(): string { Onboarding.open(); return "ok"; }
+		function close(): string { Onboarding.close(); return "ok"; }
+		function state(): string { return JSON.stringify({ opened: Onboarding.opened, pending: Onboarding.pending }); }
+	}
+
+	IpcHandler {
 		target: "cheatsheet"
 
 		function toggle(): string { Cheatsheet.toggle(); return "ok"; }

@@ -68,6 +68,8 @@ events = _load("bloom_events", "bloom_events.py")
 bsys = _tool("bloom_system")
 UI = _tool("bloom_ui").UI
 FIRST_LOGIN = "first-login-pending"
+# The first-run guide's state; the shell marks it completed (docs/specs round 3, C).
+ONBOARDING = "onboarding.json"
 operations = _load("bloom_operations", "bloom_operations.py")
 EVENTS = events.Events("lifecycle")
 
@@ -692,6 +694,11 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
     elif getattr(ctx, "created_hyprland_config", False):
         ui.step(f"Created {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration",
                 detail="removed again by uninstall unless you edit it")
+    # Fresh installs get the first-run guide once; an existing Bloom (its
+    # settings already there) never gets it unasked after an update.
+    guide = ctx.state / ONBOARDING
+    if not guide.exists():
+        atomic(guide, json.dumps({"completed": (ctx.config / "bloom/settings.json").exists()}) + "\n")
     offline = ctx.offline
     transaction = Transaction(ctx)
     service = ctx.service_state()

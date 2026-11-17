@@ -874,6 +874,30 @@ raise SystemExit(status)
         self.assertIn(str(self.placed()), result.stdout)
         self.assertFalse(self.placed().exists())
 
+    # The first-run guide: fresh installs get it once; an existing Bloom
+    # (settings already there) never gets an unsolicited guide after updating.
+    def onboarding(self):
+        return json.loads((self.state / "onboarding.json").read_text())
+
+    def test_fresh_install_leaves_the_guide_pending(self):
+        self.bloom("install")
+        self.assertEqual(self.onboarding(), {"completed": False})
+
+    def test_install_over_existing_settings_marks_the_guide_completed(self):
+        (self.config / "bloom").mkdir(parents=True, exist_ok=True)
+        (self.config / "bloom/settings.json").write_text("{}\n")
+        self.bloom("install")
+        self.assertEqual(self.onboarding(), {"completed": True})
+
+    def test_install_never_overwrites_the_guide_state(self):
+        self.state.mkdir(parents=True, exist_ok=True)
+        (self.state / "onboarding.json").write_text('{"completed": true}\n')
+        self.bloom("install")
+        self.assertEqual(self.onboarding(), {"completed": True})
+        (self.state / "onboarding.json").write_text('{"completed": false}\n')
+        self.bloom("install")
+        self.assertEqual(self.onboarding(), {"completed": False})
+
     def test_chroot_install_leaves_a_first_login_marker(self):
         result = self.bloom("install", BLOOM_AS_ROOT="1", STUB_CHROOT="1", STUB_NO_USER_MANAGER="1")
         self.assertTrue((self.state / "first-login-pending").exists())
