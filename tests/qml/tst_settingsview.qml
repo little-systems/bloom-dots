@@ -429,6 +429,15 @@ Item {
 			compare(confirmed.count, 1);
 		}
 
+		function test_openSetupReplaysTheGuide() {
+			const v = make();
+			const requested = spy(v, "setupRequested");
+			reveal(v, "openSetup");
+			compare(part(v, "openSetupLabel").text, "Open setup");
+			click(v, "openSetup");
+			compare(requested.count, 1);
+		}
+
 		function test_lastPanelCantTurnOff() {
 			const v = make("notch");
 			verify(!part(v, "calendar").enabled, "the only panel on stays on");

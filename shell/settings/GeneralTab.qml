@@ -1,6 +1,8 @@
 import QtQuick
+import "../common"
 import "../common/tokens.js" as Tokens
 import "../common/i18n"
+import "../common/render"
 
 // Bloom's GeneralTab, with low-power mode added: it's Linux Bloom's own setting.
 Column {
@@ -17,6 +19,7 @@ Column {
 	signal resetRequested()
 	signal restartRequested()
 	signal quitRequested()
+	signal setupRequested()
 
 	width: parent.width
 
@@ -126,6 +129,37 @@ Column {
 	SGroupLabel { theme: root.theme; text: "App" }
 	SGroup {
 		theme: root.theme
+		SRow {
+			objectName: "welcomeRow"
+			theme: root.theme; icon: "compass"; label: I18n.t("ui.generalTab.welcomeToBloom"); desc: I18n.t("ui.generalTab.replaySetupAndTheQuickGuide")
+			// Bloom's .onboarding-settings-launch.
+			Rectangle {
+				objectName: "openSetup"
+				activeFocusOnTab: true
+				Accessible.role: Accessible.Button
+				Accessible.name: setupLabel.text
+				Keys.onSpacePressed: root.setupRequested()
+				Keys.onReturnPressed: root.setupRequested()
+				SFocusRing {}
+				width: setupLabel.implicitWidth + 22
+				height: setupLabel.implicitHeight + 14
+				radius: 8
+				border.width: 1
+				border.color: root.theme.border
+				color: root.theme.groupBg
+				Text {
+					id: setupLabel
+					objectName: "openSetupLabel"
+					anchors.centerIn: parent
+					text: I18n.t("ui.generalTab.openSetup")
+					color: root.theme.text
+					font.family: Fonts.ui
+					font.pixelSize: Fonts.px(11)
+				}
+				HoverHandler { cursorShape: Qt.PointingHandCursor }
+				TapHandler { onTapped: root.setupRequested() }
+			}
+		}
 		SRow { objectName: "reset"; theme: root.theme; icon: "rotate-ccw"; label: "Reset to Defaults"; desc: "Restore all settings and restart Bloom"; action: true; danger: true; onClicked: root.resetRequested() }
 		SRow { objectName: "restart"; theme: root.theme; icon: "refresh-cw"; label: "Restart Bloom"; desc: "Reinitialize all components"; action: true; onClicked: root.restartRequested() }
 		SRow { objectName: "quit"; theme: root.theme; icon: "log-out"; label: "Quit Bloom"; desc: "Exit application completely"; action: true; danger: true; divider: false; onClicked: root.quitRequested() }

@@ -35,6 +35,7 @@ Rectangle {
 	property var net
 	property var bt
 	signal cheatsheetRequested()
+	signal setupRequested()
 
 	property string saveError: ""
 	signal errorDismissed()
@@ -510,6 +511,7 @@ Rectangle {
 			onResetRequested: confirm.visible = true
 			onRestartRequested: root.restartRequested()
 			onQuitRequested: root.quitRequested()
+			onSetupRequested: root.setupRequested()
 		}
 	}
 	Component {

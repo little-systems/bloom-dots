@@ -125,6 +125,10 @@ var ROWS = [
 		"tab": "general"
 	},
 	{
+		"label": "Welcome to Bloom",
+		"tab": "general"
+	},
+	{
 		"label": "Reset to Defaults",
 		"tab": "general"
 	},

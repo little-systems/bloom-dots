@@ -162,6 +162,7 @@ ShellRoot {
 			net: Network
 			bt: Bluetooth
 			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])
+			onSetupRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "onboarding", "open"])
 			onCityQueried: text => app.searchCity(text)
 			onAddFolderRequested: folderDialog.open()
 		}

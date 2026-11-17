@@ -141,5 +141,15 @@ Item {
 			click(c, "updates");
 			compare(fakeStore.sets, [["bloom-theme-mode", "light"], ["bloom-show-update-indicator", false]]);
 		}
+
+		function test_replayKeepsACustomTheme() {
+			const c = make();
+			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-theme-mode": "custom" });
+			c.index = 7;
+			verify(part(c, "segment:custom").selected, "Custom (current) is offered and selected");
+			c.index = 8;
+			compare(fakeStore.sets, [], "visiting the page writes nothing");
+			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-theme-mode": "dark" });
+		}
 	}
 }
