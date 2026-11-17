@@ -18,6 +18,7 @@ import "modules/cheatsheet"
 import "modules/wallpaper"
 import "modules/osk"
 import "modules/overlay"
+import "modules/onboarding"
 import "common/render"
 import "common/i18n"
 import "common/motion.js" as Motion
@@ -605,7 +606,7 @@ ShellRoot {
 		target: "onboarding"
 		function open(): string { Onboarding.open(); return "ok"; }
 		function close(): string { Onboarding.close(); return "ok"; }
-		function state(): string { return JSON.stringify({ opened: Onboarding.opened, pending: Onboarding.pending }); }
+		function state(): string { return JSON.stringify({ opened: Onboarding.opened, pending: Onboarding.pending, reveal: Onboarding.reveal }); }
 	}
 
 	IpcHandler {

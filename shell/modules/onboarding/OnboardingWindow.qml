@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.services
+import "."
 import "../../common/render"
 import "../../common/screens.js" as Screens
 import "../../common/tokens.js" as Tokens

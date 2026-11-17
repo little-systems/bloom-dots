@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Effects
+import "."
 import "../../common"
 import "../../common/render"
 import "../../common/i18n"

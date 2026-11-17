@@ -30,11 +30,15 @@ Singleton {
 		defaultValue: ({ completed: true })
 		validate: v => v !== null && typeof v === "object" && typeof v.completed === "boolean" ? v : undefined
 		maxBytes: 1024
-		onLoadedChanged: {
-			if (loaded && root.pending && !root._offered) {
-				root._offered = true;
-				root.opened = true;
-			}
+	}
+
+	// Offered once per shell start, however early the state file loads.
+	function _offer() {
+		if (root.pending && !root._offered) {
+			root._offered = true;
+			root.opened = true;
 		}
 	}
+	onPendingChanged: root._offer()
+	Component.onCompleted: root._offer()
 }
