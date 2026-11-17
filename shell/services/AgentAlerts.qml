@@ -17,6 +17,7 @@ Singleton {
 	property bool blocked: false
 	property var state: Logic.EMPTY
 	readonly property var active: root.blocked ? null : root.state.active
+	readonly property var attention: root.state.entries.filter(entry => entry.kind === "attention")
 	readonly property bool hasEntries: root.state.entries.length > 0
 	// Wall clock for elapsed time, ticking while an activity shows.
 	property real now: Date.now()
@@ -55,6 +56,11 @@ Singleton {
 		if (!root.enabled) return "off";
 		root._dispatch({ type: "receive", alert: parsed, now: Date.now() });
 		return "ok";
+	}
+
+	function replay() {
+		if (root.attention.length)
+			root._dispatch({ type: "replay", entry: root.attention[0] });
 	}
 
 	function dismiss() {
@@ -115,15 +121,17 @@ Singleton {
 		repeat: true
 		running: Object.keys(root._owners).length > 0
 		onTriggered: if (!probe.running) {
+			probe.sampled = root._owners;
 			probe.command = ["sh", "-c", 'for p; do s=$(cat "/proc/$p/stat" 2>/dev/null) && echo "$p ${s##*) }"; done', "sh"].concat(Logic.pids(root._owners));
 			probe.running = true;
 		}
 	}
 	Process {
 		id: probe
+		property var sampled: ({})
 		stdout: StdioCollector { id: probeOut }
 		onExited: {
-			const r = Logic.takeEnded(root._owners, Logic.aliveFromStat(probeOut.text));
+			const r = Logic.takeEnded(root._owners, Logic.aliveFromStat(probeOut.text), probe.sampled);
 			root._owners = r.owners;
 			for (const alert of r.ended)
 				root._dispatch({ type: "receive", alert: alert, now: Date.now() });

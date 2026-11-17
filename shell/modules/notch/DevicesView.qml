@@ -23,7 +23,13 @@ Item {
 	// A pick for `name`; "" clears it (Bloom: picking its own guess).
 	signal lookChosen(string name, string art)
 
-	readonly property var groups: Devices.groupDevices(root.entries, root.threshold)
+	readonly property var groups: {
+		const labels = { low: I18n.t("ui.connectedDevices.needsCharging"), pc: I18n.t("ui.connectedDevices.thisPc"),
+			audio: I18n.t("ui.connectedDevices.audio"), phone: I18n.t("ui.connectedDevices.phoneWatch"),
+			accessories: I18n.t("ui.connectedDevices.accessories"), usb: I18n.t("ui.connectedDevices.drivesCameras"),
+			other: I18n.t("ui.connectedDevices.other") };
+		return Devices.groupDevices(root.entries, root.threshold).map(group => Object.assign({}, group, { title: labels[group.key] }));
+	}
 	property string expanded: ""
 
 	// The notch height everything needs (Bloom's measureContent), before the
@@ -48,9 +54,9 @@ Item {
 
 	function _sub(entry) {
 		if (entry.kind === "pc") return root.pcStatus;
-		if (entry.wired) return Devices.wiredSub(entry);
-		if (entry.buds) return "Each bud and the case";
-		return "Connected";
+		if (entry.wired) return I18n.t(entry.id === "jack" ? "ui.connectedDevicesPanel.headphoneJack" : "ui.connectedDevicesPanel.usb");
+		if (entry.buds) return I18n.t("ui.connectedDevicesPanel.eachBudAndTheCase");
+		return I18n.t("notch.commandCenter.connected");
 	}
 
 	// .qp-header with the .bh-title-icon.

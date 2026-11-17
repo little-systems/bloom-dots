@@ -9,6 +9,7 @@ handler, after one `<file>.bloom-backup` of the original; for OpenCode it writes
 plugins/bloom-notifications.js and plugins/bloom-notifications/index.js under
 $XDG_CONFIG_HOME/opencode. Disconnect removes only Bloom's exact handlers or
 unmodified plugins. A config that isn't plain JSON is never rewritten."""
+import hashlib
 import json
 import os
 import sys
@@ -75,7 +76,12 @@ def merge_hooks(config, command, agent, install):
 
 def _handlers(config, event):
     groups = config.get("hooks", {}).get(event, []) if isinstance(config.get("hooks"), dict) else []
-    return [h for g in groups if isinstance(g, dict) and isinstance(g.get("hooks"), list) for h in g["hooks"]]
+    if not isinstance(groups, list):
+        raise AgentError(f"hooks.{event} must be an array")
+    for group in groups:
+        if not isinstance(group, dict) or not isinstance(group.get("hooks"), list):
+            raise AgentError(f"hooks.{event} has an invalid hook group")
+    return [h for group in groups for h in group["hooks"]]
 
 
 def hook_state(config, command, agent):
@@ -112,6 +118,25 @@ def render_plugin(template):
 
 def same_plugin(a, b):
     return a.replace("\r\n", "\n") == b.replace("\r\n", "\n")
+
+
+def plugin_receipt(path):
+    return path.with_name(path.name + ".bloom-owned")
+
+
+def plugin_digest(text):
+    return hashlib.sha256(text.replace("\r\n", "\n").encode()).hexdigest()
+
+
+def owned_plugin(path, text, current):
+    if text is None:
+        return False
+    receipt = _read(plugin_receipt(path))
+    try:
+        accepted = json.loads(receipt) if receipt is not None else []
+    except ValueError:
+        accepted = [receipt]  # Receipts written before recoverable replacements.
+    return same_plugin(text, current) or (isinstance(accepted, list) and plugin_digest(text) in accepted)
 
 
 def _read(path):
@@ -161,8 +186,10 @@ def status():
         path = config_path(agent)
         if agent == "opencode":
             v1, v2 = plugin_paths()
-            current = [same_plugin(_read(p) or "", render_plugin(t)) for p, t in zip((v1, v2), PLUGINS)]
-            installed, needs_update = any(current), any(current) and not all(current)
+            sources = [(p, _read(p), render_plugin(t)) for p, t in zip((v1, v2), PLUGINS)]
+            current = [old is not None and same_plugin(old, source) for _, old, source in sources]
+            installed = any(owned_plugin(path, old, source) for path, old, source in sources)
+            needs_update = installed and not all(current)
         else:
             try:
                 config = json.loads(_read(path) or "null")
@@ -179,14 +206,26 @@ def configure_opencode(install):
     originals = []
     for path, source in files:
         old = _read(path)
-        if old is not None and not same_plugin(old, source):
+        if old is not None and not owned_plugin(path, old, source):
             raise AgentError(f"The Bloom plugin at {path} was modified. Move it aside before changing this integration.")
         originals.append(old)
     for (path, source), original in zip(files, originals):
         if install:
+            if original is not None and not same_plugin(original, source):
+                backup = path.with_name(path.name + ".bloom-backup")
+                if not backup.exists():
+                    _save(backup, original)
+            # Accept either version across a failed replacement or receipt write.
+            accepted = [plugin_digest(source)]
+            if original is not None:
+                accepted.append(plugin_digest(original))
+            _save(plugin_receipt(path), json.dumps(accepted))
             _save(path, source)
-        elif original is not None:
-            path.unlink()
+            _save(plugin_receipt(path), plugin_digest(source))
+        else:
+            if original is not None:
+                path.unlink()
+            plugin_receipt(path).unlink(missing_ok=True)
     if not install:
         try:
             files[1][0].parent.rmdir()

@@ -11,11 +11,14 @@ Rectangle {
 	property string label: ""
 	property string description: ""
 	property url art: ""
+	property string agent: ""
+	property bool light: false
+	property real contentPadding: root.label ? 9 : 0
 	property color ink: "white"
 	signal activated()
 
 	readonly property bool hitEnabled: root.shown && root.opacity > 0.01
-	width: Math.max(30, contents.implicitWidth + (root.label ? 18 : 0))
+	width: Math.max(30, contents.implicitWidth + 2 * root.contentPadding)
 	height: 30
 	radius: 10
 	opacity: root.shown ? 1 : 0
@@ -47,11 +50,19 @@ Rectangle {
 		spacing: 4
 		SvgIcon {
 			anchors.verticalCenter: parent.verticalCenter
-			visible: !picture.visible
-			name: root.icon
+			visible: !picture.visible && !agentLogo.visible
+			name: root.icon || "music"
 			size: root.label ? 12 : 14
 			strokeWidth: root.label ? 2.4 : 2.2
 			color: root.ink
+		}
+		AgentLogo {
+			id: agentLogo
+			visible: root.agent !== ""
+			agent: root.agent
+			light: root.light
+			width: 17
+			height: 17
 		}
 		AlbumArt {
 			id: picture

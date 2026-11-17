@@ -93,7 +93,7 @@ Item {
 	readonly property Item musicBubbleHit: musicBubble.hitEnabled ? musicBubble : null
 	readonly property bool _showActivities: root.ready && root.expanded && root.surfaceVisible && !root.hidden
 		&& !root.open && root.panel === ""
-	readonly property bool _showShelfBubble: root._showActivities && !root.agentVisible && root.shelfCount > 0
+	readonly property bool _showShelfBubble: root._showActivities && root.shelfCount > 0
 	readonly property bool _showMusicBubble: root._showActivities && (root.timer.active || root.agentVisible) && root.musicEnabled
 		&& root.compactNotch && root.media.hasMedia && root.musicActivityVisible
 
@@ -137,6 +137,9 @@ Item {
 	}
 	property var privacy: ({ microphone: false, screen: false })
 	property var agentActivity: null
+	property var agentAttention: []
+	signal agentReplayRequested()
+	readonly property Item agentBubbleHit: agentBubble.hitEnabled ? agentBubble : null
 	property real agentNow: 0
 	property bool agentLightTheme: false
 	readonly property bool agentBlocked: !root.ready || !root.surfaceVisible || root.startupAnimating
@@ -416,7 +419,7 @@ Item {
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, shelfBubble: root._showShelfBubble && !root.alertVisible, musicBubble: root._showMusicBubble, deviceAlert: root.deviceAlert,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, shelfBubble: root._showShelfBubble && !root.alertVisible, musicBubble: root._showMusicBubble, agentBadge: agentBubble.shown, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}
@@ -986,6 +989,24 @@ Item {
 		// doesn't make the notch jitter.
 		readonly property real _needed: Logic.fitWidth(clock.textWidth, leftGroup.implicitWidth, rightGroup.implicitWidth)
 		on_NeededChanged: if (root.statusHover && stage._needed > root.fitWidth) root.fitWidth = stage._needed
+
+		ActivityBubble {
+			id: agentBubble
+			objectName: "agentAttentionBubble"
+			leading: true
+			shown: root._showActivities && root.agentAttention.length > 0
+				&& root.agentActivity?.kind !== "attention" && !root.alertVisible
+			x: pillArea.x - width - (root._showShelfBubble ? shelfBubble.width + 16 : 8)
+			y: pillArea.y + 3
+			color: root.statusHover ? root.bgExpanded : root.bg
+			ink: "#e9b873"
+			contentPadding: 8
+			agent: root.agentAttention[0]?.agent ?? ""
+			light: root.agentLightTheme
+			label: String(root.agentAttention.length)
+			description: I18n.tCount("agentActivity.attentionBadge", root.agentAttention.length)
+			onActivated: root.agentReplayRequested()
+		}
 
 		ActivityBubble {
 			id: shelfBubble

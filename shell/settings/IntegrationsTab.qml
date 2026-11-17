@@ -137,9 +137,8 @@ Column {
 		width: parent.width
 		topPadding: visible ? 12 : 0
 		wrapMode: Text.WordWrap
-		text: root.setupAgent ? root.label("verify", { agent: root.names[root.setupAgent] }) + "\n"
-			+ root.label(root.setupAgent === "codex" ? "reviewHooks" : root.setupAgent === "opencode" ? "restartOpenCode" : "restartDescription")
-			+ " " + root.label("sendPrompt") + ". " + root.label("watch") : ""
+		text: root.setupAgent ? I18n.t(({ claude: "linux.agents.setupClaude", codex: "linux.agents.setupCodex",
+			opencode: "linux.agents.setupOpencode" })[root.setupAgent]) : ""
 		textFormat: Text.PlainText
 		color: root.theme.text
 		font.family: Fonts.ui

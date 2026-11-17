@@ -149,11 +149,12 @@ function aliveFromStat(text) {
 	return alive;
 }
 
-function takeEnded(owners, alive) {
+function takeEnded(owners, alive, sampled) {
+	if (sampled === undefined) sampled = owners;
 	var next = {}, ended = [];
 	for (var key in owners) {
 		var o = owners[key];
-		if (alive[String(o.pid)] === o.started)
+		if (sampled[key] !== o || alive[String(o.pid)] === o.started)
 			next[key] = o;
 		else
 			ended.push(o.alert);

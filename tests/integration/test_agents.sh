@@ -58,5 +58,14 @@ pass "an exited agent clears its session"
 
 assert_eq "$(ipc agents event '{"agent":"claude","session":"s9","project":"p","kind":"ready","prompt":"secret"}')" "invalid" "unknown fields"
 pass "events with anything off the allow-list are refused"
+ipc agents event '{"agent":"claude","session":"s1","project":"bloom","kind":"attention"}' >/dev/null
+wait_for "the attention alert" active_is attention ""
+badge_shown() { ipc notch state | jq -e '.[0].agentBadge' >/dev/null; }
+WAIT_S=12 wait_for "the persistent attention badge" badge_shown
+badge_x="$(ipc notch state | jq -r '.[0].width | 960 - . / 2 - 8 - 21 | round')"
+if [[ -n "${BLOOM_AGENT_BADGE_SCREENSHOT:-}" ]]; then grim -o HEADLESS-1 "$BLOOM_AGENT_BADGE_SCREENSHOT"; fi
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$badge_x" 18 click 0
+wait_for "the badge click to replay the attention alert" active_is attention ""
+pass "attention stays accessible through a real click on its badge"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

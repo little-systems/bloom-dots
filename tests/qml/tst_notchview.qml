@@ -65,6 +65,25 @@ Item {
 
 		function centre(v) { return { x: 500, y: v.target.height / 2 }; }
 
+		function test_attentionBadgeReplaysAndStaysBesideShelf() {
+			const entry = { agent: "codex", kind: "attention", started: 0, received: 1 };
+			const v = make({ shelfCount: 2, agentAttention: [entry] });
+			settle(v);
+			const badge = findChild(v, "agentAttentionBubble");
+			verify(v.stateObject().agentBadge);
+			const shelf = findChild(v, "shelfBubble");
+			verify(badge.x + badge.width < shelf.x);
+			const replay = createTemporaryObject(spyComponent, host, { target: v, signalName: "agentReplayRequested" });
+			badge.activated();
+			compare(replay.count, 1);
+			v.agentActivity = entry;
+			verify(!v.stateObject().agentBadge);
+			v.agentActivity = null;
+			verify(v.stateObject().agentBadge);
+			v.agentAttention = [];
+			verify(!v.stateObject().agentBadge);
+		}
+
 		function test_agentActivitySharesTheNotchWithMusicAndPanels() {
 			const v = make({ media: playing() });
 			settle(v);

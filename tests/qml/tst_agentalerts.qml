@@ -116,6 +116,18 @@ TestCase {
 		compare(Object.keys(Agents.track(owners, alert("stopped"))), [], "stopped forgets the owner");
 	}
 
+	function test_probeKeepsOwnersAddedOrReplacedWhileItRuns() {
+		const sampled = Agents.track({}, alert("working", { pid: 500, started: 100 }));
+		let current = Agents.track(sampled, alert("working", { session: "s2", pid: 600, started: 200 }));
+		let result = Agents.takeEnded(current, {}, sampled);
+		compare(result.ended.map(a => a.session), ["s1"]);
+		compare(Object.keys(result.owners), ["claude:s2"]);
+		current = Agents.track(sampled, alert("working", { pid: 700, started: 300 }));
+		result = Agents.takeEnded(current, {}, sampled);
+		compare(result.ended.length, 0, "a replaced owner was never sampled");
+		compare(result.owners, current);
+	}
+
 	function test_elapsedAndWidth() {
 		compare(Agents.formatElapsed(0, 65999), "1:05");
 		compare(Agents.activityWidth(40, 30), 224);

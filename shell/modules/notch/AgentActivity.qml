@@ -16,47 +16,20 @@ Item {
 	readonly property string activity: entry?.activity === "checking" ? "working" : entry?.activity ?? "thinking"
 	readonly property string label: entry ? I18n.t("agentActivity." + (working ? activity : entry.kind)) : ""
 	readonly property int desiredWidth: Agents.activityWidth(status.implicitWidth, elapsed.width)
-	readonly property var logos: ({
-		claude: "claude.svg",
-		codex: light ? "codex-light.svg" : "codex.svg",
-		opencode: light ? "opencode-light.svg" : "opencode.svg"
-	})
 
 	height: 36
 	visible: opacity > 0
 	opacity: entry ? 1 : 0
 	Behavior on opacity { NumberAnimation { duration: Render.reduceMotion ? 0 : 150 } }
 
-	Item {
+	AgentLogo {
 		id: logo
-		width: 20
-		height: 22
+		agent: root.entry?.agent ?? ""
+		light: root.light
+		working: root.working
 		anchors.left: parent.left
 		anchors.leftMargin: 16
 		anchors.verticalCenter: parent.verticalCenter
-		Image {
-			width: 20
-			height: 20
-			sourceSize: Render.texture(width, height)
-			anchors.centerIn: parent
-			fillMode: Image.PreserveAspectFit
-			source: Object.prototype.hasOwnProperty.call(root.logos, root.entry?.agent ?? "") ? Qt.resolvedUrl("../../assets/agents/" + root.logos[root.entry.agent]) : ""
-		}
-		RotationAnimation on rotation {
-			running: root.working && root.entry?.agent !== "opencode" && !Render.reduceMotion
-			from: 0
-			to: 360
-			duration: 3600
-			loops: Animation.Infinite
-			onRunningChanged: if (!running) logo.rotation = 0
-		}
-		SequentialAnimation on opacity {
-			running: root.working && root.entry?.agent === "opencode" && !Render.reduceMotion
-			loops: Animation.Infinite
-			NumberAnimation { to: 0.65; duration: 1500; easing.type: Easing.InOutSine }
-			NumberAnimation { to: 1; duration: 1500; easing.type: Easing.InOutSine }
-			onRunningChanged: if (!running) logo.opacity = 1
-		}
 	}
 
 	Text {

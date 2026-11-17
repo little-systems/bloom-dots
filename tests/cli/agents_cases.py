@@ -4,9 +4,12 @@ Cases follow Bloom's agent_alerts.rs tests (63a9bf5), on Linux paths."""
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -176,6 +179,74 @@ class Cli(unittest.TestCase):
         self.assertEqual(self.bloom("disconnect", "opencode")[0], 0)
         self.assertFalse(plugin.exists())
         self.assertFalse(plugin.with_suffix("").exists(), "the empty v2 folder goes too")
+
+    def test_status_reports_malformed_groups_as_json(self):
+        settings = self.home / ".claude/settings.json"
+        settings.parent.mkdir()
+        settings.write_text(json.dumps({"hooks": {"Stop": None}}))
+        code, out, stderr = self.bloom("status")
+        self.assertEqual(code, 1)
+        self.assertIn("hooks.Stop must be an array", out["error"])
+        self.assertNotIn("Traceback", stderr)
+
+    def test_opencode_update_recognizes_the_installed_adapter_version(self):
+        checkout = self.home / "checkout"
+        (checkout / "tools").mkdir(parents=True)
+        (checkout / "integrations").mkdir()
+        tool = checkout / "tools/bloom_agents.py"
+        shutil.copyfile(TOOL, tool)
+        templates = []
+        for original in agents.PLUGINS:
+            template = checkout / "integrations" / original.name
+            shutil.copyfile(original, template)
+            templates.append(template)
+
+        def run(*args):
+            result = subprocess.run([sys.executable, str(tool), *args], env=self.env,
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            return json.loads(result.stdout)
+
+        run("connect", "opencode")
+        plugin = self.home / ".config/opencode/plugins/bloom-notifications.js"
+        original = plugin.read_text()
+        for template in templates:
+            template.write_text(template.read_text() + "\n// New Bloom adapter version\n")
+        row = next(row for row in run("status")["integrations"] if row["agent"] == "opencode")
+        self.assertTrue(row["installed"])
+        self.assertTrue(row["needsUpdate"])
+        run("connect", "opencode")
+        self.assertIn("// New Bloom adapter version", plugin.read_text())
+        self.assertEqual(plugin.with_name(plugin.name + ".bloom-backup").read_text(), original)
+        row = next(row for row in run("status")["integrations"] if row["agent"] == "opencode")
+        self.assertFalse(row["needsUpdate"])
+        run("disconnect", "opencode")
+        self.assertFalse(plugin.exists())
+        self.assertFalse(agents.plugin_receipt(plugin).exists())
+
+    def test_opencode_recovers_a_receipt_failure_across_another_upgrade(self):
+        templates = []
+        for original in agents.PLUGINS:
+            target = self.home / original.name
+            shutil.copyfile(original, target)
+            templates.append(target)
+        with patch.dict(os.environ, self.env, clear=True), patch.object(agents, "PLUGINS", templates):
+            agents.configure_opencode(True)
+            for template in templates:
+                template.write_text(template.read_text() + "\n// version two\n")
+            save = agents._save
+            def fail_final_receipt(path, text):
+                if path.name.endswith(".bloom-owned") and not text.startswith("["):
+                    raise OSError("receipt write failed")
+                save(path, text)
+            with patch.object(agents, "_save", side_effect=fail_final_receipt):
+                with self.assertRaises(OSError):
+                    agents.configure_opencode(True)
+            for template in templates:
+                template.write_text(template.read_text() + "\n// version three\n")
+            agents.configure_opencode(True)
+            for path in agents.plugin_paths():
+                self.assertIn("// version three", path.read_text())
 
     def test_unknown_agent(self):
         code, out, _ = self.bloom("connect", "gemini")
