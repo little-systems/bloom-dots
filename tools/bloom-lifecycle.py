@@ -695,10 +695,10 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
         ui.step(f"Created {ctx.config / 'hypr/hyprland.lua'} from Hyprland's default configuration",
                 detail="removed again by uninstall unless you edit it")
     # Fresh installs get the first-run guide once; an existing Bloom (its
-    # settings already there) never gets it unasked after an update.
+    # settings already there) never gets it unasked after an update. Decided
+    # now, before the settings file is created; written once the install holds.
     guide = ctx.state / ONBOARDING
-    if not guide.exists():
-        atomic(guide, json.dumps({"completed": (ctx.config / "bloom/settings.json").exists()}) + "\n")
+    guide_completed = None if guide.exists() else (ctx.config / "bloom/settings.json").exists()
     offline = ctx.offline
     transaction = Transaction(ctx)
     service = ctx.service_state()
@@ -716,6 +716,8 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
         changed = bool(transaction.changed)
         ui.step(f"Linked Bloom into your configuration ({len(transaction.changed)} changed)" if changed
                 else "Your configuration already matches")
+        if guide_completed is not None:
+            atomic(guide, json.dumps({"completed": guide_completed}) + "\n")
         marker = ctx.state / FIRST_LOGIN
         if offline:
             atomic(marker, "Bloom finishes setting up at the first Hyprland login.\n")
@@ -757,6 +759,8 @@ def install(ctx, dry_run=False, no_deps=False, restart=False, yes=False, skip_sy
         ui.say("Undo any time with: bloom uninstall")
     except BaseException:
         transaction.rollback()
+        if guide_completed is not None:
+            guide.unlink(missing_ok=True)
         ctx.restore_service(service)
         raise
     finally:
@@ -1009,6 +1013,7 @@ def uninstall(ctx, remove_deps=False):
         except OSError:
             pass
     (ctx.state / FIRST_LOGIN).unlink(missing_ok=True)
+    (ctx.state / ONBOARDING).unlink(missing_ok=True)
     system = bsys.read_manifest(bsys.system_root())
     if system and system.get("status") != "uninstalled":
         command = ["sudo", sys.executable, str(ROOT / "tools/bloom-lifecycle.py"), "system-uninstall"]

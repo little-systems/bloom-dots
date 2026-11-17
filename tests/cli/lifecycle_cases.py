@@ -889,6 +889,11 @@ raise SystemExit(status)
         self.bloom("install")
         self.assertEqual(self.onboarding(), {"completed": True})
 
+    def test_uninstall_removes_the_guide_state(self):
+        self.bloom("install")
+        self.bloom("uninstall")
+        self.assertFalse((self.state / "onboarding.json").exists())
+
     def test_install_never_overwrites_the_guide_state(self):
         self.state.mkdir(parents=True, exist_ok=True)
         (self.state / "onboarding.json").write_text('{"completed": true}\n')
