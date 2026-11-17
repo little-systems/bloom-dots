@@ -159,6 +159,20 @@ Item {
 		SettingsView { width: 776; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
+	QtObject {
+		id: fakeAgents
+		property var integrations: [
+			{ agent: "claude", installed: true, needsUpdate: false, verifiedAt: null, path: "" },
+			{ agent: "codex", installed: true, needsUpdate: false, verifiedAt: null, path: "" },
+			{ agent: "opencode", installed: false, needsUpdate: false, verifiedAt: null, path: "" }]
+		property bool busy: false
+		property string error: ""
+		property string message: ""
+		property string messageAgent: ""
+		property var requests: []
+		function request(action, agent, kind) { requests = requests.concat([[action, agent ?? "", kind ?? ""]]); }
+	}
+
 	TestCase {
 		name: "SettingsView"
 		when: windowShown
@@ -439,6 +453,36 @@ Item {
 			compare(part(v, "openSetupLabel").text, "Open setup");
 			click(v, "openSetup");
 			compare(requested.count, 1);
+		}
+
+		// Bloom's AgentIntegrations: "Setup help" opens a two-step verify guide.
+		function test_integrationSetupGuide() {
+			const v = make("integrations");
+			v.agentIntegrations = fakeAgents;
+			reveal(v, "help-claude");
+			click(v, "help-claude");
+			compare(part(v, "setupTitle").text, "Verify Claude Code");
+			compare(part(v, "setupStep1").text, "Restart Claude Code");
+			compare(part(v, "setupStep1Desc").text, "Restart the agent to load the integration.");
+			compare(part(v, "setupStep2").text, "Send a new prompt");
+			click(v, "help-codex");
+			compare(part(v, "setupStep1").text, "Allow Bloom’s hooks");
+			reveal(v, "setupClose");
+			click(v, "setupClose");
+			verify(!part(v, "setupPanel").visible);
+			verify(part(v, "activityNote").text.startsWith("The activity stays in the notch"));
+		}
+
+		function test_integrationMessages() {
+			const v = make("integrations");
+			v.agentIntegrations = fakeAgents;
+			fakeAgents.message = "preview";
+			compare(part(v, "integrationMessage").text, "Preview sent to the Island. It shows when the Island is free and Do Not Disturb is off.");
+			fakeAgents.message = "disconnected";
+			fakeAgents.messageAgent = "codex";
+			compare(part(v, "integrationMessage").text, "Codex disconnected. Restart the agent to apply.");
+			fakeAgents.message = "";
+			verify(!part(v, "integrationMessage").visible);
 		}
 
 		function test_lastPanelCantTurnOff() {

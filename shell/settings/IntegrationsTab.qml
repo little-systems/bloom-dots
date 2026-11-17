@@ -113,6 +113,7 @@ Column {
 				Row {
 					spacing: 6
 					IntegrationButton {
+						objectName: "help-" + agentRow.agent
 						visible: agentRow.awaiting
 						text: root.label("help")
 						onClicked: root.setupAgent = root.setupAgent === agentRow.agent ? "" : agentRow.agent
@@ -132,26 +133,184 @@ Column {
 			}
 		}
 	}
-	Text {
+	// Bloom's .agent-setup: verify a connection in two steps.
+	Item { width: 1; height: setup.visible ? 14 : 0 }
+	Rectangle {
+		id: setup
+		objectName: "setupPanel"
+		readonly property string name: root.names[root.setupAgent] ?? ""
 		visible: root.setupAgent !== ""
 		width: parent.width
-		topPadding: visible ? 12 : 0
+		height: visible ? setupColumn.implicitHeight + 32 : 0
+		radius: 12
+		border.width: 1
+		border.color: Qt.rgba(0.5, 0.5, 0.5, 0.18)
+		color: Qt.rgba(0.5, 0.5, 0.5, 0.035)
+		Accessible.name: root.label("setupLabel", { agent: setup.name })
+
+		component Step: Row {
+			id: step
+			property int number
+			property bool current: false
+			property string title
+			property string detail
+			property string titleName
+			property string detailName
+			property alias action: actionSlot.data
+			width: parent.width
+			spacing: 10
+			Rectangle {
+				width: 22
+				height: 22
+				radius: 11
+				color: "transparent"
+				border.width: 1
+				border.color: step.current ? "#d0ab6f" : Qt.rgba(0.5, 0.5, 0.5, 0.3)
+				Text {
+					anchors.centerIn: parent
+					text: String(step.number)
+					color: step.current ? "#d0ab6f" : root.theme.textMuted
+					font.family: Fonts.ui
+					font.pixelSize: Fonts.px(10)
+				}
+			}
+			Column {
+				width: step.width - 32 - actionSlot.width - (actionSlot.width > 0 ? 10 : 0)
+				spacing: 4
+				Text {
+					objectName: step.titleName
+					width: parent.width
+					text: step.title
+					wrapMode: Text.WordWrap
+					color: root.theme.text
+					font.family: Fonts.uiFor(Font.DemiBold)
+					font.weight: Font.DemiBold
+					font.pixelSize: Fonts.px(11)
+				}
+				Text {
+					objectName: step.detailName
+					width: parent.width
+					text: step.detail
+					wrapMode: Text.WordWrap
+					color: root.theme.textMuted
+					font.family: Fonts.ui
+					font.pixelSize: Fonts.px(11)
+					lineHeight: 1.55
+				}
+			}
+			Item {
+				id: actionSlot
+				width: childrenRect.width
+				height: childrenRect.height
+			}
+		}
+
+		Column {
+			id: setupColumn
+			x: 16
+			y: 16
+			width: parent.width - 32
+			spacing: 4
+			Text {
+				objectName: "setupTitle"
+				text: root.label("verify", { agent: setup.name })
+				color: root.theme.text
+				font.family: Fonts.uiFor(Font.DemiBold)
+				font.weight: Font.DemiBold
+				font.pixelSize: Fonts.px(12)
+			}
+			Text {
+				width: parent.width
+				text: root.label("verifyDescription")
+				wrapMode: Text.WordWrap
+				color: root.theme.textMuted
+				font.family: Fonts.ui
+				font.pixelSize: Fonts.px(11)
+				lineHeight: 1.55
+			}
+			Item { width: 1; height: 14 }
+			Step {
+				number: 1
+				current: true
+				titleName: "setupStep1"
+				detailName: "setupStep1Desc"
+				title: root.setupAgent === "codex" ? root.label("allowHooks") : root.label("restart", { agent: setup.name })
+				detail: root.setupAgent === "codex" ? root.label("reviewHooks")
+					: root.setupAgent === "opencode" ? root.label("restartOpenCode") : root.label("restartDescription")
+			}
+			Item { width: 1; height: 14 }
+			Step {
+				number: 2
+				titleName: "setupStep2"
+				detailName: "setupStep2Desc"
+				title: root.label("sendPrompt")
+				detail: root.label("watch")
+				action: IntegrationButton {
+					objectName: "setupClose"
+					text: root.label("close")
+					onClicked: root.setupAgent = ""
+				}
+			}
+		}
+	}
+
+	component Note: Text {
+		width: parent.width - 8
+		x: 4
+		topPadding: 12
+		bottomPadding: 0
 		wrapMode: Text.WordWrap
-		text: root.setupAgent ? I18n.t(({ claude: "linux.agents.setupClaude", codex: "linux.agents.setupCodex",
-			opencode: "linux.agents.setupOpencode" })[root.setupAgent]) : ""
 		textFormat: Text.PlainText
 		color: root.theme.text
+		opacity: 0.65
 		font.family: Fonts.ui
-		font.pixelSize: Fonts.px(13)
+		font.pixelSize: Fonts.px(11)
+		lineHeight: 1.6
 	}
-	Text {
+	Note {
+		text: root.backend?.busy && !root.backend?.integrations.length ? root.label("loading") : I18n.t("linux.agents.configurationNote")
+	}
+	Note {
+		objectName: "activityNote"
+		text: root.label("activityNote")
+		bottomPadding: 12
+	}
+
+	component Message: Rectangle {
+		id: message
+		property string text
+		property color ink: root.theme.text
+		property string labelName
+		visible: message.text !== ""
 		width: parent.width
-		topPadding: 12
-		wrapMode: Text.WordWrap
-		textFormat: Text.PlainText
-		text: root.backend?.error || (root.backend?.busy ? root.label("loading") : I18n.t("linux.agents.configurationNote"))
-		color: root.theme.textMuted
-		font.family: Fonts.ui
-		font.pixelSize: Fonts.px(13)
+		height: visible ? messageText.implicitHeight + 20 : 0
+		radius: 8
+		color: Qt.rgba(0.5, 0.5, 0.5, 0.08)
+		Text {
+			id: messageText
+			objectName: message.labelName
+			x: 12
+			y: 10
+			width: parent.width - 24
+			text: message.text
+			visible: message.visible
+			wrapMode: Text.WordWrap
+			textFormat: Text.PlainText
+			color: message.ink
+			font.family: Fonts.ui
+			font.pixelSize: Fonts.px(11)
+			lineHeight: 1.6
+		}
+	}
+	Message {
+		labelName: "integrationMessage"
+		text: root.backend?.message === "preview" ? I18n.t("linux.agents.previewSent")
+			: root.backend?.message === "disconnected" ? root.label("disconnected", { agent: root.names[root.backend.messageAgent] ?? "" }) : ""
+	}
+	Item { width: 1; height: root.backend?.message && root.backend?.error ? 8 : 0 }
+	Message {
+		labelName: "integrationError"
+		ink: "#e77f7f"
+		text: root.backend?.error ?? ""
 	}
 }

@@ -21,9 +21,7 @@
 			"configurationNote": "Connecting adds Bloom hooks or a plugin to the agent’s local configuration. Restart the agent after changing its setup. Codex also requires hook review.",
 			"previewFailed": "Could not show the preview. Check that Bloom’s shell and agent alerts are enabled.",
 			"requestFailed": "Could not read or update agent integrations.",
-			"setupClaude": "Restart Claude Code to load the integration. Send a new prompt and watch for its activity in Bloom’s Island.",
-			"setupCodex": "Review and trust the Bloom hooks in Codex Settings or use /hooks in the CLI. Send a new prompt and watch for its activity in Bloom’s Island.",
-			"setupOpencode": "Restart OpenCode. For OpenCode 2 with a shared service, run opencode service stop before reopening it. Send a new prompt and watch for its activity in Bloom’s Island."
+			"previewSent": "Preview sent to the Island. It shows when the Island is free and Do Not Disturb is off."
 		},
 		"notch": {
 			"thisNetworkNeedsASignInYourNetwork": "This network needs a sign-in your network settings handle.",
