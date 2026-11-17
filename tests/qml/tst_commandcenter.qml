@@ -1,5 +1,6 @@
 import QtQuick
 import QtTest
+import "../../shell/common/i18n"
 import "../../shell/modules/notch"
 
 // Bloom's Command Center (App.tsx .command-center-content-minimal, App.css
@@ -101,8 +102,18 @@ Item {
 		}
 
 		function cleanup() {
+			I18n.setting = "en";
 			mouseMove(host, 395, 295);
 			wait(250);
+		}
+
+		function test_russianLabelsAndLiveLanguageSwitch() {
+			I18n.setting = "ru";
+			compare(part(part(cc, "tile-wifi"), "title").text, I18n.t("notch.commandCenter.wifi"));
+			const russian = part(part(cc, "tile-dock"), "title").text;
+			verify(russian !== "Dock Mode", "the visible label is translated");
+			I18n.setting = "en";
+			compare(part(part(cc, "tile-dock"), "title").text, "Dock Mode");
 		}
 
 		function test_tileGrid() {

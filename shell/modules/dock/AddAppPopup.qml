@@ -4,6 +4,7 @@ import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's Add App card (Dock.tsx AddAppPopup): a search field over Running
 // and All apps, fused into the top of the dock. It rises with a scaleY
@@ -175,7 +176,7 @@ Item {
 
 				Text {
 					visible: field.text === ""
-					text: "Search apps..."
+					text: I18n.t("dock.addApp.searchPlaceholder")
 					color: root.textMuted
 					font: field.font
 				}
@@ -207,7 +208,7 @@ Item {
 
 						Text {
 							visible: modelData.title !== null
-							text: (modelData.title || "").toUpperCase()
+							text: (modelData.title === "Running" ? I18n.t("dock.addApp.running") : modelData.title === "All apps" ? I18n.t("dock.addApp.allApps") : modelData.title || "").toUpperCase()
 							leftPadding: Tokens.dock.popup.label.side
 							topPadding: Tokens.dock.popup.label.top
 							bottomPadding: Tokens.dock.popup.label.bottom

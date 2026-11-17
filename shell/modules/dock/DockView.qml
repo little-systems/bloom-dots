@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
@@ -151,7 +152,7 @@ Item {
 		root._cancelPreview();
 		popup.close();
 		menu.forId = id;
-		menu.entries = Dock.menuFor(target);
+		menu.entries = Dock.menuFor(target, (key, english) => I18n.t(key));
 		const p = stage.mapFromItem(null, x, y);
 		menu.openAt(p.x, p.y);
 	}

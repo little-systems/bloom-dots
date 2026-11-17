@@ -1,6 +1,7 @@
 import QtQuick
 import "../../common/tokens.js" as Tokens
 import "qp"
+import "../../common/i18n"
 
 // Bloom's Command Center (App.tsx .command-center-content-minimal): four
 // tiles, five round buttons and two sliders, spread top to bottom with
@@ -70,7 +71,7 @@ Item {
 	}
 
 	function _modeName(mode) {
-		return mode === "fixed" ? "Fixed" : mode === "smart" ? "Smart" : "Peek";
+		return mode === "fixed" ? I18n.t("common.behavior.fixed") : mode === "smart" ? I18n.t("common.behavior.smart") : I18n.t("common.behavior.peek");
 	}
 
 	readonly property real _top: Tokens.cc.padding.v
@@ -90,10 +91,10 @@ Item {
 			width: root._tileWidth
 			height: Tokens.cc.tile.height
 			theme: root.theme
-			title: "Wi-Fi"
+			title: I18n.t("notch.commandCenter.wifi")
 			icon: "bloom-wifi"
 			glyphOpacity: !root.wifiEnabled ? 0.4 : root.wifiConnected ? 1 : 0.7
-			status: !root.wifiKnown ? "…" : !root.wifiEnabled ? "Off" : root.wifiConnected ? (root.ssid || "Connected") : "Not connected"
+			status: !root.wifiKnown ? "…" : !root.wifiEnabled ? I18n.t("notch.commandCenter.off") : root.wifiConnected ? (root.ssid || I18n.t("notch.commandCenter.connected")) : I18n.t("notch.commandCenter.notConnected")
 			active: root.wifiEnabled
 			hasMore: true
 			onClicked: root.wifiToggled()
@@ -106,7 +107,7 @@ Item {
 			width: root._tileWidth
 			height: Tokens.cc.tile.height
 			theme: root.theme
-			title: "Dock Mode"
+			title: I18n.t("notch.commandCenter.dockMode")
 			icon: "bloom-dock"
 			status: root._modeName(root.dockMode)
 			active: root.dockMode === "fixed"
@@ -118,12 +119,12 @@ Item {
 			width: root._tileWidth
 			height: Tokens.cc.tile.height
 			theme: root.theme
-			title: "Bluetooth"
+			title: I18n.t("notch.commandCenter.bluetooth")
 			icon: "bloom-bluetooth"
-			status: !root.bluetoothPowered ? "Off"
+			status: !root.bluetoothPowered ? I18n.t("notch.commandCenter.off")
 				: root.bluetoothNames.length === 1 ? root.bluetoothNames[0]
 				: root.bluetoothNames.length > 1 ? `${root.bluetoothNames.length} connected`
-				: "On"
+				: I18n.t("notch.commandCenter.on")
 			active: root.bluetoothPowered
 			hasMore: true
 			onClicked: root.bluetoothToggled()
@@ -136,7 +137,7 @@ Item {
 			width: root._tileWidth
 			height: Tokens.cc.tile.height
 			theme: root.theme
-			title: "Notch Mode"
+			title: I18n.t("notch.commandCenter.notchMode")
 			icon: "bloom-notch"
 			status: root._modeName(root.notchMode)
 			active: root.notchMode === "fixed"
@@ -212,7 +213,7 @@ Item {
 			width: parent.width
 			theme: root.theme
 			light: root.light
-			label: "Volume"
+			label: I18n.t("notch.commandCenter.volume")
 			icon: root.volumeIcon(root.volume, root.muted)
 			value: root._displayVolume
 			percentText: Math.round(root._displayVolume * 100) + "%"
@@ -226,7 +227,7 @@ Item {
 			width: parent.width
 			theme: root.theme
 			light: root.light
-			label: "Brightness"
+			label: I18n.t("notch.commandCenter.brightness")
 			icon: root.brightnessIcon(root.brightness)
 			available: root.brightness >= 0
 			value: root.brightness / 100

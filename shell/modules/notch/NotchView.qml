@@ -10,6 +10,7 @@ import "pulses.js" as Pulses
 import "panels.js" as Panels
 import "shelf.js" as Shelf
 import "../../common/render"
+import "../../common/i18n"
 
 // The notch (Bloom App.tsx): a pill on the screen edge that springs between
 // its startup drop-in, the collapsed clock, the hovered status strip and its
@@ -997,7 +998,7 @@ Item {
 			ink: root.textColor
 			icon: "inbox"
 			label: String(root.shelfCount)
-			description: "Open shelf: " + root.shelfCount + (root.shelfCount === 1 ? " item" : " items")
+			description: I18n.tCount("linux.notch.openShelf", root.shelfCount)
 			onActivated: { activityHandoff.restart(); root.openPanel("shelf"); }
 		}
 		ActivityBubble {
@@ -1010,7 +1011,7 @@ Item {
 			ink: root.textColor
 			icon: "music"
 			art: root.albumArtEnabled ? root.media.artUrl || "" : ""
-			description: root.media.title ? "Open music: " + root.media.title : "Open music"
+			description: root.media.title ? I18n.t("ui.app.openMusicValue1", { value1: root.media.title }) : I18n.t("ui.app.openMusic")
 			onActivated: { activityHandoff.restart(); root.openMusic(); }
 		}
 		DropArea {
@@ -1030,7 +1031,8 @@ Item {
 					event.accepted = false;
 				else {
 					event.accept(Qt.CopyAction);
-					root.shelfDragEnter();
+					// Qt must finish accepting the enter before the panel changes the input region.
+					Qt.callLater(() => { if (shelfDropArea.containsDrag) root.shelfDragEnter(); });
 				}
 			}
 			onExited: root.shelfDragLeave()

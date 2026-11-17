@@ -4,6 +4,7 @@ import "../../common/tokens.js" as Tokens
 import "calendar.js" as Calendar
 import "qp"
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's calendar and timer split view (App.tsx .calendar-timer-content):
 // the month on the left, the Pomodoro timer on the right. Pure: the timer's
@@ -254,7 +255,7 @@ Item {
 					objectName: "month"
 					height: parent.height
 					verticalAlignment: Text.AlignVCenter
-					text: Qt.locale().standaloneMonthName(root.viewMonth, Locale.LongFormat) + " " + root.viewYear
+					text: Qt.locale(I18n.language).standaloneMonthName(root.viewMonth, Locale.LongFormat) + " " + root.viewYear
 					color: root.theme.text
 					font.family: Fonts.familyFor(Font.DemiBold)
 					font.pixelSize: Fonts.px(Tokens.calendar.header.heading)
@@ -289,7 +290,7 @@ Item {
 						x: 1
 						height: parent.height
 						verticalAlignment: Text.AlignVCenter
-						text: Qt.locale().standaloneMonthName(root.viewMonth, Locale.LongFormat)
+						text: Qt.locale(I18n.language).standaloneMonthName(root.viewMonth, Locale.LongFormat)
 						color: root.theme.text
 						font.family: Fonts.familyFor(Font.DemiBold)
 						font.pixelSize: Fonts.px(Tokens.calendar.picker.text)
@@ -368,7 +369,7 @@ Item {
 				Text {
 					objectName: "todayLabel"
 					anchors.centerIn: parent
-					text: "Today"
+					text: I18n.t("ui.calendar.today")
 					color: root.theme.text
 					opacity: Tokens.calendar.header.todayOpacity
 					font.family: Fonts.familyFor(Font.Normal)
@@ -526,7 +527,7 @@ Item {
 							x: 6
 							height: parent.height
 							verticalAlignment: Text.AlignVCenter
-							text: Qt.locale().standaloneMonthName(parent.index, Locale.LongFormat)
+							text: Qt.locale(I18n.language).standaloneMonthName(parent.index, Locale.LongFormat)
 							color: root.theme.text
 							font.family: Fonts.familyFor(Font.Normal)
 							font.pixelSize: Fonts.px(Tokens.calendar.picker.text)

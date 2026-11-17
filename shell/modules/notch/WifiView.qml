@@ -2,6 +2,7 @@ import QtQuick
 import "../../common/tokens.js" as Tokens
 import "qp"
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's Wi-Fi panel (WifiPanel.tsx, QuickPanel.css .qp): the header with
 // scan and the radio switch, the networks (connected, saved, then by
@@ -40,14 +41,14 @@ Item {
 	// open (work sign-in, WEP, OWE) goes to the settings tool.
 	readonly property var _personal: ["wpa", "wpa2", "wpa3"]
 	readonly property var _errorText: ({
-		"wrong-password": "Wrong password",
-		"password-required": "Enter the password",
-		"password-length": "Wi-Fi passwords are 8 to 63 characters",
-		"unsupported": "Connect to this network in your network settings",
-		"not-found": "This network is out of range",
-		"timeout": "Couldn't connect in time",
-		"no-adapter": "No Wi-Fi adapter found",
-		"failed": "Couldn't connect"
+		"wrong-password": I18n.t("ui.wifiPanel.wrongPassword"),
+		"password-required": I18n.t("ui.wifiPanel.enterThePassword"),
+		"password-length": I18n.t("ui.wifiPanel.wiFiPasswordsAre8To63Characters"),
+		"unsupported": I18n.t("linux.notch.connectToThisNetworkInYourNetworkSettings"),
+		"not-found": I18n.t("ui.wifiPanel.thisNetworkIsOutOfRange"),
+		"timeout": I18n.t("ui.wifiPanel.couldnTConnectInTime"),
+		"no-adapter": I18n.t("ui.wifiPanel.noWiFiAdapterFound"),
+		"failed": I18n.t("linux.notch.couldnTConnect")
 	})
 	property string selected: ""
 	// A saved network whose stored password stopped working gets a field.
@@ -68,10 +69,10 @@ Item {
 		if (was !== ssid) root.selected = ssid;
 	}
 	function _statusText(n) {
-		if (root.busy === n.ssid) return "Connecting…";
-		if (n.connected) return "Connected";
-		if (n.saved) return "Saved";
-		return n.security === "open" ? "Open" : "Secured";
+		if (root.busy === n.ssid) return I18n.t("ui.bluetoothPanel.connecting");
+		if (n.connected) return I18n.t("notch.commandCenter.connected");
+		if (n.saved) return I18n.t("ui.wifiPanel.saved");
+		return n.security === "open" ? I18n.t("ui.dock.open") : I18n.t("ui.wifiPanel.secured");
 	}
 	function _signalIcon(signal) {
 		return signal >= 75 ? "wifi" : signal >= 50 ? "wifi-high" : signal >= 25 ? "wifi-low" : "wifi-zero";
@@ -121,7 +122,7 @@ Item {
 			objectName: "header"
 			width: parent.width
 			theme: root.theme
-			title: "Wi-Fi"
+			title: I18n.t("notch.commandCenter.wifi")
 			onBack: root.back()
 
 			QpIconButton {
@@ -152,7 +153,7 @@ Item {
 				visible: !root.enabled || root.networks.length === 0
 				theme: root.theme
 				text: !root.available && root.unavailableText !== "" ? root.unavailableText
-					: !root.enabled ? "Wi-Fi is off" : root.scanning ? "Looking for networks…" : "No networks found"
+					: !root.enabled ? I18n.t("ui.wifiPanel.wiFiIsOff") : root.scanning ? I18n.t("ui.wifiPanel.lookingForNetworks") : I18n.t("ui.wifiPanel.noNetworksFound")
 			}
 
 			QpList {
@@ -204,7 +205,7 @@ Item {
 								objectName: "note"
 								width: entry.width - Tokens.qp.actions.left - Tokens.qp.actions.side
 								wrapMode: Text.Wrap
-								text: "This network needs a sign-in your network settings handle."
+								text: I18n.t("linux.notch.thisNetworkNeedsASignInYourNetwork")
 								color: root.theme.textMuted
 								font.family: Fonts.family
 								font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -214,7 +215,7 @@ Item {
 								sourceComponent: QpButton {
 									objectName: "openSettingsButton"
 									theme: root.theme
-									text: "Open Settings"
+									text: I18n.t("dock.options.openSettings")
 									onClicked: root.openSettings()
 								}
 							}
@@ -234,7 +235,7 @@ Item {
 								sourceComponent: QpInput {
 									objectName: "password"
 									theme: root.theme
-									placeholder: "Password"
+									placeholder: I18n.t("ui.wifiPanel.password")
 									echoMode: TextInput.Password
 									enabled: !entry.isBusy
 									Component.onCompleted: forceActiveFocus()
@@ -252,7 +253,7 @@ Item {
 								QpButton {
 									objectName: entry.n.connected ? "disconnect" : "connect"
 									theme: root.theme
-									text: entry.n.connected ? "Disconnect" : "Connect"
+									text: entry.n.connected ? I18n.t("ui.bluetoothPanel.disconnect") : I18n.t("ui.bluetoothPanel.connect")
 									primary: !entry.n.connected
 									busy: entry.isBusy && !entry.n.connected
 									enabled: entry.n.connected || (!entry.isBusy
@@ -267,7 +268,7 @@ Item {
 									sourceComponent: QpButton {
 										objectName: "forget"
 										theme: root.theme
-										text: "Forget"
+										text: I18n.t("ui.wifiPanel.forget")
 										enabled: !entry.isBusy
 										onClicked: root.forgetRequested(entry.n.ssid)
 									}
@@ -304,7 +305,7 @@ Item {
 			anchors.horizontalCenter: parent.horizontalCenter
 			visible: root.settingsAvailable
 			theme: root.theme
-			text: "More Wi-Fi settings"
+			text: I18n.t("ui.wifiPanel.moreWiFiSettings")
 			onClicked: root.openSettings()
 		}
 	}

@@ -21,6 +21,32 @@
 			"configurationNote": "Connecting adds Bloom hooks or a plugin to the agent’s local configuration. Restart the agent after changing its setup. Codex also requires hook review.",
 			"previewFailed": "Could not show the preview. Check that Bloom’s shell and agent alerts are enabled.",
 			"requestFailed": "Could not read or update agent integrations."
+		},
+		"notch": {
+			"thisNetworkNeedsASignInYourNetwork": "This network needs a sign-in your network settings handle.",
+			"connectToThisNetworkInYourNetworkSettings": "Connect to this network in your network settings",
+			"couldnTConnect": "Couldn't connect",
+			"couldnTLookForDevices": "Couldn't look for devices",
+			"openShelf_one": "Open shelf: {{count}} item",
+			"openShelf_other": "Open shelf: {{count}} items",
+			"unavailable": "{{panel}} is unavailable"
+		},
+		"dock": {
+			"emptyTrash": "Empty Trash?",
+			"thisPermanentlyRemovesTheItems": "This permanently removes the items.",
+			"emptyTrash2": "Empty Trash",
+			"hideWorkspaces": "Hide Workspaces",
+			"openDrive": "Open Drive",
+			"ejectDrive": "Eject Drive",
+			"hideFromDock": "Hide from Dock",
+			"openTrash": "Open Trash",
+			"emptyTrash3": "Empty Trash…",
+			"openFolder": "Open Folder",
+			"activate": "Activate",
+			"openNewWindow": "Open New Window",
+			"closeAllWindows": "Close all windows",
+			"closeWindow": "Close window",
+			"activateTrayApp": "Activate tray app"
 		}
 	}
 }

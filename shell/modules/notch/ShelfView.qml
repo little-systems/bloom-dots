@@ -3,6 +3,7 @@ import QtQuick.Shapes
 import "../../common"
 import "../../common/render"
 import "shelf.js" as Logic
+import "../../common/i18n"
 
 // Bloom's shelf (App.tsx .shelf-content, App.css .shelf-*): a row of tiles,
 // each a 104 × 84 preview (a picture, a text's opening line, or the file's
@@ -107,7 +108,7 @@ Item {
 			Text {
 				objectName: "label"
 				anchors.centerIn: parent
-				text: "Drop files or selected text here"
+				text: I18n.t("ui.app.dropFilesOrSelectedTextHere")
 				color: root.theme.text
 				font.family: Fonts.family
 				font.pixelSize: Fonts.px(12)
