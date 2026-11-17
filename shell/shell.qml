@@ -173,6 +173,18 @@ ShellRoot {
 		}
 	}
 
+	// The first-run guide (Onboarding): opened once after install, or replayed.
+	LazyLoader {
+		active: Onboarding.opened
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/onboarding/OnboardingWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
 	LazyLoader {
 		active: _modules.indexOf("wallpaper") >= 0
 		component: Variants {

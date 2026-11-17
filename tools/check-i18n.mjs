@@ -4,7 +4,7 @@
 // complete for their language. Prints coverage per language (partial is fine:
 // English fills in). Usage: node tools/check-i18n.mjs --check [--root <dir>]
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
@@ -52,7 +52,7 @@ for (const path of files(join(root, "shell"))) {
 	for (const m of text.matchAll(/I18n\.(t|tCount)\(\s*"([^"]+)"/g)) {
 		const [, fn, key] = m;
 		const known = fn === "tCount" ? english.has(key + "_other") || english.has(key) : english.has(key);
-		if (!known) errors.push(`${path.slice(root.length + 1)}: ${key} is not in the English catalog`);
+		if (!known) errors.push(`${relative(root, path)}: ${key} is not in the English catalog`);
 	}
 }
 

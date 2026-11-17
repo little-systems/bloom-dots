@@ -778,7 +778,25 @@ var catalogs = {
 			"calendarPlanned": "Calendar connections are planned for a future update.",
 			"planned": "Planned"
 		},
-		"linux": {}
+		"linux": {
+			"onboarding": {
+				"welcomeDesc": "Bloom makes your Linux desktop feel alive.",
+				"dropOnTheIsland": "Drop files or text on it to keep them on the shelf.",
+				"dockDesc": "Your apps and workspaces live down here.",
+				"rightClickForOptions": "Right-click an app for its options and a custom icon.",
+				"hoverAnEdge": "Hover the left or right edge and scroll to adjust.",
+				"keysTitle": "Everything a keystroke away.",
+				"keysDesc": "Tap Super to search apps, files and the web, or do quick maths.",
+				"keysClipboard": "Super+V brings back anything you copied.",
+				"keysEmoji": "Super+. picks an emoji.",
+				"keysOverview": "Super+Tab shows every window.",
+				"keysCheatsheet": "Super+/ lists every shortcut.",
+				"updateIndicator": "Show pending updates",
+				"finishShortcuts": "Press Super+/ any time for every shortcut.",
+				"finishUninstall": "bloom uninstall puts your previous desktop back.",
+				"couldntSave": "Couldn't save that. Please try again. {{value1}}"
+			}
+		}
 	},
 	"es": {},
 	"fr": {},
