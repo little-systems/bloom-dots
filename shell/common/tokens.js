@@ -154,6 +154,8 @@ var dock = {
 	iconBox: 36,
 	iconImage: 28,
 	iconOnlyImage: 32,
+	// Bloom Settings' sliders icon (Bloom Dock.css .bloom-settings-icon).
+	settingsImage: 32,
 	iconRadius: 12,
 	divider: { width: 1, height: 26, margin: 2, alpha: 0.24 },
 	startup: { impactMs: 280, expandMs: 350, animatingMs: 1500 },

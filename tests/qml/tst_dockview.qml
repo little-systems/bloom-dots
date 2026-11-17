@@ -44,6 +44,17 @@ Item {
 			tryCompare(v, "startupAnimating", false, 3000);
 		}
 
+		// Bloom draws its sliders Settings icon at 32 px in the usual tile (Dock.css .bloom-settings-icon).
+		function test_settingsIconDrawsAt32() {
+			const v = make({ items: { pinned: [host.app("bloom-settings"), host.app("a")], unpinned: [] } });
+			tryVerify(() => findChild(v, "dock-slot-bloom-settings") !== null, 1000);
+			const settings = findChild(findChild(v, "dock-slot-bloom-settings"), "dock-image");
+			const other = findChild(findChild(v, "dock-slot-a"), "dock-image");
+			compare([settings.width, settings.height], [32, 32]);
+			compare(other.width, 28);
+			verify(findChild(findChild(v, "dock-slot-bloom-settings"), "dock-tile").visible, "keeps the tile");
+		}
+
 		function test_iconsRevealInsideTheOpeningDock() {
 			const v = make();
 			const frame = findChild(v, "dock-reveal"), row = findChild(v, "dock-row");

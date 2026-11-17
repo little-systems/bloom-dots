@@ -2,3 +2,6 @@ Bloom's own inline icons (Bloom `src/App.tsx` @ b5fb962: WifiIcon, BluetoothIcon
 DockIcon, NotchIcon, MoonIcon, BatterySaverIcon, TrayIcon, BellIcon, SettingsIcon,
 ReloadIcon, BrightnessLowIcon; `src/Overlay.tsx` SunIcon; `src/icons/GithubIcon.tsx` for the About credit), copied as SVG files. GPL-3.0, as Bloom.
 `tools/gen-icons.mjs` embeds them as `bloom-<name>`.
+
+`share/icons/hicolor/*/apps/bloom-settings.png` is Bloom's `public/bloom-settings-sliders.png`
+(Bloom @ 63a9bf5), resized; GPL-3.0, as Bloom.

@@ -536,6 +536,7 @@ Item {
 							anchors.fill: parent
 							visible: slot.kind === "app" || slot.kind === "tray"
 							name: slot.name
+							appId: slot.key
 							iconSource: slot.icon
 							windows: slot.windows
 							backgroundDot: slot.backgroundDot
