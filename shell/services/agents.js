@@ -184,3 +184,13 @@ function formatElapsed(started, now) {
 function activityWidth(statusWidth, elapsedWidth) {
 	return Math.max(224, Math.ceil(32 + 20 + 8 + statusWidth + 24 + elapsedWidth));
 }
+
+// The working label's light sweep (Bloom AgentAlert.css): period and the
+// bright band's half-width as a fraction of the label (the gradient is 250%
+// wide; its colour stops sit `start`% from either edge).
+function shimmer(activity) {
+	var periods = { editing: 3200, reading: 4000, running: 3800, working: 5200, checking: 5200 };
+	var starts = { editing: 46, reading: 44 };
+	var start = starts[activity] || 40;
+	return { periodMs: periods[activity] || 4800, half: (50 - start) * 2.5 / 100 };
+}

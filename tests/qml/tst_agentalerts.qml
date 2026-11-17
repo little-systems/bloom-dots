@@ -139,4 +139,15 @@ TestCase {
 		compare(v, { codex: 1700000000 });
 		verify(Agents.verify(v, "codex", 1800000000) === v);
 	}
+
+	// Bloom's .agent-activity-status shimmer: a 250%-wide gradient whose
+	// bright centre sweeps the label between 16% and 66% of each period.
+	function test_shimmerFollowsTheActivity() {
+		compare(Agents.shimmer("thinking"), { periodMs: 4800, half: 0.25 });
+		compare(Agents.shimmer("editing"), { periodMs: 3200, half: 0.1 });
+		compare(Agents.shimmer("reading"), { periodMs: 4000, half: 0.15 });
+		compare(Agents.shimmer("running"), { periodMs: 3800, half: 0.25 });
+		compare(Agents.shimmer("working"), { periodMs: 5200, half: 0.25 });
+		compare(Agents.shimmer("checking"), { periodMs: 5200, half: 0.25 });
+	}
 }
