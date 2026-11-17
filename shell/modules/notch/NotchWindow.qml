@@ -132,6 +132,9 @@ PanelWindow {
 		onShelfTextDropped: text => ShelfState.addText(text)
 		privacy: Devices.privacy
 		deviceAlert: Devices.alert
+		agentActivity: AgentAlerts.active
+		agentNow: AgentAlerts.now
+		agentLightTheme: Theme.isLight
 		enabledPanels: ({ calendar: Settings.values["bloom-calendar-enabled"], "command-center": Settings.values["bloom-notch-command-center-enabled"], devices: Settings.values["bloom-notch-devices-enabled"] })
 		onPanelRemembered: panel => PanelState.remember(panel)
 		edgeDelay: Settings.values["bloom-notch-edge-delay"]

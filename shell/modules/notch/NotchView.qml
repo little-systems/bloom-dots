@@ -92,8 +92,8 @@ Item {
 	readonly property Item musicBubbleHit: musicBubble.hitEnabled ? musicBubble : null
 	readonly property bool _showActivities: root.ready && root.expanded && root.surfaceVisible && !root.hidden
 		&& !root.open && root.panel === ""
-	readonly property bool _showShelfBubble: root._showActivities && root.shelfCount > 0
-	readonly property bool _showMusicBubble: root._showActivities && root.timer.active && root.musicEnabled
+	readonly property bool _showShelfBubble: root._showActivities && !root.agentVisible && root.shelfCount > 0
+	readonly property bool _showMusicBubble: root._showActivities && (root.timer.active || root.agentVisible) && root.musicEnabled
 		&& root.compactNotch && root.media.hasMedia && root.musicActivityVisible
 
 	function shelfDragEnter() {
@@ -135,6 +135,12 @@ Item {
 		onTriggered: if (root.panel === "shelf") root.closePanel()
 	}
 	property var privacy: ({ microphone: false, screen: false })
+	property var agentActivity: null
+	property real agentNow: 0
+	property bool agentLightTheme: false
+	readonly property bool agentBlocked: !root.ready || !root.surfaceVisible || root.startupAnimating
+		|| root.suppressed || root.open || root.panel !== "" || root.alertVisible || root.pulse !== ""
+	readonly property bool agentVisible: !!root.agentActivity && !root.agentBlocked
 	property var deviceAlert: null
 	signal deviceAlertDismissed()
 	readonly property bool alertVisible: root.deviceAlert !== null && root.panel === "" && !root.open
@@ -204,7 +210,7 @@ Item {
 		enabled: root.musicEnabled, compactNotch: root.compactNotch, timerActive: root.timer.active,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible
 	})
-	readonly property string bloomMode: root.panel || (root.alertVisible ? "device-alert" : root.open ? "music" : root.collapsedMode)
+	readonly property string bloomMode: root.panel || (root.alertVisible ? "device-alert" : root.open ? "music" : root.agentVisible ? "agent" : root.collapsedMode)
 	readonly property bool musicOnHover: Music.musicOnStatusHover({
 		open: root.open, hovered: root.statusHover, mode: root.bloomMode, enabled: root.musicEnabled, timerActive: root.timer.active,
 		hasMedia: root.media.hasMedia, activityVisible: root.musicActivityVisible, compactNotch: root.compactNotch
@@ -239,7 +245,7 @@ Item {
 	readonly property int widgetCount: root.widgets.left.length + root.widgets.right.length
 	readonly property var target: Logic.geometry(
 		{ ready: root.ready, visible: root.surfaceVisible, hidden: root.hidden, expanded: root.expanded, impacted: root.impacted },
-		(root.panel ? Panels.size(root.panel, root.calendarRows, root.devicesHeight, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : {
+		(root.panel ? Panels.size(root.panel, root.calendarRows, root.devicesHeight, root.shelfCount) : root.alertVisible ? { width: 330, height: 76 } : root.agentVisible ? { width: agentRow.desiredWidth, height: agentRow.height } : {
 			width: Music.contentWidth({
 				open: root.open, mode: root.bloomMode, hovered: root.statusHover, onStatusHover: root.musicOnHover,
 				layout: root.layout, visualizer: root.visualizerEnabled, playing: root.media.isPlaying,
@@ -458,7 +464,7 @@ Item {
 	// An open player counts too, so a hidden notch shows while it is open.
 	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked
 		&& !(root.mode === "smart" && root.suppressed)
-		&& (root._shelfDragOpened || root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
+		&& (root.agentVisible || root._shelfDragOpened || root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
 	function closeForLock() {
 		root._shelfDragOpened = false;
 		root._shelfDraggingOut = false;
@@ -661,7 +667,7 @@ Item {
 					x: Tokens.sizes.padding
 					width: Math.max(0, parent.width - 2 * Tokens.sizes.padding)
 					height: Tokens.sizes.mainRow
-					readonly property bool showing: (root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible) || root._panelHeader
+					readonly property bool showing: (root.expanded && !root.hidden && !root.open && root.panel === "" && !root.alertVisible && !root.agentVisible) || root._panelHeader
 					opacity: showing ? 1 : 0
 					// Input follows the state, not the fade: a fading row doesn't
 					// take clicks meant for what replaces it.
@@ -669,7 +675,7 @@ Item {
 					// An alert takes the pill at once (Bloom's first alert frame has
 					// no clock); otherwise the row fades.
 					Behavior on opacity {
-						enabled: !root.alertVisible
+						enabled: !root.alertVisible && !root.agentVisible
 						NumberAnimation {
 							duration: Tokens.easing.framerDefaultMs
 							easing.type: Easing.BezierSpline
@@ -927,6 +933,17 @@ Item {
 					root.devicesHeight = Qt.binding(() => item?.devicesHeight ?? 150);
 					root.panelScroll = Qt.binding(() => item?.listScroll ?? 0);
 				}
+			}
+			AgentActivity {
+				id: agentRow
+				objectName: "agentActivity"
+				width: parent.width
+				y: Math.max(0, (parent.height - height) / 2)
+				entry: root.agentVisible ? root.agentActivity : null
+				now: root.agentNow
+				light: root.agentLightTheme
+				ink: root.textColor
+				mutedInk: root.textMuted
 			}
 			DeviceAlert {
 				id: alertSurface

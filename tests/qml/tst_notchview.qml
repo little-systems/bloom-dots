@@ -65,6 +65,24 @@ Item {
 
 		function centre(v) { return { x: 500, y: v.target.height / 2 }; }
 
+		function test_agentActivitySharesTheNotchWithMusicAndPanels() {
+			const v = make({ media: playing() });
+			settle(v);
+			v.agentNow = 62000;
+			v.agentActivity = { agent: "claude", kind: "working", activity: "editing", started: 0 };
+			const row = findChild(v, "agentActivity");
+			compare(v.bloomMode, "agent");
+			compare(v.target.height, 36);
+			compare(v.target.width, 224);
+			compare(row.label, "Editing");
+			verify(v.stateObject().musicBubble);
+			mouseClick(v, 500, 18);
+			verify(v.panel !== "");
+			verify(!v.agentVisible);
+			v.closePanel();
+			compare(v.bloomMode, "agent");
+		}
+
 		function test_activityBubblesFollowTheTimerAndOpenTheirOwnViews() {
 			const v = make({ media: playing(), shelfCount: 2, albumArtEnabled: false });
 			settle(v);

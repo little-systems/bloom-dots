@@ -23,7 +23,13 @@ active_is() { state | jq -e --arg k "$1" --arg a "$2" '.active.kind == $k and .a
 out="$(printf '{"hook_event_name":"PreToolUse","tool_name":"Edit","session_id":"s1","cwd":"/home/u/bloom","tool_input":{"file_path":"/secret"}}' | "$ROOT/bin/bloom" agent-hook claude)"
 assert_eq "$out" "{}" "the hook answers {}"
 wait_for "the Island to show Claude editing" active_is working editing
-pass "a Claude hook reaches the shell"
+notch_shows_agent() { ipc notch state | jq -e '.[0].bloomMode == "agent" and .[0].height == 36' >/dev/null; }
+wait_for "the agent activity to occupy the Island" notch_shows_agent
+if [[ -n "${BLOOM_AGENT_SCREENSHOT:-}" ]]; then
+	sleep 0.5
+	grim -o HEADLESS-1 "$BLOOM_AGENT_SCREENSHOT"
+fi
+pass "a Claude hook reaches the shell and occupies the Island"
 assert_eq "$(jq -c 'keys' "$XDG_STATE_HOME/bloom/agents.json")" '["claude"]' "the first event marks Claude connected"
 pass "the first event is remembered as connected"
 

@@ -88,6 +88,15 @@ ShellRoot {
 
 	readonly property var _modules: Settings.values["bloom-enabled-modules"]
 
+	Binding {
+		target: AgentAlerts
+		property: "blocked"
+		value: {
+			const windows = notchLoader.active ? notchLoader.item?.instances ?? [] : [];
+			return !windows.some(loader => loader.item && !loader.item.view.agentBlocked);
+		}
+	}
+
 	LoginScreen {}
 
 	LazyLoader {
