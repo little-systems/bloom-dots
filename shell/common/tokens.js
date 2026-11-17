@@ -154,6 +154,8 @@ var dock = {
 	iconBox: 36,
 	iconImage: 28,
 	iconOnlyImage: 32,
+	// Bloom Settings' sliders icon (Bloom Dock.css .bloom-settings-icon).
+	settingsImage: 32,
 	iconRadius: 12,
 	divider: { width: 1, height: 26, margin: 2, alpha: 0.24 },
 	startup: { impactMs: 280, expandMs: 350, animatingMs: 1500 },
@@ -494,4 +496,32 @@ var osd = {
 		widthSpring: { duration: 0.35, bounce: 0 },
 		exitX: -18, exitXMs: 280, exitOpacityMs: 180, exitOpacityDelay: 100
 	}
+};
+
+// The first-run guide card (Bloom Onboarding.css at 63a9bf5).
+var onboarding = {
+	dark: {
+		panel: "#202020", text: "#f3f3f3", muted: "#b7b7b7", border: "#29ffffff", control: "#292929",
+		selected: "#17ffffff", hover: "#0effffff", primary: "#eeeeee", primaryText: "#202020",
+		primaryHover: "#ffffff", arrow: "#d3d3d3", error: "#ffc4b9", toggle: "#686868"
+	},
+	light: {
+		panel: "#f5f5f5", text: "#1c1c1e", muted: "#5c5c60", border: "#24000000", control: "#eaeaea",
+		selected: "#ffffff", hover: "#0a000000", primary: "#262626", primaryText: "#fafafa",
+		primaryHover: "#101010", arrow: "#454548", error: "#a83225", toggle: "#a0a0a0"
+	},
+	radius: 24, highlight: "#0cffffff", focus: "#8fb7fa", toggleOn: "#397cef",
+	watermark: { size: 430, left: -235, bottom: -124, opacity: 0.055 },
+	header: { padX: 23, padY: 17, title: 21, tracking: -1, button: 30, closeIcon: 17 },
+	content: { top: 16, side: 32, title: 27, titleLine: 1.16, titleTracking: -0.9, titleGap: 12, text: 14, textLine: 1.5,
+		hint: 13, hintLine: 1.5, hintTop: 20, hintGap: 8 },
+	welcome: { side: 36, bottom: 12, title: 32, titleTracking: -1.1, hint: 11, hintTop: 22 },
+	footer: { padX: 24, padY: 19, minHeight: 74, progress: 11, gap: 17, backIcon: 16, link: 12 },
+	primary: { padX: 17, padY: 11, text: 12, minWidth: 114, gap: 12, icon: 15 },
+	modes: { top: 28, legend: 14, legendNote: 10, legendGap: 9, radius: 11, pad: 3, segmentPad: 7, segmentRadius: 8,
+		segmentText: 12, check: 12, checkGap: 7, note: 11, noteLine: 1.45, noteMin: 32, noteTop: 8 },
+	preferences: { top: 14, rowMin: 42, rowPad: 8, label: 14, toggle: { width: 35, height: 20, knob: 16, pad: 2 }, toggleMs: 160 },
+	error: { size: 11, top: 13 },
+	motion: { moveMs: 360, moveEase: [0.22, 1, 0.36, 1], fadeOutMs: 100, fadeInMs: 160, fadeInDelayMs: 120 },
+	disabledOpacity: 0.45
 };

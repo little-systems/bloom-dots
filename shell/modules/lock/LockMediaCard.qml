@@ -2,6 +2,7 @@ import QtQuick
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "../notch"
+import "../../common/i18n"
 
 // Transport only: this is a child of the secure session-lock surface, never
 // a desktop window, application launcher, volume mixer or authentication path.
@@ -43,7 +44,7 @@ Rectangle {
 		Text {
 			objectName: "mediaTitle"
 			width: parent.width
-			text: root.media.title || "Now Playing"
+			text: root.media.title || I18n.t("linux.session.nowPlaying")
 			textFormat: Text.PlainText
 			elide: Text.ElideRight
 			color: root.theme.text
@@ -81,7 +82,7 @@ Rectangle {
 			iconWidth: 24
 			iconHeight: 16
 			onActivated: root.previousRequested()
-			Accessible.name: "Previous track"
+			Accessible.name: I18n.t("linux.session.previousTrack")
 			Accessible.role: Accessible.Button
 			Accessible.onPressAction: if (enabled) root.previousRequested()
 		}
@@ -98,7 +99,7 @@ Rectangle {
 			box: root.metrics.button
 			iconSize: 20
 			onClicked: root.toggleRequested()
-			Accessible.name: playing ? "Pause" : "Play"
+			Accessible.name: playing ? I18n.t("notch.calendar.pause") : I18n.t("linux.session.play")
 			Accessible.role: Accessible.Button
 			Accessible.onPressAction: if (enabled) root.toggleRequested()
 		}
@@ -116,7 +117,7 @@ Rectangle {
 			iconWidth: 24
 			iconHeight: 16
 			onActivated: root.nextRequested()
-			Accessible.name: "Next track"
+			Accessible.name: I18n.t("ui.previewMediaPlayer.nextTrack")
 			Accessible.role: Accessible.Button
 			Accessible.onPressAction: if (enabled) root.nextRequested()
 		}

@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import "../../shell/settings"
 import "../../shell/common/render"
+import "../../shell/common/i18n"
 
 Item {
 	id: host
@@ -158,6 +159,20 @@ Item {
 		SettingsView { width: 776; height: 560; store: fakeStore; version: "0.1.0"; sys: fakeSys; net: fakeNet; bt: fakeBt }
 	}
 
+	QtObject {
+		id: fakeAgents
+		property var integrations: [
+			{ agent: "claude", installed: true, needsUpdate: false, verifiedAt: null, path: "" },
+			{ agent: "codex", installed: true, needsUpdate: false, verifiedAt: null, path: "" },
+			{ agent: "opencode", installed: false, needsUpdate: false, verifiedAt: null, path: "" }]
+		property bool busy: false
+		property string error: ""
+		property string message: ""
+		property string messageAgent: ""
+		property var requests: []
+		function request(action, agent, kind) { requests = requests.concat([[action, agent ?? "", kind ?? ""]]); }
+	}
+
 	TestCase {
 		name: "SettingsView"
 		when: windowShown
@@ -291,6 +306,7 @@ Item {
 
 		function test_sliderSnapsToSteps() {
 			const v = make();
+			reveal(v, "battery");
 			const s = findChild(part(v, "battery"), "sliderTrack");
 			waitForRendering(host);
 			const p = s.mapToItem(host, s.width, s.height / 2);
@@ -347,6 +363,24 @@ Item {
 			reveal(v, "import");
 			click(v, "import");
 			compare([exported.count, imported.count], [1, 1]);
+		}
+
+		// Bloom's Language row (GeneralTab.tsx): first in System, System default
+		// plus each language in its own name; the choice applies live.
+		function test_languageRow() {
+			const v = make("general");
+			const select = part(v, "language");
+			compare(select.options.map(o => o.label), ["System default", "English", "Русский", "Français", "Español",
+				"Português (Brasil)", "Português (Portugal)"]);
+			compare(select.options.map(o => o.value), ["system", "en", "ru", "fr", "es", "pt-BR", "pt-PT"]);
+			compare(select.value, "system");
+			select.activated("ru");
+			compare(v.store.values["bloom-language"], "ru");
+			tryCompare(I18n, "language", "ru");
+			compare(part(v, "title").text, "Настройки");
+			v.query = I18n.t("settings.appearance.themeMode");
+			verify(v._hits.some(hit => hit.tab === "appearance"), "search follows the chosen language");
+			select.activated("system");
 		}
 
 		// Bloom's "Made with ❤️ by" credit, both authors linked to GitHub.
@@ -410,6 +444,45 @@ Item {
 			click(v, "reset");
 			click(v, "confirmOk");
 			compare(confirmed.count, 1);
+		}
+
+		function test_openSetupReplaysTheGuide() {
+			const v = make();
+			const requested = spy(v, "setupRequested");
+			reveal(v, "openSetup");
+			compare(part(v, "openSetupLabel").text, "Open setup");
+			click(v, "openSetup");
+			compare(requested.count, 1);
+		}
+
+		// Bloom's AgentIntegrations: "Setup help" opens a two-step verify guide.
+		function test_integrationSetupGuide() {
+			const v = make("integrations");
+			v.agentIntegrations = fakeAgents;
+			reveal(v, "help-claude");
+			click(v, "help-claude");
+			compare(part(v, "setupTitle").text, "Verify Claude Code");
+			compare(part(v, "setupStep1").text, "Restart Claude Code");
+			compare(part(v, "setupStep1Desc").text, "Restart the agent to load the integration.");
+			compare(part(v, "setupStep2").text, "Send a new prompt");
+			click(v, "help-codex");
+			compare(part(v, "setupStep1").text, "Allow Bloom’s hooks");
+			reveal(v, "setupClose");
+			click(v, "setupClose");
+			verify(!part(v, "setupPanel").visible);
+			verify(part(v, "activityNote").text.startsWith("The activity stays in the notch"));
+		}
+
+		function test_integrationMessages() {
+			const v = make("integrations");
+			v.agentIntegrations = fakeAgents;
+			fakeAgents.message = "preview";
+			compare(part(v, "integrationMessage").text, "Preview sent to the Island. It shows when the Island is free and Do Not Disturb is off.");
+			fakeAgents.message = "disconnected";
+			fakeAgents.messageAgent = "codex";
+			compare(part(v, "integrationMessage").text, "Codex disconnected. Restart the agent to apply.");
+			fakeAgents.message = "";
+			verify(!part(v, "integrationMessage").visible);
 		}
 
 		function test_lastPanelCantTurnOff() {

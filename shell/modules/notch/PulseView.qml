@@ -2,6 +2,7 @@ import QtQuick
 import "../../common/tokens.js" as Tokens
 import "pulses.js" as Pulses
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's pulse slot in the collapsed row (AnimatePresence mode="wait"): the
 // view on screen leaves before the next one enters, 300 ms each way.
@@ -83,7 +84,7 @@ Item {
 			}
 			Label {
 				anchors.verticalCenter: parent.verticalCenter
-				text: Pulses.batteryLabel(root._kindShown === "low" ? "low" : "power", root.battery)
+				text: I18n.t(root._kindShown === "low" ? "notch.status.lowBattery" : root.battery.pluggedIn ? "notch.status.charging" : "notch.status.onBattery") + " • " + root.battery.level + "%"
 				color: root._kindShown === "low" ? Tokens.status.red : root.textColor
 			}
 		}
@@ -100,7 +101,7 @@ Item {
 			UpdateArrow { anchors.verticalCenter: parent.verticalCenter }
 			Label {
 				anchors.verticalCenter: parent.verticalCenter
-				text: "Update Available"
+				text: I18n.t("notch.status.updateAvailable")
 				color: Tokens.status.green
 			}
 		}

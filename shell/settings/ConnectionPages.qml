@@ -2,6 +2,7 @@ import QtQuick
 import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
+import "../common/i18n"
 
 // Settings' own Network and Bluetooth pages, on the same rows as every other
 // page. `net` and `bt` are the Network and Bluetooth services, or stand-ins.
@@ -26,8 +27,8 @@ Column {
 		id: toggleCheck
 		interval: 5000
 		onTriggered: {
-			if (root._wantWifi !== null && root.net.wifiEnabled !== root._wantWifi) root._toggleError = "Wi-Fi didn't change. Try again.";
-			if (root._wantBt !== null && root.bt.powered !== root._wantBt) root._toggleError = "Bluetooth didn't change. Try again.";
+			if (root._wantWifi !== null && root.net.wifiEnabled !== root._wantWifi) root._toggleError = I18n.t("linux.settings.wiFiDidnTChangeTryAgain");
+			if (root._wantBt !== null && root.bt.powered !== root._wantBt) root._toggleError = I18n.t("linux.settings.bluetoothDidnTChangeTryAgain");
 			root._wantWifi = null;
 			root._wantBt = null;
 		}
@@ -81,10 +82,10 @@ Column {
 		return signal >= 67 ? "wifi" : signal >= 34 ? "wifi-high" : signal >= 10 ? "wifi-low" : "wifi-zero";
 	}
 	function _netStatus(n) {
-		if (root.net.busy === n.ssid) return "Connecting…";
-		if (n.connected) return "Connected";
-		if (n.saved) return "Saved";
-		return n.security === "open" ? "Open" : "Secured";
+		if (root.net.busy === n.ssid) return I18n.t("ui.bluetoothPanel.connecting");
+		if (n.connected) return I18n.t("agentIntegrations.connected");
+		if (n.saved) return I18n.t("ui.wifiPanel.saved");
+		return n.security === "open" ? I18n.t("ui.dock.open") : I18n.t("ui.wifiPanel.secured");
 	}
 	function _deviceIcon(d) {
 		const kind = String(d.icon || "");
@@ -96,7 +97,7 @@ Column {
 	}
 	function _errorText(e) {
 		const code = e ? e.code : "";
-		return ({ "wrong-password": "Wrong password", "password-required": "This network needs a password", timeout: "Timed out" })[code] ?? (code ? "Something went wrong" : "");
+		return ({ "wrong-password": I18n.t("ui.wifiPanel.wrongPassword"), "password-required": I18n.t("linux.settings.thisNetworkNeedsAPassword"), timeout: I18n.t("linux.settings.timedOut") })[code] ?? (code ? I18n.t("linux.settings.somethingWentWrong") : "");
 	}
 	function _connect(ssid) {
 		root.net.connect(ssid, root._password);
@@ -135,9 +136,9 @@ Column {
 		SGroup {
 			theme: root.theme
 			SRow {
-				theme: root.theme; icon: "wifi"; label: "Wi-Fi"; divider: false
-				desc: !root.net.loaded ? "Checking…" : !root.net.available ? "No Wi-Fi adapter found" : !root.net.wifiEnabled ? "Off" : root.net.connected ? "Connected to " + root.net.ssid : "Not connected"
-				SToggle { objectName: "wifi"; accessibleName: "Wi-Fi"; theme: root.theme; enabled: root.net.loaded && root.net.available; checked: root.net.wifiEnabled; onToggled: root._setWifi(!root.net.wifiEnabled) }
+				theme: root.theme; icon: "wifi"; label: I18n.t("notch.commandCenter.wifi"); divider: false
+				desc: !root.net.loaded ? I18n.t("linux.settings.checking") : !root.net.available ? I18n.t("ui.wifiPanel.noWiFiAdapterFound") : !root.net.wifiEnabled ? I18n.t("notch.commandCenter.off") : root.net.connected ? I18n.t("linux.settings.connectedTo", { name: root.net.ssid }) : I18n.t("notch.commandCenter.notConnected")
+				SToggle { objectName: "wifi"; accessibleName: I18n.t("notch.commandCenter.wifi"); theme: root.theme; enabled: root.net.loaded && root.net.available; checked: root.net.wifiEnabled; onToggled: root._setWifi(!root.net.wifiEnabled) }
 			}
 		}
 
@@ -145,13 +146,13 @@ Column {
 			visible: root.net.loaded && root.net.wifiEnabled
 			width: parent.width
 			height: 38
-			SGroupLabel { y: 0; theme: root.theme; text: "Networks · " + root.net.networks.length }
+			SGroupLabel { y: 0; theme: root.theme; text: I18n.t("linux.settings.networksCount", { count: root.net.networks.length }) }
 			SChip {
 				objectName: "scan"
 				x: parent.width - width - Tokens.settings.row.paddingH
 				y: 6
 				theme: root.theme; accent: root.accent; icon: "refresh-cw"
-				text: root.net.scanning ? "Scanning…" : "Scan"
+				text: root.net.scanning ? I18n.t("linux.settings.scanning") : I18n.t("linux.settings.scan")
 				onClicked: root.net.refresh(true)
 			}
 		}
@@ -203,7 +204,7 @@ Column {
 							Message {
 								visible: network.enterprise
 								bottomPadding: 0
-								text: "This network needs a sign-in that Network Manager's own tools handle."
+								text: I18n.t("linux.settings.thisNetworkNeedsASignInThatNetwork")
 							}
 							Row {
 								x: Tokens.settings.row.inset
@@ -214,7 +215,7 @@ Column {
 									width: 220
 									theme: root.theme
 									secret: true
-									placeholder: "Password"
+									placeholder: I18n.t("ui.wifiPanel.password")
 									text: root._password
 									onTextChanged: root._password = text
 									onAccepted: root._connect(network.modelData.ssid)
@@ -222,19 +223,19 @@ Column {
 								SChip {
 									objectName: "netConnect:" + network.modelData.ssid
 									visible: !network.modelData.connected && !network.enterprise
-									theme: root.theme; accent: root.accent; active: true; text: "Connect"
+									theme: root.theme; accent: root.accent; active: true; text: I18n.t("ui.bluetoothPanel.connect")
 									onClicked: root._connect(network.modelData.ssid)
 								}
 								SChip {
 									objectName: "netDisconnect:" + network.modelData.ssid
 									visible: network.modelData.connected
-									theme: root.theme; accent: root.accent; text: "Disconnect"
+									theme: root.theme; accent: root.accent; text: I18n.t("ui.bluetoothPanel.disconnect")
 									onClicked: root.net.disconnect(network.modelData.ssid)
 								}
 								SChip {
 									objectName: "netForget:" + network.modelData.ssid
 									visible: network.modelData.saved
-									theme: root.theme; accent: root.accent; text: "Forget"
+									theme: root.theme; accent: root.accent; text: I18n.t("ui.wifiPanel.forget")
 									onClicked: {
 										root.net.forget(network.modelData.ssid);
 										root._openNet = "";
@@ -254,12 +255,12 @@ Column {
 			}
 		}
 
-		SGroupLabel { theme: root.theme; text: "VPN" }
+		SGroupLabel { theme: root.theme; text: I18n.t("linux.settings.vpn") }
 		Text {
 			objectName: "noVpn"
 			visible: !root.sys || root.sys.vpns.length === 0
 			leftPadding: Tokens.settings.group.label.h
-			text: "No VPNs are set up. Add one with NetworkManager."
+			text: I18n.t("linux.settings.noVpnsAreSetUpAddOneWith")
 			color: root.theme.textMuted
 			font.family: Fonts.ui
 			font.pixelSize: Fonts.px(14)
@@ -273,7 +274,7 @@ Column {
 					id: vpnRow
 					required property var modelData
 					required property int index
-					theme: root.theme; icon: "lock"; label: vpnRow.modelData.name; desc: vpnRow.modelData.active === "yes" ? "Connected" : "Not connected"
+					theme: root.theme; icon: "lock"; label: vpnRow.modelData.name; desc: vpnRow.modelData.active === "yes" ? I18n.t("agentIntegrations.connected") : I18n.t("notch.commandCenter.notConnected")
 					divider: vpnRow.index < root.sys.vpns.length - 1
 					SToggle { objectName: "vpn:" + vpnRow.modelData.name; accessibleName: vpnRow.modelData.name; theme: root.theme; checked: vpnRow.modelData.active === "yes"; onToggled: value => root.sys.setVpn(vpnRow.modelData.name, value) }
 				}
@@ -290,13 +291,13 @@ Column {
 		SGroup {
 			theme: root.theme
 			SRow {
-				theme: root.theme; icon: "bluetooth"; label: "Bluetooth"; divider: false
-				desc: !root.bt.loaded ? "Checking…" : root.bt.error ? "Couldn't read Bluetooth" : !root.bt.available ? "No Bluetooth adapter found" : root.bt.powered ? "On" : "Off"
-				SToggle { objectName: "bluetooth"; accessibleName: "Bluetooth"; theme: root.theme; enabled: root.bt.loaded && root.bt.available; checked: root.bt.powered; onToggled: root._setBt(!root.bt.powered) }
+				theme: root.theme; icon: "bluetooth"; label: I18n.t("notch.commandCenter.bluetooth"); divider: false
+				desc: !root.bt.loaded ? I18n.t("linux.settings.checking") : root.bt.error ? I18n.t("linux.settings.couldnTReadBluetooth") : !root.bt.available ? I18n.t("linux.settings.noBluetoothAdapterFound") : root.bt.powered ? I18n.t("notch.commandCenter.on") : I18n.t("notch.commandCenter.off")
+				SToggle { objectName: "bluetooth"; accessibleName: I18n.t("notch.commandCenter.bluetooth"); theme: root.theme; enabled: root.bt.loaded && root.bt.available; checked: root.bt.powered; onToggled: root._setBt(!root.bt.powered) }
 			}
 		}
 
-		SGroupLabel { visible: root.bt.powered && root.bt.paired.length > 0; theme: root.theme; text: "My Devices" }
+		SGroupLabel { visible: root.bt.powered && root.bt.paired.length > 0; theme: root.theme; text: I18n.t("linux.settings.myDevices") }
 		SGroup {
 			visible: root.bt.powered && root.bt.paired.length > 0
 			theme: root.theme
@@ -313,7 +314,7 @@ Column {
 						objectName: "device:" + device.modelData.name
 						theme: root.theme; action: true; icon: root._deviceIcon(device.modelData)
 						label: device.modelData.name
-						desc: root.bt.busy === device.modelData.path ? "Working…" : device.modelData.connected ? "Connected" : "Not connected"
+						desc: root.bt.busy === device.modelData.path ? I18n.t("linux.settings.working") : device.modelData.connected ? I18n.t("agentIntegrations.connected") : I18n.t("notch.commandCenter.notConnected")
 						divider: !device.open && device.index < root.bt.paired.length - 1
 						onClicked: root._openDevice = device.open ? "" : device.modelData.path
 					}
@@ -325,12 +326,12 @@ Column {
 						SChip {
 							objectName: "deviceConnect:" + device.modelData.name
 							theme: root.theme; accent: root.accent; active: !device.modelData.connected
-							text: device.modelData.connected ? "Disconnect" : "Connect"
+							text: device.modelData.connected ? I18n.t("ui.bluetoothPanel.disconnect") : I18n.t("ui.bluetoothPanel.connect")
 							onClicked: root.bt.setConnected(device.modelData.path, !device.modelData.connected)
 						}
 						SChip {
 							objectName: "deviceRemove:" + device.modelData.name
-							theme: root.theme; accent: root.accent; text: "Remove"
+							theme: root.theme; accent: root.accent; text: I18n.t("common.remove")
 							onClicked: {
 								root.bt.unpair(device.modelData.path);
 								root._openDevice = "";
@@ -341,15 +342,15 @@ Column {
 			}
 		}
 
-		SGroupLabel { visible: root.bt.powered; theme: root.theme; text: "Add a Device" }
+		SGroupLabel { visible: root.bt.powered; theme: root.theme; text: I18n.t("linux.settings.addADevice") }
 		SGroup {
 			visible: root.bt.powered
 			theme: root.theme
 			SRow {
 				objectName: "discover"
 				theme: root.theme; icon: "plus"; action: true; divider: root.bt.nearby.length > 0
-				label: root.bt.discovering ? "Stop Looking" : "Look for Devices"
-				desc: root.bt.discovering ? "Put your device in pairing mode" : "Find devices nearby"
+				label: root.bt.discovering ? I18n.t("linux.settings.stopLooking") : I18n.t("linux.settings.lookForDevices")
+				desc: root.bt.discovering ? I18n.t("linux.settings.putYourDeviceInPairingMode") : I18n.t("linux.settings.findDevicesNearby")
 				onClicked: root.bt.discover(!root.bt.discovering)
 			}
 			Repeater {
@@ -366,7 +367,7 @@ Column {
 						objectName: "nearby:" + candidate.modelData.name
 						theme: root.theme; action: true; icon: root._deviceIcon(candidate.modelData)
 						label: candidate.modelData.name
-						desc: candidate.pairing ? "Pairing…" : "Tap to pair"
+						desc: candidate.pairing ? I18n.t("ui.bluetoothPanel.pairing") : I18n.t("linux.settings.tapToPair")
 						divider: !candidate.prompt && candidate.index < root.bt.nearby.length - 1
 						onClicked: if (!candidate.pairing) root.bt.pair(candidate.modelData.path)
 					}
@@ -382,9 +383,9 @@ Column {
 							text: {
 								const p = candidate.prompt;
 								if (!p) return "";
-								if (p.kind === "provide") return "Enter the PIN shown on the device.";
-								if (p.kind === "confirm") return "Does the device show " + p.pin + "?";
-								return "Type " + p.pin + " on the device, then press Enter on it.";
+								if (p.kind === "provide") return I18n.t("linux.settings.enterThePinShownOnTheDevice");
+								if (p.kind === "confirm") return I18n.t("linux.notch.confirmPairingPin", { pin: p.pin });
+								return I18n.t("linux.notch.typePairingPin", { pin: p.pin });
 							}
 						}
 						SField {
@@ -392,7 +393,7 @@ Column {
 							visible: !!candidate.prompt && candidate.prompt.kind === "provide"
 							x: Tokens.settings.row.inset
 							theme: root.theme
-							placeholder: "PIN"
+							placeholder: I18n.t("linux.settings.pin")
 							text: root._pin
 							onTextChanged: root._pin = text
 						}
@@ -403,7 +404,7 @@ Column {
 								objectName: "pairYes"
 								visible: !!candidate.prompt && candidate.prompt.kind !== "display"
 								theme: root.theme; accent: root.accent; active: true
-								text: candidate.prompt && candidate.prompt.kind === "confirm" ? "Yes, Pair" : "Pair"
+								text: candidate.prompt && candidate.prompt.kind === "confirm" ? I18n.t("linux.settings.yesPair") : I18n.t("ui.bluetoothPanel.pair")
 								onClicked: {
 									root.bt.respond(true, root._pin);
 									root._pin = "";
@@ -411,7 +412,7 @@ Column {
 							}
 							SChip {
 								objectName: "pairNo"
-								theme: root.theme; accent: root.accent; text: "Cancel"
+								theme: root.theme; accent: root.accent; text: I18n.t("common.cancel")
 								onClicked: root.bt.respond(false, "")
 							}
 						}
@@ -425,7 +426,7 @@ Column {
 			width: parent.width
 			topPadding: 10
 			leftPadding: Tokens.settings.group.label.h
-			text: "Bluetooth couldn't finish that. Try again."
+			text: I18n.t("linux.settings.bluetoothCouldnTFinishThatTryAgain")
 			color: "#ff8a80"
 			font.family: Fonts.ui
 			font.pixelSize: Fonts.px(14)

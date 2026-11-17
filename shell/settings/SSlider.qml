@@ -1,4 +1,5 @@
 import QtQuick
+import "../common/i18n"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 
@@ -82,7 +83,7 @@ Item {
 		factor: root.displayFactor
 		suffix: root.displaySuffix
 		decimals: root.step >= 1 ? 0 : 3
-		accessibleName: root.accessibleName || "Exact value"
+		accessibleName: root.accessibleName || I18n.t("linux.settings.exactValue")
 		onEdited: value => root.moved(value)
 	}
 }

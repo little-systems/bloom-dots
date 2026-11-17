@@ -4,6 +4,7 @@ import "../../services/bluetooth.js" as Logic
 import "device-art.js" as Art
 import "qp"
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's Bluetooth panel (BluetoothPanel.tsx, QuickPanel.css .qp): paired
 // devices with Connect/Disconnect/Remove and an audio device's "Looks like"
@@ -60,9 +61,9 @@ Item {
 			mouse: "mouse", gamepad: "gamepad-2", wearable: "watch" })[kind] ?? "bluetooth";
 	}
 	function _statusText(d) {
-		if (root.busy === d.path) return d.connected ? "Disconnecting…" : "Connecting…";
-		if (!d.connected) return "Not connected";
-		return d.battery !== null && d.battery !== undefined ? "Connected · " + d.battery + "%" : "Connected";
+		if (root.busy === d.path) return d.connected ? I18n.t("ui.bluetoothPanel.disconnecting") : I18n.t("ui.bluetoothPanel.connecting");
+		if (!d.connected) return I18n.t("notch.commandCenter.notConnected");
+		return d.battery !== null && d.battery !== undefined ? I18n.t("ui.bluetoothPanel.connectedValue1", { value1: d.battery }) : I18n.t("notch.commandCenter.connected");
 	}
 	function _setAdding(wanted) {
 		if (root.adding === wanted) return;
@@ -107,7 +108,7 @@ Item {
 			objectName: "header"
 			width: parent.width
 			theme: root.theme
-			title: root.adding ? "Add a device" : "Bluetooth"
+			title: root.adding ? I18n.t("ui.bluetoothPanel.addADevice") : I18n.t("notch.commandCenter.bluetooth")
 			onBack: root.adding ? root._setAdding(false) : root.back()
 
 			QpIconButton {
@@ -137,9 +138,9 @@ Item {
 				visible: !root.enabled || (root.adding ? root.nearby.length === 0 : root.devices.length === 0)
 				theme: root.theme
 				icon: root.enabled && root.adding && !root.lookFailed ? "loader-circle" : ""
-				text: !root.enabled ? "Bluetooth is off"
-					: root.adding ? (root.lookFailed ? "Couldn't look for devices" : "Looking for devices. Make sure yours is in pairing mode.")
-					: "No paired devices"
+				text: !root.enabled ? I18n.t("ui.bluetoothPanel.bluetoothIsOff")
+					: root.adding ? (root.lookFailed ? I18n.t("linux.notch.couldnTLookForDevices") : I18n.t("ui.bluetoothPanel.lookingForDevicesMakeSureYoursIsInPairingMode"))
+					: I18n.t("ui.bluetoothPanel.noPairedDevices")
 
 				Loader {
 					anchors.horizontalCenter: parent.horizontalCenter
@@ -147,7 +148,7 @@ Item {
 					sourceComponent: QpButton {
 						objectName: "addDevice"
 						theme: root.theme
-						text: "Add device"
+						text: I18n.t("ui.bluetoothPanel.addDevice")
 						onClicked: root._setAdding(true)
 					}
 				}
@@ -207,7 +208,7 @@ Item {
 												objectName: "looksNote"
 												anchors.verticalCenter: parent.verticalCenter
 												anchors.alignWhenCentered: false
-												text: "Looks like"
+												text: I18n.t("ui.bluetoothPanel.looksLike")
 												color: root.theme.textMuted
 												font.family: Fonts.family
 												font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -219,7 +220,7 @@ Item {
 												required property var modelData
 												objectName: "look-" + modelData.art
 												theme: root.theme
-												text: modelData.label
+												text: I18n.t(modelData.key)
 												on: parent.shown === modelData.art
 												onClicked: root.lookChosen(device.d.name, modelData.art === root.guessFor(device.d) ? "" : modelData.art)
 											}
@@ -233,7 +234,7 @@ Item {
 									QpButton {
 										objectName: device.d.connected ? "disconnect" : "connect"
 										theme: root.theme
-										text: device.d.connected ? "Disconnect" : "Connect"
+										text: device.d.connected ? I18n.t("ui.bluetoothPanel.disconnect") : I18n.t("ui.bluetoothPanel.connect")
 										primary: !device.d.connected
 										busy: device.isBusy
 										enabled: !device.isBusy
@@ -242,7 +243,7 @@ Item {
 									QpButton {
 										objectName: "remove"
 										theme: root.theme
-										text: "Remove"
+										text: I18n.t("common.remove")
 										enabled: !device.isBusy
 										onClicked: root.removeRequested(device.d.path)
 									}
@@ -279,7 +280,7 @@ Item {
 						theme: root.theme
 						icon: root._kindIcon(candidate.d.kind)
 						name: candidate.d.name
-						sub: candidate.isPairing ? "Pairing…" : "Click to pair"
+						sub: candidate.isPairing ? I18n.t("ui.bluetoothPanel.pairing") : I18n.t("ui.bluetoothPanel.clickToPair")
 						badge: candidate.isPairing ? "loader-circle" : ""
 						badgeSpinning: candidate.isPairing
 						expanded: candidate.isPairing
@@ -306,7 +307,7 @@ Item {
 			anchors.horizontalCenter: parent.horizontalCenter
 			visible: root.settingsAvailable
 			theme: root.theme
-			text: "More Bluetooth settings"
+			text: I18n.t("ui.bluetoothPanel.moreBluetoothSettings")
 			onClicked: root.openSettings()
 		}
 	}
@@ -317,7 +318,7 @@ Item {
 			objectName: "promptNote"
 			wrapMode: Text.Wrap
 			textFormat: Text.StyledText
-			text: "Type " + root._pin(root.prompt?.pin) + " on the device, then press Enter on it."
+			text: I18n.t("linux.notch.typePairingPin", { pin: root._pin(root.prompt?.pin) })
 			color: root.theme.textMuted
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -334,15 +335,15 @@ Item {
 				width: parent.width
 				wrapMode: Text.Wrap
 				textFormat: Text.StyledText
-				text: "Does the device show " + root._pin(root.prompt?.pin) + "?"
+				text: I18n.t("linux.notch.confirmPairingPin", { pin: root._pin(root.prompt?.pin) })
 				color: root.theme.textMuted
 				font.family: Fonts.family
 				font.pixelSize: Fonts.px(Tokens.qp.note)
 			}
 			Row {
 				spacing: Tokens.qp.actions.gap
-				QpButton { objectName: "yes"; theme: root.theme; text: "Yes, pair"; primary: true; onClicked: root.respond(true, "") }
-				QpButton { objectName: "no"; theme: root.theme; text: "No"; onClicked: root.respond(false, "") }
+				QpButton { objectName: "yes"; theme: root.theme; text: I18n.t("ui.bluetoothPanel.yesPair"); primary: true; onClicked: root.respond(true, "") }
+				QpButton { objectName: "no"; theme: root.theme; text: I18n.t("ui.bluetoothPanel.no"); onClicked: root.respond(false, "") }
 			}
 		}
 	}
@@ -357,7 +358,7 @@ Item {
 				objectName: "pin"
 				width: parent.width
 				theme: root.theme
-				placeholder: "PIN shown on the device"
+				placeholder: I18n.t("ui.bluetoothPanel.pinShownOnTheDevice")
 				Component.onCompleted: forceActiveFocus()
 				onFocusedChanged: root._typing = focused
 				onAccepted: if (text) root.respond(true, text)
@@ -366,8 +367,8 @@ Item {
 			}
 			Row {
 				spacing: Tokens.qp.actions.gap
-				QpButton { objectName: "pairButton"; theme: root.theme; text: "Pair"; primary: true; enabled: pinField.text !== ""; onClicked: root.respond(true, pinField.text) }
-				QpButton { objectName: "cancel"; theme: root.theme; text: "Cancel"; onClicked: root.respond(false, "") }
+				QpButton { objectName: "pairButton"; theme: root.theme; text: I18n.t("ui.bluetoothPanel.pair"); primary: true; enabled: pinField.text !== ""; onClicked: root.respond(true, pinField.text) }
+				QpButton { objectName: "cancel"; theme: root.theme; text: I18n.t("common.cancel"); onClicked: root.respond(false, "") }
 			}
 		}
 	}
@@ -386,7 +387,11 @@ Item {
 			x: Tokens.qp.error.left
 			width: parent.width - Tokens.qp.error.left - Tokens.qp.error.side
 			wrapMode: Text.Wrap
-			text: root.error ? Logic.errorText(root.error.code) : ""
+			text: root.error ? (({ "not-found": I18n.t("ui.bluetoothPanel.refreshAndTryAgain"),
+				timeout: I18n.t("ui.bluetoothPanel.theDeviceDidnTAnswerInTime"),
+				cancelled: I18n.t("ui.bluetoothPanel.pairingWasCancelled"),
+				failed: I18n.t("ui.bluetoothPanel.couldnTPairWithThisDevice"),
+				"not-ready": I18n.t("ui.bluetoothPanel.putTheDeviceInPairingModeFirst") })[root.error.code] ?? root.error.code) : ""
 			color: Tokens.qp.error.color
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(Tokens.qp.error.text)

@@ -4,6 +4,7 @@ import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "overview.js" as Logic
+import "../../common/i18n"
 
 // The workspace overview: the launcher's card holding a search field over a
 // 4 × 2 grid of workspaces, each with its windows where they sit. Click a
@@ -150,7 +151,7 @@ Item {
 
 				Text {
 					visible: field.text === ""
-					text: "Find a window"
+					text: I18n.t("linux.desktop.findAWindow")
 					color: root.theme.textMuted
 					font: field.font
 				}

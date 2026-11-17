@@ -1,9 +1,22 @@
 import QtQuick
 import QtTest
+import "../../shell/common/i18n"
 import "../../shell/modules/dock/dock.js" as Dock
 
 TestCase {
 	name: "DockRules"
+
+	function cleanup() { I18n.setting = "en"; }
+
+	function test_russianMenuPreservesApplicationActionNames() {
+		I18n.setting = "ru";
+		const entries = Dock.menuFor({ kind: "app", pinnable: true, running: true,
+			actions: ["Open Project"] }, key => I18n.t(key));
+		compare(entries.find(item => item.key === "pin").label, "Закрепить в доке");
+		compare(entries.find(item => item.key === "action:0").label, "Open Project");
+		I18n.setting = "en";
+		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key))[0].label, "Add App to Dock...");
+	}
 
 	function client(cls, address, focus, extra) {
 		const c = { class: cls, address: address, focusHistoryID: focus, title: cls + " " + address, mapped: true, hidden: false };

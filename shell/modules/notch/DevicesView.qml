@@ -5,6 +5,7 @@ import "../../services/devices.js" as Devices
 import "device-art.js" as Art
 import "qp"
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's battery hub (ConnectedDevicesPanel.tsx, QuickPanel.css .bh-*):
 // connected devices grouped by priority with their battery meters. An audio
@@ -22,7 +23,13 @@ Item {
 	// A pick for `name`; "" clears it (Bloom: picking its own guess).
 	signal lookChosen(string name, string art)
 
-	readonly property var groups: Devices.groupDevices(root.entries, root.threshold)
+	readonly property var groups: {
+		const labels = { low: I18n.t("ui.connectedDevices.needsCharging"), pc: I18n.t("ui.connectedDevices.thisPc"),
+			audio: I18n.t("ui.connectedDevices.audio"), phone: I18n.t("ui.connectedDevices.phoneWatch"),
+			accessories: I18n.t("ui.connectedDevices.accessories"), usb: I18n.t("ui.connectedDevices.drivesCameras"),
+			other: I18n.t("ui.connectedDevices.other") };
+		return Devices.groupDevices(root.entries, root.threshold).map(group => Object.assign({}, group, { title: labels[group.key] }));
+	}
 	property string expanded: ""
 
 	// The notch height everything needs (Bloom's measureContent), before the
@@ -39,7 +46,7 @@ Item {
 			const out = [];
 			if (entry.buds.left) out.push({ label: "L", part: entry.buds.left });
 			if (entry.buds.right) out.push({ label: "R", part: entry.buds.right });
-			if (entry.buds.case) out.push({ label: "Case", part: entry.buds.case });
+			if (entry.buds.case) out.push({ label: I18n.t("ui.app.case"), part: entry.buds.case });
 			return out;
 		}
 		return entry.level !== null ? [{ label: "", part: { level: entry.level, charging: entry.charging } }] : [];
@@ -47,9 +54,9 @@ Item {
 
 	function _sub(entry) {
 		if (entry.kind === "pc") return root.pcStatus;
-		if (entry.wired) return Devices.wiredSub(entry);
-		if (entry.buds) return "Each bud and the case";
-		return "Connected";
+		if (entry.wired) return I18n.t(entry.id === "jack" ? "ui.connectedDevicesPanel.headphoneJack" : "ui.connectedDevicesPanel.usb");
+		if (entry.buds) return I18n.t("ui.connectedDevicesPanel.eachBudAndTheCase");
+		return I18n.t("notch.commandCenter.connected");
 	}
 
 	// .qp-header with the .bh-title-icon.
@@ -74,7 +81,7 @@ Item {
 		objectName: "title"
 		x: titleIcon.width + 4 + Tokens.qp.header.gap
 		anchors.verticalCenter: titleIcon.verticalCenter
-		text: "Connected devices"
+		text: I18n.t("ui.connectedDevicesPanel.connectedDevices")
 		color: root.theme.text
 		font.family: Fonts.familyFor(Font.DemiBold)
 		font.pixelSize: Fonts.px(Tokens.qp.header.title)
@@ -87,7 +94,7 @@ Item {
 		width: root.width
 		height: 72
 		theme: root.theme
-		text: "No devices connected"
+		text: I18n.t("ui.connectedDevicesPanel.noDevicesConnected")
 	}
 
 	QpScroll { flickable: scroller }
@@ -237,7 +244,7 @@ Item {
 										id: unknown
 										objectName: "unknown"
 										visible: row.parts.length === 0
-										text: "No battery info"
+										text: I18n.t("ui.connectedDevicesPanel.noBatteryInfo")
 										color: root.theme.textMuted
 										font.family: Fonts.family
 										pixelSize: Tokens.bh.unknown
@@ -356,7 +363,7 @@ Item {
 								Text {
 									height: Tokens.qp.chip.height
 									verticalAlignment: Text.AlignVCenter
-									text: "Looks like"
+									text: I18n.t("ui.bluetoothPanel.looksLike")
 									color: root.theme.textMuted
 									font.family: Fonts.family
 									font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -369,7 +376,7 @@ Item {
 										required property var modelData
 										objectName: "look-" + modelData.art
 										theme: root.theme
-										text: modelData.label
+										text: I18n.t(modelData.key)
 										on: row.modelData.art === modelData.art
 										onClicked: root.lookChosen(row.modelData.name, modelData.art === row.modelData.guess ? "" : modelData.art)
 									}

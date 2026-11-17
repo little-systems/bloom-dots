@@ -1,11 +1,24 @@
 import QtQuick
 import QtTest
+import "../../shell/common/i18n"
 import "../../shell/modules/launcher/launcher.js" as Launcher
 
 TestCase {
 	name: "LauncherRules"
 
 	// The owner's prefixes (2026-10-31); anything else searches apps.
+	function cleanup() { I18n.setting = "en"; }
+
+	function test_russianSettingsSearchKeepsActionIds() {
+		I18n.setting = "ru";
+		const query = I18n.t("settings.tabs.general");
+		const rows = Launcher.spotlight(query, [], [], [], "/home/test", (key, params) => I18n.t(key, params));
+		const general = rows.find(row => row.action.kind === "settings" && row.action.value === "general");
+		verify(!!general);
+		compare(general.name, query);
+		compare(general.sub, "Настройки");
+	}
+
 	function test_prefixes() {
 		compare(Launcher.parse("firefox"), { mode: "apps", term: "firefox" });
 		compare(Launcher.parse(""), { mode: "apps", term: "" });

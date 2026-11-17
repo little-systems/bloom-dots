@@ -8,6 +8,7 @@ Item {
 	id: root
 	property QtObject theme
 	required property string icon
+	property url iconSource: ""
 	required property string label
 	property string desc: ""
 	property bool action: false
@@ -48,10 +49,20 @@ Item {
 		SvgIcon {
 			x: Tokens.settings.row.paddingH + (Tokens.settings.row.icon - width) / 2
 			anchors.verticalCenter: parent.verticalCenter
-			name: root.icon
+			visible: !root.iconSource.toString()
+			name: root.icon || "info"
 			size: Tokens.settings.row.glyph
 			strokeWidth: 1.5
 			color: hover.hovered ? root.theme.text : root.theme.textMuted
+		}
+		Image {
+			visible: !!root.iconSource.toString()
+			source: root.iconSource
+			width: 20
+			height: 20
+			x: Tokens.settings.row.paddingH + (Tokens.settings.row.icon - width) / 2
+			anchors.verticalCenter: parent.verticalCenter
+			fillMode: Image.PreserveAspectFit
 		}
 		Column {
 			id: info

@@ -5,6 +5,7 @@ import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "../notch/qp"
 import "cheatsheet.js" as Logic
+import "../../common/i18n"
 
 // The keybind cheatsheet: the launcher's card, with each group as a column of
 // keycaps and what they do. Pure: CheatsheetWindow.qml binds the service.
@@ -102,7 +103,7 @@ Item {
 				id: empty
 				objectName: "empty"
 				visible: root.groups.length === 0
-				text: "No keybinds have descriptions yet"
+				text: I18n.t("linux.desktop.noKeybindsHaveDescriptionsYet")
 				color: root.theme.textMuted
 				font.family: Fonts.family
 				font.pixelSize: Fonts.px(Tokens.cheatsheet.text)

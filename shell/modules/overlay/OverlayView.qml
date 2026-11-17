@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
+import "../../common/i18n"
 
 // The overlay: a dimmed screen with cards you can drag. Pure: OverlayWindow.qml
 // binds it. A click on the dim or Escape dismisses it.
@@ -100,7 +101,7 @@ Item {
 
 	OverlayCard {
 		theme: root.theme
-		title: "Notes"
+		title: I18n.t("linux.desktop.notes")
 		x: 40
 		y: 80
 		fullWidth: 300
@@ -123,7 +124,7 @@ Item {
 	}
 	OverlayCard {
 		theme: root.theme
-		title: "System"
+		title: I18n.t("settings.groups.system")
 		x: 40
 		y: 340
 		fullWidth: 300
@@ -134,15 +135,15 @@ Item {
 		transformOrigin: Item.TopLeft
 		Column {
 			width: parent.width
-			Stat { objectName: "statCpu"; label: "CPU"; value: root.cpu + "%" }
-			Stat { label: "Memory"; value: Math.round(root.ram) + "%" }
-			Stat { label: "Disk"; value: root.disk + "%" }
-			Stat { label: "Network"; value: "↑ " + root.up + "  ↓ " + root.down }
+			Stat { objectName: "statCpu"; label: I18n.t("settings.widgets.cpu"); value: root.cpu + "%" }
+			Stat { label: I18n.t("linux.desktop.memory"); value: Math.round(root.ram) + "%" }
+			Stat { label: I18n.t("settings.widgets.disk"); value: root.disk + "%" }
+			Stat { label: I18n.t("linux.desktop.network"); value: "↑ " + root.up + "  ↓ " + root.down }
 		}
 	}
 	OverlayCard {
 		theme: root.theme
-		title: "Volume"
+		title: I18n.t("notch.music.volume")
 		x: 360
 		y: 80
 		fullWidth: 300
@@ -153,7 +154,7 @@ Item {
 		transformOrigin: Item.TopLeft
 		Text {
 			visible: root.mixer.length === 0
-			text: "Nothing is playing"
+			text: I18n.t("linux.desktop.nothingIsPlaying")
 			color: root.theme.textMuted
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(12)
@@ -203,7 +204,7 @@ Item {
 	}
 	OverlayCard {
 		theme: root.theme
-		title: "Capture"
+		title: I18n.t("linux.desktop.capture")
 		x: 360
 		y: 340
 		fullWidth: 300
@@ -214,14 +215,14 @@ Item {
 		transformOrigin: Item.TopLeft
 		Row {
 			spacing: 8
-			Action { objectName: "shot"; text: "Screenshot"; onClicked: root.recordRequested("screenshot") }
-			Action { objectName: "record"; text: "Record"; onClicked: root.recordRequested("record") }
-			Action { objectName: "recognize"; text: "Identify Song"; onClicked: root.recordRequested("recognize") }
+			Action { objectName: "shot"; text: I18n.t("linux.desktop.screenshot"); onClicked: root.recordRequested("screenshot") }
+			Action { objectName: "record"; text: I18n.t("linux.desktop.record"); onClicked: root.recordRequested("record") }
+			Action { objectName: "recognize"; text: I18n.t("linux.desktop.identifySong"); onClicked: root.recordRequested("recognize") }
 		}
 	}
 	OverlayCard {
 		theme: root.theme
-		title: "Crosshair"
+		title: I18n.t("linux.desktop.crosshair")
 		x: 360
 		y: 460
 		fullWidth: 300
@@ -232,7 +233,7 @@ Item {
 		transformOrigin: Item.TopLeft
 		Action {
 			objectName: "crosshairToggle"
-			text: root.crosshair ? "Turn Off" : "Pin to Screen"
+			text: root.crosshair ? I18n.t("linux.settings.turnOff") : I18n.t("linux.settings.pinToScreen")
 			onClicked: root.crosshairToggled(!root.crosshair)
 		}
 	}

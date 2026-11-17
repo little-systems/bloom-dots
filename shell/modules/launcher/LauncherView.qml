@@ -4,6 +4,7 @@ import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "../notch/qp"
+import "../../common/i18n"
 
 // The launcher (owner decision: Spotlight-style): a search bar high in the
 // screen's centre that grows on a spring as results appear. Bloom has no
@@ -201,7 +202,7 @@ Item {
 				Text {
 					objectName: "placeholder"
 					visible: field.text === ""
-					text: "Search anything, or ; : = > ? ! @ for more"
+					text: I18n.t("linux.launcher.searchAnythingOrForMore")
 					color: root.theme.textMuted
 					font: field.font
 				}

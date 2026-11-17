@@ -1,3 +1,4 @@
+import "../../common/i18n"
 import QtQuick
 import qs.services
 import "../../common"
@@ -29,9 +30,9 @@ Item {
 	readonly property bool toolPanel: Panels.ORDER.indexOf(panel) >= 0
 	property date now: new Date()
 	Timer { interval: 1000; running: true; repeat: true; onTriggered: root.now = new Date() }
-	readonly property string title: panel === "command-center" ? "Command Center"
-		: panel === "wifi" ? "Wi-Fi" : panel === "bluetooth" ? "Bluetooth"
-		: panel === "devices" ? "Connected Devices" : panel === "calendar" ? "Calendar" : "Shelf"
+	readonly property string title: panel === "command-center" ? I18n.t("ui.notchTab.commandCenter")
+		: panel === "wifi" ? I18n.t("notch.commandCenter.wifi") : panel === "bluetooth" ? I18n.t("notch.commandCenter.bluetooth")
+		: panel === "devices" ? I18n.t("ui.notchTab.connectedDevices") : panel === "calendar" ? I18n.t("preview.panels.calendar") : I18n.t("ui.notchTab.shelf")
 
 	// Bloom's time-center: the notch clock (or timer), with the panel arrows
 	// while a tool panel is open.
@@ -87,7 +88,7 @@ Item {
 	Text {
 		anchors.centerIn: content
 		visible: content.status === Loader.Error
-		text: root.title + " is unavailable"
+		text: I18n.t("linux.notch.unavailable", { panel: root.title })
 		color: root.textMuted
 		font.family: Fonts.family
 		font.pixelSize: Fonts.px(11)

@@ -1,5 +1,6 @@
 import QtQuick
 import "../../common/render"
+import "../../common/i18n"
 
 Item {
 	id: root
@@ -21,7 +22,7 @@ Item {
 		Text {
 			font.family: Fonts.familyFor(Font.Bold)
 			x: 16; y: 16
-			text: "Empty Trash?"
+			text: I18n.t("linux.dock.emptyTrash")
 			color: root.foreground
 			font.pixelSize: Fonts.px(16)
 			font.bold: true
@@ -29,7 +30,7 @@ Item {
 		Text {
 			font.family: Fonts.family
 			x: 16; y: 44
-			text: "This permanently removes the items."
+			text: I18n.t("linux.dock.thisPermanentlyRemovesTheItems")
 			color: root.foreground
 			opacity: 0.7
 			font.pixelSize: Fonts.px(11)
@@ -39,7 +40,7 @@ Item {
 			objectName: "confirm-cancel"
 			x: 16; y: 80; width: 105; height: 34; radius: 7
 			color: Qt.rgba(1, 1, 1, 0.12)
-			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Cancel"; color: root.foreground; font.pixelSize: Fonts.px(12)}
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: I18n.t("common.cancel"); color: root.foreground; font.pixelSize: Fonts.px(12)}
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.opened = false }
 		}
 		Rectangle {
@@ -47,7 +48,7 @@ Item {
 			objectName: "confirm-empty"
 			x: 139; y: 80; width: 105; height: 34; radius: 7
 			color: "#d94343"
-			Text { font.family: Fonts.family; anchors.centerIn: parent; text: "Empty Trash"; color: "white"; font.pixelSize: Fonts.px(12)}
+			Text { font.family: Fonts.family; anchors.centerIn: parent; text: I18n.t("linux.dock.emptyTrash2"); color: "white"; font.pixelSize: Fonts.px(12)}
 			MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.opened = false; root.confirmed(); } }
 		}
 	}

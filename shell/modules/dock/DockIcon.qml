@@ -12,6 +12,8 @@ Item {
 	id: root
 
 	property string name: ""
+	// The desktop id; Bloom Settings draws its sliders icon larger.
+	property string appId: ""
 	property string iconSource: ""
 	property int windows: 0
 	property bool backgroundDot: false
@@ -155,7 +157,8 @@ Item {
 				id: image
 				objectName: "dock-image"
 				anchors.centerIn: parent
-				width: root.iconOnly ? Tokens.dock.iconOnlyImage : Tokens.dock.iconImage
+				width: root.appId === "bloom-settings" ? Tokens.dock.settingsImage
+					: root.iconOnly ? Tokens.dock.iconOnlyImage : Tokens.dock.iconImage
 				height: width
 				sourceSize: Qt.size(width * 2, height * 2)
 				source: root.iconSource

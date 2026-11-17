@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "../../common/render"
@@ -120,7 +121,7 @@ Item {
 				Text {
 					objectName: "budLabel"
 					anchors.horizontalCenter: parent.horizontalCenter
-					text: parent.modelData === "case" ? "Case" : parent.modelData[0].toUpperCase()
+					text: parent.modelData === "case" ? I18n.t("ui.app.case") : parent.modelData[0].toUpperCase()
 					color: root.textMuted
 					font.family: Fonts.familyFor(Font.DemiBold)
 					font.pixelSize: Fonts.px(Tokens.alert.buds.label)

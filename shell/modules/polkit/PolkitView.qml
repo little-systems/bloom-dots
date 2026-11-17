@@ -4,6 +4,7 @@ import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "../notch/qp"
+import "../../common/i18n"
 
 // The password dialog for polkit: the launcher's card with quick-panel parts.
 // The password stays in the field: it leaves through `submitted`, and the
@@ -122,7 +123,7 @@ Item {
 				objectName: "title"
 				width: parent.width
 				horizontalAlignment: Text.AlignHCenter
-				text: "Authentication required"
+				text: I18n.t("linux.session.authenticationRequired")
 				color: root.theme.text
 				font.family: Fonts.familyFor(Font.DemiBold)
 				font.pixelSize: Fonts.px(Tokens.polkit.title)
@@ -145,7 +146,7 @@ Item {
 				width: parent.width
 				theme: root.theme
 				enabled: !root.busy
-				placeholder: root.prompt.replace(/:\s*$/, "") || "Password"
+				placeholder: root.prompt.replace(/:\s*$/, "") || I18n.t("ui.wifiPanel.password")
 				echoMode: root.responseVisible ? TextInput.Normal : TextInput.Password
 				onAccepted: root._submit()
 				onEscaped: root._cancel()
@@ -169,13 +170,13 @@ Item {
 				QpButton {
 					objectName: "cancel"
 					theme: root.theme
-					text: "Cancel"
+					text: I18n.t("common.cancel")
 					onClicked: root._cancel()
 				}
 				QpButton {
 					objectName: "authenticate"
 					theme: root.theme
-					text: "Authenticate"
+					text: I18n.t("linux.session.authenticate")
 					primary: true
 					busy: root.busy
 					enabled: !root.busy && field.text !== ""

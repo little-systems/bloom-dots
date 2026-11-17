@@ -44,6 +44,17 @@ Item {
 			tryCompare(v, "startupAnimating", false, 3000);
 		}
 
+		// Bloom draws its sliders Settings icon at 32 px in the usual tile (Dock.css .bloom-settings-icon).
+		function test_settingsIconDrawsAt32() {
+			const v = make({ items: { pinned: [host.app("bloom-settings"), host.app("a")], unpinned: [] } });
+			tryVerify(() => findChild(v, "dock-slot-bloom-settings") !== null, 1000);
+			const settings = findChild(findChild(v, "dock-slot-bloom-settings"), "dock-image");
+			const other = findChild(findChild(v, "dock-slot-a"), "dock-image");
+			compare([settings.width, settings.height], [32, 32]);
+			compare(other.width, 28);
+			verify(findChild(findChild(v, "dock-slot-bloom-settings"), "dock-tile").visible, "keeps the tile");
+		}
+
 		function test_iconsRevealInsideTheOpeningDock() {
 			const v = make();
 			const frame = findChild(v, "dock-reveal"), row = findChild(v, "dock-row");
@@ -90,6 +101,17 @@ Item {
 
 		// The Command Center's System Tray button reveals a hidden dock for a
 		// while; it hides again after the grace if the pointer never comes.
+		function test_guideRevealShowsTheDockWithoutChangingItsMode() {
+			const v = make({ mode: "peek" });
+			settle(v);
+			tryCompare(v, "hidden", true, 3000);
+			v.guideReveal = true;
+			compare(v.hidden, false);
+			compare(v.mode, "peek");
+			v.guideReveal = false;
+			compare(v.hidden, true);
+		}
+
 		function test_revealShowsAHiddenDock() {
 			const v = make({ mode: "peek" });
 			settle(v);

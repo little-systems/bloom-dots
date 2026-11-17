@@ -36,18 +36,19 @@ function artForKind(kind, name) {
 	}
 }
 
-// The looks a user can pick for an audio device (deviceLooks.ts).
+// The looks a user can pick for an audio device (deviceLooks.ts); `key` is
+// the shown text (Bloom's ui.deviceLooks.*), `label` its English.
 var DEVICE_LOOKS = [
-	{ art: "headphones", label: "Headphones" },
-	{ art: "round-buds", label: "Earbuds" },
-	{ art: "stem-buds", label: "Stem buds" },
-	{ art: "neckband", label: "Neckband" },
-	{ art: "speaker", label: "Speaker" }
+	{ art: "headphones", label: "Headphones", key: "ui.deviceLooks.headphones" },
+	{ art: "round-buds", label: "Earbuds", key: "ui.deviceLooks.earbuds" },
+	{ art: "stem-buds", label: "Stem buds", key: "ui.deviceLooks.stemBuds" },
+	{ art: "neckband", label: "Neckband", key: "ui.deviceLooks.neckband" },
+	{ art: "speaker", label: "Speaker", key: "ui.deviceLooks.speaker" }
 ];
 var WIRED_DEVICE_LOOKS = [
-	{ art: "headphones-wired", label: "Headphones" },
-	{ art: "earbuds-usbc", label: "Earbuds (USB-C)" },
-	{ art: "earbuds-jack", label: "Earbuds (3.5 mm)" },
-	{ art: "speaker", label: "Speaker" },
-	{ art: "microphone", label: "Microphone" }
+	{ art: "headphones-wired", label: "Headphones", key: "ui.deviceLooks.headphones" },
+	{ art: "earbuds-usbc", label: "Earbuds (USB-C)", key: "ui.deviceLooks.earbudsUsbC" },
+	{ art: "earbuds-jack", label: "Earbuds (3.5 mm)", key: "ui.deviceLooks.earbuds35Mm" },
+	{ art: "speaker", label: "Speaker", key: "ui.deviceLooks.speaker" },
+	{ art: "microphone", label: "Microphone", key: "ui.deviceLooks.microphone" }
 ];

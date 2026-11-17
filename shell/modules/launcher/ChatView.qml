@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
+import "../../common/i18n"
 
 // A dedicated conversation surface inside Spotlight. Stable message rows are
 // updated in place while streaming, so new chunks don't replay entrances.
@@ -73,14 +74,14 @@ Item {
 		Column {
 			x: 44; y: 1; spacing: 2
 			Text { text: "Bloom AI"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(15); font.weight: Font.DemiBold }
-			Text { text: root.busy ? "Writing a reply…" : "Gemini · This session"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11)}
+			Text { text: root.busy ? I18n.t("linux.session.writingAReply") : I18n.t("linux.session.geminiThisSession"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11)}
 		}
 		Row {
 			anchors.right: parent.right; spacing: 3
-			IconButton { objectName: "chatBack"; icon: "search"; label: "Back to Spotlight"; onClicked: root.backRequested() }
-			IconButton { objectName: "chatClear"; icon: "square-pen"; label: "New conversation"; onClicked: { root.clearRequested(); root.focusInput(); } }
-			IconButton { objectName: "chatSettings"; icon: "settings"; label: "AI settings"; onClicked: root.settingsRequested() }
-			IconButton { icon: "x"; label: "Close chat"; onClicked: root.dismissed() }
+			IconButton { objectName: "chatBack"; icon: "search"; label: I18n.t("linux.launcher.backToSpotlight"); onClicked: root.backRequested() }
+			IconButton { objectName: "chatClear"; icon: "square-pen"; label: I18n.t("linux.launcher.newConversation"); onClicked: { root.clearRequested(); root.focusInput(); } }
+			IconButton { objectName: "chatSettings"; icon: "settings"; label: I18n.t("linux.launcher.aiSettings"); onClicked: root.settingsRequested() }
+			IconButton { icon: "x"; label: I18n.t("linux.launcher.closeChat"); onClicked: root.dismissed() }
 		}
 	}
 	Rectangle { x: 18; y: 62; width: parent.width - 36; height: 1; color: root.theme.border }
@@ -109,8 +110,8 @@ Item {
 				Column {
 					anchors.centerIn: parent; width: parent.width; spacing: 10
 					SvgIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "sparkles"; size: 26; color: root.accent }
-					Text { anchors.horizontalCenter: parent.horizontalCenter; text: "What’s on your mind?"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(21); font.weight: Font.DemiBold }
-					Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: "Think it through, write something, or ask a question."; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(12)}
+					Text { anchors.horizontalCenter: parent.horizontalCenter; text: I18n.t("linux.launcher.whatSOnYourMind"); color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(21); font.weight: Font.DemiBold }
+					Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: I18n.t("linux.launcher.thinkItThroughWriteSomethingOrAskA"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(12)}
 					Flow {
 						anchors.horizontalCenter: parent.horizontalCenter; width: Math.min(430, parent.width); spacing: 6
 						Repeater {
@@ -169,7 +170,7 @@ Item {
 				visible: root.error !== ""; width: parent.width; height: visible ? errorCopy.implicitHeight + 48 : 0; radius: 12; color: root.theme.groupBg
 				Text { id: errorCopy; objectName: "chatError"; visible: root.error !== ""; x: 12; y: 10; width: parent.width - 24; text: root.error; textFormat: Text.PlainText; wrapMode: Text.Wrap; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(12)}
 				Text {
-					x: 12; y: errorCopy.y + errorCopy.height + 8; text: "Try again"; color: root.accent; font.family: Fonts.family; font.pixelSize: Fonts.px(11)
+					x: 12; y: errorCopy.y + errorCopy.height + 8; text: I18n.t("linux.launcher.tryAgain"); color: root.accent; font.family: Fonts.family; font.pixelSize: Fonts.px(11)
 					MouseArea { anchors.fill: parent; enabled: !root.busy; cursorShape: Qt.PointingHandCursor; onClicked: root.retryRequested() }
 				}
 			}
@@ -182,7 +183,7 @@ Item {
 		x: (parent.width - width) / 2; y: composer.y - 32
 		width: 104; height: 26; radius: 13; color: root.theme.bgExpanded
 		border.width: 1; border.color: root.theme.border
-		Text { anchors.centerIn: parent; text: "Latest ↓"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(11)}
+		Text { anchors.centerIn: parent; text: I18n.t("linux.launcher.latest"); color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(11)}
 		MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { root.followTail = true; tail.restart(); } }
 	}
 
@@ -208,7 +209,7 @@ Item {
 			onTextChanged: if (root.draft !== text) root.draft = text
 			wrapMode: TextEdit.Wrap; selectByMouse: true; clip: true
 			color: root.theme.text; selectionColor: root.accent; font.family: Fonts.family; font.pixelSize: Fonts.px(14)
-			Accessible.name: "Message Bloom AI"
+			Accessible.name: I18n.t("linux.launcher.messageBloomAi")
 			onCursorRectangleChanged: {
 				if (cursorRectangle.y < draftScroll.contentY) draftScroll.contentY = cursorRectangle.y;
 				else if (cursorRectangle.y + cursorRectangle.height > draftScroll.contentY + draftScroll.height)
@@ -221,7 +222,7 @@ Item {
 		}
 		}
 
-		Text { x: draftScroll.x; y: draftScroll.y; visible: !editor.text; text: "Message Bloom AI…"; color: root.theme.textMuted; font: editor.font }
+		Text { x: draftScroll.x; y: draftScroll.y; visible: !editor.text; text: I18n.t("linux.launcher.messageBloomAi2"); color: root.theme.textMuted; font: editor.font }
 		Rectangle {
 			objectName: "chatSend"
 			anchors.right: parent.right; anchors.rightMargin: 10; anchors.bottom: parent.bottom; anchors.bottomMargin: 10
@@ -229,7 +230,7 @@ Item {
 			readonly property bool actionable: root.busy || root.draft.trim().length > 0
 			color: actionable ? root.accent : root.theme.border
 			activeFocusOnTab: true
-			Accessible.role: Accessible.Button; Accessible.name: root.busy ? "Stop response" : "Send message"
+			Accessible.role: Accessible.Button; Accessible.name: root.busy ? I18n.t("linux.session.stopResponse") : I18n.t("linux.session.sendMessage")
 			function act() { if (root.busy) root.stopRequested(); else root.send(); }
 			Keys.onReturnPressed: act()
 			SvgIcon { anchors.centerIn: parent; name: root.busy ? "square" : "arrow-up"; size: root.busy ? 12 : 16; color: "white" }
@@ -239,6 +240,6 @@ Item {
 	}
 	Text {
 		anchors.horizontalCenter: parent.horizontalCenter; y: parent.height - 22
-		text: "Enter to send · Shift+Enter for a new line"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10)
+		text: I18n.t("linux.launcher.enterToSendShiftEnterForANew"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10)
 	}
 }

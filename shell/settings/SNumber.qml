@@ -1,4 +1,5 @@
 import QtQuick
+import "../common/i18n"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 
@@ -13,7 +14,7 @@ Rectangle {
 	property real factor: 1
 	property string suffix: ""
 	property int decimals: 3
-	property string accessibleName: "Value"
+	property string accessibleName: I18n.t("linux.settings.value")
 	property bool _editing: false
 	property bool _invalid: false
 	signal edited(real value)

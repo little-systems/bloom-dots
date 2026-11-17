@@ -9,6 +9,10 @@ var MODULES = ["notch", "dock", "osd", "notifications", "launcher", "overview", 
 var WIDGETS = ["weather", "battery", "cpu", "ram", "disk", "net"];
 
 var SCHEMA = {
+	"bloom-language": {
+		type: "enum", values: ["system", "en", "ru", "fr", "es", "pt-BR", "pt-PT"], default: "system",
+		doc: "Display language. system follows LC_ALL, LC_MESSAGES, then LANG. Changes apply live. Untranslated text uses English, message by message; translations are Bloom's (shared) plus Linux-only text in shell/i18n/linux."
+	},
 	"bloom-animation-style": {
 		type: "enum", values: ["macos", "bloom"], default: "macos",
 		doc: "Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement."
@@ -272,6 +276,10 @@ var SCHEMA = {
 	"bloom-notifications-dnd": {
 		type: "bool", default: false,
 		doc: "Do Not Disturb suppresses normal and low notification cards while retaining history; critical cards still appear."
+	},
+	"bloom-agent-alerts-enabled": {
+		type: "bool", default: true,
+		doc: "Show Claude Code, Codex and OpenCode activity in the Island (connect them in Settings > Integrations or with bloom agents connect). Turning it off clears current activities."
 	},
 	"bloom-notifications-timeout": {
 		type: "number", min: 1000, max: 60000, default: 2500,

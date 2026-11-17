@@ -2,6 +2,7 @@ import QtQuick
 import "../common/render"
 import "../common/tokens.js" as Tokens
 import "logic.js" as Logic
+import "../common/i18n"
 
 // Bloom's StatusWidgetConfig: left and right of the clock, then what's unused.
 Column {
@@ -68,7 +69,7 @@ Column {
 			spacing: 6
 			Text {
 				visible: zone.items.length === 0
-				text: "Drop here"
+				text: I18n.t("common.dropHere")
 				color: root.theme.textMuted
 				font.family: Fonts.ui
 				font.pixelSize: Fonts.px(13)

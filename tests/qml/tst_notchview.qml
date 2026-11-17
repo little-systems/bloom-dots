@@ -65,6 +65,43 @@ Item {
 
 		function centre(v) { return { x: 500, y: v.target.height / 2 }; }
 
+		function test_attentionBadgeReplaysAndStaysBesideShelf() {
+			const entry = { agent: "codex", kind: "attention", started: 0, received: 1 };
+			const v = make({ shelfCount: 2, agentAttention: [entry] });
+			settle(v);
+			const badge = findChild(v, "agentAttentionBubble");
+			verify(v.stateObject().agentBadge);
+			const shelf = findChild(v, "shelfBubble");
+			verify(badge.x + badge.width < shelf.x);
+			const replay = createTemporaryObject(spyComponent, host, { target: v, signalName: "agentReplayRequested" });
+			badge.activated();
+			compare(replay.count, 1);
+			v.agentActivity = entry;
+			verify(!v.stateObject().agentBadge);
+			v.agentActivity = null;
+			verify(v.stateObject().agentBadge);
+			v.agentAttention = [];
+			verify(!v.stateObject().agentBadge);
+		}
+
+		function test_agentActivitySharesTheNotchWithMusicAndPanels() {
+			const v = make({ media: playing() });
+			settle(v);
+			v.agentNow = 62000;
+			v.agentActivity = { agent: "claude", kind: "working", activity: "editing", started: 0 };
+			const row = findChild(v, "agentActivity");
+			compare(v.bloomMode, "agent");
+			compare(v.target.height, 36);
+			compare(v.target.width, 224);
+			compare(row.label, "Editing");
+			verify(v.stateObject().musicBubble);
+			mouseClick(v, 500, 18);
+			verify(v.panel !== "");
+			verify(!v.agentVisible);
+			v.closePanel();
+			compare(v.bloomMode, "agent");
+		}
+
 		function test_activityBubblesFollowTheTimerAndOpenTheirOwnViews() {
 			const v = make({ media: playing(), shelfCount: 2, albumArtEnabled: false });
 			settle(v);
@@ -193,6 +230,19 @@ Item {
 			compare(tip.text, "80% remaining");
 			mouseMove(v, 500, 300);
 			tryCompare(tip, "shown", false, 500);
+		}
+
+		// The first-run guide shows the real Island while it introduces it, even
+		// in Smart or Peek mode, without changing the saved mode (Bloom useOnboardingReveal).
+		function test_guideRevealShowsTheIslandWithoutChangingItsMode() {
+			const v = make({ mode: "peek" });
+			settle(v);
+			verify(v.hidden);
+			v.guideReveal = true;
+			verify(!v.hidden);
+			compare(v.mode, "peek");
+			v.guideReveal = false;
+			verify(v.hidden);
 		}
 
 		function test_peekModeHidesUntilShown() {

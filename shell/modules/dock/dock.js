@@ -249,32 +249,33 @@ function _item(key, label, danger) {
 }
 var _divider = { kind: "divider" };
 
-function menuFor(t) {
+function menuFor(t, translate) {
+	const tr = translate || ((key, english) => english);
 	if (t.kind === "workspaces")
-		return [_item("hide-workspaces", "Hide Workspaces")];
+		return [_item("hide-workspaces", tr("linux.dock.hideWorkspaces", "Hide Workspaces"))];
 	if (t.kind === "drive") {
-		const entries = [_item("open", "Open Drive")];
-		if (t.removable) entries.push(_item("eject", "Eject Drive"));
-		entries.push(_divider, _item("hide", "Hide from Dock"));
+		const entries = [_item("open", tr("linux.dock.openDrive", "Open Drive"))];
+		if (t.removable) entries.push(_item("eject", tr("linux.dock.ejectDrive", "Eject Drive")));
+		entries.push(_divider, _item("hide", tr("linux.dock.hideFromDock", "Hide from Dock")));
 		return entries;
 	}
-	if (t.kind === "trash") return [_item("open", "Open Trash"), _divider, _item("empty-trash", "Empty Trash…", true)];
+	if (t.kind === "trash") return [_item("open", tr("linux.dock.openTrash", "Open Trash")), _divider, _item("empty-trash", tr("linux.dock.emptyTrash3", "Empty Trash…"), true)];
 	if (t.kind === "folder" || t.kind === "custom")
-		return [_item("open", "Open Folder"), _divider, _item("remove", "Remove from Dock")];
-	if (t.kind === "tray") return [_item("tray:" + t.trayKey, t.hasMenu ? "App tray menu" : "Activate")];
-	const bloom = { kind: "submenu", key: "bloom", label: "Bloom Options", children: [_item("restart", "Restart Bloom"), _divider, _item("quit", "Quit Bloom", true)] };
-	const addApp = _item("add-app", "Add App to Dock...");
+		return [_item("open", tr("linux.dock.openFolder", "Open Folder")), _divider, _item("remove", tr("ui.dock.removeFromDock", "Remove from Dock"))];
+	if (t.kind === "tray") return [_item("tray:" + t.trayKey, t.hasMenu ? tr("ui.dock.appTrayMenu", "App tray menu") : tr("linux.dock.activate", "Activate"))];
+	const bloom = { kind: "submenu", key: "bloom", label: tr("dock.menu.bloomOptions", "Bloom Options"), children: [_item("restart", tr("dock.options.restart", "Restart Bloom")), _divider, _item("quit", tr("dock.options.quit", "Quit Bloom"), true)] };
+	const addApp = _item("add-app", tr("dock.menu.addApp", "Add App to Dock..."));
 	if (t.kind === "background")
 		return [addApp, bloom];
 	const out = [];
 	if (t.pinned)
-		out.push(_item("unpin", "Unpin from Dock"));
+		out.push(_item("unpin", tr("dock.menu.unpin", "Unpin from Dock")));
 	else if (t.pinnable)
-		out.push(_item("pin", "Pin to Dock"));
+		out.push(_item("pin", tr("dock.menu.pin", "Pin to Dock")));
 	if (t.pinned) {
-		out.push(_divider, _item("change-icon", "Change Icon..."));
+		out.push(_divider, _item("change-icon", tr("dock.menu.changeIcon", "Change Icon...")));
 		if (t.hasCustomIcon)
-			out.push(_item("reset-icon", "Reset Icon"));
+			out.push(_item("reset-icon", tr("dock.menu.resetIcon", "Reset Icon")));
 	}
 	if (out.length > 0)
 		out.push(_divider);
@@ -284,14 +285,14 @@ function menuFor(t) {
 		out.push(_divider);
 		out.push.apply(out, actions);
 		if (t.running)
-			out.push(_item("new-window", "Open New Window"));
+			out.push(_item("new-window", tr("linux.dock.openNewWindow", "Open New Window")));
 	}
 	if (t.running)
-		out.push(_item("close", t.windows > 1 ? "Close all windows" : "Close window", true));
+		out.push(_item("close", t.windows > 1 ? tr("linux.dock.closeAllWindows", "Close all windows") : tr("linux.dock.closeWindow", "Close window"), true));
 	if (t.trays && t.trays.length > 0) {
 		out.push(_divider);
 		for (const tray of t.trays)
-			out.push(_item("tray:" + tray.key, (tray.hasMenu ? "App tray menu" : "Activate tray app")
+			out.push(_item("tray:" + tray.key, (tray.hasMenu ? tr("ui.dock.appTrayMenu", "App tray menu") : tr("linux.dock.activateTrayApp", "Activate tray app"))
 				+ (t.trays.length > 1 ? ": " + (tray.title || tray.key) : "")));
 	}
 	return out;

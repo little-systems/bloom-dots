@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
@@ -151,7 +152,7 @@ Item {
 		root._cancelPreview();
 		popup.close();
 		menu.forId = id;
-		menu.entries = Dock.menuFor(target);
+		menu.entries = Dock.menuFor(target, (key, english) => I18n.t(key));
 		const p = stage.mapFromItem(null, x, y);
 		menu.openAt(p.x, p.y);
 	}
@@ -164,7 +165,10 @@ Item {
 	property string interaction: "none"
 
 	readonly property bool pillHovered: pillHover.hovered
-	readonly property bool hidden: Dock.isHidden(root.mode, root.overlapped, root.interaction, root.startupAnimating)
+	// The first-run guide shows the real Dock while introducing it (Bloom
+	// useOnboardingReveal); the saved mode is untouched.
+	property bool guideReveal: false
+	readonly property bool hidden: !root.guideReveal && Dock.isHidden(root.mode, root.overlapped, root.interaction, root.startupAnimating)
 	readonly property real naturalWidth: root._layout.width + 2 * Tokens.dock.padding
 	readonly property bool adaptive: root.adaptiveEnabled && root.mode === "fixed" && root.maximized
 		&& root.expanded && !root.hidden && root.surfaceVisible
@@ -536,6 +540,7 @@ Item {
 							anchors.fill: parent
 							visible: slot.kind === "app" || slot.kind === "tray"
 							name: slot.name
+							appId: slot.key
 							iconSource: slot.icon
 							windows: slot.windows
 							backgroundDot: slot.backgroundDot

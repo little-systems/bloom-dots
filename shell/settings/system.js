@@ -74,12 +74,12 @@ function option(overrides, path, fallback) {
 }
 
 var DEFAULTS = [
-	{ id: "browser", label: "Web browser", mime: "x-scheme-handler/https", icon: "globe" },
-	{ id: "files", label: "File manager", mime: "inode/directory", icon: "folder" },
-	{ id: "text", label: "Text editor", mime: "text/plain", icon: "file-text" },
-	{ id: "image", label: "Image viewer", mime: "image/png", icon: "file-image" },
-	{ id: "video", label: "Video player", mime: "video/mp4", icon: "file-video-camera" },
-	{ id: "music", label: "Music player", mime: "audio/mpeg", icon: "file-music" }
+	{ id: "browser", label: "Web browser", key: "linux.settings.defaultApp.webBrowser", mime: "x-scheme-handler/https", icon: "globe" },
+	{ id: "files", label: "File manager", key: "linux.settings.defaultApp.fileManager", mime: "inode/directory", icon: "folder" },
+	{ id: "text", label: "Text editor", key: "linux.settings.defaultApp.textEditor", mime: "text/plain", icon: "file-text" },
+	{ id: "image", label: "Image viewer", key: "linux.settings.defaultApp.imageViewer", mime: "image/png", icon: "file-image" },
+	{ id: "video", label: "Video player", key: "linux.settings.defaultApp.videoPlayer", mime: "video/mp4", icon: "file-video-camera" },
+	{ id: "music", label: "Music player", key: "linux.settings.defaultApp.musicPlayer", mime: "audio/mpeg", icon: "file-music" }
 ];
 
 function appName(desktopId) {

@@ -6,6 +6,7 @@ import "../../common/tokens.js" as Tokens
 import "../notch"
 import "../notch/qp"
 import "session.js" as Logic
+import "../../common/i18n"
 
 // The session menu: common screen/sleep actions and session-ending actions
 // on a compact card. Ending the session with work in progress asks first. Pure:
@@ -24,7 +25,7 @@ Item {
 	property var busy: ({ pacman: false, downloads: 0 })
 	property int selectedIndex: 0
 	property color accent: "#007aff"
-	readonly property var _actions: ["lock", "suspend", "hibernate", "logout", "reboot", "shutdown", "firmware"].map(id => Logic.ACTIONS.find(a => a.id === id))
+	readonly property var _actions: ["lock", "suspend", "hibernate", "logout", "reboot", "shutdown", "firmware"].map(id => Object.assign({}, Logic.ACTIONS.find(a => a.id === id), { label: ({ "lock": I18n.t("linux.session.lock"), "suspend": I18n.t("linux.session.suspend"), "hibernate": I18n.t("linux.session.hibernate"), "logout": I18n.t("linux.session.logOut"), "reboot": I18n.t("notch.calendar.restart"), "shutdown": I18n.t("linux.session.shutDown"), "firmware": I18n.t("linux.session.firmwareSetup") })[id] }))
 
 	signal actionChosen(string id)
 	signal dismissed()
@@ -33,7 +34,7 @@ Item {
 	property bool _open: false
 	// The action waiting on "… anyway".
 	property var _asking: null
-	readonly property string _warning: root._asking ? Logic.warning(root._asking.id, root.busy) : ""
+	readonly property string _warning: root._asking ? Logic.warning(root._asking.id, root.busy, (key, params) => I18n.tCount(key, root.busy.downloads, params)) : ""
 
 	function open() {
 		root.selectedIndex = 0;
@@ -126,8 +127,8 @@ Item {
 				SvgIcon { x: 2; y: 2; name: root._asking ? root._asking.icon : "power"; size: 20; color: root.theme.text }
 				Column {
 					x: 32; y: 0; spacing: 2
-					Text { text: root._asking ? root._asking.label + "?" : "Session"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(18); font.weight: Font.DemiBold }
-					Text { text: root._asking ? "Check before continuing" : "Choose what to do with this computer"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
+					Text { text: root._asking ? root._asking.label + "?" : I18n.t("linux.session.session"); color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(18); font.weight: Font.DemiBold }
+					Text { text: root._asking ? I18n.t("linux.session.checkBeforeContinuing") : I18n.t("linux.session.chooseWhatToDoWithThisComputer"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
 				}
 				Rectangle {
 					anchors.right: parent.right; width: 28; height: 28; radius: 8; color: closeHover.hovered ? root.theme.groupBg : "transparent"
@@ -139,7 +140,7 @@ Item {
 			Column {
 				visible: !root._asking
 				width: parent.width; spacing: 10
-				Text { text: "SCREEN & SLEEP"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
+				Text { text: I18n.t("linux.session.screenSleep"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
 				Row {
 					width: parent.width; spacing: 8
 					Repeater {
@@ -155,7 +156,7 @@ Item {
 					}
 				}
 				Item { width: 1; height: 4 }
-				Text { text: "SESSION & POWER"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
+				Text { text: I18n.t("linux.session.sessionPower"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10); font.weight: Font.DemiBold }
 				Row {
 					width: parent.width; spacing: 8
 					Repeater {
@@ -177,10 +178,10 @@ Item {
 				width: parent.width; height: 39; radius: 10
 				color: firmwareHover.hovered || root.selectedIndex === 6 ? root.theme.groupBg : "transparent"
 				border.width: 1; border.color: root.theme.border
-				Accessible.role: Accessible.Button; Accessible.name: "Firmware setup, restart into firmware settings"
+				Accessible.role: Accessible.Button; Accessible.name: I18n.t("linux.session.firmwareSetupRestartIntoFirmwareSettings")
 				SvgIcon { x: 11; anchors.verticalCenter: parent.verticalCenter; name: "cpu"; size: 16; color: root.theme.textMuted }
-				Text { x: 36; anchors.verticalCenter: parent.verticalCenter; text: "Firmware setup"; color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(12) }
-				Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: "Restart into firmware settings"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
+				Text { x: 36; anchors.verticalCenter: parent.verticalCenter; text: I18n.t("linux.session.firmwareSetup"); color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(12) }
+				Text { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: I18n.t("linux.session.restartIntoFirmwareSettings"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(11) }
 				HoverHandler { id: firmwareHover; cursorShape: Qt.PointingHandCursor; onHoveredChanged: if (hovered) root.selectedIndex = 6 }
 				TapHandler { onTapped: root._choose(root._actions[6], false) }
 			}
@@ -192,10 +193,10 @@ Item {
 			}
 			Row {
 				visible: root._warning !== ""; anchors.right: parent.right; spacing: Tokens.qp.actions.gap
-				QpButton { objectName: "cancel"; theme: root.theme; text: "Cancel"; onClicked: root._asking = null }
-				QpButton { objectName: "confirm"; theme: root.theme; primary: true; text: root._asking ? root._asking.label + " anyway" : ""; onClicked: root._choose(root._asking, true) }
+				QpButton { objectName: "cancel"; theme: root.theme; text: I18n.t("common.cancel"); onClicked: root._asking = null }
+				QpButton { objectName: "confirm"; theme: root.theme; primary: true; text: root._asking ? I18n.t("linux.session.confirmAnyway", { action: root._asking.label }) : ""; onClicked: root._choose(root._asking, true) }
 			}
-			Text { anchors.right: parent.right; text: root._asking ? "Enter to continue · Esc to cancel" : "Arrow keys to choose · Enter to select · Esc to close"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10) }
+			Text { anchors.right: parent.right; text: root._asking ? I18n.t("linux.session.enterToContinueEscToCancel") : I18n.t("linux.session.arrowKeysToChooseEnterToSelectEsc"); color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10) }
 		}
 	}
 }

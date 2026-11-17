@@ -12,6 +12,7 @@ import Quickshell.Io
 import qs.services
 import "settings"
 import "common/render"
+import "common/i18n"
 import "common"
 import "common/tokens.js" as Tokens
 import "services/settings.js" as Logic
@@ -23,6 +24,7 @@ import "modules/dock/extras.js" as Extras
 ShellRoot {
 	id: app
 	Binding { target: Fonts; property: "override"; value: Settings.values["bloom-font-family"] }
+	Binding { target: I18n; property: "environment"; value: ({ LC_ALL: Quickshell.env("LC_ALL") || "", LC_MESSAGES: Quickshell.env("LC_MESSAGES") || "", LANG: Quickshell.env("LANG") || "" }) }
 	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
 	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
 
@@ -36,8 +38,10 @@ ShellRoot {
 	// What a reset leaves alone: which surfaces run, and the chosen wallpaper.
 	readonly property var _keep: ["bloom-enabled-modules", "bloom-wallpaper", "bloom-wallpaper-dir", "bloom-device-looks"]
 	property string version: ""
-	property string exportLabel: "Export Settings"
-	property string importLabel: "Import Settings"
+	property string exportState: "idle"
+	readonly property string exportLabel: ({ idle: I18n.t("settings.about.export"), busy: I18n.t("linux.settings.exporting"), success: I18n.t("linux.settings.settingsExported"), failed: I18n.t("linux.settings.exportFailed") })[app.exportState]
+	property string importState: "idle"
+	readonly property string importLabel: ({ idle: I18n.t("settings.about.import"), busy: I18n.t("linux.settings.importing"), success: I18n.t("linux.settings.settingsImported"), failed: I18n.t("linux.settings.importFailed") })[app.importState]
 	property var cityResults: []
 	// Every drive, including the ones hidden from the dock: that's how they
 	// come back.
@@ -82,18 +86,18 @@ ShellRoot {
 		try {
 			parsed = JSON.parse(text);
 		} catch (e) {
-			app.importLabel = "Import Failed";
+			app.importState = "failed";
 			return;
 		}
 		if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-			app.importLabel = "Import Failed";
-			app.saveError = "Import must contain a settings object";
+			app.importState = "failed";
+			app.saveError = I18n.t("linux.settings.importMustContainASettingsObject");
 			return;
 		}
 		const changes = {};
 		Logic.keys().filter(key => key in parsed && key !== "bloom-enabled-modules").forEach(key => changes[key] = parsed[key]);
-		app.importLabel = "Importing…";
-		Settings.setMany(changes, error => { app.saveError = error; app.importLabel = error === "" ? "Settings Imported" : "Import Failed"; });
+		app.importState = "busy";
+		Settings.setMany(changes, error => { app.saveError = error; app.importState = error === "" ? "success" : "failed"; });
 	}
 
 	SystemStore { id: store }
@@ -136,6 +140,7 @@ ShellRoot {
 				Translate { y: appEntrance.rise }
 			]
 			theme: Theme
+			agentIntegrations: integrationStore
 			store: checkedStore
 			saveError: app.saveError
 			onErrorDismissed: app.saveError = ""
@@ -151,7 +156,7 @@ ShellRoot {
 			onQuitRequested: app.run(["systemctl", "--user", "stop", "bloom-shell"])
 			onExportRequested: if (!exportCopy.running) app.openExport()
 			onLinkRequested: link => Qt.openUrlExternally(link)
-			onImportRequested: if (app.importLabel !== "Importing…" && !importFile.running) importDialog.open()
+			onImportRequested: if (app.importState !== "busy" && !importFile.running) importDialog.open()
 			onColorRequested: colorDialog.open()
 			cityResults: app.cityResults
 			drives: app.drives
@@ -160,6 +165,7 @@ ShellRoot {
 			net: Network
 			bt: Bluetooth
 			onCheatsheetRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "cheatsheet", "toggle"])
+			onSetupRequested: app.run(["qs", "-c", "bloom", "ipc", "call", "onboarding", "open"])
 			onCityQueried: text => app.searchCity(text)
 			onAddFolderRequested: folderDialog.open()
 		}
@@ -174,7 +180,7 @@ ShellRoot {
 		onAccepted: {
 			exportCopy.destination = decodeURIComponent(file.toString().replace("file://", ""));
 			app.saveError = "";
-			app.exportLabel = "Exporting…";
+			app.exportState = "busy";
 			exportCopy.running = true;
 		}
 	}
@@ -185,18 +191,20 @@ ShellRoot {
 		folder: "file://" + Quickshell.env("HOME")
 		nameFilters: ["JSON (*.json)"]
 		onAccepted: {
-			app.importLabel = "Importing…";
+			app.importState = "busy";
 			importFile.path = decodeURIComponent(file.toString().replace("file://", ""));
 			importFile.running = true;
 		}
 	}
+	AgentIntegrationStore { id: integrationStore }
+
 	Process {
 		id: exportCopy
 		property string destination: ""
 		command: ["python3", Quickshell.shellPath("scripts/export-settings.py"), Settings.path, exportCopy.destination]
 		onExited: code => {
-			app.exportLabel = code === 0 ? "Settings Exported" : "Export Failed";
-			if (code !== 0) app.saveError = "Couldn't export settings. Check the selected file and its permissions.";
+			app.exportState = code === 0 ? "success" : "failed";
+			if (code !== 0) app.saveError = I18n.t("linux.settings.couldnTExportSettingsCheckTheSelectedFile");
 		}
 	}
 

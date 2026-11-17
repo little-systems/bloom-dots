@@ -21,6 +21,8 @@ Usage: bloom <command> [args]
   doctor [--json]                    Read-only health report (exit 0 healthy, 1 degraded, 2 failed)
   support [--preview] [--output FILE] Write a private, redacted support bundle (never uploaded)
   settings                           Open Bloom Settings
+  agents status|connect|disconnect [claude|codex|opencode]  Agent live activities in the Island (JSON)
+  agent-hook <agent>                 Run by connected agents for each event (always prints {})
   install [--dry-run] [--yes] [--user NAME] [--no-deps] [--restart]  Install Bloom (as root inside arch-chroot too)
   update [--rollback] [--no-deps]      Update a clean checkout or restore the previous revision
   uninstall [--remove-deps]           Restore files recorded by the installer
@@ -196,6 +198,14 @@ main() {
 	support) cmd_doctor --support "$@" ;;
 	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
 	install | update | uninstall | recover | first-login) need_python; exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
+	agents) exec python3 -I "$BLOOM_ROOT/tools/bloom_agents.py" "$@" ;;
+	# Run by agents (Claude Code, Codex) for every hooked event: never fails,
+	# never prompts, and answers {} even without Python.
+	agent-hook)
+		command -v python3 >/dev/null && exec python3 -I "$BLOOM_ROOT/tools/bloom_agent_hook.py" "$@"
+		printf '{}'
+		exit 0
+		;;
 	dev) cmd_dev "$@" ;;
 	version) cmd_version ;;
 	help | -h | --help) usage ;;

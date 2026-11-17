@@ -18,7 +18,9 @@ import "modules/cheatsheet"
 import "modules/wallpaper"
 import "modules/osk"
 import "modules/overlay"
+import "modules/onboarding"
 import "common/render"
+import "common/i18n"
 import "common/motion.js" as Motion
 
 // Bloom shell root: loads the core services, the surfaces enabled in
@@ -44,6 +46,8 @@ ShellRoot {
 	}
 	Binding { target: Render; property: "uiScale"; value: Settings.values["bloom-scale"] }
 	Binding { target: Render; property: "fontScale"; value: Settings.values["bloom-font-scale"] }
+	Binding { target: I18n; property: "setting"; value: Settings.values["bloom-language"] ?? "system" }
+	Binding { target: I18n; property: "environment"; value: ({ LC_ALL: Quickshell.env("LC_ALL") || "", LC_MESSAGES: Quickshell.env("LC_MESSAGES") || "", LANG: Quickshell.env("LANG") || "" }) }
 
 	Binding { target: Theme; property: "syncApps"; value: true }
 	Binding {
@@ -83,6 +87,15 @@ ShellRoot {
 	Component.onCompleted: console.log(`bloom: shell started (theme ${Theme.mode}, settings ${Settings.path})`)
 
 	readonly property var _modules: Settings.values["bloom-enabled-modules"]
+
+	Binding {
+		target: AgentAlerts
+		property: "blocked"
+		value: {
+			const windows = notchLoader.active ? notchLoader.item?.instances ?? [] : [];
+			return !windows.some(loader => loader.item && !loader.item.view.agentBlocked);
+		}
+	}
 
 	LoginScreen {}
 
@@ -166,6 +179,18 @@ ShellRoot {
 			delegate: Loader {
 				required property var modelData
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/cheatsheet/CheatsheetWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	// The first-run guide (Onboarding): opened once after install, or replayed.
+	LazyLoader {
+		active: Onboarding.opened
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/onboarding/OnboardingWindow.qml"), { modelData: modelData })
 			}
 		}
 	}
@@ -572,6 +597,22 @@ ShellRoot {
 		}
 	}
 
+	// Agent live activities: bloom agent-hook calls event(<json>).
+	IpcHandler {
+		target: "agents"
+
+		function event(json: string): string { return AgentAlerts.event(json); }
+		function preview(agent: string, value: string): string {
+			const working = ["thinking", "reading", "editing", "running", "working"].includes(value);
+			return AgentAlerts.test(agent, working ? "working" : value, working ? value : "");
+		}
+		function test(agent: string, kind: string): string { return AgentAlerts.test(agent, kind, kind === "working" ? "thinking" : ""); }
+		function state(): string {
+			return JSON.stringify({ enabled: AgentAlerts.enabled, entries: AgentAlerts.state.entries.length,
+				active: AgentAlerts.active ? { agent: AgentAlerts.active.agent, kind: AgentAlerts.active.kind, activity: AgentAlerts.active.activity ?? "" } : null });
+		}
+	}
+
 	IpcHandler {
 		target: "osk"
 
@@ -584,6 +625,13 @@ ShellRoot {
 
 		function toggle(): string { return _modules.indexOf("overlay") < 0 ? "off" : (OverlayState.toggle(), "ok"); }
 		function state(): string { return JSON.stringify({ opened: OverlayState.opened, crosshair: OverlayState.crosshair }); }
+	}
+
+	IpcHandler {
+		target: "onboarding"
+		function open(): string { Onboarding.open(); return "ok"; }
+		function close(): string { Onboarding.close(); return "ok"; }
+		function state(): string { return JSON.stringify({ opened: Onboarding.opened, pending: Onboarding.pending, reveal: Onboarding.reveal }); }
 	}
 
 	IpcHandler {

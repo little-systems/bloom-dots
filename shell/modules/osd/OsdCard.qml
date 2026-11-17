@@ -5,6 +5,7 @@ import "."
 import "../../common/tokens.js" as Tokens
 import "../../common/spring.js" as SpringMath
 import "../../common/render"
+import "../../common/i18n"
 
 // Bloom's volume (left edge) and brightness (right edge) HUDs: Overlay.tsx
 // VolumeNotch, BrightnessNotch and MixerTile, Overlay.css. Drawn at 1x; the
@@ -364,7 +365,7 @@ Item {
 						width: parent.width - Tokens.osd.mixer.pad.side * 2
 						horizontalAlignment: Text.AlignHCenter
 						wrapMode: Text.Wrap
-						text: "No apps with audio"
+						text: I18n.t("overlay.volume.noApps")
 						color: root.theme.textMuted
 						font.family: Fonts.familyFor(Font.Medium)
 						font.pixelSize: Fonts.px(Tokens.osd.mixer.empty)

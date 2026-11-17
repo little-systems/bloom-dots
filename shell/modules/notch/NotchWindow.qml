@@ -41,6 +41,7 @@ PanelWindow {
 		item: view.bandActive ? view.bandItem : (view.hidden ? null : view.hitItem)
 		Region { item: view.shelfBubbleHit }
 		Region { item: view.musicBubbleHit }
+		Region { item: view.agentBubbleHit }
 	}
 
 	readonly property var _monitor: HyprState.monitors.find(m => m.name === win.modelData.name) ?? null
@@ -132,6 +133,11 @@ PanelWindow {
 		onShelfTextDropped: text => ShelfState.addText(text)
 		privacy: Devices.privacy
 		deviceAlert: Devices.alert
+		agentActivity: AgentAlerts.active
+		agentAttention: AgentAlerts.attention
+		onAgentReplayRequested: AgentAlerts.replay()
+		agentNow: AgentAlerts.now
+		agentLightTheme: Theme.isLight
 		enabledPanels: ({ calendar: Settings.values["bloom-calendar-enabled"], "command-center": Settings.values["bloom-notch-command-center-enabled"], devices: Settings.values["bloom-notch-devices-enabled"] })
 		onPanelRemembered: panel => PanelState.remember(panel)
 		edgeDelay: Settings.values["bloom-notch-edge-delay"]
@@ -148,6 +154,7 @@ PanelWindow {
 		bgExpanded: Theme.bgExpanded
 		textColor: Theme.text
 		edgeShine: Settings.values["bloom-edge-shine-enabled"] !== false
+		guideReveal: Onboarding.reveal === "island"
 		textMuted: Theme.textMuted
 		weather: ({ shown: Weather.shown, label: Weather.label, icon: Weather.icon, tooltip: Weather.tooltip })
 		battery: ({ available: Battery.available, ready: Battery.ready, level: Battery.level, charging: Battery.charging, pluggedIn: Battery.pluggedIn, threshold: Battery.threshold, tooltip: Battery.tooltip })

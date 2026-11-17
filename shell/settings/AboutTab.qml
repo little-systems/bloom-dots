@@ -2,6 +2,7 @@ import QtQuick
 import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
+import "../common/i18n"
 
 // Bloom's AboutTab, without Software Updates: pacman owns those here.
 Column {
@@ -17,13 +18,13 @@ Column {
 	property string memory: ""
 	// The one place for this machine's details (there is no separate Device page).
 	readonly property var systemRows: [
-		{ label: "Device Name", value: root.hostname, icon: "monitor" },
-		{ label: "Processor", value: root.cpu, icon: "cpu" },
-		{ label: "Memory", value: root.memory, icon: "memory-stick" },
-		{ label: "Distribution ID", value: root.osInfo.id || "", icon: "info" },
-		{ label: "Edition", value: root.osInfo.variant || "", icon: "info" },
-		{ label: "Architecture", value: root.architecture, icon: "cpu" },
-		{ label: "Kernel", value: root.kernel, icon: "cpu" }
+		{ label: I18n.t("linux.settings.deviceName"), value: root.hostname, icon: "monitor" },
+		{ label: I18n.t("linux.settings.processor"), value: root.cpu, icon: "cpu" },
+		{ label: I18n.t("linux.settings.memory"), value: root.memory, icon: "memory-stick" },
+		{ label: I18n.t("linux.settings.distributionId"), value: root.osInfo.id || "", icon: "info" },
+		{ label: I18n.t("linux.settings.edition"), value: root.osInfo.variant || "", icon: "info" },
+		{ label: I18n.t("linux.settings.architecture"), value: root.architecture, icon: "cpu" },
+		{ label: I18n.t("linux.settings.kernel"), value: root.kernel, icon: "cpu" }
 	].filter(row => row.value !== "")
 	property string exportLabel: "Export Settings"
 	property string importLabel: "Import Settings"
@@ -107,7 +108,7 @@ Column {
 				objectName: "aboutTitle"
 				width: parent.width
 				horizontalAlignment: Text.AlignHCenter
-				text: "Bloom"
+				text: I18n.t("settings.dock.iconBloom")
 				color: root.theme.text
 				font.family: Fonts.syne
 				font.pixelSize: Fonts.px(Tokens.settings.about.title)
@@ -125,7 +126,7 @@ Column {
 					id: versionText
 					objectName: "version"
 					anchors.centerIn: parent
-					text: "Version " + root.version
+					text: I18n.t("linux.settings.version", { version: root.version })
 					color: root.theme.textMuted
 					font.family: Fonts.uiFor(Font.DemiBold)
 					font.pixelSize: Fonts.px(Tokens.settings.about.version)
@@ -195,7 +196,7 @@ Column {
 		x: (parent.width - width) / 2
 		height: dhanush.height
 		spacing: 5
-		CreditText { text: "Made with" }
+		CreditText { text: I18n.t("settings.about.madeWith") }
 		// Bloom's ❤️, in colour from noto-fonts-emoji (bloom-shell-deps).
 		CreditText { objectName: "creditHeart"; text: "\u2764\uFE0F" }
 		CreditText { text: "by" }
@@ -205,7 +206,7 @@ Column {
 	}
 	Item { width: 1; height: Tokens.settings.about.bottom }
 
-	SGroupLabel { objectName: "systemLabel"; theme: root.theme; text: "System"; above: 0; visible: root.systemRows.length > 0
+	SGroupLabel { objectName: "systemLabel"; theme: root.theme; text: I18n.t("settings.groups.system"); above: 0; visible: root.systemRows.length > 0
 		readonly property real aboveGroup: Tokens.settings.group.label.top }
 	SGroup {
 		theme: root.theme
@@ -235,10 +236,10 @@ Column {
 		}
 	}
 
-	SGroupLabel { objectName: "dataLabel"; theme: root.theme; text: "Data"; visible: true }
+	SGroupLabel { objectName: "dataLabel"; theme: root.theme; text: I18n.t("settings.groups.data"); visible: true }
 	SGroup {
 		theme: root.theme
-		SRow { objectName: "export"; theme: root.theme; icon: "file-down"; label: root.exportLabel; desc: "Save settings to a file"; action: true; onClicked: root.exportRequested() }
-		SRow { objectName: "import"; theme: root.theme; icon: "upload"; label: root.importLabel; desc: "Load settings from a file"; action: true; divider: false; onClicked: root.importRequested() }
+		SRow { objectName: "export"; theme: root.theme; icon: "file-down"; label: root.exportLabel; desc: I18n.t("settings.about.exportDesc"); action: true; onClicked: root.exportRequested() }
+		SRow { objectName: "import"; theme: root.theme; icon: "upload"; label: root.importLabel; desc: I18n.t("settings.about.importDesc"); action: true; divider: false; onClicked: root.importRequested() }
 	}
 }
