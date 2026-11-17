@@ -376,7 +376,7 @@ Item {
 										required property var modelData
 										objectName: "look-" + modelData.art
 										theme: root.theme
-										text: modelData.label
+										text: I18n.t(modelData.key)
 										on: row.modelData.art === modelData.art
 										onClicked: root.lookChosen(row.modelData.name, modelData.art === row.modelData.guess ? "" : modelData.art)
 									}

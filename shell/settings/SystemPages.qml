@@ -367,12 +367,12 @@ Column {
 					required property var modelData
 					required property int index
 					readonly property var choices: root.sys.defaultChoices[defaultRow.modelData.id] ?? []
-					theme: root.theme; icon: defaultRow.modelData.icon; label: defaultRow.modelData.label
+					theme: root.theme; icon: defaultRow.modelData.icon; label: I18n.t(defaultRow.modelData.key)
 					desc: Sys.appName(root.sys.defaults[defaultRow.modelData.id])
 					divider: defaultRow.index < Sys.DEFAULTS.length - 1
 					SSelect {
 						objectName: "default:" + defaultRow.modelData.id
-						accessibleName: defaultRow.modelData.label
+						accessibleName: I18n.t(defaultRow.modelData.key)
 						visible: defaultRow.choices.length > 0
 						theme: root.theme; popup: root.popup
 						options: defaultRow.choices

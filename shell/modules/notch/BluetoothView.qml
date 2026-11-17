@@ -220,7 +220,7 @@ Item {
 												required property var modelData
 												objectName: "look-" + modelData.art
 												theme: root.theme
-												text: modelData.label
+												text: I18n.t(modelData.key)
 												on: parent.shown === modelData.art
 												onClicked: root.lookChosen(device.d.name, modelData.art === root.guessFor(device.d) ? "" : modelData.art)
 											}

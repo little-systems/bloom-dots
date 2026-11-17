@@ -1170,7 +1170,15 @@ var catalogs = {
 				"thisNetworkNeedsAPassword": "This network needs a password",
 				"timedOut": "Timed out",
 				"somethingWentWrong": "Something went wrong",
-				"enterThePinShownOnTheDevice": "Enter the PIN shown on the device."
+				"enterThePinShownOnTheDevice": "Enter the PIN shown on the device.",
+				"defaultApp": {
+					"webBrowser": "Web browser",
+					"fileManager": "File manager",
+					"textEditor": "Text editor",
+					"imageViewer": "Image viewer",
+					"videoPlayer": "Video player",
+					"musicPlayer": "Music player"
+				}
 			}
 		}
 	},
