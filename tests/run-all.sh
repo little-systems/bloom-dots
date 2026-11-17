@@ -68,6 +68,11 @@ quick_tests() {
 		node "$ROOT/tools/gen-icons.mjs" --check
 	fi
 
+	step "language catalogs are up to date"
+	if need node; then
+		node "$ROOT/tools/gen-i18n.mjs" --check
+	fi
+
 	step "settings search index is up to date"
 	node "$ROOT/tools/gen-settings-index.mjs" --check
 
