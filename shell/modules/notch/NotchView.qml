@@ -97,6 +97,14 @@ Item {
 	readonly property bool _showMusicBubble: root._showActivities && (root.timer.active || root.agentVisible) && root.musicEnabled
 		&& root.compactNotch && root.media.hasMedia && root.musicActivityVisible
 
+	// An item's centre relative to the pill's top centre, in window pixels
+	// (the pill is centred on the screen), for tests that click it.
+	function _fromPillCentre(item) {
+		const c = item.mapToItem(null, item.width / 2, item.height / 2);
+		const p = pillArea.mapToItem(null, pillArea.width / 2, 0);
+		return { dx: c.x - p.x, y: c.y };
+	}
+
 	function shelfDragEnter() {
 		if (root._shelfDraggingOut || root.panel === "shelf" || root.alertVisible) return;
 		scriptedPanelClose.stop();
@@ -419,7 +427,7 @@ Item {
 			overlapped: root.overlapped, visible: root.surfaceVisible,
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
-			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, shelfBubble: root._showShelfBubble && !root.alertVisible, musicBubble: root._showMusicBubble, agentBadge: agentBubble.shown, deviceAlert: root.deviceAlert,
+			bloomMode: root.bloomMode, open: root.open, panel: root.panel, panelScroll: root.panelScroll, shelfBubble: root._showShelfBubble && !root.alertVisible, musicBubble: root._showMusicBubble, agentBadge: agentBubble.shown, agentBadgeAt: agentBubble.hitEnabled ? root._fromPillCentre(agentBubble) : null, deviceAlert: root.deviceAlert,
 			pulse: root.pulse, updateDot: root.updates.available && root.updateIndicator
 		};
 	}

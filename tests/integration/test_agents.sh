@@ -60,11 +60,14 @@ assert_eq "$(ipc agents event '{"agent":"claude","session":"s9","project":"p","k
 pass "events with anything off the allow-list are refused"
 ipc agents event '{"agent":"claude","session":"s1","project":"bloom","kind":"attention"}' >/dev/null
 wait_for "the attention alert" active_is attention ""
-badge_shown() { ipc notch state | jq -e '.[0].agentBadge' >/dev/null; }
+# The badge's real centre once it takes clicks (its width follows the fonts),
+# from the screen-centred pill.
+badge_shown() { ipc notch state | jq -e '.[0].agentBadge and .[0].agentBadgeAt != null' >/dev/null; }
 WAIT_S=12 wait_for "the persistent attention badge" badge_shown
-badge_x="$(ipc notch state | jq -r '.[0].width | 960 - . / 2 - 8 - 21 | round')"
+badge_x="$(ipc notch state | jq -r '960 + .[0].agentBadgeAt.dx | round')"
+badge_y="$(ipc notch state | jq -r '.[0].agentBadgeAt.y | round')"
 if [[ -n "${BLOOM_AGENT_BADGE_SCREENSHOT:-}" ]]; then grim -o HEADLESS-1 "$BLOOM_AGENT_BADGE_SCREENSHOT"; fi
-python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$badge_x" 18 click 0
+python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 "$badge_x" "$badge_y" click 0
 wait_for "the badge click to replay the attention alert" active_is attention ""
 pass "attention stays accessible through a real click on its badge"
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "shell log has warnings"; fi
