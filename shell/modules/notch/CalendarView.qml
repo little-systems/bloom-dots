@@ -445,7 +445,7 @@ Item {
 			spacing: Tokens.calendar.grid.gap
 
 			Repeater {
-				model: root.mondayFirst ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+				model: (root.mondayFirst ? [1, 2, 3, 4, 5, 6, 7] : [7, 1, 2, 3, 4, 5, 6]).map(day => Qt.locale(I18n.language).dayName(day, Locale.ShortFormat))
 
 				Text {
 					required property string modelData

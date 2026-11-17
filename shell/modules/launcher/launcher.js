@@ -62,16 +62,20 @@ function emoji(term) {
 	return sorted.slice(0, 60).map(e => ({ id: e[0], name: e[1], sub: "", icon: "", glyph: e[0], action: { kind: "copy", value: e[0] } }));
 }
 
-function commandRow(term) {
-	return term ? [{ id: "command", name: term, sub: "Run this command", icon: "", glyph: ">", action: { kind: "command", value: term } }] : [];
+function text(translate, key, fallback, params) {
+	return translate ? translate(key, params) : fallback;
 }
 
-function webRow(term) {
-	return term ? [{ id: "web", name: term, sub: "Search Google", icon: "", glyph: "?", action: { kind: "url", value: webUrl(term) } }] : [];
+function commandRow(term, translate) {
+	return term ? [{ id: "command", name: term, sub: text(translate, "linux.launcher.runCommand", "Run this command"), icon: "", glyph: ">", action: { kind: "command", value: term } }] : [];
 }
 
-function calcRow(term, result) {
-	return result ? [{ id: "calc", name: result, sub: term + " · Enter copies it", icon: "", glyph: "=", action: { kind: "copy", value: result } }] : [];
+function webRow(term, translate) {
+	return term ? [{ id: "web", name: term, sub: text(translate, "linux.launcher.searchGoogle", "Search Google"), icon: "", glyph: "?", action: { kind: "url", value: webUrl(term) } }] : [];
+}
+
+function calcRow(term, result, translate) {
+	return result ? [{ id: "calc", name: result, sub: text(translate, "linux.launcher.copyCalculation", term + " · Enter copies it", { expression: term }), icon: "", glyph: "=", action: { kind: "copy", value: result } }] : [];
 }
 
 var FILE_ICONS = [
@@ -114,17 +118,17 @@ function fileIcon(name) {
 }
 
 // A launcher row for an entry. `thumbs` maps image ids to their decoded file.
-function clipRow(e, thumbs) {
+function clipRow(e, thumbs, translate) {
 	const row = { id: e.id, name: e.text, sub: "", icon: "", glyph: "", symbol: "", swatch: "", action: { kind: "clip", value: e.raw } };
 	if (e.kind === "image") {
 		const thumb = thumbs[e.id] ? "file://" + thumbs[e.id] : "";
-		return Object.assign(row, { name: "Image", sub: [e.format, e.dims, e.size].filter(x => x).join(" · "), thumbnail: thumb, symbol: "file-image" });
+		return Object.assign(row, { name: text(translate, "linux.launcher.image", "Image"), sub: [e.format, e.dims, e.size].filter(x => x).join(" · "), thumbnail: thumb, symbol: "file-image" });
 	}
 	if (e.kind === "binary") return Object.assign(row, { name: e.format + " data", sub: e.size, symbol: "file" });
 	if (e.kind === "file") return Object.assign(row, { name: e.fileName, sub: e.path, symbol: fileIcon(e.fileName) });
-	if (e.kind === "link") return Object.assign(row, { sub: "Link", symbol: "globe" });
-	if (e.kind === "color") return Object.assign(row, { sub: "Color", swatch: e.color });
-	return Object.assign(row, { sub: e.text.length + " characters", symbol: "type" });
+	if (e.kind === "link") return Object.assign(row, { sub: text(translate, "linux.launcher.link", "Link"), symbol: "globe" });
+	if (e.kind === "color") return Object.assign(row, { sub: text(translate, "linux.launcher.color", "Color"), swatch: e.color });
+	return Object.assign(row, { sub: text(translate, "linux.launcher.characters", e.text.length + " characters", { count: e.text.length }), symbol: "type" });
 }
 
 function imageIds(entries) {
@@ -142,11 +146,11 @@ function parseThumbs(text) {
 
 // Settings pages Spotlight can open.
 var SETTINGS_PAGES = [
-	["display", "Display"], ["sound", "Sound"], ["power", "Power"], ["storage", "Storage"], ["device", "Device"],
-	["network", "Network"], ["bluetooth", "Bluetooth"], ["input", "Input"], ["hyprland", "Windows"], ["apps", "Default Apps"],
-	["ai", "AI"], ["time", "Time"], ["updates", "Updates"], ["general", "General"], ["appearance", "Appearance"],
-	["notch", "Notch"], ["dock", "Dock"], ["overlays", "Overlays"], ["about", "About"]
-].map(([id, name]) => ({ id: id, name: name }));
+	["display", "Display", "settings.groups.display"], ["sound", "Sound", "linux.launcher.pageSound"], ["power", "Power", "linux.launcher.pagePower"], ["storage", "Storage", "linux.launcher.pageStorage"], ["device", "Device", "linux.launcher.pageDevice"],
+	["network", "Network", "linux.launcher.pageNetwork"], ["bluetooth", "Bluetooth", "notch.commandCenter.bluetooth"], ["input", "Input", "linux.launcher.pageInput"], ["hyprland", "Windows", "settings.dock.iconWindows"], ["apps", "Default Apps", "linux.launcher.pageApps"],
+	["ai", "AI", "linux.launcher.pageAi"], ["time", "Time", "linux.launcher.pageTime"], ["updates", "Updates", "linux.launcher.pageUpdates"], ["general", "General", "settings.tabs.general"], ["appearance", "Appearance", "settings.tabs.appearance"],
+	["notch", "Notch", "settings.tabs.notch"], ["dock", "Dock", "settings.tabs.dock"], ["overlays", "Overlays", "settings.tabs.overlays"], ["about", "About", "settings.tabs.about"]
+].map(([id, name, labelKey]) => ({ id: id, name: name, labelKey: labelKey }));
 
 function fileRow(path, home) {
 	const name = path.replace(/\/$/, "").split("/").pop();
@@ -155,14 +159,14 @@ function fileRow(path, home) {
 
 // Everything at once, best kinds first, with Gemini and the web always last so
 // a query never comes up empty.
-function spotlight(term, apps, windows, files, home) {
+function spotlight(term, apps, windows, files, home, translate) {
 	const rows = [];
-	rank(apps, term).slice(0, 5).forEach(a => rows.push({ id: a.id, name: a.name, sub: "Application", icon: a.icon, glyph: "", action: { kind: "app", value: a.id } }));
+	rank(apps, term).slice(0, 5).forEach(a => rows.push({ id: a.id, name: a.name, sub: text(translate, "linux.launcher.application", "Application"), icon: a.icon, glyph: "", action: { kind: "app", value: a.id } }));
 	rank(windows.map(w => ({ name: w.title, address: w.address, app: w.class })), term).slice(0, 4).forEach(w =>
-		rows.push({ id: "window:" + w.address, name: w.name, sub: "Window · " + w.app, icon: "", glyph: "", symbol: "app-window", action: { kind: "window", value: w.address } }));
-	rank(SETTINGS_PAGES, term).slice(0, 3).forEach(p =>
-		rows.push({ id: "settings:" + p.id, name: p.name, sub: "Settings", icon: "", glyph: "", symbol: "settings", action: { kind: "settings", value: p.id } }));
+		rows.push({ id: "window:" + w.address, name: w.name, sub: text(translate, "linux.launcher.window", "Window · " + w.app, { app: w.app }), icon: "", glyph: "", symbol: "app-window", action: { kind: "window", value: w.address } }));
+	rank(SETTINGS_PAGES.map(page => Object.assign({}, page, { name: text(translate, page.labelKey, page.name) })), term).slice(0, 3).forEach(p =>
+		rows.push({ id: "settings:" + p.id, name: p.name, sub: text(translate, "settings.title", "Settings"), icon: "", glyph: "", symbol: "settings", action: { kind: "settings", value: p.id } }));
 	files.slice(0, 6).forEach(path => rows.push(fileRow(path, home)));
-	rows.push({ id: "ask", name: term, sub: "Ask Gemini", icon: "", glyph: "", symbol: "sparkles", action: { kind: "ask", value: term } });
-	return rows.concat(webRow(term));
+	rows.push({ id: "ask", name: term, sub: text(translate, "linux.launcher.askGemini", "Ask Gemini"), icon: "", glyph: "", symbol: "sparkles", action: { kind: "ask", value: term } });
+	return rows.concat(webRow(term, translate));
 }

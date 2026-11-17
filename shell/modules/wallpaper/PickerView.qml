@@ -5,6 +5,7 @@ import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "wallpaper.js" as Logic
+import "../../common/i18n"
 
 // The wallpaper picker: the launcher's card holding a grid of thumbnails,
 // driven by arrows and Enter or the pointer. Pure: PickerWindow.qml binds it.
@@ -136,11 +137,11 @@ Item {
 			spacing: 10
 			Row {
 				spacing: 8
-				Text { width: toolbar.width - actions.width - 8; anchors.verticalCenter: parent.verticalCenter; text: "Wallpapers"; color: root.theme.text; font.family: Fonts.familyFor(Font.DemiBold); font.weight: Font.DemiBold; font.pixelSize: Fonts.px(22) }
+				Text { width: toolbar.width - actions.width - 8; anchors.verticalCenter: parent.verticalCenter; text: I18n.t("linux.desktop.wallpapers"); color: root.theme.text; font.family: Fonts.familyFor(Font.DemiBold); font.weight: Font.DemiBold; font.pixelSize: Fonts.px(22) }
 				Row {
 					id: actions; spacing: 8
-					PickerButton { objectName: "openFile"; label: "Open file…"; onClicked: root.browseFileRequested() }
-					PickerButton { objectName: "browseFolder"; label: "Choose folder…"; onClicked: root.browseFolderRequested() }
+					PickerButton { objectName: "openFile"; label: I18n.t("linux.desktop.openFile"); onClicked: root.browseFileRequested() }
+					PickerButton { objectName: "browseFolder"; label: I18n.t("linux.desktop.chooseFolder"); onClicked: root.browseFolderRequested() }
 					PickerButton { objectName: "closePicker"; label: "×"; onClicked: root.dismissed() }
 				}
 			}
@@ -149,22 +150,22 @@ Item {
 				TextField {
 					id: location; objectName: "folderPath"
 					width: parent.width - folderActions.width - 8; height: 32
-					text: root.folder; placeholderText: "Wallpaper folder"
+					text: root.folder; placeholderText: I18n.t("linux.desktop.wallpaperFolder")
 					color: root.theme.text; font.family: Fonts.family; font.pixelSize: Fonts.px(12)
 					background: Rectangle { radius: 8; color: root.theme.groupBg; border.color: location.activeFocus ? root.accent : root.theme.border }
 					onAccepted: root.folderRequested(text)
 				}
 				Row {
 					id: folderActions; spacing: 6
-					PickerButton { label: "Up"; onClicked: root.folderRequested(Logic.parentFolder(root.folder)) }
-					PickerButton { label: "Default"; enabled: root.defaultFolder !== ""; onClicked: root.folderRequested(root.defaultFolder) }
-					PickerButton { objectName: "refresh"; label: "Refresh"; onClicked: root.refreshRequested() }
+					PickerButton { label: I18n.t("linux.desktop.up"); onClicked: root.folderRequested(Logic.parentFolder(root.folder)) }
+					PickerButton { label: I18n.t("linux.desktop.default"); enabled: root.defaultFolder !== ""; onClicked: root.folderRequested(root.defaultFolder) }
+					PickerButton { objectName: "refresh"; label: I18n.t("linux.desktop.refresh"); onClicked: root.refreshRequested() }
 				}
 			}
 			TextField {
 				id: search; objectName: "search"
 				width: parent.width; height: 32
-				placeholderText: "Search wallpapers…"; color: root.theme.text
+				placeholderText: I18n.t("linux.desktop.searchWallpapers"); color: root.theme.text
 				font.family: Fonts.family; font.pixelSize: Fonts.px(12)
 				background: Rectangle { radius: 8; color: root.theme.groupBg; border.color: search.activeFocus ? root.accent : root.theme.border }
 				onTextChanged: root.query = text
@@ -174,7 +175,7 @@ Item {
 		Text {
 			id: footer; objectName: "libraryStatus"
 			anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 20; bottomMargin: 12 }
-			text: root.error || (root.loading ? "Reading wallpapers…" : root.displayItems.length + " wallpapers · Includes subfolders · Arrows to browse, Enter to apply")
+			text: root.error || (root.loading ? I18n.t("linux.settings.readingWallpapers") : root.displayItems.length + " wallpapers · Includes subfolders · Arrows to browse, Enter to apply")
 			textFormat: Text.PlainText; elide: Text.ElideRight
 			color: root.error ? "#ff6961" : root.theme.textMuted
 			font.family: Fonts.family; font.pixelSize: Fonts.px(11)
@@ -184,7 +185,7 @@ Item {
 			objectName: "empty"
 			anchors.centerIn: grid
 			visible: root.displayItems.length === 0 && !root.loading
-			text: root.query ? "No matching wallpapers" : "No wallpapers in this folder"
+			text: root.query ? I18n.t("linux.settings.noMatchingWallpapers") : I18n.t("linux.settings.noWallpapersInThisFolder")
 			color: root.theme.textMuted
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(Tokens.picker.text)
@@ -229,7 +230,7 @@ Item {
 					Text {
 						anchors.centerIn: parent
 						visible: Logic.isVideo(cell.modelData) || thumbnail.status === Image.Error
-						text: Logic.isVideo(cell.modelData) ? "▶  Video" : "Preview unavailable"
+						text: Logic.isVideo(cell.modelData) ? "▶  Video" : I18n.t("linux.settings.previewUnavailable")
 						textFormat: Text.PlainText
 						color: root.theme.textMuted
 						font.family: Fonts.family

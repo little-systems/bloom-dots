@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "previews.js" as Preview
@@ -104,7 +105,7 @@ Item {
 							objectName: "preview-fallback-" + card.candidate.address
 							anchors.centerIn: parent
 							visible: !capture.item || !capture.item.hasContent
-							text: card.candidate.title || "Window preview unavailable"
+							text: card.candidate.title || I18n.t("linux.settings.windowPreviewUnavailable")
 							color: root.foreground
 							font.pixelSize: Fonts.px(12)
 							elide: Text.ElideRight

@@ -14,6 +14,10 @@ export CLAUDE_CONFIG_DIR="$TEST_TMP/claude" CODEX_HOME="$TEST_TMP/codex"
 start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom" "$TEST_TMP/bin"
 printf '{"bloom-enabled-modules":["notch"],"bloom-weather-enabled":false,"bloom-time-format-24h":true,"bloom-wallpaper":"/keep.png"}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
+if [[ -n "${BLOOM_TEST_LANGUAGE:-}" ]]; then
+	jq --arg lang "$BLOOM_TEST_LANGUAGE" '. + {"bloom-language": $lang}' "$XDG_CONFIG_HOME/bloom/settings.json" > "$TEST_TMP/settings-localized.json"
+	mv "$TEST_TMP/settings-localized.json" "$XDG_CONFIG_HOME/bloom/settings.json"
+fi
 cat > "$TEST_TMP/bin/systemctl" <<SH
 #!/bin/sh
 echo "\$*" >> "$TEST_TMP/calls"

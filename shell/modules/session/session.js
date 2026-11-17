@@ -25,14 +25,15 @@ function command(id) {
 }
 
 // Suspend and hibernate keep downloads; they shouldn't pause an upgrade.
-function warning(id, busy) {
+function warning(id, busy, translate) {
+	const text = (key, fallback) => translate ? translate(key, { count: busy.downloads }) : fallback;
 	if (id === "lock") return "";
 	const sleeping = id === "suspend" || id === "hibernate";
 	const n = sleeping ? 0 : busy.downloads;
 	const downloads = n === 1 ? "a download is in progress" : n + " downloads are in progress";
-	if (busy.pacman && n > 0) return "pacman is running, and " + downloads + ".";
-	if (busy.pacman) return "pacman is running.";
-	return n > 0 ? downloads.charAt(0).toUpperCase() + downloads.slice(1) + "." : "";
+	if (busy.pacman && n > 0) return text("linux.session.pacmanDownloads", "pacman is running, and " + downloads + ".");
+	if (busy.pacman) return text("linux.session.pacmanRunning", "pacman is running.");
+	return n > 0 ? text("linux.session.downloads", downloads.charAt(0).toUpperCase() + downloads.slice(1) + ".") : "";
 }
 
 function parseBusy(text) {

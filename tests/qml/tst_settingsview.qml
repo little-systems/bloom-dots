@@ -363,6 +363,9 @@ Item {
 			select.activated("ru");
 			compare(v.store.values["bloom-language"], "ru");
 			tryCompare(I18n, "language", "ru");
+			compare(part(v, "title").text, "Настройки");
+			v.query = I18n.t("settings.appearance.themeMode");
+			verify(v._hits.some(hit => hit.tab === "appearance"), "search follows the chosen language");
 			select.activated("system");
 		}
 

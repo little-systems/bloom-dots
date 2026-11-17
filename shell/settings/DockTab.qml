@@ -3,6 +3,7 @@ import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 import "logic.js" as Logic
+import "../common/i18n"
 
 // Bloom's DockTab, in Linux terms: Trash for the Recycle Bin, Super+Alt+Number
 // for Win+Number, the dock's workspaces for Task View. There's no Start button
@@ -31,12 +32,12 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Dock"; above: 0 }
+	SGroupLabel { theme: root.theme; text: I18n.t("settings.tabs.dock"); above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
-			theme: root.theme; icon: "monitor"; label: "Bloom Dock"; desc: "Show the dock at the bottom of the screen"; divider: root._dock
-			SToggle { accessibleName: "Bloom Dock"; objectName: "dock"; theme: root.theme; checked: root._dock; onToggled: value => root.set("bloom-enabled-modules", Logic.toggled(root._modules, "dock")) }
+			theme: root.theme; icon: "monitor"; label: I18n.t("settings.dock.enabled"); desc: I18n.t("linux.settings.showTheDockAtTheBottomOfThe"); divider: root._dock
+			SToggle { accessibleName: I18n.t("settings.dock.enabled"); objectName: "dock"; theme: root.theme; checked: root._dock; onToggled: value => root.set("bloom-enabled-modules", Logic.toggled(root._modules, "dock")) }
 		}
 		Column {
 			objectName: "dockRows"
@@ -44,55 +45,55 @@ Column {
 			width: parent.width
 
 			SRow {
-				theme: root.theme; icon: root._fixed ? "eye-off" : "eye"; label: "Behavior"; desc: "Choose how the dock appears"
-				SSelect { accessibleName: "Behavior";
+				theme: root.theme; icon: root._fixed ? "eye-off" : "eye"; label: I18n.t("settings.dock.behavior"); desc: I18n.t("settings.dock.behaviorDesc")
+				SSelect { accessibleName: I18n.t("settings.dock.behavior");
 					objectName: "dockMode"; theme: root.theme; popup: root.popup; value: root._mode
-					options: [{ value: "fixed", label: "Fixed" }, { value: "smart", label: "Smart" }, { value: "peek", label: "Peek" }]
+					options: [{ value: "fixed", label: I18n.t("common.behavior.fixed") }, { value: "smart", label: I18n.t("common.behavior.smart") }, { value: "peek", label: I18n.t("common.behavior.peek") }]
 					onActivated: value => root.set("bloom-dock-mode", value)
 				}
 			}
 			SRow {
 				objectName: "dockPeek"
 				visible: !root._fixed
-				theme: root.theme; icon: "timer"; label: "Peek Delay"
-				desc: root._delay === 0 ? "Reveal instantly on bottom-edge contact" : "Rest on the bottom edge for " + root._delay + "ms to reveal"
+				theme: root.theme; icon: "timer"; label: I18n.t("settings.notch.peekDelay")
+				desc: root._delay === 0 ? I18n.t("ui.dockTab.revealInstantlyOnBottomEdgeContact") : I18n.t("ui.dockTab.restOnTheBottomEdgeForDockedgedelayMsToReveal", { dockEdgeDelay: root._delay })
 				SSlider { theme: root.theme; from: 0; to: 800; step: 50; value: root._delay; onMoved: value => root.set("bloom-dock-edge-delay", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "eye"; label: "Show App Previews"; desc: "Show window thumbnails on hover"
-				SToggle { accessibleName: "Show App Previews"; theme: root.theme; checked: root._v["bloom-dock-preview-enabled"]; onToggled: value => root.set("bloom-dock-preview-enabled", value) }
+				theme: root.theme; icon: "eye"; label: I18n.t("settings.dock.previews"); desc: I18n.t("settings.dock.previewsDesc")
+				SToggle { accessibleName: I18n.t("settings.dock.previews"); theme: root.theme; checked: root._v["bloom-dock-preview-enabled"]; onToggled: value => root.set("bloom-dock-preview-enabled", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "layers"; label: "Show Background Apps"; desc: "Keep apps in the dock when they close to the system tray"
-				SToggle { objectName: "backgroundApps"; accessibleName: "Show Background Apps"; theme: root.theme; checked: root._v["bloom-dock-show-background-apps"]; onToggled: value => root.set("bloom-dock-show-background-apps", value) }
+				theme: root.theme; icon: "layers"; label: I18n.t("ui.dockTab.showBackgroundApps"); desc: I18n.t("ui.dockTab.keepAppsInTheDockWhenTheyCloseToThe")
+				SToggle { objectName: "backgroundApps"; accessibleName: I18n.t("ui.dockTab.showBackgroundApps"); theme: root.theme; checked: root._v["bloom-dock-show-background-apps"]; onToggled: value => root.set("bloom-dock-show-background-apps", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "circle"; label: "Icon Only"; desc: "Remove icon background and padding"
-				SToggle { accessibleName: "Icon Only"; theme: root.theme; checked: root._v["bloom-dock-icon-only"]; onToggled: value => root.set("bloom-dock-icon-only", value) }
+				theme: root.theme; icon: "circle"; label: I18n.t("settings.dock.iconOnly"); desc: I18n.t("settings.dock.iconOnlyDesc")
+				SToggle { accessibleName: I18n.t("settings.dock.iconOnly"); theme: root.theme; checked: root._v["bloom-dock-icon-only"]; onToggled: value => root.set("bloom-dock-icon-only", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "columns-2"; label: "App Separator"; desc: "Show a divider before unpinned apps"
-				SToggle { accessibleName: "App Separator"; theme: root.theme; checked: root._v["bloom-dock-separator-enabled"]; onToggled: value => root.set("bloom-dock-separator-enabled", value) }
+				theme: root.theme; icon: "columns-2"; label: I18n.t("ui.dockTab.appSeparator"); desc: I18n.t("ui.dockTab.showADividerBeforeUnpinnedApps")
+				SToggle { accessibleName: I18n.t("ui.dockTab.appSeparator"); theme: root.theme; checked: root._v["bloom-dock-separator-enabled"]; onToggled: value => root.set("bloom-dock-separator-enabled", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "layers"; label: "Workspaces"; desc: "Show this screen's workspaces in the dock"
-				SToggle { accessibleName: "Workspaces"; theme: root.theme; checked: root._v["bloom-dock-workspaces-enabled"]; onToggled: value => root.set("bloom-dock-workspaces-enabled", value) }
+				theme: root.theme; icon: "layers"; label: I18n.t("linux.settings.workspaces"); desc: I18n.t("linux.settings.showThisScreenSWorkspacesInTheDock")
+				SToggle { accessibleName: I18n.t("linux.settings.workspaces"); theme: root.theme; checked: root._v["bloom-dock-workspaces-enabled"]; onToggled: value => root.set("bloom-dock-workspaces-enabled", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "keyboard"; label: "Super+Alt+Number Shortcuts"; desc: "Open pinned apps with Super+Alt+1 through 9"
-				SToggle { accessibleName: "Super+Alt+Number Shortcuts"; theme: root.theme; checked: root._v["bloom-dock-win-number-enabled"]; onToggled: value => root.set("bloom-dock-win-number-enabled", value) }
+				theme: root.theme; icon: "keyboard"; label: I18n.t("linux.settings.superAltNumberShortcuts"); desc: I18n.t("linux.settings.openPinnedAppsWithSuperAlt1Through")
+				SToggle { accessibleName: I18n.t("linux.settings.superAltNumberShortcuts"); theme: root.theme; checked: root._v["bloom-dock-win-number-enabled"]; onToggled: value => root.set("bloom-dock-win-number-enabled", value) }
 			}
 			SRow {
 				objectName: "dockAdaptive"
 				visible: root._fixed
-				theme: root.theme; icon: "maximize-2"; label: "Adaptive Mode"; desc: "Stretch to full width when a window is maximized"
-				SToggle { accessibleName: "Adaptive Mode"; theme: root.theme; checked: root._v["bloom-dock-adaptive"]; onToggled: value => root.set("bloom-dock-adaptive", value) }
+				theme: root.theme; icon: "maximize-2"; label: I18n.t("settings.dock.adaptive"); desc: I18n.t("settings.dock.adaptiveDesc")
+				SToggle { accessibleName: I18n.t("settings.dock.adaptive"); theme: root.theme; checked: root._v["bloom-dock-adaptive"]; onToggled: value => root.set("bloom-dock-adaptive", value) }
 			}
 			SRow {
-				theme: root.theme; icon: "layout-panel-left"; label: "Dock Extras"; desc: "Show drives, folders and the Trash beside the apps"; divider: false
-				SSelect { accessibleName: "Dock Extras";
+				theme: root.theme; icon: "layout-panel-left"; label: I18n.t("ui.dockTab.dockExtras"); desc: I18n.t("linux.settings.showDrivesFoldersAndTheTrashBesideThe"); divider: false
+				SSelect { accessibleName: I18n.t("ui.dockTab.dockExtras");
 					objectName: "extras"; theme: root.theme; popup: root.popup; value: root._extras
-					options: [{ value: "off", label: "Off" }, { value: "left", label: "Left" }, { value: "right", label: "Right" }]
+					options: [{ value: "off", label: I18n.t("notch.commandCenter.off") }, { value: "left", label: I18n.t("common.left") }, { value: "right", label: I18n.t("common.right") }]
 					onActivated: value => root.set("bloom-dock-extras-position", value)
 				}
 			}
@@ -100,8 +101,8 @@ Column {
 				visible: root._extras !== "off"
 				theme: root.theme; summary: "Manage dock extras"; hint: "Drives, folders and Trash"
 				SRow {
-					theme: root.theme; icon: "hard-drive"; label: "Drives"; desc: "Fixed, removable and connected network drives"; divider: !root._drives
-					SToggle { accessibleName: "Drives"; theme: root.theme; checked: root._drives; onToggled: value => root.set("bloom-dock-extras-drives", value) }
+					theme: root.theme; icon: "hard-drive"; label: I18n.t("ui.dockTab.drives"); desc: I18n.t("ui.dockTab.fixedRemovableAndConnectedNetworkDrives"); divider: !root._drives
+					SToggle { accessibleName: I18n.t("ui.dockTab.drives"); theme: root.theme; checked: root._drives; onToggled: value => root.set("bloom-dock-extras-drives", value) }
 				}
 				Item {
 					visible: root._drives && root.drives.length > 0
@@ -127,11 +128,11 @@ Column {
 					Rectangle { x: 52; y: parent.height - 1; width: parent.width - x; height: 1; color: root.theme.border }
 				}
 				SRow {
-					theme: root.theme; icon: "trash-2"; label: "Trash"; desc: "Show the Trash in the extras"
-					SToggle { accessibleName: "Trash"; theme: root.theme; checked: root._v["bloom-dock-extras-recycle-bin"]; onToggled: value => root.set("bloom-dock-extras-recycle-bin", value) }
+					theme: root.theme; icon: "trash-2"; label: I18n.t("linux.settings.trash"); desc: I18n.t("linux.settings.showTheTrashInTheExtras")
+					SToggle { accessibleName: I18n.t("linux.settings.trash"); theme: root.theme; checked: root._v["bloom-dock-extras-recycle-bin"]; onToggled: value => root.set("bloom-dock-extras-recycle-bin", value) }
 				}
 				SRow {
-					theme: root.theme; icon: "folder-open"; label: "Special Folders"; desc: "Pick the folders that appear in the extras"; divider: false
+					theme: root.theme; icon: "folder-open"; label: I18n.t("ui.dockTab.specialFolders"); desc: I18n.t("ui.dockTab.pickTheFoldersThatAppearInTheExtras"); divider: false
 				}
 				Item {
 					width: parent.width
@@ -142,7 +143,7 @@ Column {
 						width: parent.width - Tokens.settings.row.inset - 14
 						spacing: 8
 						Repeater {
-							model: [{ id: "desktop", label: "Desktop" }, { id: "documents", label: "Documents" }, { id: "downloads", label: "Downloads" }, { id: "pictures", label: "Pictures" }, { id: "music", label: "Music" }, { id: "videos", label: "Videos" }]
+							model: [{ id: "desktop", label: I18n.t("ui.dockExtras.desktop") }, { id: "documents", label: I18n.t("ui.dockExtras.documents") }, { id: "downloads", label: I18n.t("ui.dockExtras.downloads") }, { id: "pictures", label: I18n.t("ui.dockExtras.pictures") }, { id: "music", label: I18n.t("ui.dockExtras.music") }, { id: "videos", label: I18n.t("ui.dockExtras.videos") }]
 							delegate: SChip {
 								required property var modelData
 								theme: root.theme; accent: root.accent
@@ -156,7 +157,7 @@ Column {
 				}
 				Rectangle { x: 52; width: parent.width - x; height: 1; color: root.theme.border }
 				SRow {
-					theme: root.theme; icon: "folder-plus"; label: "Custom Folders"; desc: "Add any folder to the extras section"; divider: false
+					theme: root.theme; icon: "folder-plus"; label: I18n.t("ui.dockTab.customFolders"); desc: I18n.t("ui.dockTab.addAnyFolderToTheExtrasSection"); divider: false
 				}
 				Column {
 					x: Tokens.settings.row.inset
@@ -210,7 +211,7 @@ Column {
 						objectName: "addFolder"
 						theme: root.theme; accent: root.accent
 						icon: "plus"
-						text: "Add Folder..."
+						text: I18n.t("ui.dockTab.addFolder")
 						onClicked: root.addFolderRequested()
 					}
 				}

@@ -63,7 +63,7 @@ Item {
 	function _statusText(d) {
 		if (root.busy === d.path) return d.connected ? I18n.t("ui.bluetoothPanel.disconnecting") : I18n.t("ui.bluetoothPanel.connecting");
 		if (!d.connected) return I18n.t("notch.commandCenter.notConnected");
-		return d.battery !== null && d.battery !== undefined ? "Connected · " + d.battery + "%" : I18n.t("notch.commandCenter.connected");
+		return d.battery !== null && d.battery !== undefined ? I18n.t("ui.bluetoothPanel.connectedValue1", { value1: d.battery }) : I18n.t("notch.commandCenter.connected");
 	}
 	function _setAdding(wanted) {
 		if (root.adding === wanted) return;
@@ -318,7 +318,7 @@ Item {
 			objectName: "promptNote"
 			wrapMode: Text.Wrap
 			textFormat: Text.StyledText
-			text: "Type " + root._pin(root.prompt?.pin) + " on the device, then press Enter on it."
+			text: I18n.t("linux.notch.typePairingPin", { pin: root._pin(root.prompt?.pin) })
 			color: root.theme.textMuted
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -335,7 +335,7 @@ Item {
 				width: parent.width
 				wrapMode: Text.Wrap
 				textFormat: Text.StyledText
-				text: "Does the device show " + root._pin(root.prompt?.pin) + "?"
+				text: I18n.t("linux.notch.confirmPairingPin", { pin: root._pin(root.prompt?.pin) })
 				color: root.theme.textMuted
 				font.family: Fonts.family
 				font.pixelSize: Fonts.px(Tokens.qp.note)
@@ -387,7 +387,11 @@ Item {
 			x: Tokens.qp.error.left
 			width: parent.width - Tokens.qp.error.left - Tokens.qp.error.side
 			wrapMode: Text.Wrap
-			text: root.error ? Logic.errorText(root.error.code) : ""
+			text: root.error ? (({ "not-found": I18n.t("ui.bluetoothPanel.refreshAndTryAgain"),
+				timeout: I18n.t("ui.bluetoothPanel.theDeviceDidnTAnswerInTime"),
+				cancelled: I18n.t("ui.bluetoothPanel.pairingWasCancelled"),
+				failed: I18n.t("ui.bluetoothPanel.couldnTPairWithThisDevice"),
+				"not-ready": I18n.t("ui.bluetoothPanel.putTheDeviceInPairingModeFirst") })[root.error.code] ?? root.error.code) : ""
 			color: Tokens.qp.error.color
 			font.family: Fonts.family
 			font.pixelSize: Fonts.px(Tokens.qp.error.text)

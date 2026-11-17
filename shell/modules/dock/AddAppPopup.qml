@@ -314,7 +314,7 @@ Item {
 				padding: Tokens.dock.popup.empty.padding
 				horizontalAlignment: Text.AlignHCenter
 				wrapMode: Text.WordWrap
-				text: root._query.trim() ? "No results" : "Running apps show up here — search to pin anything else"
+				text: root._query.trim() ? I18n.t("dock.addApp.noResults") : I18n.t("dock.addApp.emptyHint")
 				color: root.textMuted
 				font.family: Fonts.familyFor(Font.Medium)
 				font.pixelSize: Fonts.px(Tokens.dock.popup.empty.size)

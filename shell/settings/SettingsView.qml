@@ -27,8 +27,8 @@ Rectangle {
 	property string tab: "general"
 	property bool autostart: false
 	property string version: ""
-	property string exportLabel: "Export Settings"
-	property string importLabel: "Import Settings"
+	property string exportLabel: I18n.t("settings.about.export")
+	property string importLabel: I18n.t("settings.about.import")
 	property var cityResults: []
 	property var drives: []
 	property var sys
@@ -41,7 +41,7 @@ Rectangle {
 	property string saveError: ""
 	signal errorDismissed()
 	property string query: ""
-	readonly property var _hits: Search.find(root.query)
+	readonly property var _hits: Search.find(root.query, key => I18n.t(key))
 	signal cityQueried(string text)
 	signal addFolderRequested()
 	signal closeRequested()
@@ -56,32 +56,32 @@ Rectangle {
 	signal colorRequested()
 
 	readonly property var _groups: [
-		{ label: "System", tabs: [
-			{ id: "display", label: "Display", icon: "monitor", copy: "Screens, resolution, scale and brightness." },
-			{ id: "sound", label: "Sound", icon: "volume-2", copy: "Where sound plays and which microphone listens." },
-			{ id: "power", label: "Power", icon: "gauge", copy: "Power mode and battery." },
-			{ id: "storage", label: "Storage", icon: "hard-drive", copy: "How full your disks are." },
+		{ label: I18n.t("settings.groups.system"), tabs: [
+			{ id: "display", label: I18n.t("settings.groups.display"), icon: "monitor", copy: I18n.t("linux.settings.screensResolutionScaleAndBrightness") },
+			{ id: "sound", label: I18n.t("linux.settings.sound"), icon: "volume-2", copy: I18n.t("linux.settings.whereSoundPlaysAndWhichMicrophoneListens") },
+			{ id: "power", label: I18n.t("linux.settings.power"), icon: "gauge", copy: I18n.t("linux.settings.powerModeAndBattery") },
+			{ id: "storage", label: I18n.t("linux.settings.storage"), icon: "hard-drive", copy: I18n.t("linux.settings.howFullYourDisksAre") },
 		] },
-		{ label: "Connections", tabs: [
-			{ id: "network", label: "Network", icon: "wifi", copy: "Wi-Fi, saved networks and VPN." },
-			{ id: "bluetooth", label: "Bluetooth", icon: "bluetooth", copy: "Pair and manage devices." }
+		{ label: I18n.t("linux.settings.connections"), tabs: [
+			{ id: "network", label: I18n.t("linux.settings.network"), icon: "wifi", copy: I18n.t("linux.settings.wiFiSavedNetworksAndVpn") },
+			{ id: "bluetooth", label: I18n.t("notch.commandCenter.bluetooth"), icon: "bluetooth", copy: I18n.t("linux.settings.pairAndManageDevices") }
 		] },
-		{ label: "Desktop", tabs: [
-			{ id: "input", label: "Input", icon: "keyboard", copy: "Keyboard, touchpad and mouse." },
-			{ id: "hyprland", label: "Windows", icon: "layout-grid", copy: "Gaps, borders, corners and effects." },
-			{ id: "apps", label: "Apps", icon: "app-window", copy: "Defaults, startup apps and everything installed." },
-			{ id: "ai", label: "AI", icon: "sparkles", copy: "Gemini chat in Spotlight." },
-			{ id: "time", label: "Time", icon: "clock", copy: "Time zone and clock sync." },
-			{ id: "updates", label: "Updates", icon: "package", copy: "Keep the system current." }
+		{ label: I18n.t("ui.dockExtras.desktop"), tabs: [
+			{ id: "input", label: I18n.t("linux.settings.input"), icon: "keyboard", copy: I18n.t("linux.settings.keyboardTouchpadAndMouse") },
+			{ id: "hyprland", label: I18n.t("settings.dock.iconWindows"), icon: "layout-grid", copy: I18n.t("linux.settings.gapsBordersCornersAndEffects") },
+			{ id: "apps", label: I18n.t("linux.settings.apps"), icon: "app-window", copy: I18n.t("linux.settings.defaultsStartupAppsAndEverythingInstalled") },
+			{ id: "ai", label: I18n.t("linux.settings.ai"), icon: "sparkles", copy: I18n.t("linux.settings.geminiChatInSpotlight") },
+			{ id: "time", label: I18n.t("linux.settings.time"), icon: "clock", copy: I18n.t("linux.settings.timeZoneAndClockSync") },
+			{ id: "updates", label: I18n.t("linux.settings.updates"), icon: "package", copy: I18n.t("linux.settings.keepTheSystemCurrent") }
 		] },
-		{ label: "Bloom", tabs: [
-			{ id: "general", label: "General", icon: "settings", copy: "The essentials for how Bloom starts and runs." },
-			{ id: "appearance", label: "Appearance", icon: "palette", copy: "Make every surface feel at home on your desktop." },
-			{ id: "notch", label: "Notch", icon: "panel-top", copy: "Choose what appears at the top of your screen." },
-			{ id: "dock", label: "Dock", icon: "monitor", copy: "Shape the taskbar replacement around your workflow." },
-			{ id: "overlays", label: "Overlays", icon: "layers", copy: "Keep quick controls visible only when you need them." },
+		{ label: I18n.t("settings.dock.iconBloom"), tabs: [
+			{ id: "general", label: I18n.t("settings.tabs.general"), icon: "settings", copy: I18n.t("ui.settings.theEssentialsForHowBloomStartsAndRuns") },
+			{ id: "appearance", label: I18n.t("settings.tabs.appearance"), icon: "palette", copy: I18n.t("ui.settings.makeEverySurfaceFeelAtHomeOnYourDesktop") },
+			{ id: "notch", label: I18n.t("settings.tabs.notch"), icon: "panel-top", copy: I18n.t("ui.settings.chooseWhatAppearsAtTheTopOfYourScreen") },
+			{ id: "dock", label: I18n.t("settings.tabs.dock"), icon: "monitor", copy: I18n.t("ui.settings.shapeTheTaskbarReplacementAroundYourWorkflow") },
+			{ id: "overlays", label: I18n.t("settings.tabs.overlays"), icon: "layers", copy: I18n.t("ui.settings.keepQuickControlsVisibleOnlyWhenYouNeedThem") },
 			{ id: "integrations", label: I18n.t("settings.tabs.integrations"), icon: "bell", copy: I18n.t("integrations.agentsDescription") },
-			{ id: "about", label: "About", icon: "info", copy: "Bloom, your system and settings data." }
+			{ id: "about", label: I18n.t("settings.tabs.about"), icon: "info", copy: I18n.t("linux.settings.bloomYourSystemAndSettingsData") }
 		] }
 	]
 	readonly property var _tabs: root._groups.reduce((all, g) => all.concat(g.tabs), [])
@@ -145,7 +145,7 @@ Rectangle {
 			objectName: "title"
 			x: Tokens.settings.title.paddingH
 			anchors.verticalCenter: closeButton.verticalCenter
-			text: "Settings"
+			text: I18n.t("settings.title")
 			color: root.theme.textMuted
 			font.family: Fonts.uiFor(Font.Bold)
 			font.pixelSize: Fonts.px(Tokens.settings.title.size)
@@ -158,7 +158,7 @@ Rectangle {
 			objectName: "close"
 			activeFocusOnTab: true
 			Accessible.role: Accessible.Button
-			Accessible.name: "Close Settings"
+			Accessible.name: I18n.t("settings.closeTitle")
 			Keys.onSpacePressed: root.closeRequested()
 			Keys.onReturnPressed: root.closeRequested()
 			SFocusRing {}
@@ -218,7 +218,7 @@ Rectangle {
 				spacing: Tokens.settings.sidebar.intro.gap
 
 				Text {
-					text: "Bloom"
+					text: I18n.t("settings.dock.iconBloom")
 					color: root.theme.text
 					font.family: Fonts.uiFor(Font.Bold)
 					font.pixelSize: Fonts.px(Tokens.settings.sidebar.intro.title)
@@ -229,7 +229,7 @@ Rectangle {
 					lineHeightMode: Text.FixedHeight
 				}
 				Text {
-					text: "Make it yours"
+					text: I18n.t("ui.settings.makeItYours")
 					color: root.theme.textMuted
 					font.family: Fonts.ui
 					font.pixelSize: Fonts.px(Tokens.settings.sidebar.intro.sub)
@@ -243,8 +243,8 @@ Rectangle {
 				objectName: "settingsSearch"
 				width: parent.width
 				theme: root.theme
-				placeholder: "Find a setting"
-				accessibleName: "Find a setting"
+				placeholder: I18n.t("linux.settings.findASetting")
+				accessibleName: I18n.t("linux.settings.findASetting")
 				onTextChanged: root.query = text
 				onAccepted: if (root._hits.length) root._open(root._hits[0])
 			}
@@ -254,7 +254,7 @@ Rectangle {
 				visible: root.query !== "" && root._hits.length === 0
 				leftPadding: 12
 				topPadding: 8
-				text: "Nothing found"
+				text: I18n.t("linux.settings.nothingFound")
 				color: root.theme.textMuted
 				font.family: Fonts.ui
 				font.pixelSize: Fonts.px(14)
@@ -574,7 +574,7 @@ Rectangle {
 				spacing: 8
 
 				Text {
-					text: "Reset Bloom to Defaults"
+					text: I18n.t("settings.dialogs.resetTitle")
 					color: root.theme.text
 					font.family: Fonts.uiFor(Font.DemiBold)
 					font.pixelSize: Fonts.px(16)
@@ -582,7 +582,7 @@ Rectangle {
 				}
 				Text {
 					width: parent.width
-					text: "All settings return to their defaults and Bloom restarts. Your enabled surfaces stay as they are."
+					text: I18n.t("linux.settings.allSettingsReturnToTheirDefaultsAndBloom")
 					wrapMode: Text.Wrap
 					color: root.theme.textMuted
 					font.family: Fonts.ui
@@ -593,7 +593,7 @@ Rectangle {
 					topPadding: 6
 					spacing: 8
 					Repeater {
-						model: [{ id: "confirmCancel", label: "Cancel" }, { id: "confirmOk", label: "Reset and Restart" }]
+						model: [{ id: "confirmCancel", label: I18n.t("common.cancel") }, { id: "confirmOk", label: I18n.t("settings.dialogs.resetConfirm") }]
 						delegate: Rectangle {
 							id: confirmButton
 							required property var modelData

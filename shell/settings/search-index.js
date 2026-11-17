@@ -2,266 +2,332 @@
 var ROWS = [
 	{
 		"label": "Never",
+		"key": "linux.settings.never",
 		"tab": "general"
 	},
 	{
 		"label": "1 minute",
+		"key": "linux.settings.1Minute",
 		"tab": "general"
 	},
 	{
 		"label": "2 minutes",
+		"key": "linux.settings.2Minutes",
 		"tab": "general"
 	},
 	{
 		"label": "5 minutes",
+		"key": "linux.settings.5Minutes",
 		"tab": "general"
 	},
 	{
 		"label": "10 minutes",
+		"key": "linux.settings.10Minutes",
 		"tab": "general"
 	},
 	{
 		"label": "15 minutes",
+		"key": "linux.settings.15Minutes",
 		"tab": "general"
 	},
 	{
 		"label": "30 minutes",
+		"key": "linux.settings.30Minutes",
 		"tab": "general"
 	},
 	{
 		"label": "1 hour",
+		"key": "linux.settings.1Hour",
 		"tab": "general"
 	},
 	{
 		"label": "Language",
+		"key": "settings.general.language",
 		"tab": "general"
 	},
 	{
 		"label": "System default",
+		"key": "settings.general.languageSystem",
 		"tab": "general"
 	},
 	{
 		"label": "Launch at Login",
+		"key": "settings.general.launchAtLogin",
 		"tab": "general"
 	},
 	{
 		"label": "Update Indicator",
+		"key": "settings.general.updateIndicator",
 		"tab": "general"
 	},
 	{
 		"label": "24-Hour Time",
+		"key": "settings.general.time24h",
 		"tab": "general"
 	},
 	{
 		"label": "Battery Sound",
+		"key": "linux.settings.batterySound",
 		"tab": "general"
 	},
 	{
 		"label": "Reduce Motion",
+		"key": "linux.settings.reduceMotion",
 		"tab": "general"
 	},
 	{
 		"label": "Low Power Mode",
+		"key": "linux.settings.lowPowerMode",
 		"tab": "general"
 	},
 	{
 		"label": "Always",
+		"key": "linux.settings.always",
 		"tab": "general"
 	},
 	{
 		"label": "Low Battery Alert",
+		"key": "settings.general.lowBattery",
 		"tab": "general"
 	},
 	{
 		"label": "Lock After",
+		"key": "linux.settings.lockAfter",
 		"tab": "general"
 	},
 	{
 		"label": "Turn Screen Off After",
+		"key": "linux.settings.turnScreenOffAfter",
 		"tab": "general"
 	},
 	{
 		"label": "Sleep After",
+		"key": "linux.settings.sleepAfter",
 		"tab": "general"
 	},
 	{
 		"label": "Media Player",
+		"key": "linux.settings.mediaPlayer",
 		"tab": "general"
 	},
 	{
 		"label": "Translate To",
+		"key": "linux.settings.translateTo",
 		"tab": "general"
 	},
 	{
 		"label": "English",
+		"key": "linux.settings.english",
 		"tab": "general"
 	},
 	{
 		"label": "Hindi",
+		"key": "linux.settings.hindi",
 		"tab": "general"
 	},
 	{
 		"label": "Spanish",
+		"key": "linux.settings.spanish",
 		"tab": "general"
 	},
 	{
 		"label": "French",
+		"key": "linux.settings.french",
 		"tab": "general"
 	},
 	{
 		"label": "German",
+		"key": "linux.settings.german",
 		"tab": "general"
 	},
 	{
 		"label": "Japanese",
+		"key": "linux.settings.japanese",
 		"tab": "general"
 	},
 	{
 		"label": "Chinese",
+		"key": "linux.settings.chinese",
 		"tab": "general"
 	},
 	{
 		"label": "Arabic",
+		"key": "linux.settings.arabic",
 		"tab": "general"
 	},
 	{
 		"label": "Welcome to Bloom",
+		"key": "ui.generalTab.welcomeToBloom",
 		"tab": "general"
 	},
 	{
 		"label": "Reset to Defaults",
+		"key": "settings.general.reset",
 		"tab": "general"
 	},
 	{
 		"label": "Restart Bloom",
+		"key": "settings.general.restart",
 		"tab": "general"
 	},
 	{
 		"label": "Quit Bloom",
+		"key": "settings.general.quit",
 		"tab": "general"
 	},
 	{
 		"label": "Theme Mode",
+		"key": "settings.appearance.themeMode",
 		"tab": "appearance"
 	},
 	{
 		"label": "Custom Color",
+		"key": "settings.appearance.themeCustom",
 		"tab": "appearance"
 	},
 	{
 		"label": "Adaptive Accent",
+		"key": "settings.appearance.themeAdaptive",
 		"tab": "appearance"
 	},
 	{
 		"label": "Custom Theme Color",
+		"key": "settings.appearance.customColor",
 		"tab": "appearance"
 	},
 	{
 		"label": "Background Opacity",
+		"key": "settings.appearance.opacity",
 		"tab": "appearance"
 	},
 	{
 		"label": "Color Saturation",
+		"key": "settings.appearance.saturation",
 		"tab": "appearance"
 	},
 	{
 		"label": "Background Brightness",
+		"key": "settings.appearance.brightness",
 		"tab": "appearance"
 	},
 	{
 		"label": "Edge shine",
+		"key": "ui.appearanceTab.edgeShine",
 		"tab": "appearance"
 	},
 	{
 		"label": "Screen Corners",
+		"key": "settings.appearance.corners",
 		"tab": "appearance"
 	},
 	{
 		"label": "Font",
+		"key": "linux.settings.font",
 		"tab": "appearance"
 	},
 	{
 		"label": "UI Scale",
+		"key": "linux.settings.uiScale",
 		"tab": "appearance"
 	},
 	{
 		"label": "Font Scale",
+		"key": "linux.settings.fontScale",
 		"tab": "appearance"
 	},
 	{
 		"label": "Notch Behavior",
+		"key": "settings.notch.behavior",
 		"tab": "notch"
 	},
 	{
 		"label": "Calendar & Timer",
+		"key": "settings.notch.calendar",
 		"tab": "notch"
 	},
 	{
 		"label": "Monday-first Calendar",
+		"key": "ui.notchTab.mondayFirstCalendar",
 		"tab": "notch"
 	},
 	{
 		"label": "Timer Sound",
+		"key": "settings.notch.timerSound",
 		"tab": "notch"
 	},
 	{
 		"label": "Command Center",
+		"key": "ui.notchTab.commandCenter",
 		"tab": "notch"
 	},
 	{
 		"label": "Connected Devices",
+		"key": "ui.notchTab.connectedDevices",
 		"tab": "notch"
 	},
 	{
 		"label": "Remember Last Panel",
+		"key": "ui.notchTab.rememberLastPanel",
 		"tab": "notch"
 	},
 	{
 		"label": "Default Panel",
+		"key": "ui.notchTab.defaultPanel",
 		"tab": "notch"
 	},
 	{
 		"label": "Music Mode",
+		"key": "settings.notch.music",
 		"tab": "notch"
 	},
 	{
 		"label": "Compact Mode",
+		"key": "settings.notch.compact",
 		"tab": "notch"
 	},
 	{
 		"label": "Media Layout",
+		"key": "settings.notch.mediaLayout",
 		"tab": "notch"
 	},
 	{
 		"label": "Classic",
+		"key": "common.mediaLayout.classic",
 		"tab": "notch"
 	},
 	{
 		"label": "Compact",
+		"key": "common.mediaLayout.compact",
 		"tab": "notch"
 	},
 	{
 		"label": "Visualizer",
+		"key": "linux.settings.visualizer",
 		"tab": "notch"
 	},
 	{
 		"label": "Album Art",
+		"key": "linux.settings.albumArt",
 		"tab": "notch"
 	},
 	{
 		"label": "Ambient Glow",
+		"key": "settings.notch.ambience",
 		"tab": "notch"
 	},
 	{
 		"label": "Compact Glow",
+		"key": "settings.notch.compactGlow",
 		"tab": "notch"
 	},
 	{
 		"label": "Keep Items",
+		"key": "ui.notchTab.keepItems",
 		"tab": "notch"
 	},
 	{
 		"label": "Weather Status",
+		"key": "settings.notch.weather",
 		"tab": "notch"
 	},
 	{
@@ -274,166 +340,207 @@ var ROWS = [
 	},
 	{
 		"label": "Bloom Dock",
+		"key": "settings.dock.enabled",
 		"tab": "dock"
 	},
 	{
 		"label": "Behavior",
+		"key": "settings.dock.behavior",
 		"tab": "dock"
 	},
 	{
 		"label": "Show App Previews",
+		"key": "settings.dock.previews",
 		"tab": "dock"
 	},
 	{
 		"label": "Show Background Apps",
+		"key": "ui.dockTab.showBackgroundApps",
 		"tab": "dock"
 	},
 	{
 		"label": "Icon Only",
+		"key": "settings.dock.iconOnly",
 		"tab": "dock"
 	},
 	{
 		"label": "App Separator",
+		"key": "ui.dockTab.appSeparator",
 		"tab": "dock"
 	},
 	{
 		"label": "Workspaces",
+		"key": "linux.settings.workspaces",
 		"tab": "dock"
 	},
 	{
 		"label": "Super+Alt+Number Shortcuts",
+		"key": "linux.settings.superAltNumberShortcuts",
 		"tab": "dock"
 	},
 	{
 		"label": "Adaptive Mode",
+		"key": "settings.dock.adaptive",
 		"tab": "dock"
 	},
 	{
 		"label": "Dock Extras",
+		"key": "ui.dockTab.dockExtras",
 		"tab": "dock"
 	},
 	{
 		"label": "Drives",
+		"key": "ui.dockTab.drives",
 		"tab": "dock"
 	},
 	{
 		"label": "Trash",
+		"key": "linux.settings.trash",
 		"tab": "dock"
 	},
 	{
 		"label": "Special Folders",
+		"key": "ui.dockTab.specialFolders",
 		"tab": "dock"
 	},
 	{
 		"label": "Desktop",
+		"key": "ui.dockExtras.desktop",
 		"tab": "dock"
 	},
 	{
 		"label": "Documents",
+		"key": "ui.dockExtras.documents",
 		"tab": "dock"
 	},
 	{
 		"label": "Downloads",
+		"key": "ui.dockExtras.downloads",
 		"tab": "dock"
 	},
 	{
 		"label": "Pictures",
+		"key": "ui.dockExtras.pictures",
 		"tab": "dock"
 	},
 	{
 		"label": "Music",
+		"key": "ui.dockExtras.music",
 		"tab": "dock"
 	},
 	{
 		"label": "Videos",
+		"key": "ui.dockExtras.videos",
 		"tab": "dock"
 	},
 	{
 		"label": "Custom Folders",
+		"key": "ui.dockTab.customFolders",
 		"tab": "dock"
 	},
 	{
 		"label": "Volume HUD",
+		"key": "settings.overlays.volume",
 		"tab": "overlays"
 	},
 	{
 		"label": "Show on Edge Hover",
+		"key": "settings.overlays.volumeEdge",
 		"tab": "overlays"
 	},
 	{
 		"label": "Brightness HUD",
+		"key": "settings.overlays.brightness",
 		"tab": "overlays"
 	},
 	{
 		"label": "HUD Timeout",
+		"key": "linux.settings.hudTimeout",
 		"tab": "overlays"
 	},
 	{
 		"label": "Do Not Disturb",
+		"key": "linux.settings.doNotDisturb",
 		"tab": "overlays"
 	},
 	{
 		"label": "Banner Timeout",
+		"key": "linux.settings.bannerTimeout",
 		"tab": "overlays"
 	},
 	{
 		"label": "History",
+		"key": "linux.settings.history",
 		"tab": "overlays"
 	},
 	{
 		"label": "Protect My Ears",
+		"key": "linux.settings.protectMyEars",
 		"tab": "overlays"
 	},
 	{
 		"label": "Largest Jump",
+		"key": "linux.settings.largestJump",
 		"tab": "overlays"
 	},
 	{
 		"label": "Volume Limit",
+		"key": "linux.settings.volumeLimit",
 		"tab": "overlays"
 	},
 	{
 		"label": "Notch Notifications",
+		"key": "agentIntegrations.title",
 		"tab": "integrations"
 	},
 	{
 		"label": "Test notch",
+		"key": "agentIntegrations.test",
 		"tab": "integrations"
 	},
 	{
 		"label": "Device Name",
+		"key": "linux.settings.deviceName",
 		"tab": "about"
 	},
 	{
 		"label": "Processor",
+		"key": "linux.settings.processor",
 		"tab": "about"
 	},
 	{
 		"label": "Memory",
+		"key": "linux.settings.memory",
 		"tab": "about"
 	},
 	{
 		"label": "Distribution ID",
+		"key": "linux.settings.distributionId",
 		"tab": "about"
 	},
 	{
 		"label": "Edition",
+		"key": "linux.settings.edition",
 		"tab": "about"
 	},
 	{
 		"label": "Architecture",
+		"key": "linux.settings.architecture",
 		"tab": "about"
 	},
 	{
 		"label": "Kernel",
+		"key": "linux.settings.kernel",
 		"tab": "about"
 	},
 	{
 		"label": "Resolution",
+		"key": "linux.settings.resolution",
 		"tab": "display"
 	},
 	{
 		"label": "Scale",
+		"key": "linux.settings.scale",
 		"tab": "display"
 	},
 	{
@@ -454,130 +561,162 @@ var ROWS = [
 	},
 	{
 		"label": "Night Light",
+		"key": "linux.settings.nightLight",
 		"tab": "display"
 	},
 	{
 		"label": "Warmth",
+		"key": "linux.settings.warmth",
 		"tab": "display"
 	},
 	{
 		"label": "Brightness",
+		"key": "notch.commandCenter.brightness",
 		"tab": "display"
 	},
 	{
 		"label": "Output Device",
+		"key": "linux.settings.outputDevice",
 		"tab": "sound"
 	},
 	{
 		"label": "Volume",
+		"key": "notch.music.volume",
 		"tab": "sound"
 	},
 	{
 		"label": "Input Device",
+		"key": "linux.settings.inputDevice",
 		"tab": "sound"
 	},
 	{
 		"label": "Power Mode",
+		"key": "linux.settings.powerMode",
 		"tab": "power"
 	},
 	{
 		"label": "Power Saver",
+		"key": "linux.settings.powerSaver",
 		"tab": "power"
 	},
 	{
 		"label": "Balanced",
+		"key": "linux.settings.balanced",
 		"tab": "power"
 	},
 	{
 		"label": "Performance",
+		"key": "linux.settings.performance",
 		"tab": "power"
 	},
 	{
 		"label": "Battery",
+		"key": "settings.widgets.battery",
 		"tab": "power"
 	},
 	{
 		"label": "Repeat Delay",
+		"key": "linux.settings.repeatDelay",
 		"tab": "input"
 	},
 	{
 		"label": "Repeat Rate",
+		"key": "linux.settings.repeatRate",
 		"tab": "input"
 	},
 	{
 		"label": "Keyboard Layouts",
+		"key": "linux.settings.keyboardLayouts",
 		"tab": "input"
 	},
 	{
 		"label": "Natural Scrolling",
+		"key": "linux.settings.naturalScrolling",
 		"tab": "input"
 	},
 	{
 		"label": "Disable While Typing",
+		"key": "linux.settings.disableWhileTyping",
 		"tab": "input"
 	},
 	{
 		"label": "Scroll Speed",
+		"key": "linux.settings.scrollSpeed",
 		"tab": "input"
 	},
 	{
 		"label": "Pointer Speed",
+		"key": "linux.settings.pointerSpeed",
 		"tab": "input"
 	},
 	{
 		"label": "Inner Gaps",
+		"key": "linux.settings.innerGaps",
 		"tab": "hyprland"
 	},
 	{
 		"label": "Outer Gaps",
+		"key": "linux.settings.outerGaps",
 		"tab": "hyprland"
 	},
 	{
 		"label": "Border Size",
+		"key": "linux.settings.borderSize",
 		"tab": "hyprland"
 	},
 	{
 		"label": "Corner Rounding",
+		"key": "linux.settings.cornerRounding",
 		"tab": "hyprland"
 	},
 	{
 		"label": "Animations",
+		"key": "linux.settings.animations",
 		"tab": "hyprland"
 	},
 	{
 		"label": "Blur",
+		"key": "linux.settings.blur",
 		"tab": "hyprland"
 	},
 	{
 		"label": "View Keybinds",
+		"key": "linux.settings.viewKeybinds",
 		"tab": "hyprland"
 	},
 	{
 		"label": "API Key",
+		"key": "linux.settings.apiKey",
 		"tab": "ai"
 	},
 	{
 		"label": "Model",
+		"key": "linux.settings.model",
 		"tab": "ai"
 	},
 	{
 		"label": "Gemini Flash",
+		"key": "linux.settings.geminiFlash",
 		"tab": "ai"
 	},
 	{
 		"label": "Gemini Pro",
+		"key": "linux.settings.geminiPro",
 		"tab": "ai"
 	},
 	{
 		"label": "Test Connection",
+		"key": "linux.settings.testConnection",
 		"tab": "ai"
 	},
 	{
 		"label": "Time Zone",
+		"key": "linux.settings.timeZone",
 		"tab": "time"
 	},
 	{
 		"label": "Set Time Automatically",
+		"key": "linux.settings.setTimeAutomatically",
 		"tab": "time"
 	},
 	{

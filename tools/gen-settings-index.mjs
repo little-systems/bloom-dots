@@ -12,12 +12,12 @@ english.linux = JSON.parse(readFileSync(new URL("../i18n/linux/en.json", root), 
 const text = m => m[1] ?? m[2].split(".").reduce((node, part) => node?.[part], english);
 
 for (const [file, tab] of Object.entries(TABS)) {
-	for (const m of readFileSync(new URL(file + ".qml", root), "utf8").matchAll(LABEL)) rows.push({ label: text(m), tab });
+	for (const m of readFileSync(new URL(file + ".qml", root), "utf8").matchAll(LABEL)) rows.push({ label: text(m), ...(m[2] ? { key: m[2] } : {}), tab });
 }
 const pages = readFileSync(new URL("SystemPages.qml", root), "utf8").split(/pageId: "/).slice(1);
 for (const page of pages) {
 	const tab = page.slice(0, page.indexOf('"'));
-	for (const m of page.matchAll(LABEL)) rows.push({ label: text(m), tab });
+	for (const m of page.matchAll(LABEL)) rows.push({ label: text(m), ...(m[2] ? { key: m[2] } : {}), tab });
 }
 for (const [tab, labels] of Object.entries({ network: ["Wi-Fi", "Scan Again", "Networks"], bluetooth: ["Bluetooth", "My Devices", "Add a Device"] })) {
 	for (const label of labels) rows.push({ label, tab });

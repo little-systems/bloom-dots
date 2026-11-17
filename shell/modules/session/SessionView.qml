@@ -34,7 +34,7 @@ Item {
 	property bool _open: false
 	// The action waiting on "… anyway".
 	property var _asking: null
-	readonly property string _warning: root._asking ? Logic.warning(root._asking.id, root.busy) : ""
+	readonly property string _warning: root._asking ? Logic.warning(root._asking.id, root.busy, (key, params) => I18n.tCount(key, root.busy.downloads, params)) : ""
 
 	function open() {
 		root.selectedIndex = 0;

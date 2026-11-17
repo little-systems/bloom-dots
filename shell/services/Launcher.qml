@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import "../common/i18n"
 import Quickshell
 import Quickshell.Io
 import "../modules/launcher/launcher.js" as Logic
@@ -40,6 +41,11 @@ Singleton {
 		root.query = text;
 		root._refresh();
 	}
+	Connections {
+		target: I18n
+		function onLanguageChanged() { if (root.opened) root._refresh(); }
+	}
+	function translate(key, params) { return I18n.t(key, params); }
 	function _refresh() {
 		const q = root._parsed;
 		if (q.mode === "apps" && q.term === "") root.results = Logic.rank(Apps.all(), "").slice(0, 50).map(a => ({
@@ -51,22 +57,22 @@ Singleton {
 		}
 		else if (q.mode === "ai") root.results = [];
 		else if (q.mode === "emoji") root.results = Logic.emoji(q.term);
-		else if (q.mode === "command") root.results = Logic.commandRow(q.term);
-		else if (q.mode === "web") root.results = Logic.webRow(q.term);
+		else if (q.mode === "command") root.results = Logic.commandRow(q.term, root.translate);
+		else if (q.mode === "web") root.results = Logic.webRow(q.term, root.translate);
 		else if (q.mode === "clipboard") { root._showClips(); if (!clips.running) clips.running = true; }
 		else if (q.mode === "actions") { root._showActions(); if (!actions.running) actions.running = true; }
 		else if (q.mode === "calc") calcDelay.restart();
 	}
 	function _showSpotlight() {
 		const q = root._parsed;
-		root.results = Logic.spotlight(q.term, Apps.all(), HyprState.clients, root._files, root._home);
+		root.results = Logic.spotlight(q.term, Apps.all(), HyprState.clients, root._files, root._home, root.translate);
 	}
 	function _showClips() {
-		root.results = Logic.filterClips(root._clips, root._parsed.term).slice(0, 50).map(e => Logic.clipRow(e, root._thumbs));
+		root.results = Logic.filterClips(root._clips, root._parsed.term).slice(0, 50).map(e => Logic.clipRow(e, root._thumbs, root.translate));
 	}
 	function _showActions() {
 		root.results = Logic.rank(root._actions, root._parsed.term).map(a => ({
-			id: a.id, name: a.name, sub: "Your action", icon: "", glyph: "!", action: { kind: "action", value: a.path } }));
+			id: a.id, name: a.name, sub: I18n.t("linux.launcher.yourAction"), icon: "", glyph: "!", action: { kind: "action", value: a.path } }));
 	}
 
 	// Enter on a result: it runs, and the launcher closes.
@@ -132,7 +138,7 @@ Singleton {
 		stdout: StdioCollector { id: calcOut }
 		onExited: code => {
 			if (root._parsed.mode === "calc" && root._parsed.term === term)
-				root.results = Logic.calcRow(term, code === 0 ? calcOut.text.trim() : "");
+				root.results = Logic.calcRow(term, code === 0 ? calcOut.text.trim() : "", root.translate);
 		}
 	}
 	Process {

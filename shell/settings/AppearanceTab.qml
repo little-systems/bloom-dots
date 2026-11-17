@@ -1,6 +1,7 @@
 import QtQuick
 import "../common/render"
 import "../common/tokens.js" as Tokens
+import "../common/i18n"
 
 // Bloom's AppearanceTab.
 Column {
@@ -18,23 +19,23 @@ Column {
 
 	width: parent.width
 
-	SGroupLabel { theme: root.theme; text: "Theme"; above: 0 }
+	SGroupLabel { theme: root.theme; text: I18n.t("settings.groups.theme"); above: 0 }
 	SGroup {
 		theme: root.theme
 		SRow {
-			theme: root.theme; icon: "palette"; label: "Theme Mode"; desc: "Configure visual styling"
-			SSelect { accessibleName: "Theme Mode";
+			theme: root.theme; icon: "palette"; label: I18n.t("settings.appearance.themeMode"); desc: I18n.t("settings.appearance.themeModeDesc")
+			SSelect { accessibleName: I18n.t("settings.appearance.themeMode");
 				objectName: "themeMode"
 				theme: root.theme
 				popup: root.popup
-				options: [{ value: "dark", label: "Dark (Translucent)" }, { value: "light", label: "Light (Translucent)" }, { value: "custom", label: "Custom Color" }, { value: "adaptive", label: "Adaptive Accent" }]
+				options: [{ value: "dark", label: I18n.t("settings.appearance.themeDark") }, { value: "light", label: I18n.t("settings.appearance.themeLight") }, { value: "custom", label: I18n.t("settings.appearance.themeCustom") }, { value: "adaptive", label: I18n.t("settings.appearance.themeAdaptive") }]
 				value: root._mode
 				onActivated: value => root.store.set("bloom-theme-mode", value)
 			}
 		}
 		SRow {
 			visible: root._custom
-			theme: root.theme; icon: "droplet"; label: "Custom Theme Color"; desc: "Choose layout background color"
+			theme: root.theme; icon: "droplet"; label: I18n.t("settings.appearance.customColor"); desc: I18n.t("settings.appearance.customColorDesc")
 			Row {
 				spacing: Tokens.settings.color.gap
 				Rectangle {
@@ -57,51 +58,51 @@ Column {
 			}
 		}
 		SRow {
-			theme: root.theme; icon: "contrast"; label: "Background Opacity"; divider: root._advanced
-			desc: "Adjust theme transparency (" + Math.round(root.store.values["bloom-theme-opacity"] * 100) + "%)"
-			SSlider { accessibleName: "Background Opacity"; objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
+			theme: root.theme; icon: "contrast"; label: I18n.t("settings.appearance.opacity"); divider: root._advanced
+			desc: I18n.t("linux.settings.backgroundOpacity", { percent: Math.round(root.store.values["bloom-theme-opacity"] * 100) })
+			SSlider { accessibleName: I18n.t("settings.appearance.opacity"); objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
 		}
 		SRow {
 			visible: root._advanced
-			theme: root.theme; icon: "droplets"; label: "Color Saturation"
-			desc: "Adjust theme color vibrancy (" + Math.round(root.store.values["bloom-theme-saturation"] * 100) + "%)"
+			theme: root.theme; icon: "droplets"; label: I18n.t("settings.appearance.saturation")
+			desc: I18n.t("linux.settings.backgroundSaturation", { percent: Math.round(root.store.values["bloom-theme-saturation"] * 100) })
 			SSlider { theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-saturation"]; onMoved: value => root.store.set("bloom-theme-saturation", value) }
 		}
 		SRow {
 			visible: root._advanced
-			theme: root.theme; icon: "sun"; label: "Background Brightness"; divider: false
-			desc: "Adjust background lightness (" + Math.round(root.store.values["bloom-theme-brightness"] * 100) + "%)"
-			SSlider { accessibleName: "Background Brightness"; theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
+			theme: root.theme; icon: "sun"; label: I18n.t("settings.appearance.brightness"); divider: false
+			desc: I18n.t("linux.settings.backgroundBrightness", { percent: Math.round(root.store.values["bloom-theme-brightness"] * 100) })
+			SSlider { accessibleName: I18n.t("settings.appearance.brightness"); theme: root.theme; from: 0; to: 1; step: 0.02; value: root.store.values["bloom-theme-brightness"]; onMoved: value => root.store.set("bloom-theme-brightness", value) }
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "Screen" }
+	SGroupLabel { theme: root.theme; text: I18n.t("linux.settings.screen") }
 	SGroup {
 		theme: root.theme
 		SRow {
-			theme: root.theme; icon: "sparkles"; label: "Edge shine"; desc: "Soft reflections around the dock and notch. Turn off if animations feel less smooth."
-			SToggle { objectName: "edgeShine"; accessibleName: "Edge shine"; theme: root.theme; checked: root.store.values["bloom-edge-shine-enabled"]; onToggled: value => root.store.set("bloom-edge-shine-enabled", value) }
+			theme: root.theme; icon: "sparkles"; label: I18n.t("ui.appearanceTab.edgeShine"); desc: I18n.t("ui.appearanceTab.softReflectionsAroundTheDockAndNotchTurnOffIf")
+			SToggle { objectName: "edgeShine"; accessibleName: I18n.t("ui.appearanceTab.edgeShine"); theme: root.theme; checked: root.store.values["bloom-edge-shine-enabled"]; onToggled: value => root.store.set("bloom-edge-shine-enabled", value) }
 		}
 		SRow {
-			theme: root.theme; icon: "square"; label: "Screen Corners"; desc: "Rounded corners, hidden over fullscreen"; divider: false
-			SToggle { objectName: "screenCorners"; accessibleName: "Screen Corners"; theme: root.theme; checked: root.store.values["bloom-corners-enabled"]; onToggled: value => root.store.set("bloom-corners-enabled", value) }
+			theme: root.theme; icon: "square"; label: I18n.t("settings.appearance.corners"); desc: I18n.t("linux.settings.roundedCornersHiddenOverFullscreen"); divider: false
+			SToggle { objectName: "screenCorners"; accessibleName: I18n.t("settings.appearance.corners"); theme: root.theme; checked: root.store.values["bloom-corners-enabled"]; onToggled: value => root.store.set("bloom-corners-enabled", value) }
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "Text" }
+	SGroupLabel { theme: root.theme; text: I18n.t("linux.settings.text") }
 	SGroup {
 		theme: root.theme
 		SRow {
 			objectName: "fontRow"
-			theme: root.theme; icon: "type"; label: "Font"; divider: false
+			theme: root.theme; icon: "type"; label: I18n.t("linux.settings.font"); divider: false
 			readonly property string family: root.store.values["bloom-font-family"]
-			desc: root._fontMissing ? "That font isn't installed" : family === "" ? "Bloom's own" : family
+			desc: root._fontMissing ? I18n.t("linux.settings.thatFontIsnTInstalled") : family === "" ? I18n.t("linux.settings.bloomSOwn") : family
 			SField {
 				objectName: "font"
 				width: 160
 				theme: root.theme
-				placeholder: "Font name"
-				accessibleName: "Font"
+				placeholder: I18n.t("linux.settings.fontName")
+				accessibleName: I18n.t("linux.settings.font")
 				text: root.store.values["bloom-font-family"]
 				onAccepted: {
 					const name = text.trim();
@@ -113,12 +114,12 @@ Column {
 		}
 	}
 
-	SGroupLabel { theme: root.theme; text: "Display" }
+	SGroupLabel { theme: root.theme; text: I18n.t("settings.groups.display") }
 	SGroup {
 		theme: root.theme
 		SRow {
-			theme: root.theme; icon: "maximize-2"; label: "UI Scale"; divider: true
-			desc: "Panel and control size (" + Math.round(root._scale * 100) + "%)"
+			theme: root.theme; icon: "maximize-2"; label: I18n.t("linux.settings.uiScale"); divider: true
+			desc: I18n.t("linux.settings.uiScaleDescription", { percent: Math.round(root._scale * 100) })
 			Rectangle {
 				width: scaleRow.width + 2 * Tokens.settings.scale.paddingH + 2
 				height: scaleRow.height + 2 * Tokens.settings.scale.paddingV + 2
@@ -161,7 +162,7 @@ Column {
 								visible: cell.isValue
 								anchors.centerIn: parent; width: 60; height: 26
 								theme: root.theme; from: 0.8; to: 1.3; value: root._scale; factor: 100; suffix: "%"
-								accessibleName: "UI scale"
+								accessibleName: I18n.t("linux.settings.uiScale2")
 								onEdited: value => root.store.set("bloom-scale", value)
 							}
 							HoverHandler { id: cellHover; cursorShape: cell.isValue ? Qt.ArrowCursor : Qt.PointingHandCursor }
@@ -172,10 +173,10 @@ Column {
 			}
 		}
 		SRow {
-			theme: root.theme; icon: "type"; label: "Font Scale"; divider: false
-			desc: "Text size, independent of panel size"
+			theme: root.theme; icon: "type"; label: I18n.t("linux.settings.fontScale"); divider: false
+			desc: I18n.t("linux.settings.textSizeIndependentOfPanelSize")
 			SSlider {
-				objectName: "fontScale"; accessibleName: "Font scale"
+				objectName: "fontScale"; accessibleName: I18n.t("linux.settings.fontScale2")
 				displayFactor: 100; displaySuffix: "%"
 				theme: root.theme; from: 0.8; to: 1.6; step: 0.05
 				value: root.store.values["bloom-font-scale"] || 1.15
