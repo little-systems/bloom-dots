@@ -1,4 +1,5 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/render"
 import "../notch"
@@ -13,12 +14,12 @@ Rectangle {
 	signal pointed()
 
 	readonly property string detail: ({
-		lock: "Keep apps open",
-		suspend: "Quick resume",
-		hibernate: "Save to disk",
-		logout: "Close your session",
-		reboot: "Start fresh",
-		shutdown: "Turn off the PC"
+		lock: I18n.t("linux.session.keepAppsOpen"),
+		suspend: I18n.t("linux.session.quickResume"),
+		hibernate: I18n.t("linux.session.saveToDisk"),
+		logout: I18n.t("linux.session.closeYourSession"),
+		reboot: I18n.t("linux.session.startFresh"),
+		shutdown: I18n.t("linux.session.turnOffThePc")
 	})[action.id] ?? ""
 
 	objectName: "action:" + action.id

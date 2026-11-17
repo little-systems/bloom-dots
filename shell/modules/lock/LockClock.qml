@@ -1,11 +1,12 @@
 import QtQuick
+import "../../common/i18n"
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
 import "lock.js" as Lock
 
 // An analog clock on a slowly turning nine-lobed face, then the date and a
-// "Locked" tag. Pure: the time comes in from outside.
+// I18n.t("linux.session.locked") tag. Pure: the time comes in from outside.
 Item {
 	id: root
 
@@ -14,7 +15,7 @@ Item {
 	property date time: new Date()
 	property bool turning: true
 	// The login screen names the machine here instead.
-	property string tag: "Locked"
+	property string tag: I18n.t("linux.session.locked")
 	property string tagIcon: "lock"
 
 	readonly property real _size: Tokens.lock.clock.size

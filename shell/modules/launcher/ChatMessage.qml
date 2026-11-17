@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/render"
 import "chat-format.js" as Format
+import "../../common/i18n"
 
 Item {
 	id: root
@@ -44,7 +45,7 @@ Item {
 		y: bubble.height + 5; height: 20; spacing: 6
 		visible: !root.mine
 		SvgIcon { anchors.verticalCenter: parent.verticalCenter; name: "sparkles"; color: root.theme.textMuted; size: 11 }
-		Text { anchors.verticalCenter: parent.verticalCenter; text: root.streaming ? "Bloom AI · Writing" : "Bloom AI"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10)}
+		Text { anchors.verticalCenter: parent.verticalCenter; text: root.streaming ? I18n.t("linux.session.bloomAiWriting") : "Bloom AI"; color: root.theme.textMuted; font.family: Fonts.family; font.pixelSize: Fonts.px(10)}
 	}
 	Rectangle {
 		objectName: "copyReply"
@@ -52,7 +53,7 @@ Item {
 		visible: !root.mine && !root.streaming
 		color: copyHover.hovered ? root.theme.groupBg : "transparent"
 		activeFocusOnTab: true
-		Accessible.role: Accessible.Button; Accessible.name: "Copy reply"
+		Accessible.role: Accessible.Button; Accessible.name: I18n.t("linux.launcher.copyReply")
 		Keys.onReturnPressed: root.copied(root.body)
 		Keys.onSpacePressed: root.copied(root.body)
 		SvgIcon { anchors.centerIn: parent; name: "copy"; size: 12; color: root.theme.textMuted }

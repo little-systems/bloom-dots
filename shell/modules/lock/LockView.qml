@@ -2,6 +2,7 @@ import QtQuick
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
+import "../../common/i18n"
 
 // The lock screen over its backdrop: the clock, then three islands along the
 // bottom. In the middle the password, to its left who and which keyboard, to
@@ -36,7 +37,7 @@ Item {
 	property var media: ({ hasMedia: false, isPlaying: false })
 	// The login screen only: switchable accounts and desktop sessions. With
 	// one of each (and always on the lock screen) the extra controls stay hidden.
-	property string clockTag: "Locked"
+	property string clockTag: I18n.t("linux.session.locked")
 	property string clockTagIcon: "lock"
 	property var users: []
 	property var sessions: []
@@ -182,7 +183,7 @@ Item {
 		visible: root.capsLock
 		x: (root.width - width) / 2
 		y: main.y - height - Tokens.lock.island.gap
-		text: "Caps Lock is on"
+		text: I18n.t("linux.session.capsLockIsOn")
 		color: root.theme.text
 		font.family: Fonts.family
 		font.pixelSize: Fonts.px(Tokens.lock.message)
@@ -222,7 +223,7 @@ Item {
 				visible: field.text === ""
 				width: parent.width
 				anchors.verticalCenter: parent.verticalCenter
-				text: root.message || "Enter password"
+				text: root.message || I18n.t("linux.session.enterPassword")
 				textFormat: Text.PlainText
 				elide: Text.ElideRight
 				color: root.messageIsError ? "#ff8a80" : root.theme.textMuted
