@@ -44,6 +44,8 @@ and brightness.
 
 **Status** — battery, weather, system activity and device alerts.
 
+**Agent activity** — live Claude Code, Codex, and OpenCode status and alerts. [Connect your agents](docs/AGENTS.md).
+
 **Calendar** — your month, a focus timer and todos, within reach.
 
 **Shelf** — a place for files and text you want to keep close.
