@@ -358,3 +358,13 @@ physical hardware, a password-entry greeter, a UWSM login and real power loss.
   daily use on that machine.
 - **Owner live check** after the app-defaults work: lock fade, dock extras
   icons, kitty and the idle backend confirmed.
+
+## Release gates for v1.1.0 (2026-11-19)
+
+- **CI at `4c33030`:** every group passed (quick, qml, integration, cli).
+- **VM acceptance at `4c33030`:** 48 of 48, `ACCEPTANCE_FAILURES=0`, on a fresh
+  disposable Arch VM. The fresh install from an archinstall-style chroot passed
+  (`CHROOT_INSTALL=ok`).
+- **Idle CPU, soak and physical checks:** not run for this release (owner's
+  choice: CI and VM acceptance). The owner uses the release live on their
+  machine.
