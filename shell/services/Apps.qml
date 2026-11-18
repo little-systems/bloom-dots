@@ -48,7 +48,7 @@ Singleton {
 
 	function desktopIdentities() {
 		root.revision;
-		return DesktopEntries.applications.values.map(e => Tray.identity(e.id, e.startupClass, e.command));
+		return DesktopEntries.applications.values.map(e => Tray.identity(e.id, e.startupClass, e.command, e.noDisplay));
 	}
 
 	function actions(id) {
