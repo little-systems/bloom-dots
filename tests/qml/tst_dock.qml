@@ -13,7 +13,7 @@ TestCase {
 		const entries = Dock.menuFor({ kind: "app", pinnable: true, running: true,
 			actions: ["Open Project"] }, key => I18n.t(key));
 		compare(entries.find(item => item.key === "pin").label, "Закрепить в доке");
-		compare(entries.find(item => item.key === "action:0").label, "Open Project");
+		compare(entries.find(item => item.key === "quick-actions").children[0].label, "Open Project");
 		I18n.setting = "en";
 		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key))[0].label, "Add App to Dock...");
 	}
@@ -38,6 +38,11 @@ TestCase {
 		compare(groups.map(g => g.id), ["kitty", "firefox", "class:code"], "first-seen order; unnamed, unmapped and hidden windows skipped");
 		compare(groups[0].windows.map(w => w.address), ["0xa", "0xc"]);
 		compare(groups[0].windows[1].focus, 1);
+	}
+
+	function test_windowsKeepTheirProcess() {
+		const groups = Dock.groupWindows([{ class: "spotify", address: "0xa", focusHistoryID: 0, title: "", mapped: true, hidden: false, pid: 535434 }], c => c);
+		compare(groups[0].windows[0].pid, 535434);
 	}
 
 	// Bloom's activeOrder: running apps keep their place, new ones join the end.
@@ -106,14 +111,16 @@ TestCase {
 		compare(Dock.slots(items, true, [], [], "off", tray, false).map(x => x.key), ["a"]);
 	}
 
-	function test_pinnedLoseDotOnly() {
+	// Owner: the setting is about unpinned apps only; a pinned app keeps its
+	// gray dot (Bloom on Windows drops it too).
+	function test_pinnedKeepTheirDot() {
 		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [], hasTray: true }],
 			unpinned: [{ id: "b", name: "B", icon: "", windows: [{}], hasTray: true }] };
 		const on = Dock.slots(items, false, [], [], "off", [], true);
 		compare(on[0].backgroundDot, true);
 		const off = Dock.slots(items, false, [], [], "off", [], false);
 		compare(off.map(x => x.key), ["a", "b"], "apps stay");
-		compare(off[0].backgroundDot, false);
+		compare(off[0].backgroundDot, true);
 	}
 
 	function test_mergedAppMenuShowsEachTrayHandle() {
@@ -121,6 +128,62 @@ TestCase {
 			actions: [], trays: [{ key: "one", title: "Inbox", hasMenu: true }, { key: "two", title: "Calls", hasMenu: true }] });
 		compare(menu.filter(x => x.kind === "item" && x.key.startsWith("tray:")).map(x => x.label),
 			["App tray menu: Inbox", "App tray menu: Calls"]);
+	}
+
+	// Bloom Dock.tsx: an unpinned app left with only its tray icon is a dock
+	// item with the gray dot, hidden with the background apps.
+	function test_unpinnedBackgroundAppsFollowTheSetting() {
+		const items = { pinned: [], unpinned: [{ id: "a", name: "A", icon: "", windows: [{}] },
+			{ id: "spotify", name: "Spotify", icon: "", windows: [], hasTray: true, background: true }] };
+		const on = Dock.slots(items, true, [], [], "off", [], true);
+		compare(on.map(x => [x.key, x.kind, x.backgroundDot]), [["a", "app", false], ["spotify", "app", true]]);
+		compare(Dock.slots(items, true, [], [], "off", [], false).map(x => x.key), ["a"]);
+	}
+
+	// The app's tray menu, listed in Bloom's own menu as "App options".
+	function trayEntries() {
+		return [{ text: "Show", enabled: true }, { separator: true }, { text: "Paused", enabled: false },
+			{ text: "Profiles", enabled: true, hasChildren: true }, { text: "Quit", enabled: true }];
+	}
+	function test_appOptionsListTheTrayMenu() {
+		const menu = Dock.menuFor({ kind: "app", pinned: true, pinnable: true, running: false, background: true, windows: 0,
+			actions: [], trays: [{ key: "s1", title: "Spotify", hasMenu: true, entries: trayEntries() }] });
+		const sub = menu.find(x => x.kind === "submenu" && x.key === "app-options:s1");
+		compare(sub.label, "App options");
+		compare(sub.children.map(c => [c.kind, c.key, c.label, !!c.disabled]), [
+			["item", "traymenu:s1:0", "Show", false], ["divider", undefined, undefined, false],
+			["item", "traymenu:s1:2", "Paused", true], ["item", "tray:s1", "Profiles", false],
+			["item", "traymenu:s1:4", "Quit", false]]);
+		const keys = menu.filter(x => x.kind !== "divider").map(x => x.key);
+		verify(keys.indexOf("app-options:s1") < keys.indexOf("new-window"), "with the app's actions, above a new window");
+		verify(keys.indexOf("close") < 0, "a background app has no window to close");
+	}
+
+	function test_appOptionsNameEachTrayAndFallBackToTheAppMenu() {
+		const menu = Dock.menuFor({ kind: "app", pinned: false, pinnable: true, running: true, windows: 1, actions: [],
+			trays: [{ key: "a", title: "Inbox", hasMenu: true, entries: trayEntries() }, { key: "b", title: "Calls", hasMenu: true, entries: trayEntries() }] });
+		compare(menu.filter(x => x.kind === "submenu" && x.key.startsWith("app-options:")).map(x => x.label),
+			["App options: Inbox", "App options: Calls"]);
+		const tray = Dock.menuFor({ kind: "tray", trayKey: "t", hasMenu: true, entries: trayEntries() });
+		compare(tray.map(x => [x.kind, x.key]), [["submenu", "app-options:t"]]);
+	}
+
+	function test_fillEnglishFillsPlaceholders() {
+		compare(Dock.fillEnglish("App options: {{name}}", { name: "Inbox" }), "App options: Inbox");
+		compare(Dock.fillEnglish("App options", undefined), "App options");
+	}
+
+	// A left click on an app with no window brings it back from its tray icon;
+	// if no window comes (Spotify's appindicator has no Activate), it is
+	// launched, which raises a single-instance app's window.
+	function test_backgroundClick() {
+		const tray = { key: "s", onlyMenu: false };
+		compare(Dock.backgroundClick(1, [tray], true), null, "a window: the normal click");
+		compare(Dock.backgroundClick(0, [tray], true), { tray: "s", fallbackMs: 1500 });
+		compare(Dock.backgroundClick(0, [tray], false), { tray: "s", fallbackMs: 0 }, "nothing to launch");
+		compare(Dock.backgroundClick(0, [{ key: "m", onlyMenu: true }], true), null, "a menu-only icon: launch");
+		compare(Dock.backgroundClick(0, [tray, { key: "t", onlyMenu: false }], true), null, "which icon is unclear: launch");
+		compare(Dock.backgroundClick(0, [], true), null);
 	}
 
 	// framer AnimatePresence: a leaving item keeps its place until its exit ends.
@@ -266,7 +329,7 @@ TestCase {
 			["Unpin from Dock", "-", "Change Icon...", "-", "Add App to Dock...", "Bloom Options>"]);
 		compare(labels(Dock.menuFor(menuApp({ pinned: true, hasCustomIcon: true, running: true, windows: 2, actions: ["New Window", "New Private Window"] }))),
 			["Unpin from Dock", "-", "Change Icon...", "Reset Icon", "-", "Add App to Dock...", "Bloom Options>",
-			 "-", "New Window", "New Private Window", "Open New Window", "Close all windows"]);
+			 "-", "Quick actions>", "Open New Window", "Close all windows"]);
 		compare(labels(Dock.menuFor(menuApp({ running: true, windows: 1, pinnable: false }))),
 			["Add App to Dock...", "Bloom Options>", "-", "Open New Window", "Close window"], "no pin without a desktop entry");
 		const bloom = Dock.menuFor(menuApp({})).find(e => e.kind === "submenu");
@@ -277,7 +340,21 @@ TestCase {
 		verify(close.danger);
 		compare(labels(Dock.menuFor({ kind: "background" })), ["Add App to Dock...", "Bloom Options>"]);
 		compare(labels(Dock.menuFor({ kind: "workspaces" })), ["Hide Workspaces"]);
-		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).map(e => e.key), ["action:0", "action:1"]);
+		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).length, 0, "never loose in the menu");
+	}
+
+	// A desktop entry's own actions (Claude's "New Claude Code session") are
+	// the app's launch shortcuts, apart from its tray menu: one submenu.
+	function test_desktopActionsGoInQuickActions() {
+		const menu = Dock.menuFor(menuApp({ running: true, windows: 1, actions: ["New chat", "New Claude Code session"],
+			trays: [{ key: "c", title: "Claude", hasMenu: true, entries: [{ text: "Show", enabled: true }] }] }));
+		const quick = menu.find(e => e.key === "quick-actions");
+		compare([quick.kind, quick.label], ["submenu", "Quick actions"]);
+		compare(quick.children.map(c => [c.key, c.label]), [["action:0", "New chat"], ["action:1", "New Claude Code session"]]);
+		const keys = menu.filter(e => e.kind !== "divider").map(e => e.key);
+		verify(keys.indexOf("app-options:c") < keys.indexOf("quick-actions") && keys.indexOf("quick-actions") < keys.indexOf("new-window"));
+		verify(!menu.find(e => e.key === "app-options:c").children.some(c => c.key.startsWith("action:")), "not among the app options");
+		verify(!Dock.menuFor(menuApp({ running: true, windows: 1 })).some(e => e.key === "quick-actions"), "only when the app has some");
 	}
 
 	function test_menuPosition() {

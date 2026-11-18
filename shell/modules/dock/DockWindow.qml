@@ -148,6 +148,7 @@ PanelWindow {
 		onTrayActivated: (key, x, y) => Dock.trayActivate(key, win, Math.round(x), Math.round(y))
 		onTraySecondary: key => Dock.traySecondary(key)
 		onTrayMenuRequested: (key, x, y) => Dock.trayMenu(key, win, Math.round(x), Math.round(y))
+		onTrayMenuEntry: (key, index) => Dock.trayMenuEntry(key, index)
 		toastMessage: Dock.toast
 		toastSerial: Dock.toastSerial
 		// QML signal arguments can arrive as a Qt list rather than a JS Array.

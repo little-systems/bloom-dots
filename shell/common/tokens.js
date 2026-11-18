@@ -177,7 +177,9 @@ var dock = {
 	fallback: { size: 16, opacity: 0.7 },
 	// Context menu (Dock.css .context-menu).
 	menu: {
-		radius: 12, padding: 6, minWidth: 160, submenuMinWidth: 140, margin: 8,
+		// One fixed width (owner: consistent menus; Bloom grows from min-width
+		// 160 / 140); long labels end in an ellipsis.
+		radius: 12, padding: 6, width: 200, margin: 8,
 		item: { paddingV: 8, paddingH: 12, size: 13, radius: 6 },
 		divider: { marginV: 4, marginH: 8 },
 		arrow: { size: 8, opacity: 0.5, gap: 10 },

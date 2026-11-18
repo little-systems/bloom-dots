@@ -27,7 +27,7 @@ function groupWindows(clients, idOf) {
 			index[id] = groups.length;
 			groups.push({ id: id, cls: c.class, windows: [] });
 		}
-		groups[index[id]].windows.push({ address: c.address, focus: c.focusHistoryID, title: c.title });
+		groups[index[id]].windows.push({ address: c.address, focus: c.focusHistoryID, title: c.title, pid: c.pid || 0 });
 	}
 	return groups;
 }
@@ -52,16 +52,29 @@ function buildItems(pinned, groups, order, info) {
 	};
 }
 
+// Bloom handleAppClick: an app with no window and one tray icon is brought
+// back from the tray. Some icons ignore Activate (libayatana-appindicator,
+// e.g. Spotify), so after `fallbackMs` with still no window the app is
+// launched, which raises a single-instance app's window. null: the normal
+// click (focus or launch).
+function backgroundClick(windows, trays, canLaunch) {
+	if (windows > 0 || !trays || trays.length !== 1 || trays[0].onlyMenu)
+		return null;
+	return { tray: trays[0].key, fallbackMs: canLaunch ? 1500 : 0 };
+}
+
 var workspacesKey = "|workspaces|";
 
 // What the row shows: the workspace segment (D7) and its divider, pinned
 // apps, Bloom's divider when both app groups have something, then the other
-// running apps. showBackground false (bloom-dock-show-background-apps) drops
-// the tray-only apps and the background dot; tray actions stay in the menus.
+// running apps (an app left with only its tray icon among them, Bloom's
+// is_background). showBackground false (bloom-dock-show-background-apps)
+// drops those and the tray-only icons; pinned apps keep their gray dot (owner:
+// unlike Bloom on Windows). Tray actions stay in the menus.
 function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly, showBackground) {
 	const background = showBackground !== false;
 	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon,
-		windows: i.windows.length, backgroundDot: background && !!i.hasTray && i.windows.length === 0 });
+		windows: i.windows.length, backgroundDot: (pinned || background) && !!i.hasTray && i.windows.length === 0 });
 	const extra = e => ({ key: "extra:" + e.key, kind: "extra", extraKind: e.kind, count: e.count || 0,
 		pinned: false, name: e.name, icon: e.icon, windows: 0 });
 	const tray = t => ({ key: "tray:" + t.key, kind: "tray", pinned: false, name: t.title || t.id || "Tray app",
@@ -82,7 +95,7 @@ function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly,
 	out.push.apply(out, items.pinned.map(app(true)));
 	if (separator && items.pinned.length > 0 && items.unpinned.length > 0)
 		out.push({ key: dividerKey, kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
-	out.push.apply(out, items.unpinned.map(app(false)));
+	out.push.apply(out, items.unpinned.filter(i => background || !i.background).map(app(false)));
 	if (background && trayOnly && trayOnly.length > 0) {
 		if (appsCount > 0) out.push({ key: dividerKey + "tray", kind: "divider", pinned: false, name: "", icon: "", windows: 0 });
 		out.push.apply(out, trayOnly.map(tray));
@@ -249,8 +262,13 @@ function _item(key, label, danger) {
 }
 var _divider = { kind: "divider" };
 
+// dock.js's English text for a menu key, with its {{placeholders}} filled.
+function fillEnglish(english, params) {
+	return english.replace(/\{\{(\w+)\}\}/g, (m, k) => params && k in params ? params[k] : m);
+}
+
 function menuFor(t, translate) {
-	const tr = translate || ((key, english) => english);
+	const tr = translate || ((key, english, params) => fillEnglish(english, params));
 	if (t.kind === "workspaces")
 		return [_item("hide-workspaces", tr("linux.dock.hideWorkspaces", "Hide Workspaces"))];
 	if (t.kind === "drive") {
@@ -262,7 +280,7 @@ function menuFor(t, translate) {
 	if (t.kind === "trash") return [_item("open", tr("linux.dock.openTrash", "Open Trash")), _divider, _item("empty-trash", tr("linux.dock.emptyTrash3", "Empty Trash…"), true)];
 	if (t.kind === "folder" || t.kind === "custom")
 		return [_item("open", tr("linux.dock.openFolder", "Open Folder")), _divider, _item("remove", tr("ui.dock.removeFromDock", "Remove from Dock"))];
-	if (t.kind === "tray") return [_item("tray:" + t.trayKey, t.hasMenu ? tr("ui.dock.appTrayMenu", "App tray menu") : tr("linux.dock.activate", "Activate"))];
+	if (t.kind === "tray") return [_trayEntry({ key: t.trayKey, hasMenu: t.hasMenu, entries: t.entries }, "", tr, tr("linux.dock.activate", "Activate"))];
 	const bloom = { kind: "submenu", key: "bloom", label: tr("dock.menu.bloomOptions", "Bloom Options"), children: [_item("restart", tr("dock.options.restart", "Restart Bloom")), _divider, _item("quit", tr("dock.options.quit", "Quit Bloom"), true)] };
 	const addApp = _item("add-app", tr("dock.menu.addApp", "Add App to Dock..."));
 	if (t.kind === "background")
@@ -280,22 +298,48 @@ function menuFor(t, translate) {
 	if (out.length > 0)
 		out.push(_divider);
 	out.push(addApp, bloom);
+	// Bloom's jump list order: the app's tray menus, its desktop actions (in
+	// their own "Quick actions" submenu) and a new instance, just above Close.
+	const trays = t.trays || [];
 	const actions = (t.actions || []).map((name, i) => _item("action:" + i, name));
-	if (actions.length > 0 || t.running) {
+	const live = t.running || !!t.background;
+	if (trays.length > 0 || actions.length > 0 || live) {
 		out.push(_divider);
-		out.push.apply(out, actions);
-		if (t.running)
+		for (const tray of trays)
+			out.push(_trayEntry(tray, trays.length > 1 ? (tray.title || tray.key) : "", tr, tr("linux.dock.activateTrayApp", "Activate tray app")));
+		if (actions.length > 0)
+			out.push({ kind: "submenu", key: "quick-actions", label: tr("linux.dock.quickActions", "Quick actions"), children: actions });
+		if (live)
 			out.push(_item("new-window", tr("linux.dock.openNewWindow", "Open New Window")));
 	}
 	if (t.running)
 		out.push(_item("close", t.windows > 1 ? tr("linux.dock.closeAllWindows", "Close all windows") : tr("linux.dock.closeWindow", "Close window"), true));
-	if (t.trays && t.trays.length > 0) {
-		out.push(_divider);
-		for (const tray of t.trays)
-			out.push(_item("tray:" + tray.key, (tray.hasMenu ? tr("ui.dock.appTrayMenu", "App tray menu") : tr("linux.dock.activateTrayApp", "Activate tray app"))
-				+ (t.trays.length > 1 ? ": " + (tray.title || tray.key) : "")));
-	}
 	return out;
+}
+
+// A tray icon's menu as "App options": its entries (separators, greyed-out
+// ones; an entry with its own submenu opens the app's menu), or, before the
+// menu has loaded, the app's own tray menu or its activation.
+function _trayEntry(tray, name, tr, activate) {
+	const entries = (tray.entries || []).filter(e => e && (e.separator || e.text));
+	if (entries.length === 0) {
+		const label = tray.hasMenu ? tr("ui.dock.appTrayMenu", "App tray menu") : activate;
+		return _item("tray:" + tray.key, name ? label + ": " + name : label);
+	}
+	const children = [];
+	entries.forEach((e, i) => {
+		if (e.separator) {
+			if (children.length > 0 && children[children.length - 1].kind !== "divider") children.push(_divider);
+		} else {
+			const child = _item(e.hasChildren ? "tray:" + tray.key : "traymenu:" + tray.key + ":" + i, e.text);
+			if (e.enabled === false) child.disabled = true;
+			children.push(child);
+		}
+	});
+	if (children.length > 0 && children[children.length - 1].kind === "divider") children.pop();
+	const label = name ? tr("linux.dock.appOptionsFor", "App options: {{name}}", { name: name })
+		: tr("linux.dock.appOptions", "App options");
+	return { kind: "submenu", key: "app-options:" + tray.key, label: label, children: children };
 }
 
 // Bloom: just above the pointer, kept 8 px inside the dock window.

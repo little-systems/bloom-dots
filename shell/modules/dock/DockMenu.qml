@@ -5,7 +5,8 @@ import "dock.js" as Dock
 import "../../common/render"
 
 // Bloom's dock context menu (Dock.css .context-menu): items, dividers and one
-// level of submenu to the right, opened just above the pointer.
+// level of submenu to the right, opened just above the pointer, all one fixed
+// width.
 Item {
 	id: root
 
@@ -64,6 +65,8 @@ Item {
 		implicitWidth: label.implicitWidth + 2 * Tokens.dock.menu.item.paddingH + (item.entry.kind === "submenu" ? Tokens.dock.menu.arrow.gap + arrow.implicitWidth : 0)
 		implicitHeight: label.implicitHeight + 2 * Tokens.dock.menu.item.paddingV
 		radius: Tokens.dock.menu.item.radius
+		// An app's tray entry it has greyed out.
+		opacity: item.entry.disabled ? 0.4 : 1
 		color: hover.hovered || (item.entry.kind === "submenu" && root._submenu === item.entry.key) ? item.hoverColor : "transparent"
 		Behavior on color {
 			ColorAnimation { duration: Tokens.dock.menu.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] }
@@ -71,13 +74,13 @@ Item {
 
 		HoverHandler {
 			id: hover
-			cursorShape: Qt.PointingHandCursor
+			cursorShape: item.entry.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
 			// A top-level item (its Loader sits in `column`) closes the submenu;
 			// the submenu's own items keep it open.
 			onHoveredChanged: if (hover.hovered) root._submenu = item.entry.kind === "submenu" ? item.entry.key : (item.parent && item.parent.parent === column ? "" : root._submenu)
 		}
 		TapHandler {
-			enabled: item.entry.kind === "item"
+			enabled: item.entry.kind === "item" && !item.entry.disabled
 			onTapped: {
 				root.close();
 				root.chosen(item.entry.key);
@@ -86,7 +89,10 @@ Item {
 
 		Text {
 			id: label
+			objectName: "menu-label"
 			x: Tokens.dock.menu.item.paddingH
+			width: item.width - 2 * Tokens.dock.menu.item.paddingH - (item.entry.kind === "submenu" ? Tokens.dock.menu.arrow.gap + arrow.implicitWidth : 0)
+			elide: Text.ElideRight
 			anchors.verticalCenter: parent.verticalCenter
 			text: item.entry.label
 			color: root.textColor
@@ -110,7 +116,9 @@ Item {
 
 	component Divider: Item {
 		width: parent ? parent.width : 0
-		height: 1 + 2 * Tokens.dock.menu.divider.marginV
+		// implicitHeight: its row (a Loader) takes the item's implicit height.
+		implicitHeight: 1 + 2 * Tokens.dock.menu.divider.marginV
+		height: implicitHeight
 		Rectangle {
 			x: Tokens.dock.menu.divider.marginH
 			y: Tokens.dock.menu.divider.marginV
@@ -142,9 +150,7 @@ Item {
 		readonly property var pos: Dock.menuPosition(root._x, root._y, width, height, root.viewWidth)
 		x: box.pos.left
 		y: box.pos.top
-		// The widest row's own width: rows are stretched to the column, so the
-		// Column's implicitWidth would only echo the box back.
-		width: Math.max(Tokens.dock.menu.minWidth, root._widest(column)) + 2 * Tokens.dock.menu.padding
+		width: Tokens.dock.menu.width
 		height: column.implicitHeight + 2 * Tokens.dock.menu.padding
 
 		Column {
@@ -178,7 +184,7 @@ Item {
 				x: box.width - Tokens.dock.menu.padding
 				// Bloom: left 100%, bottom -6px: its bottom 6 px below the row's.
 				y: anchorRow ? column.y + anchorRow.y + anchorRow.height + Tokens.dock.menu.padding - height : 0
-				width: Math.max(Tokens.dock.menu.submenuMinWidth, root._widest(sub)) + 2 * Tokens.dock.menu.padding
+				width: Tokens.dock.menu.width
 				height: sub.implicitHeight + 2 * Tokens.dock.menu.padding
 
 				Column {
@@ -211,16 +217,5 @@ Item {
 				return l;
 		}
 		return null;
-	}
-
-	// Reads each row's implicitWidth, so a binding using it follows the labels.
-	function _widest(col) {
-		let w = 0;
-		for (let i = 0; i < col.children.length; i++) {
-			const l = col.children[i];
-			if (l.item)
-				w = Math.max(w, l.item.implicitWidth);
-		}
-		return w;
 	}
 }

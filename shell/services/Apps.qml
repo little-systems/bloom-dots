@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import "launch.js" as Launch
+import "../modules/dock/tray.js" as Tray
 
 // Installed apps (desktop entries) for the dock: names, icons and launching.
 // Quickshell fills the entry list gradually after start, so `revision` grows
@@ -47,7 +48,7 @@ Singleton {
 
 	function desktopIdentities() {
 		root.revision;
-		return DesktopEntries.applications.values.map(e => ({ id: e.id, startupClass: e.startupClass || "" }));
+		return DesktopEntries.applications.values.map(e => Tray.identity(e.id, e.startupClass, e.command));
 	}
 
 	function actions(id) {

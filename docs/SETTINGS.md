@@ -47,7 +47,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-dock-win-number-enabled` | bool | `true` | `true`, `false` | Super+Alt+1–9 activate the matching pinned dock app: launch it, focus it, or cycle its windows. |
 | `bloom-dock-workspaces-enabled` | bool | `true` | `true`, `false` | Show this monitor's workspaces at the start of the dock (Hyprland). |
 | `bloom-dock-preview-enabled` | bool | `true` | `true`, `false` | Show live previews of an app's windows after hovering its dock icon. |
-| `bloom-dock-show-background-apps` | bool | `true` | `true`, `false` | Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear and pinned apps lose their gray dot. |
+| `bloom-dock-show-background-apps` | bool | `true` | `true`, `false` | Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear; pinned apps keep their gray dot. |
 | `bloom-dock-extras-position` | enum | `"off"` | `off`, `left`, `right` | Show drive, trash and folder extras beside the dock apps. |
 | `bloom-dock-extras-drives` | bool | `true` | `true`, `false` | Include removable and user-mounted drives in dock extras. |
 | `bloom-dock-extras-recycle-bin` | bool | `true` | `true`, `false` | Include the XDG trash in dock extras. |

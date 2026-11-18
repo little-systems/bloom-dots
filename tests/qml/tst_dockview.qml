@@ -345,6 +345,24 @@ Item {
 			compare(menu.count, 0);
 		}
 
+		function test_appOptionsEntryReachesTheTrayItem() {
+			const entries = [{ text: "Show", enabled: true }, { text: "Quit", enabled: true }];
+			const v = make({ trayOnlyItems: [{ key: "sni-1", title: "Chat", icon: "" }],
+				menuTarget: id => id.startsWith("tray:") ? { kind: "tray", trayKey: "sni-1", hasMenu: true, entries: entries } : { kind: "background" } });
+			settle(v);
+			wait(250);
+			const slot = findChild(v, "dock-slot-tray:sni-1");
+			const p = slot.mapToItem(v, 18, 18);
+			const chosen = createTemporaryObject(spyComponent, host, { target: v, signalName: "trayMenuEntry" });
+			mouseClick(v, p.x, p.y, Qt.RightButton);
+			mouseMove(findChild(v, "menu-submenu-app-options:sni-1"), 10, 10);
+			const quit = findChild(v, "menu-item-traymenu:sni-1:1");
+			tryCompare(quit, "visible", true, 500);
+			mouseClick(quit, 10, 10);
+			compare(chosen.count, 1);
+			compare([chosen.signalArguments[0][0], chosen.signalArguments[0][1]], ["sni-1", 1]);
+		}
+
 		function framesIn(ms) {
 			let n = 0;
 			const count = () => n++;
