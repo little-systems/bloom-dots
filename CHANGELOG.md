@@ -1,5 +1,49 @@
 # Changelog
 
+## 1.1.0 (2026-11-18)
+
+Bloom 3.10.2's new features come to Linux, along with agent live activities,
+a first-run guide, Bloom's languages, and a dock that pairs tray icons with
+their apps.
+
+### Agents on the Island
+- Live activities for Claude Code, Codex and OpenCode: what the agent is
+  doing, how long it has been working, and an alert when it needs you.
+- Connect each agent from Settings in two steps. Nothing leaves your machine.
+- A turn you interrupt or rewind in Claude Code clears from the Island too.
+
+### The Dock
+- Tray icons join the app that owns them. A pinned app that is only in the
+  tray shows a gray dot, and clicking it brings its window back.
+- An unpinned app that you closed to the tray stays in the dock with its own
+  icon. Show Background Apps hides these without changing pinned apps.
+- The right-click menu has App options (the app's tray menu) and Quick
+  actions (its launcher shortcuts), at one fixed width with dividers.
+- Bloom's Settings icon.
+
+### The Island
+- Shelf drops and activity pills from Bloom 3.10.2.
+- The calendar browses months and can start weeks on Monday.
+- Mute and dim from the Command Center slider icons.
+- The timer accepts m:ss.
+
+### First run and languages
+- A first-run guide that applies your choices live and can be replayed from
+  Settings.
+- Choose Bloom's language in Settings. The Island, Dock, Search, Settings and
+  the rest of the desktop use Bloom's translations, falling back to English.
+
+### Desktop
+- Rounded screen corners, kept while locked; on by default.
+- Reflective edge shine, with a switch in Appearance.
+- Windows move on Bloom's springs, a lone window fills its workspace, and
+  Reduce Motion turns window animations off too.
+- Bloom's terminal: prompt, fastfetch with the Bloom logo and one blurred
+  kitty palette.
+- Twemoji is Bloom's emoji and Bibata Modern Classic its cursor everywhere.
+- The installer can place Bloom in your account from a clone made anywhere.
+- Settings credits the authors on its About page.
+
 ## 1.0.0 (2026-11-13)
 
 The first release of Bloom for Linux: the official Bloom desktop shell and
