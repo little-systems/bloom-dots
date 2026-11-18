@@ -13,7 +13,7 @@ TestCase {
 		const entries = Dock.menuFor({ kind: "app", pinnable: true, running: true,
 			actions: ["Open Project"] }, key => I18n.t(key));
 		compare(entries.find(item => item.key === "pin").label, "Закрепить в доке");
-		compare(entries.find(item => item.key === "action:0").label, "Open Project");
+		compare(entries.find(item => item.key === "quick-actions").children[0].label, "Open Project");
 		I18n.setting = "en";
 		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key))[0].label, "Add App to Dock...");
 	}
@@ -314,7 +314,7 @@ TestCase {
 			["Unpin from Dock", "-", "Change Icon...", "-", "Add App to Dock...", "Bloom Options>"]);
 		compare(labels(Dock.menuFor(menuApp({ pinned: true, hasCustomIcon: true, running: true, windows: 2, actions: ["New Window", "New Private Window"] }))),
 			["Unpin from Dock", "-", "Change Icon...", "Reset Icon", "-", "Add App to Dock...", "Bloom Options>",
-			 "-", "New Window", "New Private Window", "Open New Window", "Close all windows"]);
+			 "-", "Quick actions>", "Open New Window", "Close all windows"]);
 		compare(labels(Dock.menuFor(menuApp({ running: true, windows: 1, pinnable: false }))),
 			["Add App to Dock...", "Bloom Options>", "-", "Open New Window", "Close window"], "no pin without a desktop entry");
 		const bloom = Dock.menuFor(menuApp({})).find(e => e.kind === "submenu");
@@ -325,7 +325,21 @@ TestCase {
 		verify(close.danger);
 		compare(labels(Dock.menuFor({ kind: "background" })), ["Add App to Dock...", "Bloom Options>"]);
 		compare(labels(Dock.menuFor({ kind: "workspaces" })), ["Hide Workspaces"]);
-		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).map(e => e.key), ["action:0", "action:1"]);
+		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).length, 0, "never loose in the menu");
+	}
+
+	// A desktop entry's own actions (Claude's "New Claude Code session") are
+	// the app's launch shortcuts, apart from its tray menu: one submenu.
+	function test_desktopActionsGoInQuickActions() {
+		const menu = Dock.menuFor(menuApp({ running: true, windows: 1, actions: ["New chat", "New Claude Code session"],
+			trays: [{ key: "c", title: "Claude", hasMenu: true, entries: [{ text: "Show", enabled: true }] }] }));
+		const quick = menu.find(e => e.key === "quick-actions");
+		compare([quick.kind, quick.label], ["submenu", "Quick actions"]);
+		compare(quick.children.map(c => [c.key, c.label]), [["action:0", "New chat"], ["action:1", "New Claude Code session"]]);
+		const keys = menu.filter(e => e.kind !== "divider").map(e => e.key);
+		verify(keys.indexOf("app-options:c") < keys.indexOf("quick-actions") && keys.indexOf("quick-actions") < keys.indexOf("new-window"));
+		verify(!menu.find(e => e.key === "app-options:c").children.some(c => c.key.startsWith("action:")), "not among the app options");
+		verify(!Dock.menuFor(menuApp({ running: true, windows: 1 })).some(e => e.key === "quick-actions"), "only when the app has some");
 	}
 
 	function test_menuPosition() {

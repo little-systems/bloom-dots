@@ -70,6 +70,17 @@ Item {
 			verify(m.opened);
 		}
 
+		// Owner: separators as on Windows (Dock.css .menu-divider: 1 px, 4 px
+		// above and below), between Pin, the icon, Bloom's and the app's groups.
+		function test_dividersTakeTheirSpace() {
+			const m = make();
+			m.openAt(300, 480);
+			const unpin = findChild(m, "menu-item-unpin");
+			const change = findChild(m, "menu-item-change-icon");
+			const gap = change.mapToItem(m, 0, 0).y - (unpin.mapToItem(m, 0, 0).y + unpin.height);
+			compare(gap, 9, "1 px line with 4 px margins");
+		}
+
 		function test_submenuClosesOnAnotherItem() {
 			const m = make();
 			m.openAt(300, 480);
@@ -80,16 +91,25 @@ Item {
 			tryCompare(quit, "visible", false, 500);
 		}
 
-		// Owner report: long desktop actions (Claude's "Continue Last Claude
-		// Code Session") ran past the box; it must grow to its widest label.
-		function test_widthFitsTheLongestLabel() {
+		// Owner: one fixed width for the menu and its submenus, whatever the
+		// labels; a long one (Claude's "Continue Last Claude Code Session")
+		// ends in an ellipsis inside the box.
+		function test_fixedWidthElidesLongLabels() {
 			const m = make();
-			m.entries = Dock.menuFor({ kind: "app", id: "x", pinned: false, pinnable: true, running: true, windows: 1, hasCustomIcon: false, actions: ["Continue Last Claude Code Session"] });
+			m.entries = [{ kind: "item", key: "short", label: "Pin" }, { kind: "submenu", key: "s", label: "Quick actions",
+				children: [{ kind: "item", key: "long", label: "Continue Last Claude Code Session and then some more" }] }];
 			m.openAt(300, 480);
-			const item = findChild(m, "menu-item-action:0");
 			const box = findChild(m, "menu-box");
-			verify(item.implicitWidth > 200, "a long label");
-			verify(box.width >= item.implicitWidth + 2 * 6 - 0.5, `box ${box.width} fits ${item.implicitWidth}`);
+			compare(box.width, 200);
+			mouseMove(findChild(m, "menu-submenu-s"), 10, 10);
+			const long = findChild(m, "menu-item-long");
+			tryCompare(long, "visible", true, 500);
+			compare(m.submenuBoxItem.width, 200);
+			const label = findChild(long, "menu-label");
+			verify(label.truncated, "elided");
+			verify(label.mapToItem(m.submenuBoxItem, label.width, 0).x <= 200 - 6 - 12 + 0.5, "inside its padding");
+			m.entries = [{ kind: "item", key: "a", label: "A" }];
+			compare(box.width, 200, "the same for every menu");
 		}
 
 		// Owner report: the submenu sat above its item. Bloom: to the right,

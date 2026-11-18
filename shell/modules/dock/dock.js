@@ -286,8 +286,8 @@ function menuFor(t, translate) {
 	if (out.length > 0)
 		out.push(_divider);
 	out.push(addApp, bloom);
-	// Bloom's jump list order: the app's tray menus, its actions and a new
-	// instance together, just above Close.
+	// Bloom's jump list order: the app's tray menus, its desktop actions (in
+	// their own "Quick actions" submenu) and a new instance, just above Close.
 	const trays = t.trays || [];
 	const actions = (t.actions || []).map((name, i) => _item("action:" + i, name));
 	const live = t.running || !!t.background;
@@ -295,7 +295,8 @@ function menuFor(t, translate) {
 		out.push(_divider);
 		for (const tray of trays)
 			out.push(_trayEntry(tray, trays.length > 1 ? (tray.title || tray.key) : "", tr, tr("linux.dock.activateTrayApp", "Activate tray app")));
-		out.push.apply(out, actions);
+		if (actions.length > 0)
+			out.push({ kind: "submenu", key: "quick-actions", label: tr("linux.dock.quickActions", "Quick actions"), children: actions });
 		if (live)
 			out.push(_item("new-window", tr("linux.dock.openNewWindow", "Open New Window")));
 	}
