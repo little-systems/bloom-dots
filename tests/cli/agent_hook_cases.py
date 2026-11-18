@@ -66,7 +66,18 @@ class Payload(unittest.TestCase):
                  "prompt": "secret prompt text", "transcript_path": "/home/u/.claude/x.jsonl"}
         payload = hook.build_payload("claude", event, at=1700, owner={"pid": 42, "started": 7})
         self.assertEqual(payload, {"agent": "claude", "session": "s-1", "project": "bloom", "kind": "working",
-                                   "activity": "thinking", "at": 1700, "pid": 42, "started": 7})
+                                   "activity": "thinking", "at": 1700, "pid": 42, "started": 7,
+                                   "transcript": "/home/u/.claude/x.jsonl"})
+
+    def test_transcript_is_claude_only_and_a_plain_jsonl_path(self):
+        # The shell reads the end of a Claude transcript to notice turns that
+        # end without a hook (an interrupt, a rewind); nothing else is sent.
+        event = {"hook_event_name": "Stop", "session_id": "s", "cwd": "/x", "transcript_path": "/h/.codex/t.jsonl"}
+        self.assertNotIn("transcript", hook.build_payload("codex", event, at=1, owner=None))
+        for bad in ("relative/x.jsonl", "/h/x.json", "/h/../etc/x.jsonl", "/h/a\nb.jsonl", "/h/" + "a" * 1100 + ".jsonl", 5):
+            with self.subTest(path=bad):
+                event = {"hook_event_name": "Stop", "session_id": "s", "cwd": "/x", "transcript_path": bad}
+                self.assertNotIn("transcript", hook.build_payload("claude", event, at=1, owner=None))
 
     def test_thread_id_when_no_session_id(self):
         payload = hook.build_payload("codex", {"hook_event_name": "Stop", "thread_id": "t-9", "cwd": "/tmp/x"}, at=1, owner=None)

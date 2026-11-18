@@ -150,4 +150,56 @@ TestCase {
 		compare(Agents.shimmer("working"), { periodMs: 5200, half: 0.25 });
 		compare(Agents.shimmer("checking"), { periodMs: 5200, half: 0.25 });
 	}
+
+	function test_parseKeepsAPlainTranscriptPath() {
+		const base = { agent: "claude", session: "s", project: "p", kind: "working" };
+		compare(Agents.parse(JSON.stringify(Object.assign({ transcript: "/h/.claude/projects/p/s.jsonl" }, base))).transcript,
+			"/h/.claude/projects/p/s.jsonl");
+		for (const bad of ["rel/s.jsonl", "/h/s.json", "/h/../s.jsonl", "/h/a\nb.jsonl", "/" + "a".repeat(1100) + ".jsonl", 5])
+			compare(Agents.parse(JSON.stringify(Object.assign({ transcript: bad }, base))), null, String(bad));
+	}
+
+	function test_transcriptsFollowSessions() {
+		let t = Agents.follow({}, alert("working", { transcript: "/h/s1.jsonl" }));
+		t = Agents.follow(t, alert("working", { session: "s2" }));
+		compare(t, { "claude:s1": "/h/s1.jsonl" }, "no path, not followed");
+		compare(Agents.follow(t, alert("working")), t, "a later event without a path keeps it");
+		compare(Agents.follow(t, alert("ready")), t, "a finished turn keeps it for the next one");
+		compare(Agents.follow(t, alert("stopped")), {}, "an ended session forgets it");
+	}
+
+	// Working sessions that have been silent long enough to check their transcript.
+	function test_quietWorkingSessions() {
+		let s = receive(Agents.EMPTY, alert("working"), 1000);
+		s = receive(s, alert("ready", { session: "s2" }), 1000);
+		s = receive(s, alert("working", { session: "s3" }), 1000);
+		const t = { "claude:s1": "/h/s1.jsonl", "claude:s2": "/h/s2.jsonl" };
+		compare(Agents.quiet(s, t, 5999).length, 0, "not yet");
+		const q = Agents.quiet(s, t, 6000);
+		compare(q.map(c => [c.entry.session, c.path]), [["s1", "/h/s1.jsonl"]], "working, with a path, silent 5 s");
+		verify(q[0].entry === s.entries[0]);
+	}
+
+	function line(o) { return JSON.stringify(o) + "\n"; }
+	function user(content) { return line({ type: "user", message: { role: "user", content: content } }); }
+	function test_turnEndedReadsTheLastEntry() {
+		const prompt = user("make it persistent");
+		const tool = line({ type: "assistant", message: { content: [{ type: "tool_use", name: "Bash" }] } });
+		const noise = line({ type: "queue-operation" }) + line({ type: "file-history-snapshot" }) + line({ type: "pr-link" })
+			+ line({ type: "attachment" }) + line({ type: "system", subtype: "informational" });
+		compare(Agents.turnEnded(prompt + tool + user([{ type: "text", text: "[Request interrupted by user]" }])), "stopped");
+		compare(Agents.turnEnded(prompt + user("[Request interrupted by user for tool use]") + noise), "stopped",
+			"bookkeeping after the marker is skipped");
+		compare(Agents.turnEnded(prompt + tool + line({ type: "system", subtype: "stop_hook_summary" })), "ready");
+		compare(Agents.turnEnded(prompt + tool + noise), "", "still working");
+		compare(Agents.turnEnded(line({ type: "system", subtype: "stop_hook_summary" }) + prompt), "", "a new turn began");
+		compare(Agents.turnEnded(user("[Request interrupted by user] is what I typed")), "", "only the marker itself");
+		compare(Agents.turnEnded('ted by user]"}]}}\n' + prompt), "", "a cut first line is ignored");
+		compare(Agents.turnEnded(""), "");
+		compare(Agents.turnEnded("garbage"), "");
+	}
+
+	function test_splitTails() {
+		compare(Agents.splitTails("\u001e\na\nb\n\u001e\n\u001e\nc\n"), ["a\nb\n", "", "c\n"]);
+	}
 }
