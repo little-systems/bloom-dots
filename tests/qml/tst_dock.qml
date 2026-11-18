@@ -111,14 +111,16 @@ TestCase {
 		compare(Dock.slots(items, true, [], [], "off", tray, false).map(x => x.key), ["a"]);
 	}
 
-	function test_pinnedLoseDotOnly() {
+	// Owner: the setting is about unpinned apps only; a pinned app keeps its
+	// gray dot (Bloom on Windows drops it too).
+	function test_pinnedKeepTheirDot() {
 		const items = { pinned: [{ id: "a", name: "A", icon: "", windows: [], hasTray: true }],
 			unpinned: [{ id: "b", name: "B", icon: "", windows: [{}], hasTray: true }] };
 		const on = Dock.slots(items, false, [], [], "off", [], true);
 		compare(on[0].backgroundDot, true);
 		const off = Dock.slots(items, false, [], [], "off", [], false);
 		compare(off.map(x => x.key), ["a", "b"], "apps stay");
-		compare(off[0].backgroundDot, false);
+		compare(off[0].backgroundDot, true);
 	}
 
 	function test_mergedAppMenuShowsEachTrayHandle() {

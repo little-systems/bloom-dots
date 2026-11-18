@@ -69,11 +69,12 @@ var workspacesKey = "|workspaces|";
 // apps, Bloom's divider when both app groups have something, then the other
 // running apps (an app left with only its tray icon among them, Bloom's
 // is_background). showBackground false (bloom-dock-show-background-apps)
-// drops those, the tray-only icons and the gray dot; tray actions stay in the menus.
+// drops those and the tray-only icons; pinned apps keep their gray dot (owner:
+// unlike Bloom on Windows). Tray actions stay in the menus.
 function slots(items, separator, segmentCells, extras, extrasPosition, trayOnly, showBackground) {
 	const background = showBackground !== false;
 	const app = pinned => i => ({ key: i.id, kind: "app", pinned: pinned, name: i.name, icon: i.icon,
-		windows: i.windows.length, backgroundDot: background && !!i.hasTray && i.windows.length === 0 });
+		windows: i.windows.length, backgroundDot: (pinned || background) && !!i.hasTray && i.windows.length === 0 });
 	const extra = e => ({ key: "extra:" + e.key, kind: "extra", extraKind: e.kind, count: e.count || 0,
 		pinned: false, name: e.name, icon: e.icon, windows: 0 });
 	const tray = t => ({ key: "tray:" + t.key, kind: "tray", pinned: false, name: t.title || t.id || "Tray app",
