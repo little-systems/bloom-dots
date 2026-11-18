@@ -227,7 +227,7 @@ var SCHEMA = {
 	},
 	"bloom-dock-show-background-apps": {
 		type: "bool", default: true,
-		doc: "Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear and pinned apps lose their gray dot."
+		doc: "Keep apps in the dock after they close to the system tray. When disabled, unpinned tray-only apps disappear; pinned apps keep their gray dot."
 	},
 	"bloom-dock-extras-position": {
 		type: "enum", values: ["off", "left", "right"], default: "off",
