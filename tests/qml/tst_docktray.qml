@@ -119,4 +119,27 @@ TestCase {
 		compare(Tray.identity("env-app", "", ["env", "FOO=1", "/opt/tool/tool"]).exec, "tool");
 		compare(Tray.identity("empty", "", []).exec, "");
 	}
+
+	// Owner report: Claude closed to its tray showed a separate tray icon. Its
+	// process is `claude`, its desktop entry runs `claude-desktop`, so only
+	// the window told whose icon it was: remember that while the icon lives.
+	function test_aTrayKeepsTheAppItsWindowShowed() {
+		const owners = [{ service: "org.freedesktop.StatusNotifierItem-527106-1/StatusNotifierItem", id: "Claude_status_icon_1",
+			title: "", iconName: "", pid: 527106, ppid: 1, exe: "/usr/lib/claude-desktop/claude" }];
+		const item = sni("c", "Claude_status_icon_1", { icon: "image://service.sni/org.freedesktop.StatusNotifierItem-527106-1/StatusNotifierItem/1" });
+		let picked = Tray.selectTray([item], entries, ["com.anthropic.Claude"], ["com.anthropic.Claude"],
+			{ owners: owners, windows: [{ id: "com.anthropic.Claude", pid: 527106 }], observed: [], known: {} });
+		compare(picked.known, { "527106:/usr/lib/claude-desktop/claude": "com.anthropic.Claude" });
+		picked = Tray.selectTray([item], entries, [], ["com.anthropic.Claude"],
+			{ owners: owners, windows: [], observed: picked.observed, known: picked.known });
+		compare(picked.merged["com.anthropic.Claude"].map(x => x.key), ["c"], "the pinned app keeps its tray");
+		compare(picked.separate, []);
+		picked = Tray.selectTray([item], entries, [], [], { owners: owners, windows: [], observed: picked.observed, known: picked.known });
+		compare(picked.background.map(b => b.id), ["com.anthropic.Claude"], "unpinned: the app's own item");
+		compare(Tray.selectTray([], entries, [], [], { owners: [], windows: [], observed: [], known: picked.known }).known, {}, "forgotten with its icon");
+		const other = [{ service: ":1.9/x", id: "other", title: "", iconName: "", pid: 900, ppid: 1, exe: "/usr/lib/claude-desktop/claude" }];
+		const otherItem = sni("o", "other", { icon: "image://service.sni/:1.9/x/1" });
+		compare(Tray.selectTray([otherItem], entries, [], [], { owners: other, windows: [], observed: [], known: picked.known }).background, [],
+			"another process of the same executable is not that app");
+	}
 }

@@ -66,19 +66,27 @@ function _byId(item, desktopEntries) {
 // with only a tray icon left; separate: tray icons of no known app. Without
 // `context` (owners not known yet) every unmatched icon stays separate.
 // With it, an icon is shown away from its app only once that app had a
-// window (`observed`, keyed by executable, forgotten with the icon).
+// window (`observed`, keyed by executable, forgotten with the icon). `known`
+// keeps, per owning process, the app a window showed an icon belonged to, for when that window
+// closes and nothing else names it (Claude: process `claude`, entry
+// `claude-desktop`).
 function selectTray(items, desktopEntries, running, pinned, context) {
 	const present = (running || []).concat(pinned || []);
 	const merged = Object.create(null);
 	const separate = [];
 	const background = [];
 	const observed = [];
+	const known = {};
 	const ctx = context || null;
 	for (const item of items || []) {
 		if (!item || passive(item.status)) continue;
 		const owner = ctx ? ownerOf(item, ctx.owners) : null;
 		let app = owner ? appFor(owner, ctx.windows, desktopEntries) : "";
+		// By process: apps sharing one runtime (electron) share an executable.
+		const proc = owner ? owner.pid + ":" + owner.exe : "";
+		if (!app && owner) app = (ctx.known || {})[proc] || "";
 		const byOwner = !!app;
+		if (byOwner) known[proc] = app;
 		if (!app) app = _byId(item, desktopEntries);
 		const category = item.category;
 		const appCategory = category === "ApplicationStatus" || category === "Communications" || category === 2 || category === 3;
@@ -98,5 +106,5 @@ function selectTray(items, desktopEntries, running, pinned, context) {
 			else background.push({ id: app, trays: [item] });
 		} else if (!ctx || seen) separate.push(item);
 	}
-	return { merged: merged, separate: separate, background: background, observed: observed };
+	return { merged: merged, separate: separate, background: background, observed: observed, known: known };
 }
