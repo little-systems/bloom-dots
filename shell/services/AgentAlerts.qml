@@ -24,6 +24,7 @@ Singleton {
 
 	property var _order: ({})
 	property var _owners: ({})
+	property var _transcripts: ({})
 
 	function _dispatch(action) { root.state = Logic.reduce(root.state, action); }
 
@@ -42,6 +43,7 @@ Singleton {
 				return "stale";
 		}
 		root._owners = Logic.track(root._owners, alert);
+		root._transcripts = Logic.follow(root._transcripts, alert);
 		root._dispatch({ type: "receive", alert: alert, now: Date.now() });
 		return "ok";
 	}
@@ -72,6 +74,7 @@ Singleton {
 		if (!root.enabled) {
 			root._dispatch({ type: "clear" });
 			root._owners = {};
+			root._transcripts = {};
 		}
 	}
 
@@ -134,7 +137,46 @@ Singleton {
 			const r = Logic.takeEnded(root._owners, Logic.aliveFromStat(probeOut.text), probe.sampled);
 			root._owners = r.owners;
 			for (const alert of r.ended)
-				root._dispatch({ type: "receive", alert: alert, now: Date.now() });
+				root._end(alert);
+		}
+	}
+
+	function _end(alert) {
+		root._transcripts = Logic.follow(root._transcripts, alert);
+		root._dispatch({ type: "receive", alert: alert, now: Date.now() });
+	}
+
+	// Claude sends no hook when a turn is interrupted mid-reply or rewound: a
+	// working session silent for a few seconds has its transcript's last
+	// entry read (only the end of the file, never sent anywhere).
+	Timer {
+		interval: 3000
+		repeat: true
+		running: root.hasEntries && Object.keys(root._transcripts).length > 0
+		onTriggered: {
+			if (reader.running)
+				return;
+			const due = Logic.quiet(root.state, root._transcripts, Date.now());
+			if (!due.length)
+				return;
+			reader.sampled = due;
+			reader.command = ["sh", "-c", 'for f; do printf "\\036\\n"; tail -c 65536 -- "$f" 2>/dev/null; done', "sh"]
+				.concat(due.map(d => d.path));
+			reader.running = true;
+		}
+	}
+	Process {
+		id: reader
+		property var sampled: []
+		stdout: StdioCollector { id: readerOut }
+		onExited: {
+			const tails = Logic.splitTails(readerOut.text);
+			reader.sampled.forEach((d, i) => {
+				const kind = Logic.turnEnded(tails[i] || "");
+				// Only if no event replaced the entry while the file was read.
+				if (kind && root.state.entries.indexOf(d.entry) >= 0)
+					root._end({ agent: d.entry.agent, session: d.entry.session, project: d.entry.project, kind: kind });
+			});
 		}
 	}
 }

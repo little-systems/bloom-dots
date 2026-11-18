@@ -62,6 +62,20 @@ kill "$agent"; wait "$agent" 2>/dev/null || true
 wait_for "the session to clear after its agent exits" entries 1
 pass "an exited agent clears its session"
 
+# Claude sends no hook when a turn is interrupted mid-reply or rewound: a
+# working session that stays silent is checked against its transcript's end.
+transcript="$TEST_TMP/s5.jsonl"
+printf '%s\n' '{"type":"summary"}' '{"type":"user","message":{"role":"user","content":"go"}}' \
+	'{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Bash"}]}}' > "$transcript"
+ipc agents event "{\"agent\":\"claude\",\"session\":\"s5\",\"project\":\"p\",\"kind\":\"working\",\"transcript\":\"$transcript\"}" >/dev/null
+wait_for "the Claude session to be tracked" entries 2
+sleep 9
+entries 2 || fail "a silent turn that is still going was cleared"
+printf '%s\n' '{"type":"user","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]}}' \
+	'{"type":"queue-operation"}' >> "$transcript"
+WAIT_S=10 wait_for "the interrupted turn to clear" entries 1
+pass "an interrupted turn clears from its transcript"
+
 assert_eq "$(ipc agents event '{"agent":"claude","session":"s9","project":"p","kind":"ready","prompt":"secret"}')" "invalid" "unknown fields"
 pass "events with anything off the allow-list are refused"
 ipc agents event '{"agent":"claude","session":"s1","project":"bloom","kind":"attention"}' >/dev/null

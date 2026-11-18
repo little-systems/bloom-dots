@@ -6,7 +6,7 @@
 var AGENTS = ["claude", "codex", "opencode"];
 var KINDS = ["working", "ready", "attention", "error", "resolved", "stopped"];
 var ACTIVITIES = ["thinking", "reading", "editing", "running", "working", "checking"];
-var FIELDS = ["agent", "session", "project", "kind", "activity", "at", "pid", "started"];
+var FIELDS = ["agent", "session", "project", "kind", "activity", "at", "pid", "started", "transcript"];
 var MAX_PAYLOAD = 4096;
 
 var EMPTY = { entries: [], active: null };
@@ -30,12 +30,23 @@ function parse(text) {
 	var out = { agent: a.agent, session: a.session, project: project || "Agent session", kind: a.kind };
 	if (a.activity !== undefined)
 		out.activity = a.activity;
+	if (a.transcript !== undefined) {
+		if (!plainPath(a.transcript))
+			return null;
+		out.transcript = a.transcript;
+	}
 	for (var i = 0; i < 3; i++) {
 		var n = ["at", "pid", "started"][i];
 		if (typeof a[n] === "number" && isFinite(a[n]))
 			out[n] = a[n];
 	}
 	return out;
+}
+
+// An absolute .jsonl path with no "..", dot or empty segment, or control characters.
+function plainPath(p) {
+	return typeof p === "string" && p.length <= 1024 && /^\/.*\.jsonl$/.test(p) && !/[\u0000-\u001f\u007f]/.test(p)
+		&& p.split("/").slice(1).every(function (seg) { return seg !== "" && seg !== "." && seg !== ".."; });
 }
 
 // Background hooks can finish out of order: an event launched before one
@@ -136,6 +147,78 @@ function track(owners, alert) {
 	next[key] = { alert: { agent: alert.agent, session: alert.session, project: alert.project, kind: "stopped" },
 		pid: alert.pid, started: alert.started };
 	return next;
+}
+
+// Claude transcripts, keyed agent:session (at most 256). Claude Code sends no
+// hook when a turn is interrupted mid-reply or rewound, so a session that has
+// been silent while working is checked against its transcript's last entry.
+function follow(transcripts, alert) {
+	var key = alert.agent + ":" + alert.session;
+	if (alert.kind === "resolved" || alert.kind === "stopped") {
+		if (transcripts[key] === undefined)
+			return transcripts;
+		var rest = Object.assign({}, transcripts);
+		delete rest[key];
+		return rest;
+	}
+	if (typeof alert.transcript !== "string" || transcripts[key] === alert.transcript
+		|| (Object.keys(transcripts).length >= 256 && transcripts[key] === undefined))
+		return transcripts;
+	var next = Object.assign({}, transcripts);
+	next[key] = alert.transcript;
+	return next;
+}
+
+var QUIET_MS = 5000;
+
+// [{ entry, path }] for working sessions silent for QUIET_MS.
+function quiet(state, transcripts, now) {
+	var out = [];
+	state.entries.forEach(function (e) {
+		var path = transcripts[e.agent + ":" + e.session];
+		if (e.kind === "working" && path !== undefined && now - e.received >= QUIET_MS)
+			out.push({ entry: e, path: path });
+	});
+	return out;
+}
+
+var INTERRUPTED = /^\[Request interrupted by user( for tool use)?\]$/;
+
+function userText(message) {
+	var c = message && message.content;
+	if (typeof c === "string")
+		return c;
+	if (Array.isArray(c) && c.length === 1 && c[0] && c[0].type === "text")
+		return String(c[0].text);
+	return null;
+}
+
+// How a transcript's tail says the turn ended: "stopped" (interrupted),
+// "ready" (finished; its Stop hook went missing) or "" (still going). The
+// first line may be cut; bookkeeping entries are skipped.
+function turnEnded(text) {
+	var lines = String(text).split("\n");
+	for (var i = lines.length - 1; i >= 1; i--) {
+		var e;
+		try { e = JSON.parse(lines[i]); } catch (err) { continue; }
+		if (!e || typeof e !== "object")
+			continue;
+		if (e.type === "system") {
+			if (e.subtype === "stop_hook_summary")
+				return "ready";
+			continue;
+		}
+		if (e.type === "user")
+			return INTERRUPTED.test(userText(e.message) || "") ? "stopped" : "";
+		if (e.type === "assistant")
+			return "";
+	}
+	return "";
+}
+
+// The probe prints "\x1e\n" before each file's tail.
+function splitTails(text) {
+	return String(text).split("\u001e\n").slice(1);
 }
 
 // pid -> start time from lines of "<pid> <stat fields after comm>".

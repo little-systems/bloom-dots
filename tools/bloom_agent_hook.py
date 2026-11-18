@@ -7,7 +7,9 @@ with an event it already mapped). Maps it exactly as Bloom's integrations/agent-
 Advisory only: it never decides anything for the agent, always prints {} (Codex
 Stop needs valid JSON) and exits 0, and gives up on the shell after 2 s, so a
 closed or restarting Bloom never slows or stops an agent. Only allow-listed
-values are sent: no prompts, responses, tool arguments or commands."""
+values are sent: no prompts, responses, tool arguments or commands. For Claude
+the transcript's path goes too, so the shell can tell from its last entry that
+a turn ended without a hook (an interrupt, a rewind)."""
 import json
 import os
 import re
@@ -61,6 +63,14 @@ def map_event(agent, event):
     return None, None
 
 
+def transcript(path):
+    """A Claude transcript path the shell may read the end of, or None."""
+    if not isinstance(path, str) or len(path) > 1024 or not path.startswith("/") \
+            or not path.endswith(".jsonl") or not path.isprintable() or os.path.normpath(path) != path:
+        return None
+    return path
+
+
 def build_payload(agent, event, at, owner):
     """The payload for the shell, or None when nothing should be sent."""
     kind, activity = map_event(agent, event)
@@ -76,6 +86,8 @@ def build_payload(agent, event, at, owner):
     payload["at"] = at
     if isinstance(owner, dict):
         payload.update(owner)
+    if agent == "claude" and transcript(event.get("transcript_path")):
+        payload["transcript"] = event["transcript_path"]
     if len(json.dumps(payload, separators=(",", ":")).encode()) > MAX_PAYLOAD:
         return None
     return payload
