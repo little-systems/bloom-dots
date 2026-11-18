@@ -250,7 +250,9 @@ Item {
 	// The first-run guide shows the real Island while introducing it (Bloom
 	// useOnboardingReveal); the saved mode is untouched.
 	property bool guideReveal: false
-	readonly property bool hidden: !root.guideReveal && ((root.mode === "smart" && root.suppressed)
+	// An agent activity keeps the Island shown (Bloom isHidden: !agentAlert)
+	// without counting as interaction, so the edge and clicks stay live.
+	readonly property bool hidden: !root.guideReveal && !root.agentVisible && ((root.mode === "smart" && root.suppressed)
 		|| Logic.isHidden(root.mode, root.overlapped, root.interaction, root.eventPeek, root.startupAnimating))
 	// Bloom isHovered: the strip opens on the shown, expanded pill.
 	readonly property bool statusHover: root.panel === "" && root.pillHovered && root.expanded && !root.hidden && root.surfaceVisible
@@ -476,7 +478,7 @@ Item {
 	// An open player counts too, so a hidden notch shows while it is open.
 	readonly property bool _anyInteraction: !root.lockPreparing && !root.sessionLocked
 		&& !(root.mode === "smart" && root.suppressed)
-		&& (root.agentVisible || root._shelfDragOpened || root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
+		&& (root._shelfDragOpened || root.pillHovered || root.edgeArmed || root.open || root.panel !== "" || root.alertVisible)
 	function closeForLock() {
 		root._shelfDragOpened = false;
 		root._shelfDraggingOut = false;

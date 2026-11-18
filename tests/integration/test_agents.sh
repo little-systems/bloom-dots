@@ -70,6 +70,10 @@ wait_for "the attention alert" active_is attention ""
 # from the screen-centred pill.
 badge_shown() { ipc notch state | jq -e '.[0].agentBadge and .[0].agentBadgeAt != null' >/dev/null; }
 WAIT_S=12 wait_for "the persistent attention badge" badge_shown
+# It slides in: click once its centre holds still.
+badge_at() { ipc notch state | jq -c '.[0].agentBadgeAt'; }
+badge_settled() { local a; a="$(badge_at)"; sleep 0.25; [[ "$a" == "$(badge_at)" ]]; }
+wait_for "the badge to settle" badge_settled
 badge_x="$(ipc notch state | jq -r '960 + .[0].agentBadgeAt.dx | round')"
 badge_y="$(ipc notch state | jq -r '.[0].agentBadgeAt.y | round')"
 if [[ -n "${BLOOM_AGENT_BADGE_SCREENSHOT:-}" ]]; then grim -o HEADLESS-1 "$BLOOM_AGENT_BADGE_SCREENSHOT"; fi

@@ -256,6 +256,25 @@ Item {
 			tryCompare(v, "hidden", true, 1500);
 		}
 
+		// Bloom isHidden: an agent activity keeps the Island shown, even with a
+		// window over it, and never counts as the user's interaction, so once
+		// the agent clears the edge and a click still open it.
+		function test_agentKeepsAnOverlappedIslandOpenable() {
+			const v = make({ mode: "smart" });
+			settle(v);
+			v.agentActivity = { agent: "claude", kind: "working", activity: "running", started: 0 };
+			v.overlapped = true;
+			verify(!v.hidden, "the agent keeps the Island on screen over a window");
+			mouseClick(v, 500, 18);
+			verify(v.panel !== "", "a click opens the Island while the agent shows");
+			v.closePanel();
+			v.agentActivity = null;
+			tryCompare(v, "hidden", true, 2000);
+			const b = v.bandItem.mapToItem(v, v.bandItem.width / 2, 1);
+			mouseMove(v, b.x, b.y);
+			tryCompare(v, "hidden", false, 1500);
+		}
+
 		// Review focus 1: the band takes input only while the notch is hidden.
 		function test_bandOnlyWhileHidden() {
 			const fixed = make();
