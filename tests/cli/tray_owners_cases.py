@@ -70,7 +70,9 @@ class Owners(unittest.TestCase):
     def test_unreachable_items_are_skipped_and_no_watcher_is_empty(self):
         calls = {("/StatusNotifierWatcher", "RegisteredStatusNotifierItems"): [":1.9/StatusNotifierItem"]}
         self.assertEqual(owners.collect(self.bus(calls), str(self.proc)), [])
-        self.assertEqual(owners.collect(self.bus({}), str(self.proc)), [])
+        # No watcher answer is a failure, not "no icons": the shell keeps
+        # what it knew instead of forgetting every app.
+        self.assertIsNone(owners.collect(self.bus({}), str(self.proc)))
 
     def test_main_prints_json(self):
         self.assertEqual(json.loads(owners.render([])), [])

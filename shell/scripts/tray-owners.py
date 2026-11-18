@@ -5,7 +5,8 @@ Prints a JSON list: for every StatusNotifierItem the watcher knows, its
 service string (as Quickshell's pixmap URLs name it), Id, Title and IconName,
 and its D-Bus connection's pid, parent pid and executable. The pid comes from
 the bus daemon, not from the item, so an item can't claim another app. Items
-that don't answer are left out. Read-only; every call is bounded."""
+that don't answer are left out; if the watcher itself doesn't answer, nothing
+is printed and the exit status is 1. Read-only; every call is bounded."""
 import json
 import os
 import subprocess
@@ -43,7 +44,7 @@ def collect(bus, proc="/proc"):
         services = bus(["get-property", "org.kde.StatusNotifierWatcher", "/StatusNotifierWatcher",
                         "org.kde.StatusNotifierWatcher", "RegisteredStatusNotifierItems"])
     except Exception:
-        return []
+        return None
     found = []
     for service in services if isinstance(services, list) else []:
         if not isinstance(service, str) or not service:
@@ -66,4 +67,8 @@ def render(items):
 
 
 if __name__ == "__main__":
-    sys.stdout.write(render(collect(busctl)) + "\n")
+    items = collect(busctl)
+    if items is None:
+        # The watcher didn't answer: say so, so the shell keeps what it knew.
+        sys.exit(1)
+    sys.stdout.write(render(items) + "\n")

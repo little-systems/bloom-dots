@@ -74,12 +74,22 @@ Singleton {
 		command: ["timeout", "-k", "1s", "10s", "python3", "-I", Quickshell.shellPath("scripts/tray-owners.py")]
 		stdout: StdioCollector { id: ownersOut }
 		onExited: code => {
-			let list = [];
-			try { list = code === 0 ? JSON.parse(ownersOut.text) : []; } catch (e) { list = []; }
-			root.trayOwners = Array.isArray(list) ? list : [];
+			let list = null;
+			try { list = code === 0 ? JSON.parse(ownersOut.text) : null; } catch (e) { list = null; }
+			if (!Array.isArray(list)) {
+				// No answer is not "no icons": keep what we knew and look again.
+				ownersRetry.restart();
+				return;
+			}
+			root.trayOwners = list;
 			root._ownersFor = ownersProc.forKeys;
 			if (ownersProc.forKeys !== root._trayKeys) ownersDelay.restart();
 		}
+	}
+	Timer {
+		id: ownersRetry
+		interval: 2000
+		onTriggered: if (root._trayKeys !== "") ownersDelay.restart()
 	}
 	// No window came from the tray icon: launch the app instead.
 	Timer {

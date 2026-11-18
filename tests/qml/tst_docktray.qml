@@ -99,7 +99,7 @@ TestCase {
 		picked = Tray.selectTray([item], entries, ["spotify"], [], { owners: owners, windows: [{ id: "spotify", pid: 30 }], observed: [] });
 		compare(picked.merged.spotify.map(x => x.key), ["s"]);
 		compare(picked.observed, ["/opt/spotify/spotify"]);
-		picked = Tray.selectTray([item], entries, [], [], { owners: owners, windows: [], observed: picked.observed });
+		picked = Tray.selectTray([item], entries, [], [], { owners: owners, windows: [], observed: picked.observed, known: picked.known });
 		compare(picked.background.map(b => [b.id, b.trays.map(t => t.key)]), [["spotify", ["s"]]], "the window closed to the tray");
 		compare(Tray.selectTray([], entries, [], [], { owners: [], windows: [], observed: picked.observed }).observed, [], "forgotten with its icon");
 	}
@@ -112,7 +112,7 @@ TestCase {
 	}
 
 	function test_desktopIdentityNamesItsExecutable() {
-		compare(Tray.identity("chatgpt", "", ["chatgpt", "%U"]), { id: "chatgpt", startupClass: "", exec: "chatgpt", webApp: false });
+		compare(Tray.identity("chatgpt", "", ["chatgpt", "%U"]), { id: "chatgpt", startupClass: "", exec: "chatgpt", webApp: false, hidden: false });
 		compare(Tray.identity("spotify", "spotify", ["/usr/bin/spotify", "--uri=%u"]).exec, "spotify");
 		verify(Tray.identity("brave-aaa-Default", "", ["/usr/bin/brave", "--profile-directory=Default", "--app-id=aaa"]).webApp);
 		verify(Tray.identity("chrome-x", "", ["google-chrome", "--app=https://x"]).webApp);
@@ -141,5 +141,63 @@ TestCase {
 		const otherItem = sni("o", "other", { icon: "image://service.sni/:1.9/x/1" });
 		compare(Tray.selectTray([otherItem], entries, [], [], { owners: other, windows: [], observed: [], known: picked.known }).background, [],
 			"another process of the same executable is not that app");
+	}
+
+	// Owner report (again): Claude's icon stood apart once its window was
+	// gone and the dock had lost what that window told it. Its program sits
+	// in a folder named after what its desktop entry runs, so that alone
+	// names the app; generic folders and shared runtimes name nothing.
+	function test_theProgramsFolderNamesTheApp() {
+		compare(Tray.appFor({ pid: 1, ppid: 1, exe: "/usr/lib/claude-desktop/claude" }, [], entries), "com.anthropic.Claude");
+		const more = entries.concat([{ id: "bin", startupClass: "", exec: "bin", webApp: false }, { id: "electron", startupClass: "", exec: "electron", webApp: false }]);
+		compare(Tray.appFor({ pid: 2, ppid: 1, exe: "/usr/bin/tool" }, [], more), "", "bin is not an app");
+		compare(Tray.appFor({ pid: 3, ppid: 1, exe: "/usr/lib/electron/electron" }, [], more), "electron", "its own name first");
+		compare(Tray.appFor({ pid: 4, ppid: 1, exe: "/usr/lib/electron/app.bin" }, [], more), "", "a shared runtime's folder names no app");
+	}
+
+	// What a window showed is forgotten only when that process no longer owns
+	// an icon, not when one look can't name it.
+	function test_knownAppsLastAsLongAsTheirProcess() {
+		const owner = { service: ":1.5/x", id: "x", title: "", iconName: "", pid: 77, ppid: 1, exe: "/opt/x/x" };
+		const item = sni("x", "x", { icon: "image://service.sni/:1.5/x/1" });
+		const known = { "77:/opt/x/x": "spotify", "88:/opt/gone/gone": "chatgpt" };
+		compare(Tray.selectTray([], entries, [], [], { owners: [owner], windows: [], observed: [], known: known }).known,
+			{ "77:/opt/x/x": "spotify" }, "kept while its process owns an icon; the exited one goes");
+		compare(Tray.selectTray([item], entries, [], ["spotify"], { owners: [owner], windows: [], observed: [], known: known }).merged.spotify.map(i => i.key), ["x"]);
+	}
+
+	// The real cause: Claude Code's hidden URL handler entry runs `claude`, the
+	// name of Claude's program, so Claude's tray icon became that handler's
+	// separate item. Hidden entries (NoDisplay) are handlers, not apps.
+	function test_hiddenEntriesNeverClaimATray() {
+		const withHandler = entries.concat([Tray.identity("claude-code-url-handler", "", ["/home/u/.local/bin/claude", "--handle-uri", "%u"], true)]);
+		compare(withHandler[withHandler.length - 1].hidden, true);
+		compare(Tray.appFor({ pid: 1, ppid: 1, exe: "/usr/lib/claude-desktop/claude" }, [], withHandler), "com.anthropic.Claude");
+		compare(Tray.identity("x", "", ["x"]).hidden, false);
+	}
+
+	// Owner: never again, for any app. What a window of the icon's own process
+	// showed beats any name match, and an unpinned app gets its own dock item
+	// only from that: a name alone can at most add a dot to a pinned app.
+	readonly property var decoy: entries.concat([{ id: "decoy", startupClass: "", exec: "claude", webApp: false, hidden: false }])
+	readonly property var claudeOwner: ({ service: ":1.2/x", id: "Claude_status_icon_1", title: "", iconName: "", pid: 500, ppid: 1, exe: "/usr/lib/claude-desktop/claude" })
+	function claudeItem() { return sni("c", "Claude_status_icon_1", { icon: "image://service.sni/:1.2/x/1" }); }
+
+	function test_whatTheWindowShowedBeatsAnyName() {
+		let picked = Tray.selectTray([claudeItem()], decoy, ["com.anthropic.Claude"], [],
+			{ owners: [claudeOwner], windows: [{ id: "com.anthropic.Claude", pid: 500 }], observed: [], known: {} });
+		compare(Object.keys(picked.merged), ["com.anthropic.Claude"]);
+		picked = Tray.selectTray([claudeItem()], decoy, [], [], { owners: [claudeOwner], windows: [], observed: picked.observed, known: picked.known });
+		compare(picked.background.map(b => b.id), ["com.anthropic.Claude"], "not the visible app that merely shares the name");
+		compare(picked.separate, []);
+	}
+
+	function test_aNameAloneNeverMakesAnItem() {
+		// Seen with a window in an earlier run of the process: the executable is
+		// observed, but this process never showed which app it is.
+		const picked = Tray.selectTray([claudeItem()], decoy, [], [], { owners: [claudeOwner], windows: [], observed: ["/usr/lib/claude-desktop/claude"], known: {} });
+		compare([picked.background.length, picked.separate.length], [0, 0]);
+		const pinned = Tray.selectTray([claudeItem()], entries, [], ["com.anthropic.Claude"], { owners: [claudeOwner], windows: [], observed: [], known: {} });
+		compare(Object.keys(pinned.merged), ["com.anthropic.Claude"], "a name may still give a pinned app its dot");
 	}
 }
