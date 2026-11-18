@@ -52,6 +52,17 @@ function buildItems(pinned, groups, order, info) {
 	};
 }
 
+// Bloom handleAppClick: an app with no window and one tray icon is brought
+// back from the tray. Some icons ignore Activate (libayatana-appindicator,
+// e.g. Spotify), so after `fallbackMs` with still no window the app is
+// launched, which raises a single-instance app's window. null: the normal
+// click (focus or launch).
+function backgroundClick(windows, trays, canLaunch) {
+	if (windows > 0 || !trays || trays.length !== 1 || trays[0].onlyMenu)
+		return null;
+	return { tray: trays[0].key, fallbackMs: canLaunch ? 1500 : 0 };
+}
+
 var workspacesKey = "|workspaces|";
 
 // What the row shows: the workspace segment (D7) and its divider, pinned

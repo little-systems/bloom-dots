@@ -74,6 +74,16 @@ Singleton {
 			if (ownersProc.forKeys !== root._trayKeys) ownersDelay.restart();
 		}
 	}
+	// No window came from the tray icon: launch the app instead.
+	Timer {
+		id: trayFallback
+		property string forId: ""
+		onTriggered: {
+			const item = root._item(trayFallback.forId);
+			if (item && item.windows.length === 0)
+				Apps.launch(trayFallback.forId);
+		}
+	}
 	function _traysOf(id) {
 		const b = root.traySelection.background.find(x => x.id === id);
 		return root.traySelection.merged[id] || (b ? b.trays : []);
@@ -215,12 +225,15 @@ Singleton {
 		const item = root._item(id);
 		if (!item)
 			return "no such app";
-		// Bloom: an app with no window and one tray icon brings back its window
-		// from the tray rather than starting another copy.
-		const trays = item.windows.length === 0 ? root._traysOf(id) : [];
-		const tray = trays.length === 1 ? root._trayItem(trays[0].key) : null;
-		if (tray && !tray.onlyMenu) {
+		const plan = Logic.backgroundClick(item.windows.length, root._traysOf(id).map(t => ({ key: t.key, onlyMenu: !!t.onlyMenu })), Apps.exists(id));
+		const tray = plan ? root._trayItem(plan.tray) : null;
+		if (tray) {
 			tray.activate();
+			if (plan.fallbackMs > 0) {
+				trayFallback.forId = id;
+				trayFallback.interval = plan.fallbackMs;
+				trayFallback.restart();
+			}
 			return "ok";
 		}
 		const action = Logic.clickAction(item, Logic.activeAddress(HyprState.clients, HyprState.monitors));

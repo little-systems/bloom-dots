@@ -171,6 +171,19 @@ TestCase {
 		compare(Dock.fillEnglish("App options", undefined), "App options");
 	}
 
+	// A left click on an app with no window brings it back from its tray icon;
+	// if no window comes (Spotify's appindicator has no Activate), it is
+	// launched, which raises a single-instance app's window.
+	function test_backgroundClick() {
+		const tray = { key: "s", onlyMenu: false };
+		compare(Dock.backgroundClick(1, [tray], true), null, "a window: the normal click");
+		compare(Dock.backgroundClick(0, [tray], true), { tray: "s", fallbackMs: 1500 });
+		compare(Dock.backgroundClick(0, [tray], false), { tray: "s", fallbackMs: 0 }, "nothing to launch");
+		compare(Dock.backgroundClick(0, [{ key: "m", onlyMenu: true }], true), null, "a menu-only icon: launch");
+		compare(Dock.backgroundClick(0, [tray, { key: "t", onlyMenu: false }], true), null, "which icon is unclear: launch");
+		compare(Dock.backgroundClick(0, [], true), null);
+	}
+
 	// framer AnimatePresence: a leaving item keeps its place until its exit ends.
 	function test_reconcile() {
 		const rows = keys => keys.map(k => ({ key: k, leaving: false }));
