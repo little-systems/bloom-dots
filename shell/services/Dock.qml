@@ -27,6 +27,8 @@ Singleton {
 	readonly property string _trayKeys: root.trayEntries.map(e => e.key).join(" ")
 	// Executables of tray icons whose app had a window (Bloom selectDockTrayApps).
 	property var _observedTray: []
+	// The app each of those executables' windows showed (Tray.selectTray `known`).
+	property var _knownTray: ({})
 	readonly property var traySelection: {
 		Apps.revision;
 		const projections = root.trayEntries.map(e => ({ key: e.key, id: e.id, title: e.title,
@@ -35,15 +37,20 @@ Singleton {
 		for (const g of root.groups)
 			for (const w of g.windows) windows.push({ id: g.id, pid: w.pid });
 		return Tray.selectTray(projections, Apps.desktopIdentities(), root.groups.map(g => g.id), root.pinned,
-			{ owners: root.trayOwners, windows: windows, observed: root._observedTray });
+			{ owners: root.trayOwners, windows: windows, observed: root._observedTray, known: root._knownTray });
 	}
 	// Only owners read for the current icons can say what was seen. Deferred:
 	// the selection reads what it records.
 	onTraySelectionChanged: Qt.callLater(root._recordObserved)
 	function _recordObserved() {
+		if (root._ownersFor !== root._trayKeys)
+			return;
 		const next = root.traySelection.observed;
-		if (root._ownersFor === root._trayKeys && JSON.stringify(next) !== JSON.stringify(root._observedTray))
+		if (JSON.stringify(next) !== JSON.stringify(root._observedTray))
 			root._observedTray = next;
+		const known = root.traySelection.known;
+		if (JSON.stringify(known) !== JSON.stringify(root._knownTray))
+			root._knownTray = known;
 	}
 	readonly property var trayOnly: root.traySelection.separate
 	function setTrayItems(entries) { root.trayEntries = entries || []; }
