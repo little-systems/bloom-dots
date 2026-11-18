@@ -43,7 +43,9 @@ if [[ -n "${BLOOM_AGENT_SCREENSHOT:-}" ]]; then
 	grim -o HEADLESS-1 "$BLOOM_AGENT_SCREENSHOT"
 fi
 pass "a Claude hook reaches the shell and occupies the Island"
-assert_eq "$(jq -c 'keys' "$XDG_STATE_HOME/bloom/agents.json")" '["claude"]' "the first event marks Claude connected"
+# The state file is written asynchronously after the event.
+connected() { [[ "$(jq -c 'keys' "$XDG_STATE_HOME/bloom/agents.json" 2>/dev/null)" == '["claude"]' ]]; }
+wait_for "the first event to mark Claude connected" connected
 pass "the first event is remembered as connected"
 
 now=$(($(date +%s%3N)))
