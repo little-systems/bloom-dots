@@ -71,6 +71,8 @@ Item {
 	signal trayActivated(string key, real x, real y)
 	signal traySecondary(string key)
 	signal trayMenuRequested(string key, real x, real y)
+	// An entry of a tray icon's menu, chosen under "App options".
+	signal trayMenuEntry(string key, int index)
 
 	readonly property bool keyboardWanted: popup.opened
 	readonly property bool grabWanted: menu.opened || popup.opened || confirm.opened
@@ -152,7 +154,11 @@ Item {
 		root._cancelPreview();
 		popup.close();
 		menu.forId = id;
-		menu.entries = Dock.menuFor(target, (key, english) => I18n.t(key));
+		// A key the loaded catalog lacks keeps dock.js's English text.
+		menu.entries = Dock.menuFor(target, (key, english, params) => {
+			const text = I18n.t(key, params);
+			return text === key ? Dock.fillEnglish(english, params) : text;
+		});
 		const p = stage.mapFromItem(null, x, y);
 		menu.openAt(p.x, p.y);
 	}
@@ -692,6 +698,11 @@ Item {
 			onChosen: key => {
 				if (key === "add-app") popup.open();
 				else if (key === "hide-workspaces") root.hideWorkspaces();
+				else if (key.startsWith("traymenu:")) {
+					const rest = key.slice(9);
+					const at = rest.lastIndexOf(":");
+					root.trayMenuEntry(rest.slice(0, at), parseInt(rest.slice(at + 1)));
+				}
 				else if (key.startsWith("tray:")) {
 					const p = menu.boxItem.mapToItem(null, menu.boxItem.width / 2, menu.boxItem.height / 2);
 					const target = root.menuTarget(menu.forId);

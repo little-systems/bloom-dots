@@ -64,6 +64,8 @@ Item {
 		implicitWidth: label.implicitWidth + 2 * Tokens.dock.menu.item.paddingH + (item.entry.kind === "submenu" ? Tokens.dock.menu.arrow.gap + arrow.implicitWidth : 0)
 		implicitHeight: label.implicitHeight + 2 * Tokens.dock.menu.item.paddingV
 		radius: Tokens.dock.menu.item.radius
+		// An app's tray entry it has greyed out.
+		opacity: item.entry.disabled ? 0.4 : 1
 		color: hover.hovered || (item.entry.kind === "submenu" && root._submenu === item.entry.key) ? item.hoverColor : "transparent"
 		Behavior on color {
 			ColorAnimation { duration: Tokens.dock.menu.fadeMs; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.4, 0, 0.2, 1, 1, 1] }
@@ -71,13 +73,13 @@ Item {
 
 		HoverHandler {
 			id: hover
-			cursorShape: Qt.PointingHandCursor
+			cursorShape: item.entry.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
 			// A top-level item (its Loader sits in `column`) closes the submenu;
 			// the submenu's own items keep it open.
 			onHoveredChanged: if (hover.hovered) root._submenu = item.entry.kind === "submenu" ? item.entry.key : (item.parent && item.parent.parent === column ? "" : root._submenu)
 		}
 		TapHandler {
-			enabled: item.entry.kind === "item"
+			enabled: item.entry.kind === "item" && !item.entry.disabled
 			onTapped: {
 				root.close();
 				root.chosen(item.entry.key);

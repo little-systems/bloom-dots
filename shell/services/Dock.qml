@@ -20,14 +20,69 @@ Singleton {
 	readonly property string _iconDir: Paths.stateDir(Quickshell.env("XDG_STATE_HOME"), Quickshell.env("HOME")) + "/dock-icons"
 	property var _order: []
 	property var trayEntries: []
+	// Each tray icon's D-Bus owner process (scripts/tray-owners.py), for the
+	// tray icon's set of items in `_ownersFor`.
+	property var trayOwners: []
+	property string _ownersFor: ""
+	readonly property string _trayKeys: root.trayEntries.map(e => e.key).join(" ")
+	// Executables of tray icons whose app had a window (Bloom selectDockTrayApps).
+	property var _observedTray: []
 	readonly property var traySelection: {
 		Apps.revision;
 		const projections = root.trayEntries.map(e => ({ key: e.key, id: e.id, title: e.title,
 			icon: e.icon, status: e.status, category: e.category, onlyMenu: e.onlyMenu, hasMenu: e.hasMenu }));
-		return Tray.selectTray(projections, Apps.desktopIdentities(), root.groups.map(g => g.id), root.pinned);
+		const windows = [];
+		for (const g of root.groups)
+			for (const w of g.windows) windows.push({ id: g.id, pid: w.pid });
+		return Tray.selectTray(projections, Apps.desktopIdentities(), root.groups.map(g => g.id), root.pinned,
+			{ owners: root.trayOwners, windows: windows, observed: root._observedTray });
+	}
+	// Only owners read for the current icons can say what was seen. Deferred:
+	// the selection reads what it records.
+	onTraySelectionChanged: Qt.callLater(root._recordObserved)
+	function _recordObserved() {
+		const next = root.traySelection.observed;
+		if (root._ownersFor === root._trayKeys && JSON.stringify(next) !== JSON.stringify(root._observedTray))
+			root._observedTray = next;
 	}
 	readonly property var trayOnly: root.traySelection.separate
 	function setTrayItems(entries) { root.trayEntries = entries || []; }
+	on_TrayKeysChanged: ownersDelay.restart()
+	Timer {
+		id: ownersDelay
+		interval: 250
+		onTriggered: {
+			if (root._trayKeys === "") {
+				root.trayOwners = [];
+				root._ownersFor = "";
+			} else if (!ownersProc.running) {
+				ownersProc.forKeys = root._trayKeys;
+				ownersProc.running = true;
+			} else ownersDelay.restart();
+		}
+	}
+	Process {
+		id: ownersProc
+		property string forKeys: ""
+		command: ["timeout", "-k", "1s", "10s", "python3", "-I", Quickshell.shellPath("scripts/tray-owners.py")]
+		stdout: StdioCollector { id: ownersOut }
+		onExited: code => {
+			let list = [];
+			try { list = code === 0 ? JSON.parse(ownersOut.text) : []; } catch (e) { list = []; }
+			root.trayOwners = Array.isArray(list) ? list : [];
+			root._ownersFor = ownersProc.forKeys;
+			if (ownersProc.forKeys !== root._trayKeys) ownersDelay.restart();
+		}
+	}
+	function _traysOf(id) {
+		const b = root.traySelection.background.find(x => x.id === id);
+		return root.traySelection.merged[id] || (b ? b.trays : []);
+	}
+	function _trayProjection(t) {
+		const entry = root.trayEntries.find(e => e.key === t.key);
+		return { key: t.key, title: t.title, hasMenu: !!t.hasMenu, onlyMenu: !!t.onlyMenu,
+			entries: (entry?.menu || []).map(h => ({ text: h.text || "", enabled: !!h.enabled, separator: !!h.isSeparator, hasChildren: !!h.hasChildren })) };
+	}
 	readonly property var groups: Logic.groupWindows(HyprState.clients, cls => Logic.identity(cls, root._idFor(cls)))
 	readonly property var items: {
 		Apps.revision; // re-resolve names and icons as desktop entries load
@@ -35,6 +90,13 @@ Singleton {
 			id => Object.assign(Apps.info(id), root.icons[id] ? { icon: "file://" + root.icons[id] } : {}));
 		for (const item of built.pinned.concat(built.unpinned))
 			item.hasTray = !!root.traySelection.merged[item.id]?.length;
+		// An unpinned app left with only its tray icon (Bloom is_background).
+		for (const b of root.traySelection.background) {
+			if (built.pinned.some(i => i.id === b.id) || built.unpinned.some(i => i.id === b.id))
+				continue;
+			const info = Object.assign(Apps.info(b.id), root.icons[b.id] ? { icon: "file://" + root.icons[b.id] } : {});
+			built.unpinned.push({ id: b.id, name: info.name, icon: info.icon, windows: [], hasTray: true, background: true });
+		}
 		return built;
 	}
 
@@ -153,6 +215,14 @@ Singleton {
 		const item = root._item(id);
 		if (!item)
 			return "no such app";
+		// Bloom: an app with no window and one tray icon brings back its window
+		// from the tray rather than starting another copy.
+		const trays = item.windows.length === 0 ? root._traysOf(id) : [];
+		const tray = trays.length === 1 ? root._trayItem(trays[0].key) : null;
+		if (tray && !tray.onlyMenu) {
+			tray.activate();
+			return "ok";
+		}
 		const action = Logic.clickAction(item, Logic.activeAddress(HyprState.clients, HyprState.monitors));
 		if (action.kind === "launch")
 			return Apps.launch(id) ? "ok" : "cannot launch";
@@ -220,14 +290,15 @@ Singleton {
 		if (id.startsWith("tray:")) {
 			const key = id.slice(5);
 			const entry = root.trayEntries.find(e => e.key === key);
-			return { kind: "tray", trayKey: key, hasMenu: !!entry?.hasMenu };
+			return Object.assign({ kind: "tray", trayKey: key }, root._trayProjection({ key: key, title: entry?.title, hasMenu: entry?.hasMenu, onlyMenu: entry?.onlyMenu }));
 		}
 		const item = root._item(id);
 		return {
 			kind: "app", id: id, pinned: root.pinned.indexOf(id) >= 0, pinnable: Apps.exists(id),
 			running: !!item && item.windows.length > 0, windows: item ? item.windows.length : 0,
 			hasCustomIcon: !!root.icons[id], actions: Apps.actions(id),
-			trays: root.traySelection.merged[id] || []
+			background: !!item?.background || (!!item && item.windows.length === 0 && root._traysOf(id).length > 0),
+			trays: root._traysOf(id).map(root._trayProjection)
 		};
 	}
 
@@ -243,6 +314,14 @@ Singleton {
 		const item = root._trayItem(key);
 		if (!item) return "tray item gone";
 		item.secondaryActivate();
+		return "ok";
+	}
+	// An entry of a tray icon's menu, listed under "App options".
+	function trayMenuEntry(key, index) {
+		const entry = root.trayEntries.find(e => e.key === key);
+		const handle = entry?.menu?.[index];
+		if (!handle || handle.isSeparator || !handle.enabled) return "no such entry";
+		handle.triggered();
 		return "ok";
 	}
 	function trayMenu(key, window, x, y) {

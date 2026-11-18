@@ -58,6 +58,18 @@ Item {
 		}
 
 		// Review M2: hovering another item closes the submenu (Bloom: mouseleave).
+		function test_disabledItemsAreDimAndInert() {
+			const m = make();
+			m.entries = [{ kind: "item", key: "a", label: "Paused", danger: false, disabled: true }, { kind: "item", key: "b", label: "Quit", danger: false }];
+			const chosen = createTemporaryObject(spyComponent, host, { target: m, signalName: "chosen" });
+			m.openAt(300, 480);
+			const paused = findChild(m, "menu-item-a");
+			verify(paused.opacity < 1);
+			mouseClick(paused, 10, 10);
+			compare(chosen.count, 0);
+			verify(m.opened);
+		}
+
 		function test_submenuClosesOnAnotherItem() {
 			const m = make();
 			m.openAt(300, 480);

@@ -40,6 +40,11 @@ TestCase {
 		compare(groups[0].windows[1].focus, 1);
 	}
 
+	function test_windowsKeepTheirProcess() {
+		const groups = Dock.groupWindows([{ class: "spotify", address: "0xa", focusHistoryID: 0, title: "", mapped: true, hidden: false, pid: 535434 }], c => c);
+		compare(groups[0].windows[0].pid, 535434);
+	}
+
 	// Bloom's activeOrder: running apps keep their place, new ones join the end.
 	function test_nextOrder() {
 		compare(Dock.nextOrder([], ["a", "b"]), ["a", "b"]);
@@ -121,6 +126,49 @@ TestCase {
 			actions: [], trays: [{ key: "one", title: "Inbox", hasMenu: true }, { key: "two", title: "Calls", hasMenu: true }] });
 		compare(menu.filter(x => x.kind === "item" && x.key.startsWith("tray:")).map(x => x.label),
 			["App tray menu: Inbox", "App tray menu: Calls"]);
+	}
+
+	// Bloom Dock.tsx: an unpinned app left with only its tray icon is a dock
+	// item with the gray dot, hidden with the background apps.
+	function test_unpinnedBackgroundAppsFollowTheSetting() {
+		const items = { pinned: [], unpinned: [{ id: "a", name: "A", icon: "", windows: [{}] },
+			{ id: "spotify", name: "Spotify", icon: "", windows: [], hasTray: true, background: true }] };
+		const on = Dock.slots(items, true, [], [], "off", [], true);
+		compare(on.map(x => [x.key, x.kind, x.backgroundDot]), [["a", "app", false], ["spotify", "app", true]]);
+		compare(Dock.slots(items, true, [], [], "off", [], false).map(x => x.key), ["a"]);
+	}
+
+	// The app's tray menu, listed in Bloom's own menu as "App options".
+	function trayEntries() {
+		return [{ text: "Show", enabled: true }, { separator: true }, { text: "Paused", enabled: false },
+			{ text: "Profiles", enabled: true, hasChildren: true }, { text: "Quit", enabled: true }];
+	}
+	function test_appOptionsListTheTrayMenu() {
+		const menu = Dock.menuFor({ kind: "app", pinned: true, pinnable: true, running: false, background: true, windows: 0,
+			actions: [], trays: [{ key: "s1", title: "Spotify", hasMenu: true, entries: trayEntries() }] });
+		const sub = menu.find(x => x.kind === "submenu" && x.key === "app-options:s1");
+		compare(sub.label, "App options");
+		compare(sub.children.map(c => [c.kind, c.key, c.label, !!c.disabled]), [
+			["item", "traymenu:s1:0", "Show", false], ["divider", undefined, undefined, false],
+			["item", "traymenu:s1:2", "Paused", true], ["item", "tray:s1", "Profiles", false],
+			["item", "traymenu:s1:4", "Quit", false]]);
+		const keys = menu.filter(x => x.kind !== "divider").map(x => x.key);
+		verify(keys.indexOf("app-options:s1") < keys.indexOf("new-window"), "with the app's actions, above a new window");
+		verify(keys.indexOf("close") < 0, "a background app has no window to close");
+	}
+
+	function test_appOptionsNameEachTrayAndFallBackToTheAppMenu() {
+		const menu = Dock.menuFor({ kind: "app", pinned: false, pinnable: true, running: true, windows: 1, actions: [],
+			trays: [{ key: "a", title: "Inbox", hasMenu: true, entries: trayEntries() }, { key: "b", title: "Calls", hasMenu: true, entries: trayEntries() }] });
+		compare(menu.filter(x => x.kind === "submenu" && x.key.startsWith("app-options:")).map(x => x.label),
+			["App options: Inbox", "App options: Calls"]);
+		const tray = Dock.menuFor({ kind: "tray", trayKey: "t", hasMenu: true, entries: trayEntries() });
+		compare(tray.map(x => [x.kind, x.key]), [["submenu", "app-options:t"]]);
+	}
+
+	function test_fillEnglishFillsPlaceholders() {
+		compare(Dock.fillEnglish("App options: {{name}}", { name: "Inbox" }), "App options: Inbox");
+		compare(Dock.fillEnglish("App options", undefined), "App options");
 	}
 
 	// framer AnimatePresence: a leaving item keeps its place until its exit ends.

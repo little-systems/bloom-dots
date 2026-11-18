@@ -13,13 +13,19 @@ ShellRoot {
 		repeat: true
 		running: true
 		onTriggered: {
-			if (!root.seen && Dock.trayEntries.length > 0) {
+			const first = Dock.trayEntries[0];
+			if (!root.seen && first && Dock.trayOwners.length > 0 && first.menu.length > 0) {
 				console.log("RESULT tray=" + Dock.trayEntries.map(x => x.id).join(","));
 				root.seen = true;
-				const key = Dock.trayEntries[0].key;
+				const key = first.key;
+				console.log("RESULT owner=" + (Dock.trayOwners[0].pid > 0 && Dock.trayOwners[0].service.indexOf("BloomTest") >= 0));
+				const target = Dock.menuTarget("tray:" + key);
+				console.log("RESULT entries=" + target.entries.map(e => e.separator ? "|" : e.text + (e.enabled ? "" : "(off)")).join(","));
+				console.log("RESULT unobserved-hidden=" + (Dock.trayOnly.length === 0));
 				console.log("RESULT activate=" + Dock.trayActivate(key, null, 0, 0));
 				console.log("RESULT secondary=" + Dock.traySecondary(key));
-			} else if (root.seen && !root.passive && Dock.trayOnly.length === 0) {
+				console.log("RESULT entry=" + Dock.trayMenuEntry(key, 0));
+			} else if (root.seen && !root.passive && (first?.status === "Passive" || first?.status === 0)) {
 				console.log("RESULT passive-hidden");
 				root.passive = true;
 				source.active = false;

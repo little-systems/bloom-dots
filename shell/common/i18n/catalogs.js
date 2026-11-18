@@ -828,7 +828,9 @@ var catalogs = {
 				"openNewWindow": "Open New Window",
 				"closeAllWindows": "Close all windows",
 				"closeWindow": "Close window",
-				"activateTrayApp": "Activate tray app"
+				"activateTrayApp": "Activate tray app",
+				"appOptions": "App options",
+				"appOptionsFor": "App options: {{name}}"
 			},
 			"launcher": {
 				"copyReply": "Copy reply",
