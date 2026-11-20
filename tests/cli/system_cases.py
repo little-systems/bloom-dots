@@ -287,6 +287,13 @@ class Phase(Facts):
         steps = system.plan(self.root, self.user, deps=True)
         self.assertEqual([(s["packages"], s["adopt"]) for s in steps if s["kind"] == "apps"], [([], ["kitty"])])
 
+    def test_mission_center_ships_as_the_default_task_manager(self):
+        # Owner: Bloom bundles Mission Center and sets it as the task manager.
+        pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
+        self.assertIn("'mission-center'", pkgbuild)
+        schema = (ROOT / "shell/services/settings.js").read_text()
+        self.assertIn('default: "io.missioncenter.MissionCenter"', schema)
+
     def test_shell_dependencies_include_fastfetch(self):
         pkgbuild = (ROOT / "packaging/bloom-shell-deps/PKGBUILD").read_text().split("optdepends")[0]
         self.assertIn("'fastfetch'", pkgbuild)

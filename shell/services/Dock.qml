@@ -370,6 +370,7 @@ Singleton {
 		else if (key === "close") root.closeWindows(id);
 		else if (key === "restart") root.restartShell();
 		else if (key === "quit") root.quitShell();
+		else if (key === "task-manager") TaskManager.open();
 		else if (key.startsWith("action:")) Apps.runAction(id, parseInt(key.slice(7)));
 	}
 

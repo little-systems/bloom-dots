@@ -145,6 +145,10 @@ var SCHEMA = {
 		type: "string", maxLength: 4096, default: "",
 		doc: "Wallpaper image or video. Empty uses the one set in ii, else Bloom's own (light for the light theme, dark otherwise)."
 	},
+	"bloom-task-manager": {
+		type: "string", maxLength: 256, default: "io.missioncenter.MissionCenter",
+		doc: "Desktop id of the task manager that the dock menu, Ctrl+Shift+Esc and the Command Center open. Mission Center ships with Bloom; if the chosen app isn't installed, the first installed app in the Monitor category opens."
+	},
 	"bloom-wallpaper-dir": {
 		type: "string", maxLength: 4096, default: "",
 		doc: "Folder the wallpaper picker lists. Empty means ~/Pictures/Wallpapers."

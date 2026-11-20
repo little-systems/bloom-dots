@@ -1185,8 +1185,13 @@ var catalogs = {
 					"textEditor": "Text editor",
 					"imageViewer": "Image viewer",
 					"videoPlayer": "Video player",
-					"musicPlayer": "Music player"
+					"musicPlayer": "Music player",
+					"taskManager": "Task manager"
 				}
+			},
+			"taskManager": {
+				"noneTitle": "No task manager installed",
+				"noneBody": "Install Mission Center, or choose a task manager in Settings › Apps."
 			}
 		}
 	},

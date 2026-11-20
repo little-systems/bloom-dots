@@ -55,6 +55,10 @@ Item {
 		property var layouts: ["us", "de"]
 		property var defaultChoices: ({ browser: [{ value: "firefox.desktop", label: "Firefox" }] })
 		property var installed: [{ id: "a", name: "Alpha" }, { id: "b", name: "Beta" }]
+		property var taskEntries: [
+			{ id: "io.missioncenter.MissionCenter", name: "Mission Center", categories: ["System", "Monitor"], noDisplay: false },
+			{ id: "htop", name: "Htop", categories: ["System", "Monitor"], noDisplay: false },
+			{ id: "a", name: "Alpha", categories: ["Utility"], noDisplay: false }]
 		function setStreamVolume(i, v) { calls.push(["stream", i, v]); }
 		function setStartup(i, o) { calls.push(["startup", i, o]); }
 		function setVpn(n, o) { calls.push(["vpn", n, o]); }
@@ -931,6 +935,21 @@ Item {
 			click(v, "default:browser");
 			click(v, "option:firefox.desktop");
 			compare(fakeSys.calls[0], ["default", "browser", "firefox.desktop"]);
+		}
+
+		// Owner: a default task manager beside the other default apps; it is
+		// Bloom's own setting (no MIME type), Mission Center unless changed.
+		function test_defaultTaskManager() {
+			const v = make("apps");
+			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-task-manager": "io.missioncenter.MissionCenter" });
+			const row = part(v, "row:Task manager");
+			compare(findChild(row, "desc").text, "Mission Center");
+			click(v, "default:taskManager");
+			part(v, "option:io.missioncenter.MissionCenter");
+			verify(findChild(v, "option:a") === null, "only task managers are offered");
+			click(v, "option:htop");
+			compare(fakeStore.sets[fakeStore.sets.length - 1], ["bloom-task-manager", "htop"]);
+			compare(findChild(row, "desc").text, "Htop");
 		}
 
 		// Owner: Settings opens fast. A system page builds only when shown, so

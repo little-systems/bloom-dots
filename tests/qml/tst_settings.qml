@@ -55,6 +55,13 @@ TestCase {
 		verify(!Settings.validateValue({ type: "bool" }, "yes").ok);
 	}
 
+	// Owner: Mission Center is the default task manager.
+	function test_taskManagerDefault() {
+		compare(Settings.defaults()["bloom-task-manager"], "io.missioncenter.MissionCenter");
+		compare(Settings.validateOne("bloom-task-manager", "htop"), { ok: true, value: "htop" });
+		compare(Settings.validateOne("bloom-task-manager", ""), { ok: true, value: "" });
+	}
+
 	function test_numberRange() {
 		// Owner: surfaces never go below 60% opacity.
 		verify(!Settings.validateOne("bloom-theme-opacity", 0).ok);

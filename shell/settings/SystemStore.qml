@@ -51,6 +51,7 @@ Scope {
 	property var layouts: []
 	property var defaultChoices: ({})
 	readonly property var installed: Apps.all()
+	readonly property var taskEntries: TaskManager.entries
 	property string aiCheck: ""
 	property string _wantSink: ""
 	property string _wantSource: ""

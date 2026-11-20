@@ -17,7 +17,8 @@ depends=('quickshell' 'hyprland' 'python' 'python-gobject' 'jq' 'qt6-svg' 'qt6-i
          'wireplumber' 'pipewire-pulse' 'libpulse' 'networkmanager' 'bluez' 'bluez-utils' 'libnotify' 'xdg-utils'
          'upower' 'power-profiles-daemon' 'polkit' 'adwaita-icon-theme'
          'xdg-desktop-portal-hyprland' 'xdg-desktop-portal-gtk' 'gnome-keyring' 'libsecret'
-         'plasma-integration' 'archlinux-xdg-menu' 'xdg-desktop-portal-kde' 'ttf-jetbrains-mono-nerd' 'noto-fonts-emoji' 'fastfetch')
+         'plasma-integration' 'archlinux-xdg-menu' 'xdg-desktop-portal-kde' 'ttf-jetbrains-mono-nerd' 'noto-fonts-emoji' 'fastfetch'
+         'mission-center')
 optdepends=('mpvpaper: video wallpapers' 'satty: screenshot annotation'
             'swappy: screenshot annotation alternative' 'songrec: music recognition'
             'translate-shell: translation' 'pacman-contrib: pending package updates'

@@ -31,6 +31,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-temp-unit` | enum | `"celsius"` | `celsius`, `fahrenheit` | Temperature unit for the weather widget. |
 | `bloom-time-format-24h` | bool | `false` | `true`, `false` | 24-hour clock in the notch; otherwise 12-hour with AM/PM. |
 | `bloom-wallpaper` | string | `""` | text, up to 4096 characters | Wallpaper image or video. Empty uses the one set in ii, else Bloom's own (light for the light theme, dark otherwise). |
+| `bloom-task-manager` | string | `"io.missioncenter.MissionCenter"` | text, up to 256 characters | Desktop id of the task manager that the dock menu, Ctrl+Shift+Esc and the Command Center open. Mission Center ships with Bloom; if the chosen app isn't installed, the first installed app in the Monitor category opens. |
 | `bloom-wallpaper-dir` | string | `""` | text, up to 4096 characters | Folder the wallpaper picker lists. Empty means ~/Pictures/Wallpapers. |
 | `bloom-lock-wallpaper` | string | `""` | text, up to 4096 characters | Image behind the lock screen. Empty uses the desktop wallpaper. |
 | `bloom-lock-media-enabled` | bool | `true` | `true`, `false` | Show a compact transport card inside the secure lock screen when media is playing. After pausing there it remains available to resume. No app-launch action is offered. |

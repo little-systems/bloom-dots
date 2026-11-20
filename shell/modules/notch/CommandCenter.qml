@@ -49,6 +49,7 @@ CommandCenterView {
 	onPowerRequested: Session.show()
 	onSettingsRequested: Settings.openApp()
 	onRestartRequested: Dock.restartShell()
+	onTaskManagerRequested: TaskManager.open()
 	onVolumeChosen: value => Audio.setVolume(value)
 	onBrightnessChosen: percent => Brightness.setPercent(percent)
 }
