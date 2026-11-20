@@ -68,6 +68,7 @@ PanelWindow {
 			NumberAnimation { duration: win.motion.moveMs; easing.type: Easing.BezierSpline; easing.bezierCurve: win.motion.moveEase.concat([1, 1]) }
 		}
 		onRevealChanged: if (win.targetScreen) Onboarding.reveal = card.reveal
+		onPageChanged: if (win.targetScreen) Onboarding.pageShown(card.page.kind)
 		onCloseRequested: Onboarding.close()
 	}
 

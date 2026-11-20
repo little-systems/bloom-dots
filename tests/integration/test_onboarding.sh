@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # The first-run guide through the real shell on headless sway: a pending
-# install opens it; the virtual pointer clicks through all nine pages; the
-# Island shows during its introduction; finishing marks it completed and a
-# restart doesn't reopen it.
+# install opens it; the virtual pointer clicks through all ten pages; the
+# Island shows during its introduction; the notifications page posts one real
+# sample; finishing marks it completed and a restart doesn't reopen it.
 set -euo pipefail
 if [[ -z "${BLOOM_IN_DBUS:-}" ]]; then
 	# A private bus that can't auto-start anything, and no route to the host
@@ -20,7 +20,7 @@ fi
 bloom_env
 start_sway
 mkdir -p "$XDG_CONFIG_HOME/bloom" "$XDG_STATE_HOME/bloom"
-printf '{"bloom-enabled-modules":["notch"],"bloom-notch-mode":"peek","bloom-weather-enabled":false,"bloom-reduce-motion":true,"bloom-scale":1}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
+printf '{"bloom-enabled-modules":["notch","notifications"],"bloom-notch-mode":"peek","bloom-weather-enabled":false,"bloom-reduce-motion":true,"bloom-scale":1}\n' > "$XDG_CONFIG_HOME/bloom/settings.json"
 printf '{"completed": false}\n' > "$XDG_STATE_HOME/bloom/onboarding.json"
 start_shell
 
@@ -30,18 +30,25 @@ wait_for "the guide to open on a pending install" opened true
 pass "a pending install opens the guide"
 
 # The primary button sits 24 px from the card's right edge and centred in the
-# 74 px footer; the 500x400 card is centred, or 96 px from the Island/Dock edge.
+# 74 px footer; the 500x400 card is centred, or 96 px from the Island/Dock edge,
+# or 96 px from the top and left of the notification column on its page.
 click_primary() {
-	local top
-	case "$1" in island) top=96 ;; dock) top=$((1080 - 400 - 96)) ;; *) top=$(((1080 - 400) / 2)) ;; esac
-	python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 $((710 + 500 - 24 - 50)) $((top + 400 - 37)) click 1
+	local top left=710
+	case "$1" in island) top=96 ;; dock) top=$((1080 - 400 - 96)) ;; notifications) top=96 left=$((1920 - 396 - 24 - 500)) ;; *) top=$(((1080 - 400) / 2)) ;; esac
+	python3 -I "$ROOT/tests/integration/vpointer.py" 1920 1080 $((left + 500 - 24 - 50)) $((top + 400 - 37)) click 1
 	sleep 0.3
 }
 click_primary center
 wait_for "the Island to show during its introduction" reveal_is island
 pass "Meet the Island reveals the Island in Peek mode"
-for anchor in island island dock dock center center center; do click_primary "$anchor"; done
+samples() { ipc notifications state | jq '[.history[] | select(.app == "Bloom" and .summary == "Notifications land here")] | length'; }
+for anchor in island island dock dock center; do click_primary "$anchor"; done
+sampled() { [[ "$(samples)" == 1 ]]; }
+wait_for "the notifications page to post its sample" sampled
+pass "the notifications page posts one real sample notification"
+for anchor in notifications center center; do click_primary "$anchor"; done
 reveal_is "" || fail "the reveal clears after the introductions"
+assert_eq "$(samples)" "1" "the sample is posted once"
 click_primary center
 wait_for "the guide to close after Let's bloom" opened false
 assert_eq "$(jq -c . "$XDG_STATE_HOME/bloom/onboarding.json")" '{"completed":true}' "finishing records completion"

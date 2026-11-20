@@ -1,6 +1,8 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Io
+import "../common/i18n"
 import "../modules/onboarding/onboarding.js" as Logic
 
 // The first-run guide (docs/specs round 3, C): a fresh install writes
@@ -16,7 +18,22 @@ Singleton {
 	readonly property bool pending: state.loaded && Logic.pending(JSON.stringify(state.value))
 	property bool _offered: false
 
-	function open() { root.opened = true; }
+	function open() {
+		root._sampleSent = false;
+		root.opened = true;
+	}
+
+	// Owner: the notifications page posts one real notification, so the corner
+	// has something to show; once per tour, however often the page is shown.
+	property bool _sampleSent: false
+	function pageShown(kind) {
+		if (kind !== "notifications" || root._sampleSent) return;
+		root._sampleSent = true;
+		sample.command = ["timeout", "-k", "1s", "5s", "notify-send", "-a", "Bloom",
+			I18n.t("linux.onboarding.sampleTitle"), I18n.t("linux.onboarding.sampleBody")];
+		sample.running = true;
+	}
+	Process { id: sample }
 	function close() {
 		root.opened = false;
 		root.reveal = "";
