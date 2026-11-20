@@ -10,7 +10,7 @@ Settings live in `~/.config/bloom/settings.json` (`$XDG_CONFIG_HOME/bloom/settin
 | `bloom-animation-style` | enum | `"macos"` | `macos`, `bloom` | Animation style (config only). macos uses restrained fade, scale and slide entrances with springs that settle without bounce throughout the shell. bloom restores the previous size morphs and spring bounce. Reduce Motion skips movement. |
 | `bloom-theme-mode` | enum | `"dark"` | `dark`, `light`, `custom`, `adaptive` | Theme mode. Adaptive follows the wallpaper. |
 | `bloom-theme-color` | color | `"#007aff"` | `#rgb` or `#rrggbb` | Accent colour for the custom theme (#rgb or #rrggbb). |
-| `bloom-theme-opacity` | number | `0.8` | 0.1 to 1 | Opacity of Bloom surfaces, including open panels. Application opacity is unchanged. |
+| `bloom-theme-opacity` | number | `0.8` | 0.6 to 1 | Opacity of Bloom surfaces, including open panels, from 0.6 to 1. Lower values fall back to the default. Application opacity is unchanged. |
 | `bloom-theme-saturation` | number | `0.5` | 0 to 1 | Background saturation for the custom and adaptive themes. |
 | `bloom-theme-brightness` | number | `0.15` | 0 to 1 | Background lightness for the custom and adaptive themes. Above 0.55 the text turns dark. |
 | `bloom-enabled-modules` | list | `[]` | `notch`, `dock`, `osd`, `notifications`, `launcher`, `overview`, `session`, `lock`, `polkit`, `tray`, `regiontools`, `wallpaper`, `cheatsheet`, `osk`, `overlay` | Bloom surfaces to run. Anything not listed is left to another shell (e.g. illogical-impulse). |

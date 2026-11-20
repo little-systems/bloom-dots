@@ -877,6 +877,14 @@ Item {
 			tryVerify(() => now.color.a > 0, 500, "moving brings it back");
 		}
 
+		// Owner: the opacity slider runs from 60% to 100%.
+		function test_opacitySliderStartsAtSixty() {
+			const v = make("appearance");
+			const slider = part(v, "opacity");
+			compare(slider.from, 0.6);
+			compare(slider.to, 1);
+		}
+
 		function test_searchWithNothing() {
 			const v = make();
 			part(v, "settingsSearch").text = "zzzz";

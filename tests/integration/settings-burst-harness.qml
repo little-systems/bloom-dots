@@ -7,7 +7,7 @@ ShellRoot {
     Timer {
         interval: 300; running: true
         onTriggered: {
-            for (const value of [0.5, 0.6, 0.7, 0.8, 0.9]) {
+            for (const value of [0.6, 0.65, 0.7, 0.8, 0.9]) {
                 Settings.set("bloom-theme-opacity", value, error => {
                     if (error !== "") { failed = true; console.log("RESULT burst error=" + error); }
                     completed++;
