@@ -28,9 +28,10 @@ Singleton {
 
 	signal settingChanged(string key)
 
-	// A separate process keeps Settings failures isolated from the shell.
+	// A separate process keeps Settings failures isolated from the shell. It
+	// is usually preloaded hidden, so this shows it; else it starts one.
 	function openApp() {
-		Quickshell.execDetached(["qs", "--no-duplicate", "-p", Quickshell.shellPath("settings-app.qml")]);
+		Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/open-settings.sh"), Quickshell.shellPath("settings-app.qml")]);
 	}
 
 	function get(key) {

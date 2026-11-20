@@ -95,6 +95,14 @@ Rectangle {
 		root._loadTab();
 	}
 
+	// A preloaded Settings is reused: each open starts fresh on `tabId`.
+	function reset(tabId) {
+		searchField.text = "";
+		confirm.visible = false;
+		root.tab = tabId;
+		page.contentY = 0;
+	}
+
 	function _open(hit) {
 		root.tab = hit.tab;
 		searchField.text = "";

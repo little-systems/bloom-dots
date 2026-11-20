@@ -33,6 +33,16 @@ if "$BLOOM" ipc shell >/dev/null 2>&1; then fail "ipc without a function should 
 grep -q "dev install" <<<"$("$BLOOM" help)" || fail "help lists commands"
 pass "usage errors exit non-zero; help lists commands"
 
+# settings shows the preloaded Settings, or starts one when none answers
+: >"$STUB_LOG"
+STUB_QS_OUT=ok "$BLOOM" settings
+grep -q '^qs ipc -p .*/shell/settings-app.qml call settingsapp open display$' "$STUB_LOG" || fail "settings asks a preloaded Settings to open"
+grep -q -- '--no-duplicate' "$STUB_LOG" && fail "settings started a second Settings"
+: >"$STUB_LOG"
+STUB_QS_OUT='' "$BLOOM" settings
+grep -q -- '^qs --no-duplicate -p .*/shell/settings-app.qml$' "$STUB_LOG" || fail "settings starts Settings when none is preloaded"
+pass "settings opens the preloaded Settings, or starts one"
+
 # ipc forwards and keeps qs's exit code (review focus 5)
 "$BLOOM" ipc shell ping
 grep -qx 'qs -c bloom ipc call shell ping' "$STUB_LOG" || fail "ipc forwarding"

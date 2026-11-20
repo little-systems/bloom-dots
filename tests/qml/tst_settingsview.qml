@@ -995,6 +995,24 @@ Item {
 			fired("linkRequested", () => tab().linkRequested("https://example.com"), a => compare(String(a[0]), "https://example.com"));
 		}
 
+		// A preloaded Settings is reused: each open starts fresh on its page.
+		function test_resetOpensAPageFresh() {
+			const v = make("general");
+			part(v, "settingsSearch").text = "gaps";
+			part(v, "confirm").visible = true;
+			v.tab = "about";
+			part(v, "page").contentY = 100;
+			v.reset("sound");
+			compare(v.tab, "sound");
+			compare(part(v, "settingsSearch").text, "");
+			verify(!part(v, "confirm").visible);
+			compare(part(v, "page").contentY, 0);
+			v.tab = "general";
+			part(v, "page").contentY = 100;
+			v.reset("general");
+			compare(part(v, "page").contentY, 0, "the same page also starts at the top");
+		}
+
 		function test_installedAppsFilter() {
 			const v = make("apps");
 			reveal(v, "appSearch");
