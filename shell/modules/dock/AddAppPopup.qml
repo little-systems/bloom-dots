@@ -224,7 +224,7 @@ Item {
 							delegate: Rectangle {
 								id: row
 								required property var modelData
-								readonly property int index: root.flat.indexOf(row.modelData)
+								readonly property int index: root.flat.findIndex(x => x.id === row.modelData.id)
 								readonly property bool selected: row.index === root.selectedIndex
 								readonly property bool isPinned: root.pinned.indexOf(row.modelData.id) >= 0
 								objectName: "addapp-row-" + row.modelData.id

@@ -74,6 +74,13 @@ Item {
 			verify(closed.count >= 1);
 		}
 
+		function test_rowsKnowTheirPlace() {
+			const p = make();
+			compare(findChild(p, "addapp-row-chrome").index, 0);
+			compare(findChild(p, "addapp-row-kitty").index, 2);
+			verify(findChild(p, "addapp-row-chrome").selected);
+		}
+
 		function test_escapeCloses() {
 			const p = make();
 			keyClick(Qt.Key_Escape);
