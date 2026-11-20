@@ -924,6 +924,18 @@ Item {
 			compare(fakeSys.calls[0], ["default", "browser", "firefox.desktop"]);
 		}
 
+		// Owner: Settings opens fast. A system page builds only when shown, so
+		// the hidden Apps list doesn't rebuild as desktop entries load.
+		function test_onlyTheShownSystemPageIsBuilt() {
+			const v = make("display");
+			part(v, "page:display");
+			waitForRendering(host);
+			compare(findChild(v, "app:a"), null, "the Apps page waits until it is opened");
+			compare(findChild(v, "page:sound"), null);
+			v.tab = "apps";
+			part(v, "app:a");
+		}
+
 		function test_installedAppsFilter() {
 			const v = make("apps");
 			reveal(v, "appSearch");
