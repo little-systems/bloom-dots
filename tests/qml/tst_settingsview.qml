@@ -455,6 +455,15 @@ Item {
 			compare(requested.count, 1);
 		}
 
+		// Opening Integrations asks the backend for the agents' status.
+		function test_integrationsAskForStatusWhenOpened() {
+			const v = make("general");
+			v.agentIntegrations = fakeAgents;
+			fakeAgents.requests = [];
+			v.tab = "integrations";
+			compare(fakeAgents.requests, [["status", "", ""]]);
+		}
+
 		// Bloom's AgentIntegrations: "Setup help" opens a two-step verify guide.
 		function test_integrationSetupGuide() {
 			const v = make("integrations");
@@ -934,6 +943,56 @@ Item {
 			compare(findChild(v, "page:sound"), null);
 			v.tab = "apps";
 			part(v, "app:a");
+		}
+
+		// Each tab gets the view's live values and hands its requests up.
+		function test_tabsForwardTheirValuesAndRequests() {
+			const v = make("general");
+			const tab = () => part(v, "tabLoader").item;
+			const fired = (name, call, check) => {
+				const s = spy(v, name);
+				call();
+				compare(s.count, 1, name);
+				if (check) check(s.signalArguments[0]);
+			};
+			verify(tab().popup !== null);
+			compare(tab().theme, v.theme);
+			compare(tab().store, v.store);
+			const was = v.autostart;
+			v.autostart = !was;
+			compare(tab().autostart, !was, "autostart stays bound");
+			v.autostart = was;
+			fired("autostartToggled", () => tab().autostartToggled(true), a => compare(a[0], true));
+			fired("restartRequested", () => tab().restartRequested());
+			fired("quitRequested", () => tab().quitRequested());
+			fired("setupRequested", () => tab().setupRequested());
+			tab().resetRequested();
+			verify(part(v, "confirm").visible, "reset asks first");
+			part(v, "confirm").visible = false;
+
+			v.tab = "appearance";
+			fired("colorRequested", () => tab().colorRequested());
+
+			v.tab = "notch";
+			v.cityResults = [{ name: "Pune", country: "India" }];
+			compare(tab().cityResults.length, 1);
+			fired("cityQueried", () => tab().cityQueried("Pu"), a => compare(a[0], "Pu"));
+
+			v.tab = "dock";
+			v.drives = [{ id: "sda1", label: "Data" }];
+			compare(tab().drives.length, 1);
+			fired("addFolderRequested", () => tab().addFolderRequested());
+
+			v.tab = "integrations";
+			compare(tab().backend, v.agentIntegrations);
+
+			v.tab = "about";
+			v.version = "9.9.9";
+			compare(tab().version, "9.9.9");
+			compare(tab().exportLabel, v.exportLabel);
+			fired("exportRequested", () => tab().exportRequested());
+			fired("importRequested", () => tab().importRequested());
+			fired("linkRequested", () => tab().linkRequested("https://example.com"), a => compare(String(a[0]), "https://example.com"));
 		}
 
 		function test_installedAppsFilter() {
