@@ -60,7 +60,7 @@ Column {
 		SRow {
 			theme: root.theme; icon: "contrast"; label: I18n.t("settings.appearance.opacity"); divider: root._advanced
 			desc: I18n.t("linux.settings.backgroundOpacity", { percent: Math.round(root.store.values["bloom-theme-opacity"] * 100) })
-			SSlider { accessibleName: I18n.t("settings.appearance.opacity"); objectName: "opacity"; theme: root.theme; from: 0.1; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
+			SSlider { accessibleName: I18n.t("settings.appearance.opacity"); objectName: "opacity"; theme: root.theme; from: 0.6; to: 1; step: 0.05; value: root.store.values["bloom-theme-opacity"]; onMoved: value => root.store.set("bloom-theme-opacity", value) }
 		}
 		SRow {
 			visible: root._advanced

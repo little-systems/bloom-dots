@@ -56,8 +56,10 @@ TestCase {
 	}
 
 	function test_numberRange() {
-		verify(!Settings.validateOne("bloom-theme-opacity", 0).ok, "Bloom's minimum opacity is 0.1");
-		verify(Settings.validateOne("bloom-theme-opacity", 0.1).ok);
+		// Owner: surfaces never go below 60% opacity.
+		verify(!Settings.validateOne("bloom-theme-opacity", 0).ok);
+		verify(!Settings.validateOne("bloom-theme-opacity", 0.55).ok, "the minimum opacity is 0.6");
+		verify(Settings.validateOne("bloom-theme-opacity", 0.6).ok);
 		verify(Settings.validateOne("bloom-theme-opacity", 1).ok);
 		verify(!Settings.validateOne("bloom-theme-opacity", 1.5).ok);
 		verify(!Settings.validateOne("bloom-theme-opacity", NaN).ok);

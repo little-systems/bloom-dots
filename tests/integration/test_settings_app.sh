@@ -38,6 +38,9 @@ SWAY_SOCK="$(ls "$XDG_RUNTIME_DIR"/sway-ipc.* | head -1)"
 win() { SWAYSOCK="$SWAY_SOCK" swaymsg -t get_tree | jq -e '[.. | objects | select(.name? == "Bloom Settings")] | length == 1' >/dev/null; }
 wait_for "the window" win
 pass "the window maps"
+store_started() { call state | jq -e '.storeStarted == true' >/dev/null; }
+wait_for "the system queries to start once the window is up" store_started
+pass "the system store starts after the first frame"
 for page in sound power storage input hyprland apps time updates network bluetooth; do
 	assert_eq "$(call tab "$page")" "ok" "open $page"
 done

@@ -100,7 +100,35 @@ ShellRoot {
 		Settings.setMany(changes, error => { app.saveError = error; app.importState = error === "" ? "success" : "failed"; });
 	}
 
-	SystemStore { id: store }
+	// Owner: Settings is preloaded at login (scripts/preload-settings.sh), so
+	// opening it only shows a window that is already built. Closing hides it.
+	readonly property bool preloaded: Quickshell.env("BLOOM_SETTINGS_HIDDEN") === "1"
+	readonly property string instance: Math.random().toString(36).slice(2)
+	property bool _refreshOnFrame: false
+	function show(page) {
+		view.reset(page || "display");
+		appEntrance.jump(Render.macMotion ? 0 : 1);
+		app._refreshOnFrame = store.started;
+		win.visible = true;
+	}
+	function hide() { win.visible = false; }
+
+	SystemStore { id: store; autoStart: false }
+	// The store's queries fork a dozen helpers; start them once the window
+	// has its first frame, so they don't hold it back. A preloaded Settings
+	// has no window to hold back, and re-reads them each time it is shown.
+	Component.onCompleted: if (app.preloaded) store.start()
+	Connections {
+		target: win.contentItem.Window.window
+		enabled: !store.started || app._refreshOnFrame
+		function onFrameSwapped() {
+			if (!store.started) store.start();
+			else if (app._refreshOnFrame) {
+				app._refreshOnFrame = false;
+				store.refresh();
+			}
+		}
+	}
 	// Settings.set reports a refused write; dropping that would show a change
 	// that never happened.
 	property string saveError: ""
@@ -125,7 +153,8 @@ ShellRoot {
 		implicitHeight: win.fixedHeight
 		minimumSize: Qt.size(win.fixedWidth, win.fixedHeight)
 		maximumSize: minimumSize
-		onClosed: Qt.quit()
+		visible: !app.preloaded
+		onClosed: app.hide()
 
 		SettingsView {
 			id: view
@@ -148,7 +177,7 @@ ShellRoot {
 			version: app.version
 			exportLabel: app.exportLabel
 			importLabel: app.importLabel
-			onCloseRequested: Qt.quit()
+			onCloseRequested: app.hide()
 			onDragRequested: win.startSystemMove()
 			onAutostartToggled: enabled => store.setAutostart(enabled)
 			onResetConfirmed: app.reset()
@@ -257,8 +286,11 @@ ShellRoot {
 		function state(): string {
 			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version,
 				width: win.width, height: win.height, fixedWidth: win.fixedWidth, fixedHeight: win.fixedHeight,
-				distribution: store.osInfo, distroLogo: store.distroLogo, architecture: store.architecture, kernel: store.kernel, exportStatus: app.exportLabel, importStatus: app.importLabel });
+				distribution: store.osInfo, distroLogo: store.distroLogo, architecture: store.architecture, kernel: store.kernel, storeStarted: store.started, visible: win.visible, instance: app.instance, exportStatus: app.exportLabel, importStatus: app.importLabel });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
+		function open(page: string): string { app.show(page); return "ok"; }
+		function close(): string { app.hide(); return "ok"; }
+		function quit(): string { Qt.quit(); return "ok"; }
 	}
 }

@@ -304,10 +304,18 @@ Scope {
 		defaultsProc.running = true;
 	}
 
-	Component.onCompleted: {
+	// Settings turns this off and calls start() once its window is up: these
+	// queries fork a dozen helpers, and doing that before the first frame
+	// held the window back by about a third of a second.
+	property bool autoStart: true
+	property bool started: false
+	function start() {
+		if (root.started) return;
+		root.started = true;
 		root.refresh();
 		stateProc.running = true;
 	}
+	Component.onCompleted: if (root.autoStart) root.start()
 
 	readonly property string _query: Quickshell.shellPath("scripts/settings-query.sh")
 	Process {

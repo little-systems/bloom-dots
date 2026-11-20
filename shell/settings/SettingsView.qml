@@ -92,11 +92,73 @@ Rectangle {
 	onTabChanged: {
 		page.contentY = 0;
 		pageEntrance.jump(Render.macMotion && !Render.reduceMotion ? 0 : 1);
+		root._loadTab();
+	}
+
+	// A preloaded Settings is reused: each open starts fresh on `tabId`.
+	function reset(tabId) {
+		searchField.text = "";
+		confirm.visible = false;
+		root.tab = tabId;
+		page.contentY = 0;
 	}
 
 	function _open(hit) {
 		root.tab = hit.tab;
 		searchField.text = "";
+	}
+	readonly property var _tabFiles: ({ general: "GeneralTab.qml", appearance: "AppearanceTab.qml", notch: "NotchTab.qml", dock: "DockTab.qml",
+		overlays: "OverlaysTab.qml", integrations: "IntegrationsTab.qml", about: "AboutTab.qml" })
+	// What each tab's inline declaration used to bind: given at creation (a tab
+	// may use them in onCompleted, Integrations requires some) and kept bound.
+	function _tabValues(tab) {
+		const shared = { theme: () => root.theme, store: () => root.store, popup: () => selectPopup };
+		return ({
+			general: Object.assign({}, shared, { autostart: () => root.autostart }),
+			appearance: shared,
+			notch: Object.assign({}, shared, { cityResults: () => root.cityResults }),
+			dock: Object.assign({}, shared, { accent: () => root.theme.accent ?? "#007aff", drives: () => root.drives }),
+			overlays: { theme: shared.theme, store: shared.store },
+			integrations: Object.assign({}, shared, { backend: () => root.agentIntegrations }),
+			about: {
+				theme: shared.theme, version: () => root.version, osInfo: () => root.sys?.osInfo ?? ({}), distroLogo: () => root.sys?.distroLogo ?? "",
+				kernel: () => root.sys?.kernel ?? "", architecture: () => root.sys?.architecture ?? "", hostname: () => root.sys?.hostname ?? "",
+				cpu: () => root.sys?.cpu ?? "", memory: () => root.sys?.memory ?? "", exportLabel: () => root.exportLabel, importLabel: () => root.importLabel
+			}
+		})[tab] ?? {};
+	}
+	function _loadTab() {
+		const file = root._tabFiles[root.tab];
+		if (!file) {
+			tabLoader.source = "";
+			return;
+		}
+		const values = root._tabValues(root.tab);
+		const initial = {};
+		for (const name in values) initial[name] = values[name]();
+		tabLoader.setSource(file, initial);
+	}
+	Component.onCompleted: root._loadTab()
+	function _wireTab(tab, t) {
+		const values = root._tabValues(tab);
+		for (const name in values) t[name] = Qt.binding(values[name]);
+		if (tab === "general") {
+			t.autostartToggled.connect(value => root.autostartToggled(value));
+			t.resetRequested.connect(() => confirm.visible = true);
+			t.restartRequested.connect(() => root.restartRequested());
+			t.quitRequested.connect(() => root.quitRequested());
+			t.setupRequested.connect(() => root.setupRequested());
+		} else if (tab === "appearance") {
+			t.colorRequested.connect(() => root.colorRequested());
+		} else if (tab === "notch") {
+			t.cityQueried.connect(text => root.cityQueried(text));
+		} else if (tab === "dock") {
+			t.addFolderRequested.connect(() => root.addFolderRequested());
+		} else if (tab === "about") {
+			t.exportRequested.connect(() => root.exportRequested());
+			t.importRequested.connect(() => root.importRequested());
+			t.linkRequested.connect(link => root.linkRequested(link));
+		}
 	}
 	function _step(delta) {
 		const at = root._tabs.findIndex(t => t.id === root.tab);
@@ -499,55 +561,19 @@ Rectangle {
 					active: (root.tab === "network" || root.tab === "bluetooth") && root.net !== undefined
 					sourceComponent: ConnectionPages { theme: root.theme; net: root.net; bt: root.bt; sys: root.sys; accent: root.theme.accent ?? "#007aff"; page: root.tab }
 				}
+				// Tabs load from their files when opened, so opening Settings
+				// doesn't compile every tab first.
 				Loader {
+					id: tabLoader
+					objectName: "tabLoader"
 					width: parent.width
 					height: item ? item.implicitHeight : 0
-					sourceComponent: ({ general: generalTab, appearance: appearanceTab, notch: notchTab, dock: dockTab, overlays: overlaysTab, integrations: integrationsTab, about: aboutTab })[root.tab] ?? null
+					onLoaded: root._wireTab(root.tab, item)
 				}
 			}
 		}
 	}
 
-	Component {
-		id: generalTab
-		GeneralTab {
-			theme: root.theme; store: root.store; popup: selectPopup; autostart: root.autostart
-			onAutostartToggled: value => root.autostartToggled(value)
-			onResetRequested: confirm.visible = true
-			onRestartRequested: root.restartRequested()
-			onQuitRequested: root.quitRequested()
-			onSetupRequested: root.setupRequested()
-		}
-	}
-	Component {
-		id: appearanceTab
-		AppearanceTab { theme: root.theme; store: root.store; popup: selectPopup; onColorRequested: root.colorRequested() }
-	}
-	Component {
-		id: notchTab
-		NotchTab { theme: root.theme; store: root.store; popup: selectPopup; cityResults: root.cityResults; onCityQueried: text => root.cityQueried(text) }
-	}
-	Component {
-		id: dockTab
-		DockTab { theme: root.theme; accent: root.theme.accent ?? "#007aff"; store: root.store; popup: selectPopup; drives: root.drives; onAddFolderRequested: root.addFolderRequested() }
-	}
-	Component {
-		id: overlaysTab
-		OverlaysTab { theme: root.theme; store: root.store }
-	}
-	Component {
-		id: integrationsTab
-		IntegrationsTab { theme: root.theme; store: root.store; popup: selectPopup; backend: root.agentIntegrations }
-	}
-	Component {
-		id: aboutTab
-		AboutTab {
-			theme: root.theme; version: root.version; osInfo: root.sys?.osInfo ?? ({}); distroLogo: root.sys?.distroLogo ?? ""; kernel: root.sys?.kernel ?? ""; architecture: root.sys?.architecture ?? ""; hostname: root.sys?.hostname ?? ""; cpu: root.sys?.cpu ?? ""; memory: root.sys?.memory ?? ""; exportLabel: root.exportLabel; importLabel: root.importLabel
-			onExportRequested: root.exportRequested()
-			onLinkRequested: link => root.linkRequested(link)
-			onImportRequested: root.importRequested()
-		}
-	}
 
 	// Bloom asks through a native dialog; here it's a card over the window.
 	Rectangle {

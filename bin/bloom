@@ -196,7 +196,7 @@ main() {
 	ipc) cmd_ipc "$@" ;;
 	doctor) cmd_doctor "$@" ;;
 	support) cmd_doctor --support "$@" ;;
-	settings) exec qs --no-duplicate -p "$BLOOM_ROOT/shell/settings-app.qml" ;;
+	settings) exec sh "$BLOOM_ROOT/shell/scripts/open-settings.sh" "$BLOOM_ROOT/shell/settings-app.qml" ;;
 	install | update | uninstall | recover | first-login) need_python; exec python3 "$BLOOM_ROOT/tools/bloom-lifecycle.py" "$cmd" "$@" ;;
 	agents) exec python3 -I "$BLOOM_ROOT/tools/bloom_agents.py" "$@" ;;
 	# Run by agents (Claude Code, Codex) for every hooked event: never fails,
