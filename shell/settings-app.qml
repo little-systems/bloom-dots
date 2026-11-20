@@ -100,7 +100,14 @@ ShellRoot {
 		Settings.setMany(changes, error => { app.saveError = error; app.importState = error === "" ? "success" : "failed"; });
 	}
 
-	SystemStore { id: store }
+	SystemStore { id: store; autoStart: false }
+	// The store's queries fork a dozen helpers; start them once the window
+	// has its first frame, so they don't hold it back.
+	Connections {
+		target: win.contentItem.Window.window
+		enabled: !store.started
+		function onFrameSwapped() { store.start(); }
+	}
 	// Settings.set reports a refused write; dropping that would show a change
 	// that never happened.
 	property string saveError: ""
@@ -257,7 +264,7 @@ ShellRoot {
 		function state(): string {
 			return JSON.stringify({ tab: view.tab, autostart: store.autostart, version: app.version,
 				width: win.width, height: win.height, fixedWidth: win.fixedWidth, fixedHeight: win.fixedHeight,
-				distribution: store.osInfo, distroLogo: store.distroLogo, architecture: store.architecture, kernel: store.kernel, exportStatus: app.exportLabel, importStatus: app.importLabel });
+				distribution: store.osInfo, distroLogo: store.distroLogo, architecture: store.architecture, kernel: store.kernel, storeStarted: store.started, exportStatus: app.exportLabel, importStatus: app.importLabel });
 		}
 		function tab(id: string): string { view.tab = id; return "ok"; }
 	}
