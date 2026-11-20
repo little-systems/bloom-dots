@@ -30,10 +30,10 @@ var SCHEMA = {
 	},
 	"bloom-theme-opacity": {
 		type: "number",
-		min: 0.1,
+		min: 0.6,
 		max: 1,
 		default: 0.8,
-		doc: "Opacity of Bloom surfaces, including open panels. Application opacity is unchanged."
+		doc: "Opacity of Bloom surfaces, including open panels, from 0.6 to 1. Lower values fall back to the default. Application opacity is unchanged."
 	},
 	"bloom-theme-saturation": {
 		type: "number",

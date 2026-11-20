@@ -20,18 +20,18 @@ assert_eq "$(ipc settings get bloom-theme-opacity)" "0.8" "default opacity"
 pass "first run uses defaults without creating settings.json"
 
 mkdir -p "$(dirname "$SETTINGS")"
-printf '{ "bloom-theme-opacity": 0.5, "x-future-key": 1 }\n' >"$SETTINGS"
-wait_for "a settings.json created after startup to apply" ipc_equals 0.5 settings get bloom-theme-opacity
+printf '{ "bloom-theme-opacity": 0.7, "x-future-key": 1 }\n' >"$SETTINGS"
+wait_for "a settings.json created after startup to apply" ipc_equals 0.7 settings get bloom-theme-opacity
 pass "a settings.json created after startup is picked up"
 
-printf '{ "bloom-theme-opacity": 0.4, "x-future-key": 1 }\n' >"$SETTINGS"
-wait_for "a hand edit to apply" ipc_equals 0.4 settings get bloom-theme-opacity
+printf '{ "bloom-theme-opacity": 0.65, "x-future-key": 1 }\n' >"$SETTINGS"
+wait_for "a hand edit to apply" ipc_equals 0.65 settings get bloom-theme-opacity
 pass "hand edits apply live"
 
 # Review focus 1: a syntax error keeps the last good values and the file is never overwritten.
 printf '{ "bloom-theme-opacity": 0.3, \n' >"$SETTINGS"
 wait_for "the parse warning" log_has "is not valid JSON"
-assert_eq "$(ipc settings get bloom-theme-opacity)" "0.4" "opacity after a bad edit"
+assert_eq "$(ipc settings get bloom-theme-opacity)" "0.65" "opacity after a bad edit"
 assert_eq "$(ipc settings set bloom-theme-opacity 0.6)" "settings.json is invalid; fix it before changing settings" "set while the file is broken"
 grep -qF '"bloom-theme-opacity": 0.3, ' "$SETTINGS" || fail "the broken settings.json was overwritten"
 pass "a broken file keeps the last good settings and is never overwritten"
@@ -39,7 +39,7 @@ pass "a broken file keeps the last good settings and is never overwritten"
 # Valid JSON that isn't an object must be treated like a broken file, not rewritten.
 printf '"abc"\n' >"$SETTINGS"
 wait_for "the non-object warning" log_has "is not a JSON object"
-assert_eq "$(ipc settings get bloom-theme-opacity)" "0.4" "opacity after a non-object file"
+assert_eq "$(ipc settings get bloom-theme-opacity)" "0.65" "opacity after a non-object file"
 assert_eq "$(ipc settings set bloom-theme-opacity 0.6)" "settings.json is invalid; fix it before changing settings" "set while the file is not an object"
 assert_eq "$(cat "$SETTINGS")" '"abc"' "non-object settings.json left untouched"
 pass "a non-object file is refused like a broken one and never rewritten"
@@ -56,7 +56,7 @@ file_mode_is() { [[ "$(jq -r '."bloom-theme-mode"' "$SETTINGS" 2>/dev/null)" == 
 wait_for "the mode to reach the file" file_mode_is light
 assert_eq "$(jq -r '."x-future-key"' "$SETTINGS")" "1" "unknown key kept"
 assert_eq "$(ipc theme mode)" "light" "theme follows settings"
-assert_eq "$(ipc settings set bloom-theme-opacity 2)" "bloom-theme-opacity: expected a number from 0.1 to 1" "invalid set rejected"
+assert_eq "$(ipc settings set bloom-theme-opacity 2)" "bloom-theme-opacity: expected a number from 0.6 to 1" "invalid set rejected"
 pass "set validates, writes the file, keeps unknown keys, and the theme follows"
 
 assert_eq "$(ipc settings set bloom-theme-mode adaptive)" "ok" "set adaptive"

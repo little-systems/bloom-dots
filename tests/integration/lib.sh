@@ -25,6 +25,8 @@ bloom_env() {
 	export BLOOM_CHECKUPDATES="$TEST_TMP/no-checkupdates"
 	# Apps launched by the shell in tests stay out of the real user systemd.
 	export BLOOM_LAUNCH_SCOPE=0
+	# The shell doesn't preload Settings in tests unless a test asks for it.
+	export BLOOM_SETTINGS_PRELOAD=0
 	# Adaptive theming writes here, never to the real home.
 	export BLOOM_THEME_HOME="$TEST_TMP/home"
 	export BLOOM_THEME_NO_RELOAD=1

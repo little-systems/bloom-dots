@@ -86,6 +86,14 @@ ShellRoot {
 	}
 	Component.onCompleted: console.log(`bloom: shell started (theme ${Theme.mode}, settings ${Settings.path})`)
 
+	// Owner: Settings opens at once, so it is preloaded hidden after the shell
+	// has settled. Integration tests turn this off unless they test it.
+	Timer {
+		interval: 3000
+		running: Quickshell.env("BLOOM_SETTINGS_PRELOAD") !== "0"
+		onTriggered: Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/preload-settings.sh"), Quickshell.shellPath("settings-app.qml")])
+	}
+
 	readonly property var _modules: Settings.values["bloom-enabled-modules"]
 
 	Binding {
