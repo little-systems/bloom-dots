@@ -516,6 +516,32 @@ Item {
 			compare(fakeStore.values["bloom-weather-lon"], 73.8);
 		}
 
+		// Owner: new city results under a resting pointer stay dark until it
+		// moves.
+		function test_cityTypingIgnoresHoverUntilThePointerMoves() {
+			const v = make("notch");
+			const field = part(v, "city");
+			field.forceActiveFocus();
+			waitForRendering(host);
+			part(v, "page").contentY = field.mapToItem(part(v, "page").contentItem, 0, 0).y - 120;
+			keyClick("P");
+			v.cityResults = [{ name: "Pune", country: "India", latitude: 18.5, longitude: 73.8 }];
+			waitForRendering(host);
+			const city = part(v, "cityResult:Pune");
+			const at = city.mapToItem(host, city.width / 2, city.height / 2);
+			mouseMove(host, at.x, at.y);
+			tryVerify(() => city.color.a > 0, 500, "moving onto a result lights it");
+			keyClick("u");
+			v.cityResults = [{ name: "Pune", country: "India", latitude: 18.5, longitude: 73.8 }, { name: "Puri", country: "India", latitude: 19.8, longitude: 85.8 }];
+			waitForRendering(host);
+			const now = part(v, "cityResult:Pune");
+			mouseMove(host, at.x, at.y);
+			wait(100);
+			compare(now.color.a, 0, "a still pointer stays dark while typing");
+			mouseMove(host, at.x + 20, at.y);
+			tryVerify(() => now.color.a > 0, 500, "moving brings it back");
+		}
+
 		function test_dockToggleEditsTheModules() {
 			const v = make("dock");
 			verify(part(v, "dockRows").visible);
@@ -826,6 +852,29 @@ Item {
 			click(v, "hit:Inner Gaps");
 			compare(v.tab, "hyprland");
 			compare(field.text, "", "search clears after going there");
+		}
+
+		// Owner: while typing, a resting pointer doesn't light up a result
+		// until it moves.
+		function test_typingIgnoresHoverUntilThePointerMoves() {
+			const v = make();
+			part(v, "settingsSearch").focusField();
+			keyClick("g");
+			keyClick("a");
+			waitForRendering(host);
+			const hit = part(v, "hit:Inner Gaps");
+			const at = hit.mapToItem(host, hit.width / 2, hit.height / 2);
+			mouseMove(host, at.x, at.y);
+			tryVerify(() => hit.color.a > 0, 500, "hover lights the result");
+			keyClick("p");
+			waitForRendering(host);
+			const now = part(v, "hit:Inner Gaps");
+			const under = now.mapToItem(host, now.width / 2, now.height / 2);
+			mouseMove(host, under.x, under.y);
+			wait(100);
+			compare(now.color.a, 0, "a still pointer stays dark while typing");
+			mouseMove(host, under.x + 20, under.y);
+			tryVerify(() => now.color.a > 0, 500, "moving brings it back");
 		}
 
 		function test_searchWithNothing() {

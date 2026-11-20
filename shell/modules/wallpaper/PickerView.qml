@@ -73,6 +73,8 @@ Item {
 	onDisplayItemsChanged: root._syncSelection()
 
 	focus: true
+	Keys.onPressed: hoverGuard.typed()
+	TypingGuard { id: hoverGuard }
 	Keys.onEscapePressed: root.dismissed()
 	Keys.onLeftPressed: root._move("left")
 	Keys.onRightPressed: root._move("right")
@@ -169,6 +171,7 @@ Item {
 				font.family: Fonts.family; font.pixelSize: Fonts.px(12)
 				background: Rectangle { radius: 8; color: root.theme.groupBg; border.color: search.activeFocus ? root.accent : root.theme.border }
 				onTextChanged: root.query = text
+				onTextEdited: hoverGuard.typed()
 				onAccepted: { root.forceActiveFocus(); if (root.displayItems.length) root.chosen(root.displayItems[root.selectedIndex]); }
 			}
 		}
@@ -255,6 +258,7 @@ Item {
 					}
 				}
 				HoverHandler {
+					enabled: !hoverGuard.typing
 					cursorShape: Qt.PointingHandCursor
 					onHoveredChanged: if (hovered) root.selectedIndex = cell.index
 				}

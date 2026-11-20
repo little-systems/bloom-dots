@@ -39,6 +39,8 @@ Item {
 	visible: root._open || card.opacity > 0
 	transformOrigin: Item.Bottom
 
+	TypingGuard { id: hoverGuard }
+
 	function open() {
 		field.text = "";
 		root._query = "";
@@ -68,6 +70,7 @@ Item {
 	}
 
 	function _handleKey(event) {
+		hoverGuard.typed();
 		if (event.key === Qt.Key_Escape) {
 			root.close();
 			event.accepted = true;
@@ -224,7 +227,7 @@ Item {
 							delegate: Rectangle {
 								id: row
 								required property var modelData
-								readonly property int index: root.flat.indexOf(row.modelData)
+								readonly property int index: root.flat.findIndex(x => x.id === row.modelData.id)
 								readonly property bool selected: row.index === root.selectedIndex
 								readonly property bool isPinned: root.pinned.indexOf(row.modelData.id) >= 0
 								objectName: "addapp-row-" + row.modelData.id
@@ -239,6 +242,7 @@ Item {
 
 								HoverHandler {
 									id: rowHover
+									enabled: !hoverGuard.typing
 									cursorShape: Qt.PointingHandCursor
 									onHoveredChanged: if (rowHover.hovered) root.selectedIndex = row.index
 								}

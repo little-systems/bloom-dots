@@ -74,6 +74,32 @@ Item {
 			verify(closed.count >= 1);
 		}
 
+		function test_rowsKnowTheirPlace() {
+			const p = make();
+			compare(findChild(p, "addapp-row-chrome").index, 0);
+			compare(findChild(p, "addapp-row-kitty").index, 2);
+			verify(findChild(p, "addapp-row-chrome").selected);
+		}
+
+		// Owner: typing reflows the rows under a still pointer; the selection
+		// stays with the keyboard until the pointer itself moves.
+		function test_typingIgnoresHoverUntilThePointerMoves() {
+			const p = make();
+			waitForRendering(host);
+			const row = findChild(p, "addapp-row-gimp");
+			const at = row.mapToItem(host, 60, row.height / 2);
+			mouseMove(host, at.x, at.y);
+			tryCompare(p, "selectedIndex", 1, 500);
+			keyClick("i");
+			tryVerify(() => p.flat.length === 3 && p.flat[0].id === "firefox", 600);
+			waitForRendering(host);
+			mouseMove(host, at.x, at.y);
+			wait(100);
+			compare(p.selectedIndex, 0);
+			mouseMove(host, at.x + 20, at.y);
+			tryVerify(() => p.selectedIndex !== 0, 500);
+		}
+
 		function test_escapeCloses() {
 			const p = make();
 			keyClick(Qt.Key_Escape);

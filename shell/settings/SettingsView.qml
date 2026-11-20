@@ -102,6 +102,8 @@ Rectangle {
 		const at = root._tabs.findIndex(t => t.id === root.tab);
 		root.tab = root._tabs[(at + delta + root._tabs.length) % root._tabs.length].id;
 	}
+	TypingGuard { id: hoverGuard }
+
 	Keys.onPressed: event => {
 		if (!(event.modifiers & Qt.ControlModifier)) return;
 		if (event.key === Qt.Key_Tab || event.key === Qt.Key_PageDown) root._step(1);
@@ -246,6 +248,7 @@ Rectangle {
 				placeholder: I18n.t("linux.settings.findASetting")
 				accessibleName: I18n.t("linux.settings.findASetting")
 				onTextChanged: root.query = text
+				onEdited: hoverGuard.typed()
 				onAccepted: if (root._hits.length) root._open(root._hits[0])
 			}
 			Item { width: 1; height: 10 }
@@ -294,7 +297,7 @@ Rectangle {
 							font.pixelSize: Fonts.px(12)
 						}
 					}
-					HoverHandler { id: hitHover; cursorShape: Qt.PointingHandCursor }
+					HoverHandler { id: hitHover; enabled: !hoverGuard.typing; cursorShape: Qt.PointingHandCursor }
 					TapHandler { onTapped: root._open(hit.modelData) }
 				}
 			}
