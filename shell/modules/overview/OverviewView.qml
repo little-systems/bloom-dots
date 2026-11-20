@@ -52,6 +52,7 @@ Item {
 	}
 	function close() { root._open = false; }
 	function _key(event) {
+		hoverGuard.typed();
 		const arrows = { [Qt.Key_Left]: "left", [Qt.Key_Right]: "right", [Qt.Key_Up]: "up", [Qt.Key_Down]: "down" };
 		if (event.key === Qt.Key_Escape) root.dismissed();
 		else if (arrows[event.key] && !(root._searching && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)))
@@ -62,6 +63,8 @@ Item {
 		} else return;
 		event.accepted = true;
 	}
+	TypingGuard { id: hoverGuard }
+
 	// The workspace under a point in the view's coordinates, or 0.
 	function _workspaceAt(x, y) {
 		for (let i = 0; i < cells.count; i++) {
@@ -188,7 +191,7 @@ Item {
 					border.width: cell.active ? 1 : 0
 					border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, Tokens.dock.popup.selectedEdgeAlpha)
 
-					HoverHandler { id: cellHover; cursorShape: Qt.PointingHandCursor }
+					HoverHandler { id: cellHover; enabled: !hoverGuard.typing; cursorShape: Qt.PointingHandCursor }
 					TapHandler { onTapped: root.workspaceChosen(cell.workspace) }
 
 					Repeater {

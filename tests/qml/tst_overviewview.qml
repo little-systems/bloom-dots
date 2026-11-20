@@ -57,6 +57,25 @@ Item {
 			fuzzyCompare(card.x + card.width / 2, 550, 0.51);
 		}
 
+		// Owner: while typing, a resting pointer doesn't light up a workspace
+		// until it moves.
+		function test_typingIgnoresHoverUntilThePointerMoves() {
+			const v = make();
+			const cell = part(v, "workspace:6");
+			const idle = v.theme.groupBg;
+			const at = centre(cell);
+			mouseMove(host, at.x, at.y);
+			tryVerify(() => !Qt.colorEqual(cell.color, idle), 500, "hover lights the workspace");
+			part(v, "field").forceActiveFocus();
+			keyClick("x");
+			tryVerify(() => Qt.colorEqual(cell.color, idle), 500, "typing drops the hover light");
+			mouseMove(host, at.x, at.y);
+			wait(100);
+			verify(Qt.colorEqual(cell.color, idle), "a still pointer stays dark");
+			mouseMove(host, at.x + 20, at.y);
+			tryVerify(() => !Qt.colorEqual(cell.color, idle), 500, "moving brings it back");
+		}
+
 		function test_windowsSitWhereTheyAre() {
 			const v = make();
 			const w = part(v, "window:0xb");

@@ -527,3 +527,6 @@ var onboarding = {
 	motion: { moveMs: 360, moveEase: [0.22, 1, 0.36, 1], fadeOutMs: 100, fadeInMs: 160, fadeInDelayMs: 120 },
 	disabledOpacity: 0.45
 };
+
+// Typing in a search box parks hover until the pointer really moves this far.
+var typingGuard = { slop: 4 };

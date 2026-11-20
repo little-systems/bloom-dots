@@ -44,6 +44,29 @@ Item {
 			compare(v.selectedIndex, 3);
 		}
 
+		// Owner: searching reflows the tiles under a still pointer; the
+		// selection stays with the keyboard until the pointer itself moves.
+		function test_typingIgnoresHoverUntilThePointerMoves() {
+			const v = make();
+			waitForRendering(host);
+			const tile = findChild(v, "tile:/w/c.mp4");
+			const at = tile.mapToItem(host, tile.width / 2, tile.height / 2);
+			mouseMove(host, at.x, at.y);
+			tryCompare(v, "selectedIndex", 2, 500);
+			findChild(v, "search").forceActiveFocus();
+			keyClick("j");
+			keyClick("p");
+			keyClick("g");
+			compare(v.displayItems.length, 3);
+			compare(v.selectedIndex, 1);
+			waitForRendering(host);
+			mouseMove(host, at.x, at.y);
+			wait(100);
+			compare(v.selectedIndex, 1);
+			mouseMove(host, at.x + 20, at.y);
+			tryCompare(v, "selectedIndex", 2, 500);
+		}
+
 		function test_enterChooses() {
 			const v = make();
 			const chosen = spy(v, "chosen");

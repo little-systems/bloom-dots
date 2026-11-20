@@ -11,6 +11,7 @@ Rectangle {
 	property bool secret: false
 	property string accessibleName: root.placeholder
 	signal accepted()
+	signal edited()
 
 	width: 240
 	height: Math.max(Tokens.settings.control, Fonts.px(Tokens.settings.controlText) * 1.6)
@@ -39,6 +40,7 @@ Rectangle {
 		font.family: Fonts.ui
 		font.pixelSize: Fonts.px(Tokens.settings.controlText)
 		Keys.onReturnPressed: root.accepted()
+		onTextEdited: root.edited()
 		Text {
 			visible: input.text === ""
 			height: parent.height

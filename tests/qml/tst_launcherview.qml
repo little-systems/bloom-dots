@@ -153,6 +153,29 @@ Item {
 			tryCompare(v, "selectedIndex", 1, 500);
 		}
 
+		// Owner: typing moves results under a still pointer; the selection
+		// stays with the keyboard until the pointer itself moves.
+		function test_typingIgnoresHoverUntilThePointerMoves() {
+			const v = make({ results: host.results });
+			v.open();
+			const card = part(v, "card");
+			tryCompare(card, "height", v.targetHeight, 1500);
+			waitForRendering(host);
+			const p = part(v, "row:a3").mapToItem(host, 40, 24);
+			mouseMove(host, p.x, p.y);
+			tryCompare(v, "selectedIndex", 3, 500);
+			const field = part(v, "field");
+			field.forceActiveFocus();
+			keyClick(Qt.Key_X);
+			v.results = host.results.slice(1).concat([host.results[0]]).map(r => Object.assign({}, r, { id: r.id + "x" }));
+			waitForRendering(host);
+			mouseMove(host, p.x, p.y);
+			wait(100);
+			compare(v.selectedIndex, 0);
+			mouseMove(host, p.x, p.y + 20);
+			tryVerify(() => v.selectedIndex !== 0, 500);
+		}
+
 		function test_emojiDrawsInFullColour() {
 			const v = make({ results: [{ id: "😀", name: "Grinning face", sub: "", icon: "", glyph: "😀" }] });
 			v.open();

@@ -90,6 +90,7 @@ Item {
 		list.positionViewAtIndex(root.selectedIndex, ListView.Contain);
 	}
 	function _key(event) {
+		hoverGuard.typed();
 		if (event.key === Qt.Key_Escape) root.dismissed();
 		else if (event.key === Qt.Key_Down || event.key === Qt.Key_Tab) root._move(1);
 		else if (event.key === Qt.Key_Up || event.key === Qt.Key_Backtab) root._move(-1);
@@ -105,6 +106,8 @@ Item {
 		event.accepted = true;
 	}
 	onResultsChanged: root.selectedIndex = 0
+
+	TypingGuard { id: hoverGuard }
 	onChattingChanged: if (root.chatting) { chatSurface.draft = field.text.replace(/^@\s*/, ""); root.focusInput(); }
 
 	// cursor: default — a click on the screen around the bar dismisses it
@@ -242,6 +245,7 @@ Item {
 					border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, Tokens.dock.popup.selectedEdgeAlpha)
 
 					HoverHandler {
+						enabled: !hoverGuard.typing
 						cursorShape: Qt.PointingHandCursor
 						onHoveredChanged: if (hovered) root.selectedIndex = row.index
 					}

@@ -12,6 +12,8 @@ Column {
 	property var store
 	property Item popup
 	property var cityResults: []
+
+	TypingGuard { id: hoverGuard }
 	signal cityQueried(string text)
 
 	readonly property var _v: root.store.values
@@ -181,6 +183,7 @@ Column {
 				font.family: Fonts.ui
 				font.pixelSize: Fonts.px(14)
 				onTextEdited: {
+					hoverGuard.typed();
 					root.set("bloom-weather-city", text);
 					root.cityQueried(text);
 				}
@@ -258,7 +261,7 @@ Column {
 								font.family: Fonts.ui
 								font.pixelSize: Fonts.px(12)
 							}
-							HoverHandler { id: cityHover; cursorShape: Qt.PointingHandCursor }
+							HoverHandler { id: cityHover; enabled: !hoverGuard.typing; cursorShape: Qt.PointingHandCursor }
 							TapHandler { onTapped: root._pick(cityItem.modelData) }
 						}
 					}
