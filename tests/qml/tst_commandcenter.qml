@@ -50,6 +50,7 @@ Item {
 	SignalSpy { id: power; target: cc; signalName: "powerRequested" }
 	SignalSpy { id: settings; target: cc; signalName: "settingsRequested" }
 	SignalSpy { id: restart; target: cc; signalName: "restartRequested" }
+	SignalSpy { id: taskManager; target: cc; signalName: "taskManagerRequested" }
 	SignalSpy { id: volumeChosen; target: cc; signalName: "volumeChosen" }
 	SignalSpy { id: brightnessChosen; target: cc; signalName: "brightnessChosen" }
 
@@ -287,15 +288,17 @@ Item {
 			compare(part(notch, "background").color, colours.text);
 		}
 
+		// Bloom's five plus the owner's Task Manager between Restart and Settings,
+		// still spread edge to edge.
 		function test_roundButtons() {
-			const names = ["dnd", "energy", "restart", "settings", "power"];
-			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-reload", "bloom-settings", "power"];
-			const sizes = [18, 18, 14, 14, 14];
+			const names = ["dnd", "energy", "restart", "taskmanager", "settings", "power"];
+			const glyphs = ["bloom-moon", "bloom-battery-saver", "bloom-reload", "activity", "bloom-settings", "power"];
+			const sizes = [18, 18, 14, 14, 14, 14];
 			const buttons = names.map(n => part(cc, "round-" + n));
 			// padding 0 4, justify-content space-between.
 			compare(at(buttons[0]).x, 4);
-			compare(at(buttons[4]).x + 32, 322 - 4);
-			const step = (322 - 8 - 32) / 4;
+			compare(at(buttons[5]).x + 32, 322 - 4);
+			const step = (322 - 8 - 32) / 5;
 			buttons.forEach((b, i) => {
 				fuzzyCompare(at(b).x, 4 + i * step, 0.01);
 				compare(b.width, 32);
@@ -306,8 +309,9 @@ Item {
 				compare(part(b, "background").color, colours.groupBg);
 				compare(part(b, "background").border.color, colours.border);
 			});
-			compare(part(buttons[3], "glyph").opacity, 0.9);
-			const spies = [dnd, saver, restart, settings, power];
+			compare(part(buttons[4], "glyph").opacity, 0.9);
+			compare(buttons[3].Accessible.name, "Task Manager");
+			const spies = [dnd, saver, restart, taskManager, settings, power];
 			buttons.forEach((b, i) => {
 				mouseClick(b);
 				compare(spies[i].count, 1, names[i]);

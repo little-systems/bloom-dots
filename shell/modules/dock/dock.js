@@ -283,8 +283,9 @@ function menuFor(t, translate) {
 	if (t.kind === "tray") return [_trayEntry({ key: t.trayKey, hasMenu: t.hasMenu, entries: t.entries }, "", tr, tr("linux.dock.activate", "Activate"))];
 	const bloom = { kind: "submenu", key: "bloom", label: tr("dock.menu.bloomOptions", "Bloom Options"), children: [_item("restart", tr("dock.options.restart", "Restart Bloom")), _divider, _item("quit", tr("dock.options.quit", "Quit Bloom"), true)] };
 	const addApp = _item("add-app", tr("dock.menu.addApp", "Add App to Dock..."));
+	// Owner: the default task manager, first as on Bloom's taskbar menu.
 	if (t.kind === "background")
-		return [addApp, bloom];
+		return [_item("task-manager", tr("ui.dock.taskManager", "Task Manager")), _divider, addApp, bloom];
 	const out = [];
 	if (t.pinned)
 		out.push(_item("unpin", tr("dock.menu.unpin", "Unpin from Dock")));

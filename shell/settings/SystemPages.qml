@@ -3,6 +3,7 @@ import "../common"
 import "../common/render"
 import "../common/tokens.js" as Tokens
 import "system.js" as Sys
+import "../services/taskmanager.js" as TaskManagerLogic
 import "../common/i18n"
 
 // The Windows-style pages, one Column per `page`. `sys` is SystemStore, or a
@@ -398,7 +399,7 @@ Column {
 						readonly property var choices: root.sys.defaultChoices[defaultRow.modelData.id] ?? []
 						theme: root.theme; icon: defaultRow.modelData.icon; label: I18n.t(defaultRow.modelData.key)
 						desc: Sys.appName(root.sys.defaults[defaultRow.modelData.id])
-						divider: defaultRow.index < Sys.DEFAULTS.length - 1
+						divider: true
 						SSelect {
 							objectName: "default:" + defaultRow.modelData.id
 							accessibleName: I18n.t(defaultRow.modelData.key)
@@ -408,6 +409,23 @@ Column {
 							value: root.sys.defaults[defaultRow.modelData.id] ?? ""
 							onActivated: value => root.sys.setDefault(defaultRow.modelData.id, defaultRow.modelData.mime, value)
 						}
+					}
+				}
+				// Owner: the task manager (no MIME type; Bloom's own setting).
+				SRow {
+					id: taskRow
+					readonly property string current: root.store.values["bloom-task-manager"] ?? ""
+					readonly property var choices: TaskManagerLogic.choices(root.sys.taskEntries ?? [], taskRow.current)
+					theme: root.theme; icon: "activity"; label: I18n.t("linux.settings.defaultApp.taskManager")
+					desc: taskRow.choices.find(c => c.value === taskRow.current)?.label ?? I18n.t("linux.settings.notSet")
+					SSelect {
+						objectName: "default:taskManager"
+						accessibleName: I18n.t("linux.settings.defaultApp.taskManager")
+						visible: taskRow.choices.length > 0
+						theme: root.theme; popup: root.popup
+						options: taskRow.choices
+						value: taskRow.current
+						onActivated: value => root.store.set("bloom-task-manager", value)
 					}
 				}
 			}

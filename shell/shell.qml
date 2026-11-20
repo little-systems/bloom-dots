@@ -643,6 +643,12 @@ ShellRoot {
 	}
 
 	IpcHandler {
+		target: "taskmanager"
+		function open(): string { return TaskManager.open(); }
+		function state(): string { return JSON.stringify({ chosen: TaskManager.chosen }); }
+	}
+
+	IpcHandler {
 		target: "cheatsheet"
 
 		function toggle(): string { Cheatsheet.toggle(); return "ok"; }

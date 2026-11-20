@@ -15,7 +15,8 @@ TestCase {
 		compare(entries.find(item => item.key === "pin").label, "Закрепить в доке");
 		compare(entries.find(item => item.key === "quick-actions").children[0].label, "Open Project");
 		I18n.setting = "en";
-		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key))[0].label, "Add App to Dock...");
+		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key)).find(item => item.key === "add-app").label, "Add App to Dock...");
+		compare(Dock.menuFor({ kind: "background" }, key => I18n.t(key))[0].label, "Task Manager");
 	}
 
 	function client(cls, address, focus, extra) {
@@ -338,7 +339,9 @@ TestCase {
 		const close = Dock.menuFor(menuApp({ running: true, windows: 1 })).pop();
 		compare(close.key, "close");
 		verify(close.danger);
-		compare(labels(Dock.menuFor({ kind: "background" })), ["Add App to Dock...", "Bloom Options>"]);
+		// Owner: Task Manager first, as on Bloom's taskbar menu.
+		compare(labels(Dock.menuFor({ kind: "background" })), ["Task Manager", "-", "Add App to Dock...", "Bloom Options>"]);
+		compare(Dock.menuFor({ kind: "background" })[0].key, "task-manager");
 		compare(labels(Dock.menuFor({ kind: "workspaces" })), ["Hide Workspaces"]);
 		compare(Dock.menuFor(menuApp({ actions: ["A", "B"] })).filter(e => e.key && e.key.startsWith("action:")).length, 0, "never loose in the menu");
 	}

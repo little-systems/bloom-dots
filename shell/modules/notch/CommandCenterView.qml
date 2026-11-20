@@ -40,6 +40,7 @@ Item {
 	signal powerRequested()
 	signal settingsRequested()
 	signal restartRequested()
+	signal taskManagerRequested()
 	signal volumeChosen(real value)
 	signal brightnessChosen(int percent)
 
@@ -153,7 +154,8 @@ Item {
 		width: root.width - Tokens.cc.round.sidePad * 2
 		height: Tokens.cc.round.size
 
-		readonly property real step: (width - Tokens.cc.round.size) / 4
+		// Bloom's five, plus the owner's Task Manager.
+		readonly property real step: (width - Tokens.cc.round.size) / 5
 
 		CcRoundButton {
 			objectName: "round-dnd"
@@ -184,8 +186,17 @@ Item {
 		}
 
 		CcRoundButton {
-			objectName: "round-settings"
+			objectName: "round-taskmanager"
 			x: roundRow.step * 3
+			theme: root.theme
+			icon: "activity"
+			accessibleName: I18n.t("ui.dock.taskManager")
+			onClicked: root.taskManagerRequested()
+		}
+
+		CcRoundButton {
+			objectName: "round-settings"
+			x: roundRow.step * 4
 			theme: root.theme
 			icon: "bloom-settings"
 			glyphOpacity: 0.9
@@ -194,7 +205,7 @@ Item {
 
 		CcRoundButton {
 			objectName: "round-power"
-			x: roundRow.step * 4
+			x: roundRow.step * 5
 			theme: root.theme
 			icon: "power"
 			enabled: root.powerAvailable

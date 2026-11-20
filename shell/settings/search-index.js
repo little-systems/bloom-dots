@@ -685,6 +685,11 @@ var ROWS = [
 		"tab": "hyprland"
 	},
 	{
+		"label": "Task manager",
+		"key": "linux.settings.defaultApp.taskManager",
+		"tab": "apps"
+	},
+	{
 		"label": "API Key",
 		"key": "linux.settings.apiKey",
 		"tab": "ai"

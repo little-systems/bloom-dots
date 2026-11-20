@@ -178,6 +178,7 @@ hl.bind("SUPER + K", ipc("osk toggle"), { description = "Bloom: On-screen keyboa
 hl.bind("SUPER + G", ipc("overlay toggle"), { description = "Bloom: Widget overlay" })
 hl.bind("SUPER + L", ipc("lock lock"), { description = "Bloom: Lock" })
 hl.bind("CTRL + ALT + Delete", ipc("session toggle"), { description = "Bloom: Session menu" })
+hl.bind("CTRL + SHIFT + Escape", ipc("taskmanager open"), { description = "Bloom: Task manager" })
 
 -- Apps
 hl.bind("SUPER + Return", hl.dsp.exec_cmd(terminal), { description = "Apps: Terminal" })

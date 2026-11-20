@@ -88,4 +88,7 @@ trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/config/hypr/custom"
 printf 'dofile("%s/hypr/desktop.lua")\ndofile("%s/hypr/bloom.lua")\n' "$ROOT" "$ROOT" > "$T/hyprland.lua"
 XDG_CONFIG_HOME="$T/config" Hyprland --verify-config -c "$T/hyprland.lua" 2>&1 | grep -q '^config ok$' || fail "Hyprland rejects Bloom's config"
+# Owner: Ctrl+Shift+Esc opens the default task manager, as on Windows.
+grep -qF 'hl.bind("CTRL + SHIFT + Escape", ipc("taskmanager open")' "$ROOT/hypr/desktop.lua" || fail "Ctrl+Shift+Esc doesn't open the task manager"
+echo "ok - Ctrl+Shift+Esc opens the task manager"
 echo "ok - Hyprland accepts Bloom's desktop and integration"

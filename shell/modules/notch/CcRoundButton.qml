@@ -14,8 +14,13 @@ Item {
 	property real glyphSize: 14
 	property real glyphOpacity: 1
 	property bool active: false
+	property string accessibleName: ""
 
 	signal clicked()
+
+	Accessible.role: Accessible.Button
+	Accessible.name: root.accessibleName
+	Accessible.onPressAction: root.clicked()
 
 	readonly property bool _hover: pointer.hovered
 	// :hover lifts 1 px; :active is scale(0.95) translateY(0).
