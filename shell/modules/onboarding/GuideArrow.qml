@@ -9,6 +9,9 @@ Canvas {
 
 	property color color: "#d3d3d3"
 	property bool reducedMotion: false
+	// Points up-right instead (our notifications page, at the corner).
+	property bool mirrored: false
+	transform: Scale { origin.x: root.width / 2; xScale: root.mirrored ? -1 : 1 }
 	property real _curve: 0
 	property real _head: 0
 

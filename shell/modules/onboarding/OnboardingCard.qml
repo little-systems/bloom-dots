@@ -427,6 +427,7 @@ Item {
 		width: root.anchorPlacement ? root.anchorPlacement.width : 112
 		height: root.anchorPlacement ? root.anchorPlacement.height : 56
 		rotation: root.anchorPlacement ? root.anchorPlacement.rotation : 0
+		mirrored: !!(root.anchorPlacement && root.anchorPlacement.mirror)
 		opacity: pageView.opacity
 		color: root.c.arrow
 		reducedMotion: root.reducedMotion

@@ -54,7 +54,7 @@ Item {
 
 		function test_cardKeepsItsSizeOnEveryPage() {
 			const c = make();
-			for (let i = 0; i < 9; i++) {
+			for (let i = 0; i < 10; i++) {
 				c.index = i;
 				compare([c.cardWidth, c.cardHeight], [500, 400], "page " + i);
 			}
@@ -62,19 +62,19 @@ Item {
 
 		function test_progressAndButtons() {
 			const c = make();
-			compare(part(c, "progress").text, "1 / 9");
+			compare(part(c, "progress").text, "1 / 10");
 			verify(!part(c, "back").visible, "no Back on the first page");
 			compare(part(c, "primaryLabel").text, "Show me around");
 			c.next();
 			compare(c.index, 1);
-			compare(part(c, "progress").text, "2 / 9");
+			compare(part(c, "progress").text, "2 / 10");
 			verify(part(c, "back").visible);
 			compare(part(c, "primaryLabel").text, "Continue");
-			c.index = 8;
+			c.index = 9;
 			compare(part(c, "primaryLabel").text, "Let's bloom");
 			verify(!part(c, "skip").visible, "no Skip on the last page");
 			c.back();
-			compare(c.index, 7);
+			compare(c.index, 8);
 		}
 
 		function test_pagesShowTheirText() {
@@ -82,6 +82,12 @@ Item {
 			compare(part(c, "title").text, "Welcome to Bloom.");
 			compare(part(c, "description").text, "Bloom makes your Linux desktop feel alive.");
 			c.index = 6;
+			compare(part(c, "title").text, "Catch up anytime");
+			compare(part(c, "description").text, "Notifications slide in at the top-right corner, then tuck themselves away. Bloom just sent you one to try.");
+			compare(part(c, "hint:0").text, "Point at the very top-right corner to see them again");
+			compare(part(c, "hint:1").text, "Clear All empties the list");
+			compare(part(c, "hint:2").text, "Turn on Do Not Disturb in the Command Center");
+			c.index = 7;
 			compare(part(c, "title").text, "Everything a keystroke away.");
 			compare(part(c, "hint:3").text, "Super+/ lists every shortcut.");
 		}
@@ -89,8 +95,8 @@ Item {
 		function test_revealFollowsTheIntroductions() {
 			const c = make();
 			const seen = [];
-			for (let i = 0; i < 9; i++) { c.index = i; seen.push(c.reveal); }
-			compare(seen, ["", "island", "", "dock", "", "", "", "", ""]);
+			for (let i = 0; i < 10; i++) { c.index = i; seen.push(c.reveal); }
+			compare(seen, ["", "island", "", "dock", "", "", "", "", "", ""]);
 		}
 
 		function test_closeEscapeSkipAndFinish() {
@@ -104,7 +110,7 @@ Item {
 			compare(closed, 2, "Skip closes");
 			mouseClick(part(c, "close"));
 			compare(closed, 3, "the header's close button closes");
-			c.index = 8;
+			c.index = 9;
 			mouseClick(part(c, "primary"));
 			compare(closed, 4, "Let's bloom closes");
 		}
@@ -116,6 +122,15 @@ Item {
 			c.index = 1;
 			verify(part(c, "arrow").visible);
 			compare([part(c, "arrow").x, part(c, "arrow").y], [326, -56]);
+			verify(!part(c, "arrow").mirrored);
+		}
+
+		// Owner: the notifications page points up-right, into the corner.
+		function test_notificationsArrowPointsAtTheCorner() {
+			const c = make({ anchorPlacement: { inside: false, x: 388, y: -56, width: 112, height: 56, rotation: 0, mirror: true } });
+			c.index = 6;
+			verify(part(c, "arrow").visible);
+			verify(part(c, "arrow").mirrored);
 		}
 
 		function test_choicesApplyAndAFailureKeepsTheOldValue() {
@@ -136,7 +151,7 @@ Item {
 
 		function test_preferencesApplyLive() {
 			const c = make();
-			c.index = 7;
+			c.index = 8;
 			click(c, "segment:light");
 			click(c, "updates");
 			compare(fakeStore.sets, [["bloom-theme-mode", "light"], ["bloom-show-update-indicator", false]]);
@@ -145,9 +160,9 @@ Item {
 		function test_replayKeepsACustomTheme() {
 			const c = make();
 			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-theme-mode": "custom" });
-			c.index = 7;
-			verify(part(c, "segment:custom").selected, "Custom (current) is offered and selected");
 			c.index = 8;
+			verify(part(c, "segment:custom").selected, "Custom (current) is offered and selected");
+			c.index = 9;
 			compare(fakeStore.sets, [], "visiting the page writes nothing");
 			fakeStore.values = Object.assign({}, fakeStore.values, { "bloom-theme-mode": "dark" });
 		}

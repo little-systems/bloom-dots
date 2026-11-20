@@ -7,17 +7,38 @@ import "../../shell/modules/onboarding/layout.js" as Layout
 TestCase {
 	name: "OnboardingLayout"
 
-	function test_ninePagesInOrder() {
-		compare(Pages.PAGES.map(p => p.kind), ["welcome", "intro", "island-mode", "intro", "dock-mode", "controls", "keys", "preferences", "finish"]);
-		compare(Pages.PAGES.map(p => p.anchor), ["center", "island", "island", "dock", "dock", "center", "center", "center", "center"]);
+	// Owner: a page on where notifications live follows the HUD page.
+	function test_tenPagesInOrder() {
+		compare(Pages.PAGES.map(p => p.kind), ["welcome", "intro", "island-mode", "intro", "dock-mode", "controls", "notifications", "keys", "preferences", "finish"]);
+		compare(Pages.PAGES.map(p => p.anchor), ["center", "island", "island", "dock", "dock", "center", "notifications", "center", "center", "center"]);
 		compare(Pages.PAGES[0].title, "ui.onboarding.welcomeToBloom");
 		compare(Pages.PAGES[0].description, "linux.onboarding.welcomeDesc");
-		compare(Pages.PAGES[6].title, "linux.onboarding.keysTitle");
-		compare(Pages.PAGES[8].title, "ui.onboarding.alreadyBlooming");
+		compare(Pages.PAGES[6].title, "linux.onboarding.notificationsTitle");
+		compare(Pages.PAGES[6].description, "linux.onboarding.notificationsDesc");
+		compare(Pages.PAGES[6].hints, ["linux.onboarding.notificationsCorner", "linux.onboarding.notificationsClear", "linux.onboarding.notificationsDnd"]);
+		compare(Pages.PAGES[7].title, "linux.onboarding.keysTitle");
+		compare(Pages.PAGES[9].title, "ui.onboarding.alreadyBlooming");
 	}
 
 	function test_revealOnlyDuringIntroductions() {
-		compare(Pages.PAGES.map(Pages.reveal), ["", "island", "", "dock", "", "", "", "", ""]);
+		compare(Pages.PAGES.map(Pages.reveal), ["", "island", "", "dock", "", "", "", "", "", ""]);
+	}
+
+	// Owner: the notifications page sits by the top-right corner, its arrow
+	// (Bloom's, mirrored) pointing up into it. The card stays left of the
+	// notification column (396 px, scaled) so the sample it sends shows.
+	function test_notificationsPlacement() {
+		const p = Layout.place("notifications", 1920, 1080, 1);
+		compare([p.scale, p.width, p.height, p.x, p.y], [1, 500, 400, 1920 - 396 - 24 - 500, 96]);
+		compare(Layout.place("notifications", 2560, 1440, 1.25).x, 2560 - 396 * 1.25 - 24 * 1.25 - 500 * 1.25);
+		const out = Layout.arrow("notifications", 1920, 1080, 1);
+		compare([out.inside, out.x, out.y, out.width, out.height, out.rotation, out.mirror], [false, 500 - 112, -56, 112, 56, 0, true]);
+		const inside = Layout.arrow("notifications", 1920, 540, 1);
+		compare([inside.inside, inside.x, inside.y, inside.mirror], [true, 500 - 24 - 32, 65, true]);
+		compare(Layout.arrow("island", 1920, 1080, 1).mirror, false);
+		compare(Layout.arrow("dock", 1920, 1080, 1).mirror, false);
+		compare(Layout.region("notifications", 1920, 1080, 1).length, 2);
+		compare(Layout.place("notifications", 700, 800, 1).x, 20, "without room beside the column it keeps 20 px from the left");
 	}
 
 	// Bloom: fitScale = max(0.4, min(scale, (w-40)/500, (h-160)/400)), centred,

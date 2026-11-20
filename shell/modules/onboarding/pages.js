@@ -13,6 +13,9 @@ var PAGES = [
 	{ kind: "dock-mode", anchor: "dock", title: "ui.onboarding.giveYourAppsSomeSpace", description: "ui.onboarding.chooseWhenYourDockStaysOnScreen", hints: [] },
 	{ kind: "controls", anchor: "center", title: "ui.onboarding.aLittleLessInterruption", description: "ui.onboarding.bloomBringsVolumeAndBrightnessControlsToTheSidesOf",
 		hints: ["ui.onboarding.useYourKeyboardControlsAsUsual", "linux.onboarding.hoverAnEdge"] },
+	// Owner: where notifications live (Linux only; Windows draws its own).
+	{ kind: "notifications", anchor: "notifications", title: "linux.onboarding.notificationsTitle", description: "linux.onboarding.notificationsDesc",
+		hints: ["linux.onboarding.notificationsCorner", "linux.onboarding.notificationsClear", "linux.onboarding.notificationsDnd"] },
 	{ kind: "keys", anchor: "center", title: "linux.onboarding.keysTitle", description: "linux.onboarding.keysDesc",
 		hints: ["linux.onboarding.keysClipboard", "linux.onboarding.keysEmoji", "linux.onboarding.keysOverview", "linux.onboarding.keysCheatsheet"] },
 	{ kind: "preferences", anchor: "center", title: "ui.onboarding.makeYourselfAtHome", description: "ui.onboarding.aFewSmallChoicesYourWay", hints: [] },
