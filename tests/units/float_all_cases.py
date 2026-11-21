@@ -150,9 +150,38 @@ function steps.remember_on_close()
  local a = add("0xa", false, 1, "firefox")
  mode.toggle()
  a.size = { x = 1111, y = 777 }; a.at = { x = 300, y = 200 }
- mode.closed(a)
- mode.closed(a) -- window.destroy after window.close
+ a.mapped = false; mode.hidden(a) -- window.close
+ mode.closed(a) -- then window.destroy
  print(only("save"))
+end
+-- Apps like Spotify hide to the tray and come back as the same window,
+-- still floating: Hyprland reports the hide as window.close.
+function steps.tray_while_on()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ a.mapped = false; mode.hidden(a)
+ a.mapped = true; mode.opened(a)
+ mode.toggle()
+ print(state(), only("disable"))
+end
+function steps.tray_while_off()
+ local a = add("0xa", false, 1, "Spotify"); add("0xb", false, 1, "kitty")
+ mode.toggle()
+ a.mapped = false; mode.hidden(a)
+ mode.toggle() -- turned off while Spotify is hidden
+ local tiled_while_hidden = only("disable")
+ a.mapped = true; mode.opened(a)
+ print(tiled_while_hidden, only("disable"), state())
+end
+function steps.tray_tiled_by_hand()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ a.mapped = false; mode.hidden(a)
+ mode.toggle()
+ a.floating = false -- tiled some other way meanwhile
+ a.mapped = true; mode.opened(a)
+ mode.opened(a)
+ print("[" .. only("disable") .. "]")
 end
 function steps.remember_on_reload()
  local a = add("0xa", false, 1, "firefox"); local b = add("0xb", false, 1, "kitty")
@@ -260,6 +289,15 @@ class FloatAll(unittest.TestCase):
     def test_tiling_back_remembers_each_apps_size(self):
         self.assertEqual(self.run_step("remember_on_tile"), "save firefox 1111x777@300:200")
 
+    def test_a_window_hidden_to_the_tray_is_still_tiled_back(self):
+        self.assertEqual(self.run_step("tray_while_on"), "0xa=tile\tdisable 0xa")
+
+    def test_a_window_hidden_when_tiling_back_is_tiled_when_it_returns(self):
+        self.assertEqual(self.run_step("tray_while_off"), "disable 0xb\tdisable 0xb,disable 0xa\t0xa=tile 0xb=tile")
+
+    def test_a_returning_window_already_tiled_is_left_alone(self):
+        self.assertEqual(self.run_step("tray_tiled_by_hand"), "[]")
+
     def test_closing_remembers_the_size(self):
         self.assertEqual(self.run_step("remember_on_close"), "save firefox 1111x777@300:200")
 
@@ -305,7 +343,7 @@ class FloatAll(unittest.TestCase):
         self.assertIn('local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")', text)
         self.assertIn('local float_mode = dofile(checkout .. "/hypr/float-mode.lua").open(state .. "/bloom/float-all", os.getenv("HYPRLAND_INSTANCE_SIGNATURE") or "")', text)
         self.assertIn('dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes, float_mode)', text)
-        self.assertIn('hl.on("window.close", float_all.closed)', text)
+        self.assertIn('hl.on("window.close", float_all.hidden)', text)
         self.assertIn('hl.on("config.unload", float_all.unloading)', text)
         self.assertIn('hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })', text)
         self.assertIn('hl.on("window.open", float_all.opened)', text)

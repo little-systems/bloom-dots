@@ -6,7 +6,9 @@
 -- windows) }) holds the mode and the windows it floated (address to process
 -- id) through one; a window is taken back only if it's still floating and
 -- the same process. Not the app's name: some, like Spotify, set it late.
--- Without `kept` a reload ends the mode.
+-- Without `kept` a reload ends the mode. A window hidden to the tray stays
+-- owed (Hyprland reopens the same one), and if the mode was turned off
+-- meanwhile it's tiled when it comes back.
 --
 -- A window it floats gets its app's remembered size, or 1280 x 800, never
 -- more than 80% of the screen, and goes back where its app last was; with no
@@ -113,19 +115,25 @@ function M.new(hl, sizes, kept)
 
     function mode.toggle()
         if on then
+            -- A hidden window (in the tray) stays owed: it's tiled when it's back.
+            local owed = {}
             for _, window in ipairs(hl.get_windows()) do
-                if floated[window.address] and window.floating then
-                    remember(window)
-                    hl.dispatch(hl.dsp.window.float({ action = "disable", window = window }))
+                if floated[window.address] then
+                    if window.mapped == false then
+                        owed[window.address] = floated[window.address]
+                    elseif window.floating then
+                        remember(window)
+                        hl.dispatch(hl.dsp.window.float({ action = "disable", window = window }))
+                    end
                 end
             end
-            floated = {}
+            floated = owed
             on = false
             keep()
         else
             local spots = {}
             for _, window in ipairs(hl.get_windows()) do
-                if not window.floating then
+                if not window.floating and window.mapped ~= false then
                     local workspace = window.workspace and window.workspace.id or 0
                     spots[workspace] = spots[workspace] or {}
                     float(window, spots[workspace])
@@ -136,16 +144,31 @@ function M.new(hl, sizes, kept)
         end
     end
 
+    -- Also a window coming back from the tray: Hyprland reopens the same one.
     function mode.opened(window)
-        if on and window and not window.floating then
+        if not window then return end
+        if not on then
+            if not floated[window.address] then return end
+            if window.floating then hl.dispatch(hl.dsp.window.float({ action = "disable", window = window })) end
+            floated[window.address] = nil
+            keep()
+        elseif not window.floating then
             float(window, nil)
             keep()
         end
     end
 
+    -- window.close, which is also a hide (apps like Spotify hide to the tray
+    -- and come back as the same window), so the window stays owed.
+    function mode.hidden(window)
+        if window and floated[window.address] and window.floating then remember(window) end
+    end
+
+    -- window.destroy: gone for good.
     function mode.closed(window)
         if not window or not floated[window.address] then return end
-        if window.floating then remember(window) end
+        -- Saved already if it was hidden first.
+        if window.floating and window.mapped ~= false then remember(window) end
         floated[window.address] = nil
         keep()
     end

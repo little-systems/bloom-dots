@@ -201,7 +201,7 @@ local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/
 local float_mode = dofile(checkout .. "/hypr/float-mode.lua").open(state .. "/bloom/float-all", os.getenv("HYPRLAND_INSTANCE_SIGNATURE") or "")
 local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes, float_mode)
 hl.on("window.open", float_all.opened)
-hl.on("window.close", float_all.closed)
+hl.on("window.close", float_all.hidden)
 hl.on("window.destroy", float_all.closed)
 hl.on("config.unload", float_all.unloading)
 hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })

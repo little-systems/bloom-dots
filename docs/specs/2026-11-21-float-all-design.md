@@ -28,6 +28,13 @@ them all back.
   same process, since some apps (Spotify) set their name late. A new
   Hyprland session starts with the mode off.
 
+- Apps like Spotify hide to the tray and come back as the same window, and
+  Hyprland reports the hide as `window.close`. Forgetting the window there
+  stranded it floating (the owner hit it): it came back floating, so it read
+  as floating on its own. A hidden window now stays remembered and only
+  `window.destroy` forgets it; one hidden when the mode is turned off is
+  tiled when it comes back. Hidden windows aren't floated by turning it on.
+
 ## Window sizes
 
 Owner's follow-up the same day: floated windows came up at whatever size
