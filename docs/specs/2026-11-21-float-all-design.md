@@ -34,8 +34,13 @@ remembered per app, always centred.
   so they don't stack exactly.
 - An app's size (by window class) is remembered when its window is tiled
   back, closed, or Hyprland reloads; tiny sizes and nameless windows aren't.
+- Owner's next follow-up: the place is remembered too. A window goes back to
+  its app's last position when that still fits its screen at the new size;
+  otherwise it's centred. Windows landing on the same spot (same remembered
+  place, or both centred) are nudged apart.
 - Kept in `$XDG_STATE_HOME/bloom/floating-sizes` (`hypr/float-sizes.lua`),
-  one tab-separated line per app, so it lasts through reloads and restarts.
+  one tab-separated line per app (class, width, height, x, y; older lines
+  without a place still read), so it lasts through reloads and restarts.
   Windows that float on their own keep their own sizes.
 
 ## Shape

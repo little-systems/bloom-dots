@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Super + Alt + Space floats every window on every workspace, and tiles back
-the ones it floated. Windows it floats get the app's remembered size, or a
-default one, centred. Runs hypr/float-all.lua in plain Lua with a stand-in hl
+the ones it floated. Windows it floats get the app's remembered size and
+place, or a default size, centred. Runs hypr/float-all.lua in plain Lua with a stand-in hl
 whose windows change state as the dispatches arrive, and a stand-in size
 store."""
 import shutil
@@ -12,10 +12,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r"""
 local windows = {}
-local screen = { width = 1920, height = 1080, scale = 1 }
+local screen = { x = 0, y = 0, width = 1920, height = 1080, scale = 1 }
 local function add(address, floating, workspace, class, size)
  local w = { address = address, floating = floating, workspace = { id = workspace }, class = class or "app",
-  size = size or { x = 1900, y = 1000 }, monitor = screen }
+  size = size or { x = 1900, y = 1000 }, at = { x = 10, y = 10 }, monitor = screen }
  windows[#windows + 1] = w
  return w
 end
@@ -26,7 +26,10 @@ local log = {}
 local saved = {}
 local store = {
  get = function(class) return saved[class] end,
- set = function(class, width, height) saved[class] = { width = width, height = height }; log[#log + 1] = "save " .. class .. " " .. width .. "x" .. height end
+ set = function(class, width, height, x, y)
+  saved[class] = { width = width, height = height, x = x, y = y }
+  log[#log + 1] = "save " .. class .. " " .. width .. "x" .. height .. (x and ("@" .. x .. ":" .. y) or "")
+ end
 }
 local function target(args)
  local t = type(args.window) == "table" and args.window or find((args.window or ""):match("^address:(.*)$"))
@@ -51,9 +54,10 @@ hl = {
    t.size = { x = d.args.x, y = d.args.y }
    log[#log + 1] = "resize " .. t.address .. " " .. d.args.x .. "x" .. d.args.y
   elseif d.kind == "center" then log[#log + 1] = "center " .. t.address
+  elseif d.args.relative then log[#log + 1] = "nudge " .. t.address .. " " .. d.args.x .. ":" .. d.args.y
   else
-   assert(d.args.relative)
-   log[#log + 1] = "nudge " .. t.address .. " " .. d.args.x .. ":" .. d.args.y
+   t.at = { x = d.args.x, y = d.args.y }
+   log[#log + 1] = "place " .. t.address .. " " .. d.args.x .. ":" .. d.args.y
   end
  end
 }
@@ -122,14 +126,14 @@ end
 function steps.remember_on_tile()
  local a = add("0xa", false, 1, "firefox"); add("0xdialog", true, 1, "dialog", { x = 400, y = 300 })
  mode.toggle()
- a.size = { x = 1111, y = 777 } -- resized by hand
+ a.size = { x = 1111, y = 777 }; a.at = { x = 300, y = 200 } -- resized and moved by hand
  mode.toggle()
  print(only("save"))
 end
 function steps.remember_on_close()
  local a = add("0xa", false, 1, "firefox")
  mode.toggle()
- a.size = { x = 1111, y = 777 }
+ a.size = { x = 1111, y = 777 }; a.at = { x = 300, y = 200 }
  mode.closed(a)
  mode.closed(a) -- window.destroy after window.close
  print(only("save"))
@@ -137,7 +141,7 @@ end
 function steps.remember_on_reload()
  local a = add("0xa", false, 1, "firefox"); local b = add("0xb", false, 1, "kitty")
  mode.toggle()
- a.size = { x = 1111, y = 777 }
+ a.size = { x = 1111, y = 777 }; a.at = { x = 300, y = 200 }; b.at = { x = 10, y = 10 }
  mode.unloading()
  print(only("save"))
 end
@@ -150,6 +154,29 @@ function steps.nonsense_not_kept()
 end
 function steps.new_window_size()
  saved.kitty = { width = 900, height = 600 }
+ add("0xa", false, 1)
+ mode.toggle()
+ log = {}
+ mode.opened(add("0xnew", false, 1, "kitty"))
+ print(table.concat(log, ","))
+end
+function steps.placed()
+ saved.firefox = { width = 1000, height = 640, x = 300, y = 200 }
+ saved.kitty = { width = 900, height = 600, x = 1500, y = 700 } -- would hang off the screen
+ saved.old = { width = 800, height = 500 }
+ add("0xa", false, 1, "firefox"); add("0xb", false, 1, "firefox"); add("0xc", false, 1, "kitty"); add("0xd", false, 1, "old")
+ mode.toggle()
+ print(table.concat(log, ","))
+end
+function steps.placed_other_screen()
+ screen.x = 1920
+ saved.firefox = { width = 1000, height = 640, x = 300, y = 200 }
+ add("0xa", false, 1, "firefox")
+ mode.toggle()
+ print(table.concat(log, ","))
+end
+function steps.new_window_placed()
+ saved.kitty = { width = 900, height = 600, x = 40, y = 60 }
  add("0xa", false, 1)
  mode.toggle()
  log = {}
@@ -202,19 +229,34 @@ class FloatAll(unittest.TestCase):
         self.assertEqual(self.run_step("remembered"), "resize 0xa 1000x640,resize 0xb 1536x864")
 
     def test_tiling_back_remembers_each_apps_size(self):
-        self.assertEqual(self.run_step("remember_on_tile"), "save firefox 1111x777")
+        self.assertEqual(self.run_step("remember_on_tile"), "save firefox 1111x777@300:200")
 
     def test_closing_remembers_the_size(self):
-        self.assertEqual(self.run_step("remember_on_close"), "save firefox 1111x777")
+        self.assertEqual(self.run_step("remember_on_close"), "save firefox 1111x777@300:200")
 
     def test_a_reload_remembers_the_sizes(self):
-        self.assertEqual(self.run_step("remember_on_reload"), "save firefox 1111x777,save kitty 1280x800")
+        self.assertEqual(self.run_step("remember_on_reload"), "save firefox 1111x777@300:200,save kitty 1280x800@10:10")
 
     def test_nameless_and_tiny_windows_are_not_remembered(self):
         self.assertEqual(self.run_step("nonsense_not_kept"), "[]")
 
     def test_a_new_window_gets_its_apps_size_without_a_nudge(self):
         self.assertEqual(self.run_step("new_window_size"), "enable 0xnew,resize 0xnew 900x600,center 0xnew")
+
+    def test_an_app_goes_back_where_it_was(self):
+        # A second window of the same app is nudged off the first; an app
+        # whose place would hang off the screen, or that has none, is centred.
+        self.assertEqual(self.run_step("placed").split(","), [
+            "enable 0xa", "resize 0xa 1000x640", "place 0xa 300:200",
+            "enable 0xb", "resize 0xb 1000x640", "place 0xb 300:200", "nudge 0xb 32:32",
+            "enable 0xc", "resize 0xc 900x600", "center 0xc",
+            "enable 0xd", "resize 0xd 800x500", "center 0xd", "nudge 0xd 32:32"])
+
+    def test_a_place_on_another_screen_is_centred_instead(self):
+        self.assertEqual(self.run_step("placed_other_screen"), "enable 0xa,resize 0xa 1000x640,center 0xa")
+
+    def test_a_new_window_goes_where_its_app_was(self):
+        self.assertEqual(self.run_step("new_window_placed"), "enable 0xnew,resize 0xnew 900x600,place 0xnew 40:60")
 
     def test_without_a_store_sizes_last_until_reload(self):
         self.assertEqual(self.run_step("memory"), "resize 0xa 1280x800,resize 0xa 1111x777")

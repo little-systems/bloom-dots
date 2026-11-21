@@ -13,7 +13,10 @@ HARNESS = r"""
 local sizes = dofile(arg[1])
 local path = arg[2]
 local steps = {}
-local function show(s, class) local v = s.get(class) print(v and (v.width .. "x" .. v.height) or "none") end
+local function show(s, class)
+ local v = s.get(class)
+ print(v and (v.width .. "x" .. v.height .. (v.x and ("@" .. v.x .. "," .. v.y) or "")) or "none")
+end
 function steps.round_trip()
  local s = sizes.open(path)
  s.set("firefox", 1000, 640); s.set("org.kde.dolphin", 900, 700); s.set("firefox", 1100, 650)
@@ -27,6 +30,12 @@ function steps.bad_names()
  s.set("kitty", 900.6, 700.2)
  local again = sizes.open(path)
  show(again, "a\tb"); show(again, "kitty")
+end
+function steps.positions()
+ local s = sizes.open(path)
+ s.set("firefox", 1000, 640, 40, -20.4); s.set("kitty", 900, 600)
+ local again = sizes.open(path)
+ show(again, "firefox"); show(again, "kitty"); show(again, "old")
 end
 function steps.unwritable() local s = sizes.open(path) s.set("kitty", 900, 700) show(s, "kitty") end
 steps[arg[3]]()
@@ -58,6 +67,13 @@ class FloatSizes(unittest.TestCase):
             path = Path(tmp) / "floating-sizes"
             self.assertEqual(self.run_step("bad_names", path), ["none", "901x700"])
             self.assertEqual(path.read_text(), "kitty\t901\t700\n")
+
+    def test_positions_are_kept_and_older_lines_without_one_still_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "floating-sizes"
+            path.write_text("old\t800\t500\n")
+            self.assertEqual(self.run_step("positions", path), ["1000x640@40,-20", "900x600", "800x500"])
+            self.assertIn("firefox\t1000\t640\t40\t-20\n", path.read_text())
 
     def test_an_unwritable_file_still_remembers_until_reload(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -5,11 +5,12 @@
 -- Hyprland resets Lua state on a config reload, which ends the mode.
 --
 -- A window it floats gets its app's remembered size, or 1280 x 800, never
--- more than 80% of the screen, and is centred; windows floated together on
--- one workspace are nudged apart. An app's size is remembered when its
--- window is tiled back, closed, or Hyprland reloads. `sizes` keeps them
--- ({ get(class), set(class, width, height) }); without one they last until
--- the reload.
+-- more than 80% of the screen, and goes back where its app last was; with no
+-- place, or one that no longer fits its screen, it's centred. Windows that
+-- would land on the same spot on one workspace are nudged apart. An app's
+-- size and place are remembered when its window is tiled back, closed, or
+-- Hyprland reloads. `sizes` keeps them ({ get(class), set(class, width,
+-- height, x, y) }); without one they last until the reload.
 local M = {}
 
 local DEFAULT = { width = 1280, height = 800 }
@@ -21,7 +22,7 @@ local function memory()
     local saved = {}
     return {
         get = function(class) return saved[class] end,
-        set = function(class, width, height) saved[class] = { width = width, height = height } end
+        set = function(class, width, height, x, y) saved[class] = { width = width, height = height, x = x, y = y } end
     }
 end
 
@@ -46,13 +47,33 @@ function M.new(hl, sizes)
         return width, height
     end
 
-    local function float(window, nudge)
+    -- Whether a width x height window at x, y lies on the monitor.
+    local function inside(x, y, width, height, monitor)
+        if not (x and y and monitor and monitor.width and monitor.height) then return false end
+        local scale = monitor.scale or 1
+        local left, top = monitor.x or 0, monitor.y or 0
+        return x >= left and y >= top
+            and x + width <= left + monitor.width / scale and y + height <= top + monitor.height / scale
+    end
+
+    -- Floats the window. `nudges` counts the windows already put on each spot
+    -- of its workspace, so one landing on a taken spot is nudged off it.
+    local function float(window, nudges)
         hl.dispatch(hl.dsp.window.float({ action = "enable", window = window }))
         floated[window.address] = true
         local name = class(window)
-        local width, height = fit(name and sizes.get(name) or DEFAULT, window.monitor)
+        local saved = name and sizes.get(name) or DEFAULT
+        local width, height = fit(saved, window.monitor)
         hl.dispatch(hl.dsp.window.resize({ x = width, y = height, relative = false, window = window }))
-        hl.dispatch(hl.dsp.window.center({ window = window }))
+        local spot = "centre"
+        if inside(saved.x, saved.y, width, height, window.monitor) then
+            spot = saved.x .. "," .. saved.y
+            hl.dispatch(hl.dsp.window.move({ x = saved.x, y = saved.y, relative = false, window = window }))
+        else
+            hl.dispatch(hl.dsp.window.center({ window = window }))
+        end
+        local nudge = nudges and nudges[spot] or 0
+        if nudges then nudges[spot] = nudge + 1 end
         if nudge > 0 then
             hl.dispatch(hl.dsp.window.move({ x = nudge * NUDGE, y = nudge * NUDGE, relative = true, window = window }))
         end
@@ -60,10 +81,11 @@ function M.new(hl, sizes)
 
     local function remember(window)
         local name = class(window)
-        local size = window.size
+        local size, at = window.size, window.at
         if not name or type(size) ~= "table" or not size.x or not size.y then return end
         if size.x < SMALLEST or size.y < SMALLEST then return end
-        sizes.set(name, size.x, size.y)
+        if type(at) ~= "table" then at = {} end
+        sizes.set(name, size.x, size.y, at.x, at.y)
     end
 
     local mode = {}
@@ -83,12 +105,12 @@ function M.new(hl, sizes)
             floated = {}
             on = false
         else
-            local nudges = {}
+            local spots = {}
             for _, window in ipairs(hl.get_windows()) do
                 if not window.floating then
                     local workspace = window.workspace and window.workspace.id or 0
-                    float(window, nudges[workspace] or 0)
-                    nudges[workspace] = (nudges[workspace] or 0) + 1
+                    spots[workspace] = spots[workspace] or {}
+                    float(window, spots[workspace])
                 end
             end
             on = true
@@ -96,7 +118,7 @@ function M.new(hl, sizes)
     end
 
     function mode.opened(window)
-        if on and window and not window.floating then float(window, 0) end
+        if on and window and not window.floating then float(window, nil) end
     end
 
     function mode.closed(window)
