@@ -34,6 +34,14 @@ them all back.
   as floating on its own. A hidden window now stays remembered and only
   `window.destroy` forgets it; one hidden when the mode is turned off is
   tiled when it comes back. Hidden windows aren't floated by turning it on.
+- That first fix trusted `mapped`, but a logged run showed Hyprland sends
+  `window.close` while the window still reads mapped and floating (and may
+  drop it from `hl.get_windows()`), so turning the mode off tried to tile the
+  hidden window, which Hyprland ignored, and forgot it. Float-all now marks a
+  hide itself ("away", kept through a reload as `<pid> away`). Turning the
+  mode off leaves away and unlisted windows owed, and each is tiled when it
+  comes back. A window at a reused address from another process isn't taken
+  for the old one.
 
 ## Window sizes
 
