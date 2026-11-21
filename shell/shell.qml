@@ -13,6 +13,7 @@ import "modules/launcher"
 import "modules/session"
 import "modules/overview"
 import "modules/switcher"
+import "modules/grab"
 import "modules/polkit"
 import "modules/lock"
 import "modules/cheatsheet"
@@ -191,6 +192,13 @@ ShellRoot {
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/switcher/SwitcherWindow.qml"), { modelData: modelData })
 			}
 		}
+	}
+
+	// The grab handle for floating windows, also with the overview; it reads
+	// Hyprland's window list, so only under Hyprland.
+	LazyLoader {
+		active: _modules.indexOf("overview") >= 0 && HyprState.available
+		component: GrabWindows {}
 	}
 
 	// Exclusive with any other polkit agent: only one can register (§3.4).
