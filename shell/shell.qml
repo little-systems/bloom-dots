@@ -594,11 +594,13 @@ ShellRoot {
 		}
 	}
 
-	// Hyprland's alt-tab.lua: what the Alt + Tab card draws for floating windows.
+	// Hyprland's alt-tab.lua: what the switcher card draws (Alt + Tab with
+	// floating windows, or a held three-finger swipe).
 	IpcHandler {
 		target: "switcher"
 
 		function open(seq: int, addresses: string, index: int): string { return Switcher.open(seq, addresses, index); }
+		function reveal(seq: int, addresses: string, index: int): string { return Switcher.open(seq, addresses, index, true); }
 		function hide(seq: int): string { return Switcher.hide(seq); }
 		function state(): string {
 			const windows = switcherLoader.item ? switcherLoader.item.instances.map(l => l.item).filter(Boolean) : [];

@@ -79,8 +79,10 @@ window, and holding shows the card to step through continuously.
   recent first.
 - A quick swipe, either way, goes back to the last window, as a quick Alt +
   Tab does; a floating one comes to the front.
-- Fingers held down 200 ms show the card, tiled windows too (owner asked for
-  it while holding). Each 150 units of travel steps the choice: left is next
+- Fingers held down 100 ms show the card, tiled windows too (owner asked for
+  it while holding, then for it sooner). That first message is `reveal`, so
+  the shell skips its own 120 ms wait (which keeps a quick Alt + Tab from
+  flashing the card). Each 150 units of travel steps the choice: left is next
   (natural scrolling, like the four-finger workspace swipe), right is back,
   wrapping. Before the card shows, steps only move the choice.
 - Lifting switches to the choice (a clicked tile wins). A cancelled swipe or

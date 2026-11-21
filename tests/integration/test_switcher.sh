@@ -54,5 +54,15 @@ sleep 0.4
 is '(.revealed | not) and (.visible | not)' || fail "a quick tap flashed the card: $(state)"
 pass "a quick tap never shows the card"
 
+# A held swipe has waited already: its card shows at once.
+assert_eq "$(ipc switcher reveal 9 "0xa1,0xb2" 1)" "ok" "reveal"
+is '.active and .revealed and .index == 1' || fail "reveal didn't show the card at once: $(state)"
+wait_for "the revealed card" is '.visible'
+assert_eq "$(ipc switcher open 10 "0xa1,0xb2" 0)" "ok" "a step after reveal"
+is '.revealed and .index == 0' || fail "a step hid the revealed card: $(state)"
+assert_eq "$(ipc switcher reveal 10 "0xa1,0xb2" 1)" "stale" "a late reveal"
+ipc switcher hide 11 >/dev/null
+pass "a held swipe's card shows at once, and steps keep it"
+
 if grep -E "WARN|ERROR" "$TEST_TMP/shell.log" | grep -vE "textinput|pipewire"; then fail "shell log has warnings"; fi
 pass "no warnings or errors in the shell log"

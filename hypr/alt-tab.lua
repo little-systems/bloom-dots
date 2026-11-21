@@ -4,7 +4,7 @@
 --
 -- Tiled windows take focus as Tab steps, with no card. When every window is
 -- floating, `notify` tells the shell to draw its card instead (`open <seq>
--- <addresses> <index>`, `hide <seq>`), and letting go of Alt focuses the
+-- <addresses> <index>`, or `reveal` to skip the shell's wait; `hide <seq>`), and letting go of Alt focuses the
 -- choice and brings it to the front. Each `bloom ipc` runs as its own
 -- process, so messages can land out of order: every one carries the whole
 -- state and a rising seq, and the shell drops older ones. A tile the shell
@@ -24,7 +24,7 @@ local M = {}
 
 local WATCH_MS = 30
 local HOLD_TICK_MS = 20
-local HOLD_MS = 200
+local HOLD_MS = 100
 local STEP = 150
 
 function M.new(hl, notify)
@@ -62,10 +62,12 @@ function M.new(hl, notify)
         if window.floating then hl.dispatch(hl.dsp.window.bring_to_top()) end
     end
 
-    local function open()
+    -- `reveal` shows the card at once (a held swipe has waited already);
+    -- `open` lets the shell wait, so a quick Alt + Tab never flashes it.
+    local function open(verb)
         local addresses = {}
         for i, window in ipairs(cycle.windows) do addresses[i] = window.address end
-        send("open " .. table.concat(addresses, ",") .. " " .. (cycle.index - 1))
+        send((verb or "open") .. " " .. table.concat(addresses, ",") .. " " .. (cycle.index - 1))
     end
 
     local function finish()
@@ -134,7 +136,7 @@ function M.new(hl, notify)
         if cycle.held < HOLD_MS then return end
         cycle.card = true
         holder:set_enabled(false)
-        open()
+        open("reveal")
     end
 
     mode.gesture = {}
