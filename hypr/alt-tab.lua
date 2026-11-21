@@ -16,6 +16,15 @@ local M = {}
 
 local WATCH_MS = 30
 
+-- A three-finger swipe (owner's request): one step through the windows on
+-- the workspace in Hyprland's own order, so repeated swipes reach every one
+-- rather than flipping between two; a floating one comes to the front.
+function M.swipe(hl, direction)
+    hl.dispatch(hl.dsp.window.cycle_next({ next = direction > 0 }))
+    local window = hl.get_active_window()
+    if window and window.floating then hl.dispatch(hl.dsp.window.bring_to_top()) end
+end
+
 function M.new(hl, notify)
     local cycle = nil
     local seq = 0

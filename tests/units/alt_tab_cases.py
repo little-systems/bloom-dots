@@ -34,10 +34,19 @@ hl = {
  end,
  dsp = {
   focus = function(args) return { name = "focus", window = args.window } end,
-  window = { bring_to_top = function() return { name = "top" } end }
+  window = {
+   bring_to_top = function() return { name = "top" } end,
+   cycle_next = function(args) return { name = "cycle", next = args.next } end
+  }
  },
  dispatch = function(d)
   if d.name == "focus" then active = d.window; log[#log + 1] = "focus " .. d.window.address
+  elseif d.name == "cycle" then
+   -- Hyprland's own order: here, as added.
+   local at = 1
+   for i, w in ipairs(windows) do if w == active then at = i end end
+   active = windows[(at - 1 + (d.next and 1 or -1)) % #windows + 1]
+   log[#log + 1] = "cycle " .. (d.next and "next" or "back") .. " " .. active.address
   else log[#log + 1] = d.name end
  end,
  bind = function(keys, fn, opts)
@@ -49,7 +58,8 @@ hl = {
  end
 }
 local function tick() for _, t in ipairs(timers) do if t.enabled then t.fn() end end end
-local mode = dofile(arg[1]).new(hl, function(message) log[#log + 1] = "shell " .. message end)
+local M = dofile(arg[1])
+local mode = M.new(hl, function(message) log[#log + 1] = "shell " .. message end)
 local function setup(floating)
  local a = add("0xa", 0, 1, floating); local b = add("0xb", 2, 1, floating); local c = add("0xc", 1, 1, floating); add("0xother", 3, 2)
  active = a
@@ -83,6 +93,8 @@ function steps.alt_watched_again()
  mode.step(1); alt_down = false; tick()
  alt_down = true; mode.step(1); alt_down = false; tick()
 end
+function steps.swipe_tiled() local a = add("0xa", 0); add("0xb", 1); active = a; M.swipe(hl, 1); M.swipe(hl, 1); M.swipe(hl, -1) end
+function steps.swipe_floating() local a = add("0xa", 0); add("0xf", 1, 1, true); active = a; M.swipe(hl, 1); M.swipe(hl, 1) end
 function steps.alone() local a = add("0xa", 0); active = a; mode.step(1); mode.commit() end
 function steps.release_without_cycle() setup(); mode.commit() end
 steps[arg[2]]()
@@ -152,6 +164,12 @@ class AltTab(unittest.TestCase):
         self.assertEqual(log.count("timer off"), 2)
         self.assertEqual(log.count("unbind Escape"), 2)
 
+    def test_a_swipe_steps_through_the_windows_in_order(self):
+        self.assertEqual(self.run_step("swipe_tiled"), ["cycle next 0xb", "cycle next 0xa", "cycle back 0xb"])
+
+    def test_a_swipe_brings_a_floating_window_to_the_front(self):
+        self.assertEqual(self.run_step("swipe_floating"), ["cycle next 0xf", "top", "cycle next 0xa"])
+
     def test_one_window_does_nothing(self):
         self.assertEqual(self.run_step("alone"), [""])
 
@@ -160,9 +178,14 @@ class AltTab(unittest.TestCase):
 
     def test_desktop_binds_it(self):
         text = (ROOT / "hypr/desktop.lua").read_text()
-        self.assertIn('dofile(checkout .. "/hypr/alt-tab.lua").new(hl, function(message) hl.dispatch(ipc("switcher " .. message)) end)', text)
+        self.assertIn('local switching = dofile(checkout .. "/hypr/alt-tab.lua")', text)
+        self.assertIn('local alt_tab = switching.new(hl, function(message) hl.dispatch(ipc("switcher " .. message)) end)', text)
         self.assertIn('hl.bind("ALT + Tab", function() alt_tab.step(1) end, { description = "Windows: Switch" })', text)
         self.assertIn('hl.bind("ALT + SHIFT + Tab", function() alt_tab.step(-1) end, { description = "Windows: Switch back" })', text)
+        self.assertIn('hl.gesture({ fingers = 3, direction = "left", action = function() switching.swipe(hl, 1) end })', text)
+        self.assertIn('hl.gesture({ fingers = 3, direction = "right", action = function() switching.swipe(hl, -1) end })', text)
+        self.assertNotIn('action = "move"', text)
+        self.assertIn('hl.gesture({ fingers = 3, direction = "pinch", action = "fullscreen" })', text)
         for key in ("ALT_L", "ALT_R"):
             self.assertIn(f'hl.bind("{key}", alt_tab.commit, {{ release = true, ignore_mods = true, non_consuming = true }})', text)
 

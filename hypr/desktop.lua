@@ -101,7 +101,6 @@ hl.config({
     },
     binds = { hide_special_on_workspace_change = true },
 })
-hl.gesture({ fingers = 3, direction = "swipe", action = "move" })
 hl.gesture({ fingers = 3, direction = "pinch", action = "fullscreen" })
 hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
 hl.gesture({ fingers = 4, direction = "up", action = function() hl.dispatch(ipc("overview open")) end })
@@ -208,7 +207,12 @@ hl.on("config.unload", float_all.unloading)
 hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })
 -- Switches windows on this workspace, most recent first (alt-tab.lua); the
 -- shell draws the switcher. Releasing Alt switches.
-local alt_tab = dofile(checkout .. "/hypr/alt-tab.lua").new(hl, function(message) hl.dispatch(ipc("switcher " .. message)) end)
+local switching = dofile(checkout .. "/hypr/alt-tab.lua")
+local alt_tab = switching.new(hl, function(message) hl.dispatch(ipc("switcher " .. message)) end)
+-- Three fingers left or right step through the windows (natural scrolling:
+-- left is next, as with four fingers for workspaces).
+hl.gesture({ fingers = 3, direction = "left", action = function() switching.swipe(hl, 1) end })
+hl.gesture({ fingers = 3, direction = "right", action = function() switching.swipe(hl, -1) end })
 hl.bind("ALT + Tab", function() alt_tab.step(1) end, { description = "Windows: Switch" })
 hl.bind("ALT + SHIFT + Tab", function() alt_tab.step(-1) end, { description = "Windows: Switch back" })
 hl.bind("ALT_L", alt_tab.commit, { release = true, ignore_mods = true, non_consuming = true })

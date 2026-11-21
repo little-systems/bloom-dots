@@ -67,3 +67,13 @@ on to apps (`non_consuming`) and match with any modifiers (`ignore_mods`).
 Plain-Lua cases for ordering, stepping, wrapping, commit, click, cancel and
 the Esc bind's lifetime; switcher.js and SwitcherView QML tests; the store's
 rule cases; an integration test driving `bloom ipc switcher` under sway.
+
+## Three-finger swipe
+
+Owner's follow-up the same day: three fingers moved the focused window;
+they should switch windows instead. Swiping left goes to the next window on
+the workspace and right to the previous (natural scrolling, like the
+four-finger workspace swipe), in Hyprland's own cycle order (`cycle_next`),
+so repeated swipes reach every window instead of flipping between the last
+two. A floating one comes to the front. No card. Pinch still toggles
+fullscreen. `M.swipe(hl, direction)` in `hypr/alt-tab.lua`.
