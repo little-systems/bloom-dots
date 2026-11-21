@@ -81,6 +81,10 @@ Item {
 	readonly property Item menuBoxItem: menu.boxItem
 	readonly property Item submenuBoxItem: menu.submenuBoxItem
 	readonly property Item popupItem: popup
+	readonly property Item popupCardItem: popup.cardItem
+	// The dock window draws the menu's and Add App's shadows from an unblurred
+	// layer (DockShadows.qml), so Hyprland's blur never ends in a band on them.
+	property bool externalShadows: false
 	readonly property bool confirmOpen: confirm.opened
 	readonly property Item confirmBoxItem: confirm.boxItem
 	readonly property Item previewItem: preview
@@ -194,7 +198,10 @@ Item {
 			sessionLocked: root.sessionLocked, lockPreparing: root.lockPreparing, userVisible: root.userVisible,
 			width: root.target.width, height: root.target.height, y: root.target.y,
 			previewOpen: root.previewOpen,
-			keys: root._rows.map(r => r.key)
+			keys: root._rows.map(r => r.key),
+			surfaceHeight: root.height,
+			// The open menu's box in the dock window's coordinates.
+			menuBox: menu.opened ? menu.boxItem.mapToItem(null, 0, 0, menu.boxItem.width, menu.boxItem.height) : null
 		};
 	}
 
@@ -671,6 +678,7 @@ Item {
 			z: -1
 			x: (stage.width - width) / 2
 			y: pillArea.y + Tokens.dock.popup.tuck - height
+			ownShadows: !root.externalShadows
 			apps: root.apps
 			running: (root.items.unpinned || []).filter(i => !i.id.startsWith("class:")).map(i => ({ id: i.id, name: i.name, icon: i.icon }))
 			pinned: (root.items.pinned || []).map(i => i.id)
@@ -689,6 +697,7 @@ Item {
 			anchors.fill: parent
 			z: 10
 			viewWidth: stage.width
+			ownShadows: !root.externalShadows
 			light: root.light
 			bg: root.bgExpanded
 			border: root.border

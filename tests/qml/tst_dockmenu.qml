@@ -33,6 +33,16 @@ Item {
 			return m;
 		}
 
+		// The dock window draws the menu's shadow from an unblurred layer
+		// (DockShadows.qml); elsewhere the menu draws its own.
+		function test_ownShadowOnlyWhenAsked() {
+			const m = make();
+			m.openAt(300, 480);
+			tryVerify(() => findChild(m, "menu-shadow").visible, 1000, "own shadow");
+			m.ownShadows = false;
+			verify(!findChild(m, "menu-shadow").visible, "shadow left to the dock window");
+		}
+
 		function test_opensAbovePointerAndChooses() {
 			const m = make();
 			const chosen = createTemporaryObject(spyComponent, host, { target: m, signalName: "chosen" });

@@ -38,6 +38,16 @@ Item {
 			return p;
 		}
 
+		// The dock window draws the card's shadow from an unblurred layer
+		// (DockShadows.qml); elsewhere the card draws its own.
+		function test_ownShadowOnlyWhenAsked() {
+			const p = make();
+			tryVerify(() => findChild(p, "popup-shadow").visible, 1000, "own shadow");
+			p.ownShadows = false;
+			verify(!findChild(p, "popup-shadow").visible, "shadow left to the dock window");
+			verify(p.cardItem === findChild(p, "addapp-card"), "the card is exposed for the dock window");
+		}
+
 		function test_browseSections() {
 			const p = make();
 			compare(p.flat.map(x => x.id), ["chrome", "gimp", "kitty"], "Running, then All apps without pinned or running");

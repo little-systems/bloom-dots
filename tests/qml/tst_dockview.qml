@@ -38,6 +38,17 @@ Item {
 			return v;
 		}
 
+		// The dock window draws the menu's and Add App's shadows from an
+		// unblurred layer, from the boxes it exposes.
+		function test_externalShadowsHandOverTheBoxes() {
+			const v = make({ externalShadows: true });
+			verify(!v.menuItem.ownShadows, "menu draws none");
+			verify(!v.popupItem.ownShadows, "Add App draws none");
+			verify(v.popupCardItem === findChild(v, "addapp-card"), "Add App card exposed");
+			const own = make();
+			verify(own.menuItem.ownShadows && own.popupItem.ownShadows, "by default they draw their own");
+		}
+
 		function settle(v) {
 			v.ready = true;
 			tryCompare(v, "expanded", true, 1000);

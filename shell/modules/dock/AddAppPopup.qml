@@ -23,6 +23,10 @@ Item {
 	property color accent: "#007aff"
 
 	readonly property bool opened: root._open
+	// False when the dock window draws the card's shadow from an unblurred
+	// layer (DockShadows.qml).
+	property bool ownShadows: true
+	readonly property Item cardItem: card
 	readonly property var sections: Dock.addAppSections(root.apps, root.running, root.pinned, root._query)
 	readonly property var flat: root.sections.reduce((all, s) => all.concat(s.items), [])
 	property int selectedIndex: 0
@@ -122,6 +126,7 @@ Item {
 
 	Rectangle {
 		id: card
+		objectName: "addapp-card"
 		anchors.fill: parent
 		radius: Tokens.dock.popup.radius
 		color: root.bg
@@ -354,9 +359,10 @@ Item {
 	}
 
 	BoxShadow {
+		objectName: "popup-shadow"
 		anchors.fill: card
 		z: -1
-		visible: card.opacity > 0
+		visible: root.ownShadows && card.opacity > 0
 		offset.y: Tokens.dock.popup.shadow.y
 		blur: Tokens.dock.popup.shadow.blur
 		radius: card.radius
