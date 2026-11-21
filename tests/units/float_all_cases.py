@@ -15,7 +15,7 @@ local windows = {}
 local screen = { x = 0, y = 0, width = 1920, height = 1080, scale = 1 }
 local function add(address, floating, workspace, class, size)
  local w = { address = address, floating = floating, workspace = { id = workspace }, class = class or "app",
-  size = size or { x = 1900, y = 1000 }, at = { x = 10, y = 10 }, monitor = screen }
+  size = size or { x = 1900, y = 1000 }, at = { x = 10, y = 10 }, monitor = screen, pid = #windows + 101 }
  windows[#windows + 1] = w
  return w
 end
@@ -29,6 +29,17 @@ local store = {
  set = function(class, width, height, x, y)
   saved[class] = { width = width, height = height, x = x, y = y }
   log[#log + 1] = "save " .. class .. " " .. width .. "x" .. height .. (x and ("@" .. x .. ":" .. y) or "")
+ end
+}
+local kept_on, kept_windows = false, {}
+local kept_log = {}
+local kept = {
+ load = function() return kept_on, kept_windows end,
+ save = function(on, windows)
+  local list = {}
+  for address, class in pairs(windows) do list[#list + 1] = address .. "=" .. class end
+  table.sort(list)
+  kept_log[#kept_log + 1] = (on and "on" or "off") .. " " .. table.concat(list, ",")
  end
 }
 local function target(args)
@@ -61,7 +72,12 @@ hl = {
   end
  end
 }
-local mode = dofile(arg[1]).new(hl, arg[3] ~= "memory" and store or nil)
+local new = dofile(arg[1]).new
+if arg[3] == "reloaded" then
+ kept_on, kept_windows = true, { ["0xa"] = "101", ["0xgone"] = "200", ["0xc"] = "999" }
+ add("0xa", true, 1, "Spotify"); add("0xb", true, 1, "dialog"); add("0xc", true, 1, "app")
+end
+local mode = new(hl, arg[3] ~= "memory" and store or nil, arg[3] ~= "memory" and kept or nil)
 local function state()
  local out = {}
  for _, w in ipairs(windows) do out[#out + 1] = w.address .. "=" .. (w.floating and "float" or "tile") end
@@ -183,6 +199,19 @@ function steps.new_window_placed()
  mode.opened(add("0xnew", false, 1, "kitty"))
  print(table.concat(log, ","))
 end
+function steps.reloaded()
+ local was = mode.active()
+ mode.toggle()
+ print(tostring(was), state(), only("disable"))
+end
+function steps.kept()
+ local a = add("0xa", false, 1, "firefox"); add("0xdialog", true, 1, "dialog")
+ mode.toggle()
+ local new = add("0xnew", false, 1, "kitty"); mode.opened(new)
+ mode.closed(a)
+ mode.toggle()
+ print(table.concat(kept_log, "|"))
+end
 function steps.memory() local a = add("0xa", false, 1, "firefox"); mode.toggle(); a.size = { x = 1111, y = 777 }; mode.toggle(); mode.toggle(); print(only("resize")) end
 steps[arg[2]]()
 """
@@ -258,13 +287,24 @@ class FloatAll(unittest.TestCase):
     def test_a_new_window_goes_where_its_app_was(self):
         self.assertEqual(self.run_step("new_window_placed"), "enable 0xnew,resize 0xnew 900x600,place 0xnew 40:60")
 
+    def test_a_reload_keeps_the_mode_and_the_windows_it_floated(self):
+        # A window is only taken back if it's still there, floating, and the
+        # same process (an app's name can change, Spotify sets its late); one
+        # that floated on its own stays floating.
+        self.assertEqual(self.run_step("reloaded"), "true\t0xa=tile 0xb=float 0xc=float\tdisable 0xa")
+
+    def test_the_mode_is_kept_as_it_changes(self):
+        self.assertEqual(self.run_step("kept").split("|"), [
+            "on 0xa=101", "on 0xa=101,0xnew=103", "on 0xnew=103", "off"])
+
     def test_without_a_store_sizes_last_until_reload(self):
         self.assertEqual(self.run_step("memory"), "resize 0xa 1280x800,resize 0xa 1111x777")
 
     def test_desktop_binds_it(self):
         text = (ROOT / "hypr/desktop.lua").read_text()
         self.assertIn('local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")', text)
-        self.assertIn('dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes)', text)
+        self.assertIn('local float_mode = dofile(checkout .. "/hypr/float-mode.lua").open(state .. "/bloom/float-all", os.getenv("HYPRLAND_INSTANCE_SIGNATURE") or "")', text)
+        self.assertIn('dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes, float_mode)', text)
         self.assertIn('hl.on("window.close", float_all.closed)', text)
         self.assertIn('hl.on("config.unload", float_all.unloading)', text)
         self.assertIn('hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })', text)

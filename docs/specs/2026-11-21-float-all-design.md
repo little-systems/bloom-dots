@@ -19,8 +19,14 @@ them all back.
   hand) stay floating, so "back to tiling" restores the layout as it was.
 - While on, a window that opens tiled is floated and remembered; one whose
   rules float it is left alone.
-- Hyprland resets Lua state on a config reload, so a reload ends the mode.
-  Windows it floated stay floating until tiled by hand or the mode runs again.
+- Hyprland resets Lua state on a config reload. At first that ended the
+  mode and stranded the windows it had floated (the owner hit it with
+  Spotify): the next press saw them as floating on their own. The mode and
+  its windows (address and process id) are now kept in
+  `$XDG_STATE_HOME/bloom/float-all` (`hypr/float-mode.lua`) and read back
+  after a reload; a window is taken back only if it's still floating and the
+  same process, since some apps (Spotify) set their name late. A new
+  Hyprland session starts with the mode off.
 
 ## Window sizes
 

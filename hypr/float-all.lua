@@ -2,7 +2,11 @@
 -- on every workspace, and windows that open while it's on float too; the
 -- next press tiles back the ones it floated. Windows that were floating
 -- already (dialogs, rule-floated or floated by hand) stay as they were.
--- Hyprland resets Lua state on a config reload, which ends the mode.
+-- Hyprland resets Lua state on a config reload, so `kept` ({ load(), save(on,
+-- windows) }) holds the mode and the windows it floated (address to process
+-- id) through one; a window is taken back only if it's still floating and
+-- the same process. Not the app's name: some, like Spotify, set it late.
+-- Without `kept` a reload ends the mode.
 --
 -- A window it floats gets its app's remembered size, or 1280 x 800, never
 -- more than 80% of the screen, and goes back where its app last was; with no
@@ -26,7 +30,7 @@ local function memory()
     }
 end
 
-function M.new(hl, sizes)
+function M.new(hl, sizes, kept)
     sizes = sizes or memory()
     local on = false
     local floated = {}
@@ -35,6 +39,19 @@ function M.new(hl, sizes)
         local name = window.class
         if not name or name == "" then name = window.initial_class end
         if name and name ~= "" then return name end
+    end
+
+    local function keep()
+        if kept then kept.save(on, floated) end
+    end
+
+    if kept then
+        local was, windows = kept.load()
+        on = was
+        for _, window in ipairs(hl.get_windows()) do
+            local pid = windows[window.address]
+            if pid and window.floating and pid == tostring(window.pid) then floated[window.address] = pid end
+        end
     end
 
     local function fit(size, monitor)
@@ -60,7 +77,7 @@ function M.new(hl, sizes)
     -- of its workspace, so one landing on a taken spot is nudged off it.
     local function float(window, nudges)
         hl.dispatch(hl.dsp.window.float({ action = "enable", window = window }))
-        floated[window.address] = true
+        floated[window.address] = tostring(window.pid)
         local name = class(window)
         local saved = name and sizes.get(name) or DEFAULT
         local width, height = fit(saved, window.monitor)
@@ -104,6 +121,7 @@ function M.new(hl, sizes)
             end
             floated = {}
             on = false
+            keep()
         else
             local spots = {}
             for _, window in ipairs(hl.get_windows()) do
@@ -114,17 +132,22 @@ function M.new(hl, sizes)
                 end
             end
             on = true
+            keep()
         end
     end
 
     function mode.opened(window)
-        if on and window and not window.floating then float(window, nil) end
+        if on and window and not window.floating then
+            float(window, nil)
+            keep()
+        end
     end
 
     function mode.closed(window)
         if not window or not floated[window.address] then return end
         if window.floating then remember(window) end
         floated[window.address] = nil
+        keep()
     end
 
     function mode.unloading()

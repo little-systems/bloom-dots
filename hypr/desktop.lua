@@ -199,7 +199,8 @@ hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "t
 -- Floats every window on every workspace, or tiles them back (float-all.lua).
 local state = os.getenv("XDG_STATE_HOME") or ((os.getenv("HOME") or "") .. "/.local/state")
 local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")
-local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes)
+local float_mode = dofile(checkout .. "/hypr/float-mode.lua").open(state .. "/bloom/float-all", os.getenv("HYPRLAND_INSTANCE_SIGNATURE") or "")
+local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes, float_mode)
 hl.on("window.open", float_all.opened)
 hl.on("window.close", float_all.closed)
 hl.on("window.destroy", float_all.closed)
