@@ -17,8 +17,8 @@
 -- through `gesture` ({ start, update, finish }, Hyprland's gesture
 -- callbacks): a quick swipe goes back to the last window, as a quick Alt +
 -- Tab does. Keeping the fingers down HOLD_MS shows the card, tiled windows
--- too, and every STEP of travel moves the choice (left is next, natural
--- scrolling); lifting switches to it. A cancelled swipe or Esc changes
+-- too, and every STEP of travel moves the choice (right is next, the
+-- owner's choice); lifting switches to it. A cancelled swipe or Esc changes
 -- nothing.
 local M = {}
 
@@ -154,12 +154,12 @@ function M.new(hl, notify)
     function mode.gesture.update(event)
         if not cycle or not cycle.swipe then return end
         cycle.travel = cycle.travel + ((event and event.delta and event.delta.x) or 0)
-        while cycle.travel <= -STEP do
-            cycle.travel = cycle.travel + STEP
-            move(1)
-        end
         while cycle.travel >= STEP do
             cycle.travel = cycle.travel - STEP
+            move(1)
+        end
+        while cycle.travel <= -STEP do
+            cycle.travel = cycle.travel + STEP
             move(-1)
         end
     end

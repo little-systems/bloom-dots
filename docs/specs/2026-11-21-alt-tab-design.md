@@ -82,9 +82,9 @@ window, and holding shows the card to step through continuously.
 - Fingers held down 100 ms show the card, tiled windows too (owner asked for
   it while holding, then for it sooner). That first message is `reveal`, so
   the shell skips its own 120 ms wait (which keeps a quick Alt + Tab from
-  flashing the card). Each 80 units of travel (150 at first; the owner asked for quicker) steps the choice: left is next
-  (natural scrolling, like the four-finger workspace swipe), right is back,
-  wrapping. Before the card shows, steps only move the choice.
+  flashing the card). Each 80 units of travel (150 at first; the owner asked for quicker) steps the choice: right is next and
+  left is back (at first the other way, like natural scrolling; the owner
+  flipped it), wrapping. Before the card shows, steps only move the choice.
 - Lifting switches to the choice (a clicked tile wins). A cancelled swipe or
   Esc changes nothing. A swipe during Alt + Tab, or Alt during a swipe, is
   left alone. Pinch still toggles fullscreen.
