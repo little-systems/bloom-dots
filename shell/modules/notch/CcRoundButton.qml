@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "qp"
@@ -51,7 +50,7 @@ Item {
 	}
 
 	// .active: box-shadow 0 2px 8px var(--bloom-border).
-	RectangularShadow {
+	BoxShadow {
 		objectName: "shadow"
 		visible: root.active
 		anchors.fill: background

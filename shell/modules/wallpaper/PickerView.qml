@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Controls
 import "../../common"
 import "../../common/render"
@@ -96,7 +95,7 @@ Item {
 		target: root._open ? 1 : 0
 	}
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		visible: card.visible
 		opacity: card.opacity

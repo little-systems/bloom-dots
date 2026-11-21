@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
@@ -354,7 +353,7 @@ Item {
 		}
 	}
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		z: -1
 		visible: card.opacity > 0

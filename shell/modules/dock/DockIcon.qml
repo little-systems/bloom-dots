@@ -131,7 +131,7 @@ Item {
 				target: root.pressed && !root.dragging ? Tokens.dock.tapScale : root.dragging ? Tokens.dock.drag.scale : root.hovered && root.shown ? Tokens.dock.hover.scale : 1
 			}
 
-			RectangularShadow {
+			BoxShadow {
 				anchors.fill: tile
 				visible: tile.visible
 				offset.y: 4

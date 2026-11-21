@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
@@ -83,7 +82,7 @@ Item {
 		}
 	}
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		visible: card.visible
 		opacity: card.opacity

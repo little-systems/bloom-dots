@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Effects
+import "../../common"
 import QtQuick.Shapes
 import "../../common/tokens.js" as Tokens
 
@@ -12,7 +12,7 @@ Item {
 	implicitHeight: Tokens.pulse.arrow.box
 	readonly property real _k: Tokens.pulse.arrow.glyph / 24
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: disc
 		radius: disc.radius
 		blur: 8

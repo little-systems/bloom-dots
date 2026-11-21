@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Effects
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
 import "../../common/render"
@@ -133,7 +133,7 @@ Item {
 		color: root.bg
 		border.width: 1
 		border.color: root.border
-		RectangularShadow {
+		BoxShadow {
 			anchors.fill: parent
 			z: -1
 			radius: parent.radius

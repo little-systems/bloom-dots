@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
@@ -66,7 +65,7 @@ Item {
 	// cursor: default — the screen around it; a stray click doesn't cancel
 	MouseArea { anchors.fill: parent; enabled: root._open }
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		visible: card.visible
 		opacity: card.opacity
