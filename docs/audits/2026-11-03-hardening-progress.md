@@ -368,3 +368,14 @@ physical hardware, a password-entry greeter, a UWSM login and real power loss.
 - **Idle CPU, soak and physical checks:** not run for this release (owner's
   choice: CI and VM acceptance). The owner uses the release live on their
   machine.
+
+## Release gates for v1.2.0 (2026-11-21)
+
+- **CI at `4be4f02`:** every group passed (quick, qml, integration, cli).
+- **VM acceptance at `4be4f02`:** 48 of 48, `ACCEPTANCE_FAILURES=0`, on a fresh
+  disposable Arch VM. The fresh install from an archinstall-style chroot passed
+  (`CHROOT_INSTALL=ok`).
+- **Idle CPU, soak and physical checks:** not run for this release, as for
+  v1.1.0. The owner checked the new window features (float or tile all,
+  floating sizes and places, Alt + Tab, the three-finger switcher, the grab
+  handle) live on their machine.
