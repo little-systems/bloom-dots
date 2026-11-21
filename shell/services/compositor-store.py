@@ -27,7 +27,12 @@ LIMIT = 1024 * 1024
 INSTALLER_TEMPLATE = b"-- Written by Bloom Settings. Personal overrides belong in bloom.lua.\n"
 HEADER = "-- Written by Bloom Settings. Delete this file to undo everything in it."
 MARKER = "-- bloom-state-v1 "
-RULE = 'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'
+# Hyprland blurs behind layer pixels more opaque than ignore_alpha: above the
+# shadows' 50% and below the cards' 60% opacity floor, so a shadow never gets
+# a hard-edged blurred band.
+RULE = 'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.55 })'
+# Earlier rules, still read; the next save writes RULE.
+LEGACY_RULES = ('hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })',)
 MONITOR = re.compile(r'hl\.monitor\(\{ output = "[A-Za-z0-9._-]+", mode = "(?:[0-9]+x[0-9]+@[0-9]+(?:\.[0-9]+)?|preferred)", position = "-?[0-9]+x-?[0-9]+", scale = ([0-9]+(?:\.[0-9]+)?)(?:, transform = [0-7])? \}\)')
 
 
@@ -97,9 +102,13 @@ def validate(state):
         match = MONITOR.fullmatch(line) if isinstance(line, str) else None
         if match is None or not 0.25 <= float(match[1]) <= 4:
             raise ValueError("unsupported monitor preference; original retained")
-    if any(line != RULE for line in state["rules"]):
+    if any(line != RULE and line not in LEGACY_RULES for line in state["rules"]):
         raise ValueError("unrecognized layer rule; original retained")
     return state
+
+
+def current(state):
+    return {**state, "rules": [RULE if line in LEGACY_RULES else line for line in state["rules"]]}
 
 
 def legacy_source(state):
@@ -139,7 +148,8 @@ def snapshot(config, legacy):
         if data is not None and not pristine and data != legacy_source(state):
             raise ValueError("legacy compositor file differs from its state; preserving changes")
         revision = digest(b"legacy\0" + (data or b"missing") + b"\0" + (old_json or b"missing"))
-    return {"state": state, "revision": revision, "previous": previous, "source": data}
+    # "stored" is the state as written, "state" as the next save writes it.
+    return {"state": current(state), "stored": state, "revision": revision, "previous": previous, "source": data}
 
 
 def atomic_write(path, data):
@@ -188,8 +198,8 @@ def commit(config, legacy, expected, changes):
         old = snapshot(config, legacy)
         if old["revision"] != expected:
             raise ValueError("compositor preferences changed elsewhere; reload and retry")
-        state = validate({**old["state"], **changes})
-        if state == old["state"] and old["source"] is not None and old["previous"]:
+        state = current(validate({**old["state"], **changes}))
+        if state == old["stored"] and old["source"] is not None and old["previous"]:
             return old
         history = config.parent / ".bloom-settings-history"
         history.mkdir(mode=0o700, exist_ok=True)
@@ -197,7 +207,7 @@ def commit(config, legacy, expected, changes):
         if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
             raise ValueError("unsafe compositor history directory")
         backup = history / (old["revision"] + ".json")
-        saved = (json.dumps({"revision": old["revision"], "state": old["state"], "source": old["source"].decode() if old["source"] is not None else None}, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
+        saved = (json.dumps({"revision": old["revision"], "state": old["stored"], "source": old["source"].decode() if old["source"] is not None else None}, ensure_ascii=False, separators=(",", ":")) + "\n").encode()
         if len(saved) > 4 * LIMIT:
             raise ValueError("previous compositor snapshot exceeds size limit")
         existing = read_file(backup, 4 * LIMIT)
@@ -238,7 +248,7 @@ def main():
             result = commit(config, legacy, request["expected"], request["changes"])
         else:
             raise ValueError("unknown compositor store action")
-        result = {"ok": True, **{k: v for k, v in result.items() if k != "source"}}
+        result = {"ok": True, **{k: v for k, v in result.items() if k not in ("source", "stored")}}
     except (ValueError, OSError, KeyError, TypeError) as error:
         result = {"ok": False, "error": str(error) if isinstance(error, ValueError) else "compositor storage unavailable; check permissions"}
     print(json.dumps(result, ensure_ascii=False, allow_nan=False))

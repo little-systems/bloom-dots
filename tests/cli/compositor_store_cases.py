@@ -73,6 +73,31 @@ class CompositorStoreCases(unittest.TestCase):
         self.assertEqual(again["revision"], result["revision"])
         self.assertEqual(self.config.stat().st_mtime_ns, mtime)
 
+    # Hyprland blurs behind every layer pixel more opaque than ignore_alpha.
+    # Cards are at least 60% opaque (the opacity floor) and their shadows at
+    # most 50%, so only a threshold between them blurs cards without a hard
+    # blurred band where a shadow fades out.
+    def test_layer_blur_skips_shadows_but_not_cards(self):
+        threshold = float(store.RULE.split("ignore_alpha = ")[1].split(" ")[0])
+        self.assertGreater(threshold, 0.5)
+        self.assertLess(threshold, 0.6)
+
+    # Files saved before the threshold changed still load; the next save
+    # writes the current rule and keeps the old file in history.
+    def test_old_blur_rule_is_read_and_upgraded_on_save(self):
+        source = store.encode(dict(self.state, rules=[store.LEGACY_RULES[0]]), "")
+        self.config.write_bytes(source)
+        before = store.snapshot(self.config, self.legacy)
+        self.assertEqual(before["state"]["rules"], [store.RULE])
+        self.assertEqual(self.config.read_bytes(), source)
+        saved = store.commit(self.config, self.legacy, before["revision"], {})
+        written = self.config.read_bytes()
+        self.assertIn(store.RULE.encode(), written)
+        self.assertNotIn(store.LEGACY_RULES[0].encode(), written)
+        self.assertEqual(saved["state"]["rules"], [store.RULE])
+        backup = self.config.parent / ".bloom-settings-history" / (before["revision"] + ".json")
+        self.assertEqual(json.loads(backup.read_text())["source"].encode(), source)
+
     def test_canonical_document_has_one_source_of_truth(self):
         first = store.snapshot(self.config, self.legacy)
         result = store.commit(self.config, self.legacy, first["revision"], self.state)

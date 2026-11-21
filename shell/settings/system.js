@@ -175,7 +175,7 @@ function badLayouts(text, known) {
 }
 
 function layerRules() {
-	return ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })'];
+	return ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.55 })'];
 }
 
 // os-release is data, never shell code. Only these display fields are read.
