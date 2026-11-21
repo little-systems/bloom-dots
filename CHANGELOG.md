@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.2.0 (2026-11-21)
+
+Window management for Bloom: float or tile every window at once, switch with
+Alt + Tab or a three-finger swipe, and floating windows that remember where
+they were.
+
+### Windows
+- Super + Alt + Space floats every window on every workspace, and the next
+  press tiles them back. Windows that open meanwhile float too; dialogs keep
+  their own.
+- A floated window opens at the size and place its app last had, or at
+  1280 x 800 in the middle, and windows floated together are nudged apart.
+- Float or tile all keeps track of its windows through a Hyprland reload and
+  through apps that hide to the tray, such as Spotify.
+- Alt + Tab switches between the windows on the workspace, most recent
+  first. Tiled windows take focus as you go; floating ones get a card of live
+  previews.
+- A three-finger swipe goes back to the last window. Hold it to show the
+  card, starting on the window you're in, and move right or left to step.
+- A grab handle on the top edge of floating windows that draw no title bar,
+  such as Spotify.
+
+### Desktop
+- A default task manager, Mission Center, on Ctrl + Shift + Esc, the dock's
+  menu and a Command Center button; choose another in Settings.
+- Card shadows no longer show a hard band, and the background blur fades
+  with cards as they open and close.
+- Bloom surfaces stay at least 60% opaque.
+
+### Settings, Search and the guide
+- Settings opens at once: it's ready from login, and each tab loads when
+  you open it.
+- Typing in Search ignores the mouse until it moves, so the selection stays
+  put.
+- The first-run guide shows where notifications live.
+
+### The Dock
+- Tray icons stay with the app whose window showed them, and never go to an
+  app that didn't.
+- Add App's keyboard highlight shows again.
+
 ## 1.1.0 (2026-11-18)
 
 Bloom 3.10.2's new features come to Linux, along with agent live activities,
