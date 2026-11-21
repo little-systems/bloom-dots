@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Effects
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "../../common/render"
 
@@ -55,7 +55,7 @@ Item {
 		onTriggered: root.shown = true
 	}
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		offset.y: 6
 		blur: 20

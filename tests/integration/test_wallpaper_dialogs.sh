@@ -26,7 +26,7 @@ SH
 chmod +x "$BLOOM_WALLPAPER_PICKER"
 printf '%s\n' "$TEST_TMP/walls/custom # café.png" > "$TEST_TMP/result-file"
 printf '%s\n' "$TEST_TMP/custom folder" > "$TEST_TMP/result-folder"
-qs --no-color -p "$H" > "$TEST_TMP/shell.log" 2>&1 &
+qs --no-color -p "$H" > >(drop_missing_protocol >"$TEST_TMP/shell.log") 2>&1 &
 # Used by the cleanup trap in lib.sh.
 # shellcheck disable=SC2034
 SHELL_PID=$!

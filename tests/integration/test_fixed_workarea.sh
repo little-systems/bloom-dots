@@ -46,7 +46,7 @@ read -r pw
 SH
 chmod +x "$TEST_TMP/pam/check"
 ln -s "$TEST_TMP/shell" "$XDG_CONFIG_HOME/quickshell/bloom"
-qs --no-color -c bloom >"$TEST_TMP/shell.log" 2>&1 &
+qs --no-color -c bloom > >(drop_missing_protocol >"$TEST_TMP/shell.log") 2>&1 &
 SHELL_PID=$!
 wait_for "the shell to answer ping" ipc_equals pong shell ping
 

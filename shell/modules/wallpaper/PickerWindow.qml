@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../../common/screens.js" as Screens
@@ -29,9 +30,11 @@ PanelWindow {
 	WlrLayershell.namespace: "bloom:wallpaper-picker"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: Wallpaper.opened && !win.dialogOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+	HyprlandWindow.opacity: view.compositorFade ? view.fade : 1
 
 	PickerView {
 		id: view
+		compositorFade: HyprState.available
 		width: win.width / win.uiScale
 		height: win.height / win.uiScale
 		scale: win.uiScale

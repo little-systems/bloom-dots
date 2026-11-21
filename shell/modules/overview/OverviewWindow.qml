@@ -26,6 +26,7 @@ PanelWindow {
 	WlrLayershell.namespace: "bloom:overview"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: Overview.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+	HyprlandWindow.opacity: view.compositorFade ? view.fade : 1
 
 	readonly property var _toplevels: {
 		const out = {};
@@ -43,6 +44,7 @@ PanelWindow {
 
 	OverviewView {
 		id: view
+		compositorFade: HyprState.available
 		width: win.width / win.uiScale
 		height: win.height / win.uiScale
 		scale: win.uiScale

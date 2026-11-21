@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Effects
+import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
 import "../../common/render"
@@ -21,6 +21,9 @@ Item {
 	// For the dock window's input mask: only the boxes take clicks.
 	readonly property Item boxItem: box
 	property Item submenuBoxItem: null
+	// False when the dock window draws the boxes' shadows from an unblurred
+	// layer (DockShadows.qml).
+	property bool ownShadows: true
 
 	// Whether a scene point falls on the open menu or its submenu.
 	function containsScenePoint(x, y) {
@@ -133,9 +136,11 @@ Item {
 		color: root.bg
 		border.width: 1
 		border.color: root.border
-		RectangularShadow {
+		BoxShadow {
+			objectName: "menu-shadow"
 			anchors.fill: parent
 			z: -1
+			visible: root.ownShadows
 			radius: parent.radius
 			offset.y: root.light ? Tokens.dock.menu.shadowLight.y : Tokens.dock.menu.shadow.y
 			blur: root.light ? Tokens.dock.menu.shadowLight.blur : Tokens.dock.menu.shadow.blur

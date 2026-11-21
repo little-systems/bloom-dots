@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/tokens.js" as Tokens
 import "dock.js" as Dock
@@ -29,7 +28,7 @@ Item {
 	width: Dock.segmentWidth(root.cells.length)
 	height: Tokens.dock.iconBox
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: tile
 		visible: tile.visible
 		offset.y: 4

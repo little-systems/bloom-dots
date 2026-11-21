@@ -103,6 +103,7 @@ PanelWindow {
 		lockPreparing: win.lockPreparing
 		edgeDelay: Settings.values["bloom-dock-edge-delay"]
 		uiScale: Settings.values["bloom-scale"]
+		externalShadows: true
 		iconOnly: Settings.values["bloom-dock-icon-only"]
 		separatorEnabled: Settings.values["bloom-dock-separator-enabled"]
 		previewEnabled: Settings.values["bloom-dock-preview-enabled"]
@@ -168,5 +169,11 @@ PanelWindow {
 		onSwitchWorkspace: cell => cell.id > 0 ? Dock.switchWorkspace(cell.id) : Dock.switchWorkspaceNamed(cell.tip)
 		onStepWorkspace: dir => Dock.stepWorkspace(dir, view.workspaceCells)
 		onHideWorkspaces: Settings.set("bloom-dock-workspaces-enabled", false)
+	}
+
+	DockShadows {
+		screen: win.modelData
+		visible: win.visible
+		view: view
 	}
 }

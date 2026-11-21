@@ -24,7 +24,7 @@ wait_for 'reported Bloom ownership' owned_status
 pass 'Bloom owns notifications on the private bus'
 
 ln -s "$ROOT/shell" "$XDG_CONFIG_HOME/quickshell/bloom-conflict"
-qs --no-color -c bloom-conflict >"$TEST_TMP/conflict.log" 2>&1 &
+qs --no-color -c bloom-conflict > >(drop_missing_protocol >"$TEST_TMP/conflict.log") 2>&1 &
 SECOND_SHELL_PID=$!
 second_ipc() { qs -c bloom-conflict ipc call "$@"; }
 wait_for 'second shell ping' second_ipc shell ping
@@ -224,7 +224,7 @@ wait_for 'saved close reason' jq -e --argjson id "$persistent_id" 'any(.entries[
 kill "$SHELL_PID"
 wait "$SHELL_PID" 2>/dev/null || true
 SHELL_PID=""
-qs --no-color -c bloom >"$TEST_TMP/restarted.log" 2>&1 &
+qs --no-color -c bloom > >(drop_missing_protocol >"$TEST_TMP/restarted.log") 2>&1 &
 SHELL_PID=$!
 wait_for 'restarted shell' ipc_equals pong shell ping
 history_restored() { [[ "$(ipc notifications state | jq '.history | length')" == "$saved_count" ]]; }

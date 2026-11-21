@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../../common/screens.js" as Screens
@@ -24,6 +25,7 @@ PanelWindow {
 	WlrLayershell.namespace: "bloom:launcher"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: Launcher.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+	HyprlandWindow.opacity: view.compositorFade ? view.fade : 1
 
 	LauncherView {
 		id: view
@@ -31,6 +33,7 @@ PanelWindow {
 		height: win.height / win.uiScale
 		scale: win.uiScale
 		transformOrigin: Item.TopLeft
+		compositorFade: HyprState.available
 		theme: Theme
 		accent: Theme.accent
 		results: Launcher.results

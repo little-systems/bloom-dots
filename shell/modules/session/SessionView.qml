@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import "../../common"
 import "../../common/render"
 import "../../common/tokens.js" as Tokens
@@ -30,7 +29,15 @@ Item {
 	signal actionChosen(string id)
 	signal dismissed()
 
-	readonly property bool shown: root._open || card.opacity > 0
+	readonly property bool shown: root._open || root.fade > 0
+	// How far the card has faded in. Under Hyprland the window fades instead
+	// (compositorFade), so the compositor's blur fades with the card.
+	property bool compositorFade: false
+	property real fade: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
+	Behavior on fade {
+		enabled: !root._open
+		NumberAnimation { duration: Tokens.launcher.exitMs }
+	}
 	property bool _open: false
 	// The action waiting on "… anyway".
 	property var _asking: null
@@ -83,7 +90,7 @@ Item {
 		}
 	}
 
-	RectangularShadow {
+	BoxShadow {
 		anchors.fill: card
 		visible: card.visible
 		opacity: card.opacity
@@ -108,11 +115,7 @@ Item {
 		border.width: 1
 		border.color: root.theme.border
 		visible: opacity > 0
-		opacity: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
-		Behavior on opacity {
-			enabled: !root._open
-			NumberAnimation { duration: Tokens.launcher.exitMs }
-		}
+		opacity: root.compositorFade ? (root.fade > 0 ? 1 : 0) : root.fade
 
 		// cursor: default — the card's own surface
 		MouseArea { anchors.fill: parent }
