@@ -70,10 +70,19 @@ rule cases; an integration test driving `bloom ipc switcher` under sway.
 
 ## Three-finger swipe
 
-Owner's follow-up the same day: three fingers moved the focused window;
-they should switch windows instead. Swiping left goes to the next window on
-the workspace and right to the previous (natural scrolling, like the
-four-finger workspace swipe), in Hyprland's own cycle order (`cycle_next`),
-so repeated swipes reach every window instead of flipping between the last
-two. A floating one comes to the front. No card. Pinch still toggles
-fullscreen. `M.swipe(hl, direction)` in `hypr/alt-tab.lua`.
+Owner's follow-up the same day: three fingers moved the focused window; they
+should switch windows instead. Then: a quick swipe goes back to the previous
+window, and holding shows the card to step through continuously.
+
+- One horizontal three-finger gesture with Hyprland's `{ start, update,
+  finish }` callbacks drives the Alt + Tab cycle (`mode.gesture`), most
+  recent first.
+- A quick swipe, either way, goes back to the last window, as a quick Alt +
+  Tab does; a floating one comes to the front.
+- Fingers held down 200 ms show the card, tiled windows too (owner asked for
+  it while holding). Each 150 units of travel steps the choice: left is next
+  (natural scrolling, like the four-finger workspace swipe), right is back,
+  wrapping. Before the card shows, steps only move the choice.
+- Lifting switches to the choice (a clicked tile wins). A cancelled swipe or
+  Esc changes nothing. A swipe during Alt + Tab, or Alt during a swipe, is
+  left alone. Pinch still toggles fullscreen.

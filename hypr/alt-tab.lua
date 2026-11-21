@@ -12,23 +12,26 @@
 --
 -- Alt's release bind can be missed (Alt let go while another key is held, a
 -- grab), so while a cycle runs a timer also watches for Alt being let go.
+--
+-- A three-finger horizontal swipe (owner's request) drives the same cycle
+-- through `gesture` ({ start, update, finish }, Hyprland's gesture
+-- callbacks): a quick swipe goes back to the last window, as a quick Alt +
+-- Tab does. Keeping the fingers down HOLD_MS shows the card, tiled windows
+-- too, and every STEP of travel moves the choice (left is next, natural
+-- scrolling); lifting switches to it. A cancelled swipe or Esc changes
+-- nothing.
 local M = {}
 
 local WATCH_MS = 30
-
--- A three-finger swipe (owner's request): one step through the windows on
--- the workspace in Hyprland's own order, so repeated swipes reach every one
--- rather than flipping between two; a floating one comes to the front.
-function M.swipe(hl, direction)
-    hl.dispatch(hl.dsp.window.cycle_next({ next = direction > 0 }))
-    local window = hl.get_active_window()
-    if window and window.floating then hl.dispatch(hl.dsp.window.bring_to_top()) end
-end
+local HOLD_TICK_MS = 20
+local HOLD_MS = 200
+local STEP = 150
 
 function M.new(hl, notify)
     local cycle = nil
     local seq = 0
     local watch = nil
+    local holder = nil
     local mode = {}
 
     local function send(message)
@@ -69,6 +72,7 @@ function M.new(hl, notify)
         local done = cycle
         cycle = nil
         if watch then watch:set_enabled(false) end
+        if holder then holder:set_enabled(false) end
         if done.card then send("hide") end
         done.escape:unbind()
         return done
@@ -81,13 +85,25 @@ function M.new(hl, notify)
     function mode.cancel()
         if not cycle then return end
         local done = finish()
-        if not done.card and done.start then focus(done.start) end
+        if not done.card and not done.swipe and done.start then focus(done.start) end
+    end
+
+    local function move(direction)
+        cycle.index = (cycle.index - 1 + direction) % #cycle.windows + 1
+        -- Tiled Alt + Tab focuses as it goes; a swipe switches when lifted.
+        if cycle.card then open() elseif not cycle.swipe then focus(cycle.windows[cycle.index]) end
+    end
+
+    -- Focuses the choice unless a tile was clicked (the shell focused it).
+    local function switch(done)
+        local active = hl.get_active_window()
+        if (active and active.address) ~= (done.start and done.start.address) then return end
+        focus(done.windows[done.index])
     end
 
     function mode.step(direction)
         if cycle then
-            cycle.index = (cycle.index - 1 + direction) % #cycle.windows + 1
-            if cycle.card then open() else focus(cycle.windows[cycle.index]) end
+            if not cycle.swipe then move(direction) end
             return
         end
         local list = windows()
@@ -107,12 +123,49 @@ function M.new(hl, notify)
     end
 
     function mode.commit()
-        if not cycle then return end
+        if not cycle or cycle.swipe then return end
         local done = finish()
-        if not done.card then return end
-        local active = hl.get_active_window()
-        if (active and active.address) ~= (done.start and done.start.address) then return end
-        focus(done.windows[done.index])
+        if done.card then switch(done) end
+    end
+
+    local function held()
+        if not cycle or not cycle.swipe or cycle.card then return end
+        cycle.held = cycle.held + HOLD_TICK_MS
+        if cycle.held < HOLD_MS then return end
+        cycle.card = true
+        holder:set_enabled(false)
+        open()
+    end
+
+    mode.gesture = {}
+
+    function mode.gesture.start()
+        if cycle then return end
+        local list = windows()
+        if #list < 2 then return end
+        cycle = { windows = list, index = 2, start = hl.get_active_window(), card = false, swipe = true, held = 0, travel = 0 }
+        cycle.escape = hl.bind("Escape", mode.cancel, { ignore_mods = true })
+        if holder then holder:set_enabled(true)
+        else holder = hl.timer(held, { timeout = HOLD_TICK_MS, type = "repeat" }) end
+    end
+
+    function mode.gesture.update(event)
+        if not cycle or not cycle.swipe then return end
+        cycle.travel = cycle.travel + ((event and event.delta and event.delta.x) or 0)
+        while cycle.travel <= -STEP do
+            cycle.travel = cycle.travel + STEP
+            move(1)
+        end
+        while cycle.travel >= STEP do
+            cycle.travel = cycle.travel - STEP
+            move(-1)
+        end
+    end
+
+    function mode.gesture.finish(event)
+        if not cycle or not cycle.swipe then return end
+        if event and event.cancelled then return mode.cancel() end
+        switch(finish())
     end
 
     return mode
