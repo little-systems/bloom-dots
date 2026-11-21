@@ -197,9 +197,13 @@ hl.bind("SUPER + SHIFT + R", ipc("region run record"), { description = "Screen: 
 hl.bind("SUPER + Q", hl.dsp.window.close(), { description = "Windows: Close" })
 hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { description = "Windows: Fullscreen" })
 -- Floats every window on every workspace, or tiles them back (float-all.lua).
-local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl)
+local state = os.getenv("XDG_STATE_HOME") or ((os.getenv("HOME") or "") .. "/.local/state")
+local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")
+local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes)
 hl.on("window.open", float_all.opened)
+hl.on("window.close", float_all.closed)
 hl.on("window.destroy", float_all.closed)
+hl.on("config.unload", float_all.unloading)
 hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })
 -- Switches windows on this workspace, most recent first (alt-tab.lua); the
 -- shell draws the switcher. Releasing Alt switches.

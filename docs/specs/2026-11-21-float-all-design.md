@@ -22,12 +22,30 @@ them all back.
 - Hyprland resets Lua state on a config reload, so a reload ends the mode.
   Windows it floated stay floating until tiled by hand or the mode runs again.
 
+## Window sizes
+
+Owner's follow-up the same day: floated windows came up at whatever size
+Hyprland had for them, which looked random. Owner's choices: a default size,
+remembered per app, always centred.
+
+- A window it floats gets its app's remembered size, or 1280 x 800, never
+  more than 80% of the screen (in layout pixels, so scaling counts), and is
+  centred. Windows floated together on one workspace are nudged 32 px apart
+  so they don't stack exactly.
+- An app's size (by window class) is remembered when its window is tiled
+  back, closed, or Hyprland reloads; tiny sizes and nameless windows aren't.
+- Kept in `$XDG_STATE_HOME/bloom/floating-sizes` (`hypr/float-sizes.lua`),
+  one tab-separated line per app, so it lasts through reloads and restarts.
+  Windows that float on their own keep their own sizes.
+
 ## Shape
 
-`hypr/float-all.lua` returns `new(hl)` → `{ toggle, opened, closed, active }`,
+`hypr/float-all.lua` returns `new(hl, sizes)` → `{ toggle, opened, closed,
+unloading, active }`,
 kept free of globals so plain Lua can test it with a stand-in `hl`.
 `hypr/desktop.lua` loads it from the checkout, binds Super + Alt + Space to
-`toggle` and subscribes `opened`/`closed` to `window.open`/`window.destroy`.
+`toggle` and subscribes `opened` to `window.open`, `closed` to `window.close`
+and `window.destroy`, and `unloading` to `config.unload`.
 
 ## Tests
 

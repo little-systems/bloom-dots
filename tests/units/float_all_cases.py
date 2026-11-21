@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Super + Alt + Space floats every window on every workspace, and tiles back
-the ones it floated. Runs hypr/float-all.lua in plain Lua with a stand-in hl
-whose windows change floating state as the dispatches arrive."""
+the ones it floated. Windows it floats get the app's remembered size, or a
+default one, centred. Runs hypr/float-all.lua in plain Lua with a stand-in hl
+whose windows change state as the dispatches arrive, and a stand-in size
+store."""
 import shutil
 import subprocess
 import unittest
@@ -10,8 +12,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r"""
 local windows = {}
-local function add(address, floating, workspace)
- local w = { address = address, floating = floating, workspace = workspace }
+local screen = { width = 1920, height = 1080, scale = 1 }
+local function add(address, floating, workspace, class, size)
+ local w = { address = address, floating = floating, workspace = { id = workspace }, class = class or "app",
+  size = size or { x = 1900, y = 1000 }, monitor = screen }
  windows[#windows + 1] = w
  return w
 end
@@ -19,21 +23,50 @@ local function find(address)
  for _, w in ipairs(windows) do if w.address == address then return w end end
 end
 local log = {}
+local saved = {}
+local store = {
+ get = function(class) return saved[class] end,
+ set = function(class, width, height) saved[class] = { width = width, height = height }; log[#log + 1] = "save " .. class .. " " .. width .. "x" .. height end
+}
+local function target(args)
+ local t = type(args.window) == "table" and args.window or find((args.window or ""):match("^address:(.*)$"))
+ assert(t, "a dispatch must name its window")
+ return t
+end
 hl = {
  get_windows = function() local copy = {} for i, w in ipairs(windows) do copy[i] = w end return copy end,
- dsp = { window = { float = function(args) return { kind = "float", args = args } end } },
+ dsp = { window = {
+  float = function(args) return { kind = "float", args = args } end,
+  resize = function(args) return { kind = "resize", args = args } end,
+  center = function(args) return { kind = "center", args = args } end,
+  move = function(args) return { kind = "move", args = args } end
+ } },
  dispatch = function(d)
-  local target = type(d.args.window) == "table" and d.args.window or find((d.args.window or ""):match("^address:(.*)$"))
-  assert(target, "a float dispatch must name its window")
-  target.floating = d.args.action == "enable"
-  log[#log + 1] = d.args.action .. " " .. target.address
+  local t = target(d.args)
+  if d.kind == "float" then
+   t.floating = d.args.action == "enable"
+   log[#log + 1] = d.args.action .. " " .. t.address
+  elseif d.kind == "resize" then
+   assert(not d.args.relative)
+   t.size = { x = d.args.x, y = d.args.y }
+   log[#log + 1] = "resize " .. t.address .. " " .. d.args.x .. "x" .. d.args.y
+  elseif d.kind == "center" then log[#log + 1] = "center " .. t.address
+  else
+   assert(d.args.relative)
+   log[#log + 1] = "nudge " .. t.address .. " " .. d.args.x .. ":" .. d.args.y
+  end
  end
 }
-local mode = dofile(arg[1]).new(hl)
+local mode = dofile(arg[1]).new(hl, arg[3] ~= "memory" and store or nil)
 local function state()
  local out = {}
  for _, w in ipairs(windows) do out[#out + 1] = w.address .. "=" .. (w.floating and "float" or "tile") end
  return table.concat(out, " ")
+end
+local function only(prefix)
+ local out = {}
+ for _, line in ipairs(log) do if line:sub(1, #prefix) == prefix then out[#out + 1] = line end end
+ return table.concat(out, ",")
 end
 local steps = {}
 function steps.float_all()
@@ -62,12 +95,68 @@ function steps.closed()
  mode.closed(a)
  add("0xa", false, 1)
  mode.toggle()
- print(state(), table.concat(log, ","))
+ print(state(), only("enable"))
 end
 function steps.nothing_open()
  mode.toggle(); mode.opened(nil)
  print(mode.active(), #log)
 end
+function steps.default_size()
+ add("0xa", false, 1); add("0xb", false, 1); add("0xc", false, 1); add("0xd", false, 2); add("0xdialog", true, 1, "app", { x = 400, y = 300 })
+ mode.toggle()
+ print(table.concat(log, ","))
+end
+function steps.small_screen()
+ screen.width, screen.height, screen.scale = 2560, 1440, 2
+ add("0xa", false, 1)
+ mode.toggle()
+ print(only("resize"))
+end
+function steps.remembered()
+ saved.firefox = { width = 1000, height = 640 }
+ saved.huge = { width = 5000, height = 4000 }
+ add("0xa", false, 1, "firefox"); add("0xb", false, 2, "huge")
+ mode.toggle()
+ print(only("resize"))
+end
+function steps.remember_on_tile()
+ local a = add("0xa", false, 1, "firefox"); add("0xdialog", true, 1, "dialog", { x = 400, y = 300 })
+ mode.toggle()
+ a.size = { x = 1111, y = 777 } -- resized by hand
+ mode.toggle()
+ print(only("save"))
+end
+function steps.remember_on_close()
+ local a = add("0xa", false, 1, "firefox")
+ mode.toggle()
+ a.size = { x = 1111, y = 777 }
+ mode.closed(a)
+ mode.closed(a) -- window.destroy after window.close
+ print(only("save"))
+end
+function steps.remember_on_reload()
+ local a = add("0xa", false, 1, "firefox"); local b = add("0xb", false, 1, "kitty")
+ mode.toggle()
+ a.size = { x = 1111, y = 777 }
+ mode.unloading()
+ print(only("save"))
+end
+function steps.nonsense_not_kept()
+ local a = add("0xa", false, 1, ""); local b = add("0xb", false, 1, "tiny")
+ mode.toggle()
+ a.size = { x = 1111, y = 777 }; b.size = { x = 40, y = 30 }
+ mode.toggle()
+ print("[" .. only("save") .. "]")
+end
+function steps.new_window_size()
+ saved.kitty = { width = 900, height = 600 }
+ add("0xa", false, 1)
+ mode.toggle()
+ log = {}
+ mode.opened(add("0xnew", false, 1, "kitty"))
+ print(table.concat(log, ","))
+end
+function steps.memory() local a = add("0xa", false, 1, "firefox"); mode.toggle(); a.size = { x = 1111, y = 777 }; mode.toggle(); mode.toggle(); print(only("resize")) end
 steps[arg[2]]()
 """
 
@@ -75,7 +164,7 @@ steps[arg[2]]()
 @unittest.skipUnless(shutil.which("lua"), "Lua is required to run float-all.lua")
 class FloatAll(unittest.TestCase):
     def run_step(self, step):
-        run = subprocess.run(["lua", "-", str(ROOT / "hypr/float-all.lua"), step], input=HARNESS,
+        run = subprocess.run(["lua", "-", str(ROOT / "hypr/float-all.lua"), step, step], input=HARNESS,
                              text=True, capture_output=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         return run.stdout.strip()
@@ -98,9 +187,44 @@ class FloatAll(unittest.TestCase):
     def test_toggling_with_nothing_open(self):
         self.assertEqual(self.run_step("nothing_open"), "true\t0")
 
+    def test_floated_windows_get_a_default_size_centred_and_nudged_apart(self):
+        self.assertEqual(self.run_step("default_size").split(","), [
+            "enable 0xa", "resize 0xa 1280x800", "center 0xa",
+            "enable 0xb", "resize 0xb 1280x800", "center 0xb", "nudge 0xb 32:32",
+            "enable 0xc", "resize 0xc 1280x800", "center 0xc", "nudge 0xc 64:64",
+            "enable 0xd", "resize 0xd 1280x800", "center 0xd"])
+
+    def test_the_default_fits_a_small_screen(self):
+        # 2560 x 1440 at 200% is 1280 x 720 to lay out in; 80% of that.
+        self.assertEqual(self.run_step("small_screen"), "resize 0xa 1024x576")
+
+    def test_an_app_gets_its_remembered_size_capped_to_the_screen(self):
+        self.assertEqual(self.run_step("remembered"), "resize 0xa 1000x640,resize 0xb 1536x864")
+
+    def test_tiling_back_remembers_each_apps_size(self):
+        self.assertEqual(self.run_step("remember_on_tile"), "save firefox 1111x777")
+
+    def test_closing_remembers_the_size(self):
+        self.assertEqual(self.run_step("remember_on_close"), "save firefox 1111x777")
+
+    def test_a_reload_remembers_the_sizes(self):
+        self.assertEqual(self.run_step("remember_on_reload"), "save firefox 1111x777,save kitty 1280x800")
+
+    def test_nameless_and_tiny_windows_are_not_remembered(self):
+        self.assertEqual(self.run_step("nonsense_not_kept"), "[]")
+
+    def test_a_new_window_gets_its_apps_size_without_a_nudge(self):
+        self.assertEqual(self.run_step("new_window_size"), "enable 0xnew,resize 0xnew 900x600,center 0xnew")
+
+    def test_without_a_store_sizes_last_until_reload(self):
+        self.assertEqual(self.run_step("memory"), "resize 0xa 1280x800,resize 0xa 1111x777")
+
     def test_desktop_binds_it(self):
         text = (ROOT / "hypr/desktop.lua").read_text()
-        self.assertIn('dofile(checkout .. "/hypr/float-all.lua").new(hl)', text)
+        self.assertIn('local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")', text)
+        self.assertIn('dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes)', text)
+        self.assertIn('hl.on("window.close", float_all.closed)', text)
+        self.assertIn('hl.on("config.unload", float_all.unloading)', text)
         self.assertIn('hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })', text)
         self.assertIn('hl.on("window.open", float_all.opened)', text)
         self.assertIn('hl.on("window.destroy", float_all.closed)', text)
