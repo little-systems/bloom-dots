@@ -195,10 +195,13 @@ ShellRoot {
 	}
 
 	// The grab handle for floating windows, also with the overview; it reads
-	// Hyprland's window list, so only under Hyprland.
+	// Hyprland's window list, so only under Hyprland. Set by path once active,
+	// so it isn't compiled where there are no layer windows (offscreen tests).
 	LazyLoader {
 		active: _modules.indexOf("overview") >= 0 && HyprState.available
-		component: GrabWindows {}
+		component: Loader {
+			Component.onCompleted: setSource(Qt.resolvedUrl("modules/grab/GrabWindows.qml"))
+		}
 	}
 
 	// Exclusive with any other polkit agent: only one can register (§3.4).
