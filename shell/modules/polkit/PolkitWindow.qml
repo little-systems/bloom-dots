@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../../common/screens.js" as Screens
@@ -28,6 +29,7 @@ PanelWindow {
 	WlrLayershell.namespace: "bloom:polkit"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: win.requested ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+	HyprlandWindow.opacity: view.compositorFade ? view.fade : 1
 
 	onRequestedChanged: {
 		if (win.requested) {
@@ -40,6 +42,7 @@ PanelWindow {
 
 	PolkitView {
 		id: view
+		compositorFade: HyprState.available
 		width: win.width / win.uiScale
 		height: win.height / win.uiScale
 		scale: win.uiScale

@@ -27,12 +27,21 @@ LIMIT = 1024 * 1024
 INSTALLER_TEMPLATE = b"-- Written by Bloom Settings. Personal overrides belong in bloom.lua.\n"
 HEADER = "-- Written by Bloom Settings. Delete this file to undo everything in it."
 MARKER = "-- bloom-state-v1 "
-# Hyprland blurs behind layer pixels more opaque than ignore_alpha: above the
-# shadows' 50% and below the cards' 60% opacity floor, so a shadow never gets
-# a hard-edged blurred band.
-RULE = 'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.55 })'
-# Earlier rules, still read; the next save writes RULE.
-LEGACY_RULES = ('hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })',)
+# Hyprland blurs behind layer pixels more opaque than ignore_alpha. Layers
+# with card shadows (up to 50% opaque) use a threshold above them and below
+# the cards' 60% opacity floor, so no shadow ends in a hard blurred band. Their
+# windows fade through Hyprland (HyprlandWindow.opacity) with the card kept
+# solid, so the blur fades with it. The rest keep 0.2 so their own fades stay
+# blurred: the dock fades its pill, menus and previews separately.
+RULES = (
+    'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|osk)$" }, blur = true, ignore_alpha = 0.2 })',
+    'hl.layer_rule({ match = { namespace = "^bloom:(launcher|session|cheatsheet|overview|polkit|wallpaper-picker)$" }, blur = true, ignore_alpha = 0.55 })',
+)
+# Earlier rules, still read; the next save writes RULES.
+LEGACY_RULES = (
+    'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.2 })',
+    'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.55 })',
+)
 MONITOR = re.compile(r'hl\.monitor\(\{ output = "[A-Za-z0-9._-]+", mode = "(?:[0-9]+x[0-9]+@[0-9]+(?:\.[0-9]+)?|preferred)", position = "-?[0-9]+x-?[0-9]+", scale = ([0-9]+(?:\.[0-9]+)?)(?:, transform = [0-7])? \}\)')
 
 
@@ -92,7 +101,7 @@ def lua(value, depth=0):
 def validate(state):
     if not isinstance(state, dict):
         raise ValueError("invalid compositor state")
-    state = {"hypr": {}, "monitors": [], "rules": [RULE], **state}
+    state = {"hypr": {}, "monitors": [], "rules": list(RULES), **state}
     if not isinstance(state["hypr"], dict):
         raise ValueError("invalid compositor overrides")
     lua(state["hypr"])
@@ -102,13 +111,15 @@ def validate(state):
         match = MONITOR.fullmatch(line) if isinstance(line, str) else None
         if match is None or not 0.25 <= float(match[1]) <= 4:
             raise ValueError("unsupported monitor preference; original retained")
-    if any(line != RULE and line not in LEGACY_RULES for line in state["rules"]):
+    if any(line not in RULES and line not in LEGACY_RULES for line in state["rules"]):
         raise ValueError("unrecognized layer rule; original retained")
     return state
 
 
 def current(state):
-    return {**state, "rules": [RULE if line in LEGACY_RULES else line for line in state["rules"]]}
+    if not any(line in LEGACY_RULES for line in state["rules"]):
+        return state
+    return {**state, "rules": list(RULES)}
 
 
 def legacy_source(state):

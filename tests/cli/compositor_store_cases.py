@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -21,7 +22,7 @@ class CompositorStoreCases(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.config = self.root / "bloom-settings.lua"
         self.legacy = self.root / "hypr-settings.json"
-        self.state = {"hypr": {"general": {"gaps_in": 4}}, "monitors": [], "rules": [store.RULE], "owner-extra": "preserve"}
+        self.state = {"hypr": {"general": {"gaps_in": 4}}, "monitors": [], "rules": list(store.RULES), "owner-extra": "preserve"}
 
     def old_files(self):
         self.legacy.write_text(json.dumps(self.state))
@@ -74,29 +75,43 @@ class CompositorStoreCases(unittest.TestCase):
         self.assertEqual(self.config.stat().st_mtime_ns, mtime)
 
     # Hyprland blurs behind every layer pixel more opaque than ignore_alpha.
-    # Cards are at least 60% opaque (the opacity floor) and their shadows at
-    # most 50%, so only a threshold between them blurs cards without a hard
-    # blurred band where a shadow fades out.
+    # Layers with card shadows (up to 50% opaque) need a threshold above them
+    # and below the cards' 60% opacity floor, or the blur ends in a hard band
+    # where a shadow fades; their windows fade through Hyprland with the card
+    # solid, so the blur fades with it. The rest keep 0.2 so their own fades
+    # stay blurred: the dock fades its pill, menus and previews separately.
     def test_layer_blur_skips_shadows_but_not_cards(self):
-        threshold = float(store.RULE.split("ignore_alpha = ")[1].split(" ")[0])
-        self.assertGreater(threshold, 0.5)
-        self.assertLess(threshold, 0.6)
+        def threshold(namespace):
+            matches = [line for line in store.RULES if re.search(line.split('namespace = "')[1].split('"')[0], "bloom:" + namespace)]
+            self.assertEqual(len(matches), 1, namespace)
+            return float(matches[0].split("ignore_alpha = ")[1].split(" ")[0])
+        for namespace in ("launcher", "session", "cheatsheet", "overview", "polkit", "wallpaper-picker"):
+            self.assertGreater(threshold(namespace), 0.5, namespace)
+            self.assertLess(threshold(namespace), 0.6, namespace)
+        for namespace in ("notch", "dock", "osd-left", "osd-right", "osk"):
+            self.assertEqual(threshold(namespace), 0.2, namespace)
 
-    # Files saved before the threshold changed still load; the next save
-    # writes the current rule and keeps the old file in history.
-    def test_old_blur_rule_is_read_and_upgraded_on_save(self):
-        source = store.encode(dict(self.state, rules=[store.LEGACY_RULES[0]]), "")
-        self.config.write_bytes(source)
-        before = store.snapshot(self.config, self.legacy)
-        self.assertEqual(before["state"]["rules"], [store.RULE])
-        self.assertEqual(self.config.read_bytes(), source)
-        saved = store.commit(self.config, self.legacy, before["revision"], {})
-        written = self.config.read_bytes()
-        self.assertIn(store.RULE.encode(), written)
-        self.assertNotIn(store.LEGACY_RULES[0].encode(), written)
-        self.assertEqual(saved["state"]["rules"], [store.RULE])
-        backup = self.config.parent / ".bloom-settings-history" / (before["revision"] + ".json")
-        self.assertEqual(json.loads(backup.read_text())["source"].encode(), source)
+    # Files saved with an earlier rule still load; the next save writes the
+    # current rules and keeps the old file in history.
+    def test_old_blur_rules_are_read_and_upgraded_on_save(self):
+        for old in store.LEGACY_RULES:
+            with self.subTest(old=old):
+                for path in self.root.iterdir():
+                    if path.is_file():
+                        path.unlink()
+                source = store.encode(dict(self.state, rules=[old]), "")
+                self.config.write_bytes(source)
+                before = store.snapshot(self.config, self.legacy)
+                self.assertEqual(before["state"]["rules"], list(store.RULES))
+                self.assertEqual(self.config.read_bytes(), source)
+                saved = store.commit(self.config, self.legacy, before["revision"], {})
+                written = self.config.read_bytes().decode()
+                self.assertEqual(saved["state"]["rules"], list(store.RULES))
+                for line in store.RULES:
+                    self.assertIn(line, written)
+                self.assertNotIn(old, written)
+                backup = self.config.parent / ".bloom-settings-history" / (before["revision"] + ".json")
+                self.assertEqual(json.loads(backup.read_text())["source"].encode(), source)
 
     def test_canonical_document_has_one_source_of_truth(self):
         first = store.snapshot(self.config, self.legacy)
@@ -159,7 +174,7 @@ class CompositorStoreCases(unittest.TestCase):
     def test_generation_matches_existing_qml_serializer(self):
         script = "const fs=require('fs'),vm=require('vm');const c=vm.createContext({});vm.runInContext(fs.readFileSync(process.argv[1],'utf8'),c);console.log(JSON.stringify(c.hyprFile({general:{gaps_in:4},input:{touchpad:{natural_scroll:false}}},c.layerRules())));"
         expected = json.loads(subprocess.check_output(["node", "-e", script, str(ROOT / "shell/settings/system.js")], text=True))
-        state = {"hypr": {"general": {"gaps_in": 4}, "input": {"touchpad": {"natural_scroll": False}}}, "monitors": [], "rules": [store.RULE]}
+        state = {"hypr": {"general": {"gaps_in": 4}, "input": {"touchpad": {"natural_scroll": False}}}, "monitors": [], "rules": list(store.RULES)}
         self.assertEqual(store.legacy_source(state).decode(), expected)
 
     def test_invalid_typed_config_is_refused(self):

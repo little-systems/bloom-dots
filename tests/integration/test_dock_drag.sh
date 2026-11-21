@@ -32,7 +32,7 @@ wait_for "the drag order on disk" jq -e '.pinned == ["b","c","a"]' "$XDG_STATE_H
 kill "$SHELL_PID"
 wait "$SHELL_PID" || true
 SHELL_PID=""
-qs --no-color -c bloom >"$TEST_TMP/shell.log" 2>&1 &
+qs --no-color -c bloom > >(drop_missing_protocol >"$TEST_TMP/shell.log") 2>&1 &
 SHELL_PID=$!
 wait_for "the restarted shell" ipc_equals pong shell ping
 wait_for "the drag order after restarting the shell" ordered

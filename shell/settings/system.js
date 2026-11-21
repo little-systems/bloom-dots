@@ -174,8 +174,12 @@ function badLayouts(text, known) {
 	return String(text).split(",").map(x => x.trim()).filter(x => x && known.indexOf(x) < 0);
 }
 
+// Must match RULES in services/compositor-store.py.
 function layerRules() {
-	return ['hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|launcher|session|cheatsheet|overview|polkit|wallpaper-picker|osk)$" }, blur = true, ignore_alpha = 0.55 })'];
+	return [
+		'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|osk)$" }, blur = true, ignore_alpha = 0.2 })',
+		'hl.layer_rule({ match = { namespace = "^bloom:(launcher|session|cheatsheet|overview|polkit|wallpaper-picker)$" }, blur = true, ignore_alpha = 0.55 })'
+	];
 }
 
 // os-release is data, never shell code. Only these display fields are read.

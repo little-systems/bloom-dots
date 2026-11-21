@@ -113,11 +113,16 @@ ipc_equals() {
 	[[ "$(ipc "$@" 2>/dev/null)" == "$expected" ]]
 }
 
+# The test compositors lack hyprland_surface_v1, which the card windows use to
+# fade under Hyprland, and Quickshell warns about it for each of them. Shell
+# output goes through this so only that line is dropped from the logs tests check.
+drop_missing_protocol() { grep -v --line-buffered "does not support the hyprland_surface_v1 protocol" || true; }
+
 # Links the checkout as the `bloom` config (like `bloom dev install`) and
 # starts it.
 start_shell() {
 	ln -s "$ROOT/shell" "$XDG_CONFIG_HOME/quickshell/bloom"
-	qs --no-color -c bloom >"$TEST_TMP/shell.log" 2>&1 &
+	qs --no-color -c bloom > >(drop_missing_protocol >"$TEST_TMP/shell.log") 2>&1 &
 	SHELL_PID=$!
 	wait_for "the shell to answer ping" ipc_equals pong shell ping
 }

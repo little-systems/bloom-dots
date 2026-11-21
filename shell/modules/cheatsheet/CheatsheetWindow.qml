@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.services
 import "."
 import "../../common/screens.js" as Screens
@@ -24,9 +25,11 @@ PanelWindow {
 	WlrLayershell.namespace: "bloom:cheatsheet"
 	WlrLayershell.layer: WlrLayer.Overlay
 	WlrLayershell.keyboardFocus: Cheatsheet.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+	HyprlandWindow.opacity: view.compositorFade ? view.fade : 1
 
 	CheatsheetView {
 		id: view
+		compositorFade: HyprState.available
 		width: win.width / win.uiScale
 		height: win.height / win.uiScale
 		scale: win.uiScale

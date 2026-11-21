@@ -42,7 +42,15 @@ Item {
 	signal chosen(var item)
 	signal dismissed()
 
-	readonly property bool shown: root._open || card.opacity > 0
+	readonly property bool shown: root._open || root.fade > 0
+	// How far the card has faded in. Under Hyprland the window fades instead
+	// (compositorFade), so the compositor's blur fades with the card.
+	property bool compositorFade: false
+	property real fade: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
+	Behavior on fade {
+		enabled: !root._open
+		NumberAnimation { duration: Tokens.launcher.exitMs }
+	}
 	readonly property real barHeight: Tokens.launcher.field.height + 2 * Tokens.launcher.padding
 	readonly property real targetHeight: root.chatting ? Math.min(chatSurface.preferredHeight, root.height * 0.76)
 		: root.barHeight + (root.results.length ? Tokens.launcher.gap + root._listHeight : 0)
@@ -158,11 +166,7 @@ Item {
 		clip: true
 		visible: opacity > 0
 		transformOrigin: Item.Top
-		opacity: root._open ? Math.min(1, Math.max(0, enter.value)) : 0
-		Behavior on opacity {
-			enabled: !root._open
-			NumberAnimation { duration: Tokens.launcher.exitMs }
-		}
+		opacity: root.compositorFade ? (root.fade > 0 ? 1 : 0) : root.fade
 
 		// Clicks on the card stay on it.
 		// cursor: default — the card's own surface
