@@ -9,3 +9,4 @@ grep -qx 'OnFailure=bloom-shell-failed.service' "$ROOT/systemd/bloom-shell.servi
 echo "ok - systemd units verify"
 python3 "$ROOT/tests/units/session_start_cases.py"
 python3 "$ROOT/tests/units/reduce_motion_cases.py"
+python3 "$ROOT/tests/units/float_all_cases.py"

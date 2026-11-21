@@ -196,7 +196,11 @@ hl.bind("SUPER + SHIFT + R", ipc("region run record"), { description = "Screen: 
 -- Windows
 hl.bind("SUPER + Q", hl.dsp.window.close(), { description = "Windows: Close" })
 hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { description = "Windows: Fullscreen" })
-hl.bind("SUPER + ALT + Space", hl.dsp.window.float({ action = "toggle" }), { description = "Windows: Float or tile" })
+-- Floats every window on every workspace, or tiles them back (float-all.lua).
+local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl)
+hl.on("window.open", float_all.opened)
+hl.on("window.destroy", float_all.closed)
+hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })
 for _, direction in ipairs({ "left", "right", "up", "down" }) do
     hl.bind("SUPER + " .. direction, hl.dsp.focus({ direction = direction }), { description = "Windows: Focus (arrow keys)" })
     hl.bind("SUPER + SHIFT + " .. direction, hl.dsp.window.move({ direction = direction }), { description = "Windows: Move (arrow keys)" })
