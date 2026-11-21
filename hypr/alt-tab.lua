@@ -25,7 +25,7 @@ local M = {}
 local WATCH_MS = 30
 local HOLD_TICK_MS = 20
 local HOLD_MS = 100
-local STEP = 150
+local STEP = 80
 
 function M.new(hl, notify)
     local cycle = nil

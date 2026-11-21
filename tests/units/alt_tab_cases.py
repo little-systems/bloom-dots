@@ -89,20 +89,20 @@ end
 local swipe = mode.gesture
 local function moved(x) swipe.update({ phase = "update", delta = { x = x, y = 0 } }) end
 local function hold() for _ = 1, 5 do tick() end end
-function steps.flick() setup(); swipe.start({ delta = { x = -40, y = 0 } }); moved(-60); swipe.finish({ cancelled = false }) end
+function steps.flick() setup(); swipe.start({ delta = { x = -40, y = 0 } }); moved(-70); swipe.finish({ cancelled = false }) end
 function steps.flick_right() setup(true); swipe.start({ delta = { x = 40, y = 0 } }); swipe.finish({ cancelled = false }) end
 function steps.held()
  setup(); swipe.start({ delta = { x = -40, y = 0 } })
  for _ = 1, 4 do tick() end
  log[#log + 1] = "-- 80 ms"
  tick()
- moved(-100); moved(-60) -- one step left
- moved(170) -- one step back right
- moved(160) -- and one more, wrapping
+ moved(-50); moved(-40) -- one step left (80 units)
+ moved(90) -- one step back right
+ moved(85) -- and one more, wrapping
  swipe.finish({ cancelled = false })
 end
 function steps.held_still() setup(true); swipe.start({ delta = { x = -40, y = 0 } }); hold(); hold(); swipe.finish({ cancelled = false }) end
-function steps.flick_steps() setup(); swipe.start({ delta = { x = -40, y = 0 } }); moved(-160); swipe.finish({ cancelled = false }) end
+function steps.flick_steps() setup(); swipe.start({ delta = { x = -40, y = 0 } }); moved(-85); swipe.finish({ cancelled = false }) end
 function steps.cancelled() setup(); swipe.start({ delta = { x = -40, y = 0 } }); hold(); swipe.finish({ cancelled = true }) end
 function steps.swipe_escape() setup(); swipe.start({ delta = { x = -40, y = 0 } }); hold(); binds["Escape"].fn(); moved(-200); swipe.finish({ cancelled = false }) end
 function steps.swipe_alone() local a = add("0xa", 0); active = a; swipe.start({ delta = { x = -40, y = 0 } }); hold(); moved(-300); swipe.finish({ cancelled = false }) end
