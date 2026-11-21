@@ -25,4 +25,18 @@ TestCase {
 		compare(Logic.columns(9, 5), 5);
 		compare(Logic.columns(0, 5), 1);
 	}
+
+	// Each `bloom ipc` is its own process, so messages can land out of order.
+	function test_olderMessagesAreDropped() {
+		verify(Logic.fresh(1, 0, 0));
+		verify(Logic.fresh(5, 4, 10));
+		verify(!Logic.fresh(4, 5, 10));
+		verify(!Logic.fresh(5, 5, 10));
+	}
+
+	// Hyprland's reload restarts the count; by then the last message is old.
+	function test_aRestartedCountIsTakenOnceTheLastMessageIsOld() {
+		verify(!Logic.fresh(1, 40, Logic.restartAfterMs - 1));
+		verify(Logic.fresh(1, 40, Logic.restartAfterMs + 1));
+	}
 }
