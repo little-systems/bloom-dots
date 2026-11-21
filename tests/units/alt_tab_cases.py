@@ -102,7 +102,7 @@ function steps.held()
  swipe.finish({ cancelled = false })
 end
 function steps.held_still() setup(true); swipe.start({ delta = { x = -40, y = 0 } }); hold(); hold(); swipe.finish({ cancelled = false }) end
-function steps.flick_steps() setup(); swipe.start({ delta = { x = 40, y = 0 } }); moved(85); swipe.finish({ cancelled = false }) end
+function steps.flick_steps() setup(); swipe.start({ delta = { x = 40, y = 0 } }); moved(170); swipe.finish({ cancelled = false }) end
 function steps.cancelled() setup(); swipe.start({ delta = { x = -40, y = 0 } }); hold(); swipe.finish({ cancelled = true }) end
 function steps.swipe_escape() setup(); swipe.start({ delta = { x = -40, y = 0 } }); hold(); binds["Escape"].fn(); moved(-200); swipe.finish({ cancelled = false }) end
 function steps.swipe_alone() local a = add("0xa", 0); active = a; swipe.start({ delta = { x = -40, y = 0 } }); hold(); moved(-300); swipe.finish({ cancelled = false }) end
@@ -182,7 +182,7 @@ class AltTab(unittest.TestCase):
     def test_a_quick_swipe_either_way_goes_back_and_brings_a_floating_window_up(self):
         self.assertEqual(self.run_step("flick_right")[-2:], ["focus 0xc", "top"])
 
-    def test_a_quick_swipe_that_travels_still_steps(self):
+    def test_a_quick_swipe_that_travels_steps_from_the_focused_window(self):
         self.assertEqual(self.run_step("flick_steps")[-1], "focus 0xb")
 
     def test_holding_shows_the_card_and_moving_steps_it(self):
@@ -190,14 +190,14 @@ class AltTab(unittest.TestCase):
         before = log[:log.index("-- 80 ms")]
         self.assertFalse([m for m in before if m.startswith("shell")], "the card showed before the hold")
         self.assertEqual([m for m in log if m.startswith("shell")], [
-            "shell reveal 1 0xa,0xc,0xb 1", "shell open 2 0xa,0xc,0xb 2", "shell open 3 0xa,0xc,0xb 1",
-            "shell open 4 0xa,0xc,0xb 0", "shell hide 5"])
-        self.assertEqual(log[-1], "focus 0xa")
+            "shell reveal 1 0xa,0xc,0xb 0", "shell open 2 0xa,0xc,0xb 1", "shell open 3 0xa,0xc,0xb 0",
+            "shell open 4 0xa,0xc,0xb 2", "shell hide 5"])
+        self.assertEqual(log[-1], "focus 0xb")
 
-    def test_holding_still_keeps_the_choice_and_opens_the_card_once(self):
+    def test_holding_starts_on_the_focused_window_and_still_keeps_it(self):
         log = self.run_step("held_still")
-        self.assertEqual([m for m in log if m.startswith("shell")], ["shell reveal 1 0xa,0xc,0xb 1", "shell hide 2"])
-        self.assertEqual(log[-2:], ["focus 0xc", "top"])
+        self.assertEqual([m for m in log if m.startswith("shell")], ["shell reveal 1 0xa,0xc,0xb 0", "shell hide 2"])
+        self.assertEqual(log[-2:], ["focus 0xa", "top"])
 
     def test_a_cancelled_swipe_changes_nothing(self):
         log = self.run_step("cancelled")
@@ -207,7 +207,7 @@ class AltTab(unittest.TestCase):
     def test_escape_ends_a_swipe(self):
         log = self.run_step("swipe_escape")
         self.assertNotIn("focus", " ".join(log))
-        self.assertEqual([m for m in log if m.startswith("shell")], ["shell reveal 1 0xa,0xc,0xb 1", "shell hide 2"])
+        self.assertEqual([m for m in log if m.startswith("shell")], ["shell reveal 1 0xa,0xc,0xb 0", "shell hide 2"])
 
     def test_a_swipe_with_one_window_does_nothing(self):
         self.assertEqual(self.run_step("swipe_alone"), [""])

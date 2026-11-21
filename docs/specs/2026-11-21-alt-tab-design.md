@@ -85,6 +85,9 @@ window, and holding shows the card to step through continuously.
   flashing the card). Each 80 units of travel (150 at first; the owner asked for quicker) steps the choice: right is next and
   left is back (at first the other way, like natural scrolling; the owner
   flipped it), wrapping. Before the card shows, steps only move the choice.
+- The card starts on the focused window (owner's follow-up), so moving
+  steps from there; lifting without moving stays put. A quick swipe that
+  never stepped still goes back to the last window.
 - Lifting switches to the choice (a clicked tile wins). A cancelled swipe or
   Esc changes nothing. A swipe during Alt + Tab, or Alt during a swipe, is
   left alone. Pinch still toggles fullscreen.

@@ -17,9 +17,9 @@
 -- through `gesture` ({ start, update, finish }, Hyprland's gesture
 -- callbacks): a quick swipe goes back to the last window, as a quick Alt +
 -- Tab does. Keeping the fingers down HOLD_MS shows the card, tiled windows
--- too, and every STEP of travel moves the choice (right is next, the
--- owner's choice); lifting switches to it. A cancelled swipe or Esc changes
--- nothing.
+-- too, starting on the focused window, and every STEP of travel moves the
+-- choice (right is next, the owner's choice); lifting switches to it. A
+-- cancelled swipe or Esc changes nothing.
 local M = {}
 
 local WATCH_MS = 30
@@ -145,7 +145,8 @@ function M.new(hl, notify)
         if cycle then return end
         local list = windows()
         if #list < 2 then return end
-        cycle = { windows = list, index = 2, start = hl.get_active_window(), card = false, swipe = true, held = 0, travel = 0 }
+        -- Starts on the focused window, so a held swipe steps from there.
+        cycle = { windows = list, index = 1, start = hl.get_active_window(), card = false, swipe = true, held = 0, travel = 0 }
         cycle.escape = hl.bind("Escape", mode.cancel, { ignore_mods = true })
         if holder then holder:set_enabled(true)
         else holder = hl.timer(held, { timeout = HOLD_TICK_MS, type = "repeat" }) end
@@ -167,7 +168,10 @@ function M.new(hl, notify)
     function mode.gesture.finish(event)
         if not cycle or not cycle.swipe then return end
         if event and event.cancelled then return mode.cancel() end
-        switch(finish())
+        local done = finish()
+        -- A quick swipe that didn't step goes back to the last window.
+        if not done.card and done.index == 1 then done.index = 2 end
+        switch(done)
     end
 
     return mode
