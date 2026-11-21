@@ -101,7 +101,6 @@ hl.config({
     },
     binds = { hide_special_on_workspace_change = true },
 })
-hl.gesture({ fingers = 3, direction = "swipe", action = "move" })
 hl.gesture({ fingers = 3, direction = "pinch", action = "fullscreen" })
 hl.gesture({ fingers = 4, direction = "horizontal", action = "workspace" })
 hl.gesture({ fingers = 4, direction = "up", action = function() hl.dispatch(ipc("overview open")) end })
@@ -196,7 +195,26 @@ hl.bind("SUPER + SHIFT + R", ipc("region run record"), { description = "Screen: 
 -- Windows
 hl.bind("SUPER + Q", hl.dsp.window.close(), { description = "Windows: Close" })
 hl.bind("SUPER + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), { description = "Windows: Fullscreen" })
-hl.bind("SUPER + ALT + Space", hl.dsp.window.float({ action = "toggle" }), { description = "Windows: Float or tile" })
+-- Floats every window on every workspace, or tiles them back (float-all.lua).
+local state = os.getenv("XDG_STATE_HOME") or ((os.getenv("HOME") or "") .. "/.local/state")
+local float_sizes = dofile(checkout .. "/hypr/float-sizes.lua").open(state .. "/bloom/floating-sizes")
+local float_mode = dofile(checkout .. "/hypr/float-mode.lua").open(state .. "/bloom/float-all", os.getenv("HYPRLAND_INSTANCE_SIGNATURE") or "")
+local float_all = dofile(checkout .. "/hypr/float-all.lua").new(hl, float_sizes, float_mode)
+hl.on("window.open", float_all.opened)
+hl.on("window.close", float_all.hidden)
+hl.on("window.destroy", float_all.closed)
+hl.on("config.unload", float_all.unloading)
+hl.bind("SUPER + ALT + Space", float_all.toggle, { description = "Windows: Float or tile all" })
+-- Switches windows on this workspace, most recent first (alt-tab.lua); the
+-- shell draws the switcher. Releasing Alt switches.
+local alt_tab = dofile(checkout .. "/hypr/alt-tab.lua").new(hl, function(message) hl.dispatch(ipc("switcher " .. message)) end)
+-- Three fingers sideways switch the same way: a quick swipe goes back to the
+-- last window; holding shows the card and moving steps through it.
+hl.gesture({ fingers = 3, direction = "horizontal", action = alt_tab.gesture })
+hl.bind("ALT + Tab", function() alt_tab.step(1) end, { description = "Windows: Switch" })
+hl.bind("ALT + SHIFT + Tab", function() alt_tab.step(-1) end, { description = "Windows: Switch back" })
+hl.bind("ALT_L", alt_tab.commit, { release = true, ignore_mods = true, non_consuming = true })
+hl.bind("ALT_R", alt_tab.commit, { release = true, ignore_mods = true, non_consuming = true })
 for _, direction in ipairs({ "left", "right", "up", "down" }) do
     hl.bind("SUPER + " .. direction, hl.dsp.focus({ direction = direction }), { description = "Windows: Focus (arrow keys)" })
     hl.bind("SUPER + SHIFT + " .. direction, hl.dsp.window.move({ direction = direction }), { description = "Windows: Move (arrow keys)" })

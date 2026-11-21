@@ -85,7 +85,7 @@ class CompositorStoreCases(unittest.TestCase):
             matches = [line for line in store.RULES if re.search(line.split('namespace = "')[1].split('"')[0], "bloom:" + namespace)]
             self.assertEqual(len(matches), 1, namespace)
             return float(matches[0].split("ignore_alpha = ")[1].split(" ")[0])
-        for namespace in ("launcher", "session", "cheatsheet", "overview", "polkit", "wallpaper-picker"):
+        for namespace in ("launcher", "session", "cheatsheet", "overview", "polkit", "wallpaper-picker", "switcher"):
             self.assertGreater(threshold(namespace), 0.5, namespace)
             self.assertLess(threshold(namespace), 0.6, namespace)
         for namespace in ("notch", "dock", "osd-left", "osd-right", "osk"):

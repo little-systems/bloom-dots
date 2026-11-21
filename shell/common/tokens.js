@@ -312,6 +312,31 @@ var overview = {
 	dragThreshold: 6
 };
 
+// The Alt + Tab switcher: the launcher's card holding a row of live window
+// previews, five across, wrapping. It appears once Alt has been held revealMs.
+var switcher = {
+	columns: 5,
+	padding: 14,
+	gap: 10,
+	revealMs: 120,
+	tile: { width: 220, preview: 124, radius: 10, padding: 6, gap: 6, icon: 16, title: 12 }
+};
+
+// The grab handle on floating windows that draw no title bar: an invisible
+// zone centred on the focused floating window's top edge, half above it;
+// the pill shows while the pointer is in it. A drag keeps `keep` px of the
+// window on screen. Geometry is refreshed every pollMs while one is focused,
+// since moving a floating window sends Hyprland no event.
+var grab = {
+	zoneWidth: 180,
+	zoneHeight: 18,
+	keep: 64,
+	pill: { width: 56, height: 6, border: 1 },
+	fadeMs: 150,
+	pollMs: 250,
+	moveMs: 16
+};
+
 // The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
 var lock = {
 	message: 12,

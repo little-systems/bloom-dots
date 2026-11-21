@@ -12,6 +12,8 @@ import "modules/osd"
 import "modules/launcher"
 import "modules/session"
 import "modules/overview"
+import "modules/switcher"
+import "modules/grab"
 import "modules/polkit"
 import "modules/lock"
 import "modules/cheatsheet"
@@ -176,6 +178,29 @@ ShellRoot {
 				required property var modelData
 				Component.onCompleted: setSource(Qt.resolvedUrl("modules/overview/OverviewWindow.qml"), { modelData: modelData })
 			}
+		}
+	}
+
+	// The Alt + Tab switcher comes with the overview: both find windows.
+	LazyLoader {
+		id: switcherLoader
+		active: _modules.indexOf("overview") >= 0
+		component: Variants {
+			model: Quickshell.screens
+			delegate: Loader {
+				required property var modelData
+				Component.onCompleted: setSource(Qt.resolvedUrl("modules/switcher/SwitcherWindow.qml"), { modelData: modelData })
+			}
+		}
+	}
+
+	// The grab handle for floating windows, also with the overview; it reads
+	// Hyprland's window list, so only under Hyprland. Set by path once active,
+	// so it isn't compiled where there are no layer windows (offscreen tests).
+	LazyLoader {
+		active: _modules.indexOf("overview") >= 0 && HyprState.available
+		component: Loader {
+			Component.onCompleted: setSource(Qt.resolvedUrl("modules/grab/GrabWindows.qml"))
 		}
 	}
 
@@ -566,6 +591,21 @@ ShellRoot {
 		function move(address: string, workspace: int): string { return Overview.moveWindow(address, workspace); }
 		function state(): string {
 			return JSON.stringify({ opened: Overview.opened, activeWorkspace: Overview.activeWorkspace, windows: Overview.clients.length });
+		}
+	}
+
+	// Hyprland's alt-tab.lua: what the switcher card draws (Alt + Tab with
+	// floating windows, or a held three-finger swipe).
+	IpcHandler {
+		target: "switcher"
+
+		function open(seq: int, addresses: string, index: int): string { return Switcher.open(seq, addresses, index); }
+		function reveal(seq: int, addresses: string, index: int): string { return Switcher.open(seq, addresses, index, true); }
+		function hide(seq: int): string { return Switcher.hide(seq); }
+		function state(): string {
+			const windows = switcherLoader.item ? switcherLoader.item.instances.map(l => l.item).filter(Boolean) : [];
+			return JSON.stringify({ active: Switcher.active, revealed: Switcher.revealed, index: Switcher.index,
+				addresses: Switcher.addresses, visible: windows.some(w => w.visible) });
 		}
 	}
 

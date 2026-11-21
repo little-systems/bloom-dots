@@ -20,6 +20,9 @@ bloom_env() {
 	export XDG_STATE_HOME="$TEST_TMP/state"
 	export XDG_RUNTIME_DIR="$TEST_TMP/run"
 	export QT_QPA_PLATFORM=offscreen NO_COLOR=1
+	# The host's Hyprland is never the test's; tests that want one set a
+	# signature of their own.
+	unset HYPRLAND_INSTANCE_SIGNATURE
 	# Never sync the real pacman databases from a test (tests that need
 	# updates point this at tests/integration/updates-fake.sh).
 	export BLOOM_CHECKUPDATES="$TEST_TMP/no-checkupdates"
