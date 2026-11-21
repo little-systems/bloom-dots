@@ -6,9 +6,13 @@
 -- windows) }) holds the mode and the windows it floated (address to process
 -- id) through one; a window is taken back only if it's still floating and
 -- the same process. Not the app's name: some, like Spotify, set it late.
--- Without `kept` a reload ends the mode. A window hidden to the tray stays
--- owed (Hyprland reopens the same one), and if the mode was turned off
--- meanwhile it's tiled when it comes back.
+-- Without `kept` a reload ends the mode.
+--
+-- Apps like Spotify hide to the tray and come back as the same window.
+-- Hyprland reports the hide as window.close while the window still reads
+-- mapped and floating, and may leave it out of hl.get_windows(), so a hide is
+-- marked here ("away", kept through a reload too). Turning the mode off
+-- leaves away and unlisted windows owed; each is tiled when it comes back.
 --
 -- A window it floats gets its app's remembered size, or 1280 x 800, never
 -- more than 80% of the screen, and goes back where its app last was; with no
@@ -35,7 +39,10 @@ end
 function M.new(hl, sizes, kept)
     sizes = sizes or memory()
     local on = false
+    -- address -> process id of each window it floated and still owes a tile
     local floated = {}
+    -- address -> true while one of those is hidden (in the tray)
+    local away = {}
 
     local function class(window)
         local name = window.class
@@ -44,15 +51,31 @@ function M.new(hl, sizes, kept)
     end
 
     local function keep()
-        if kept then kept.save(on, floated) end
+        if not kept then return end
+        local windows = {}
+        for address, pid in pairs(floated) do windows[address] = away[address] and pid .. " away" or pid end
+        kept.save(on, windows)
+    end
+
+    local function forget(address)
+        floated[address] = nil
+        away[address] = nil
     end
 
     if kept then
         local was, windows = kept.load()
         on = was
-        for _, window in ipairs(hl.get_windows()) do
-            local pid = windows[window.address]
-            if pid and window.floating and pid == tostring(window.pid) then floated[window.address] = pid end
+        local listed = {}
+        for _, window in ipairs(hl.get_windows()) do listed[window.address] = window end
+        for address, value in pairs(windows) do
+            local pid, hidden = value:match("^(%S+)( away)$")
+            pid = pid or value
+            local window = listed[address]
+            if hidden then
+                floated[address], away[address] = pid, true
+            elseif window and window.floating and pid == tostring(window.pid) then
+                floated[address] = pid
+            end
         end
     end
 
@@ -115,19 +138,18 @@ function M.new(hl, sizes, kept)
 
     function mode.toggle()
         if on then
-            -- A hidden window (in the tray) stays owed: it's tiled when it's back.
-            local owed = {}
+            -- Away or unlisted windows stay owed: each is tiled when it's back.
             for _, window in ipairs(hl.get_windows()) do
-                if floated[window.address] then
-                    if window.mapped == false then
-                        owed[window.address] = floated[window.address]
-                    elseif window.floating then
+                local address = window.address
+                if floated[address] and not away[address] and window.mapped ~= false then
+                    if window.floating then
                         remember(window)
                         hl.dispatch(hl.dsp.window.float({ action = "disable", window = window }))
                     end
+                    forget(address)
                 end
             end
-            floated = owed
+            for address in pairs(floated) do away[address] = true end
             on = false
             keep()
         else
@@ -147,10 +169,17 @@ function M.new(hl, sizes, kept)
     -- Also a window coming back from the tray: Hyprland reopens the same one.
     function mode.opened(window)
         if not window then return end
+        local address = window.address
+        -- Hyprland reuses addresses: another process's window isn't ours.
+        if floated[address] and floated[address] ~= tostring(window.pid) then forget(address) end
         if not on then
-            if not floated[window.address] then return end
+            if not floated[address] then return end
             if window.floating then hl.dispatch(hl.dsp.window.float({ action = "disable", window = window })) end
-            floated[window.address] = nil
+            forget(address)
+            keep()
+        elseif floated[address] then
+            away[address] = nil
+            if not window.floating then float(window, nil) end
             keep()
         elseif not window.floating then
             float(window, nil)
@@ -158,18 +187,20 @@ function M.new(hl, sizes, kept)
         end
     end
 
-    -- window.close, which is also a hide (apps like Spotify hide to the tray
-    -- and come back as the same window), so the window stays owed.
+    -- window.close, which is also a hide to the tray: the window stays owed.
     function mode.hidden(window)
-        if window and floated[window.address] and window.floating then remember(window) end
+        if not window or not floated[window.address] then return end
+        if window.floating then remember(window) end
+        away[window.address] = true
+        keep()
     end
 
     -- window.destroy: gone for good.
     function mode.closed(window)
         if not window or not floated[window.address] then return end
         -- Saved already if it was hidden first.
-        if window.floating and window.mapped ~= false then remember(window) end
-        floated[window.address] = nil
+        if window.floating and not away[window.address] and window.mapped ~= false then remember(window) end
+        forget(window.address)
         keep()
     end
 

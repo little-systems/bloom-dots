@@ -73,6 +73,9 @@ hl = {
  end
 }
 local new = dofile(arg[1]).new
+if arg[3] == "reloaded_away" then
+ kept_on, kept_windows = false, { ["0xa"] = "101 away" }
+end
 if arg[3] == "reloaded" then
  kept_on, kept_windows = true, { ["0xa"] = "101", ["0xgone"] = "200", ["0xc"] = "999" }
  add("0xa", true, 1, "Spotify"); add("0xb", true, 1, "dialog"); add("0xc", true, 1, "app")
@@ -173,6 +176,44 @@ function steps.tray_while_off()
  a.mapped = true; mode.opened(a)
  print(tiled_while_hidden, only("disable"), state())
 end
+-- What Hyprland really does (seen live with Spotify): window.close comes
+-- while the window still reads mapped and floating, and a hidden window may
+-- not be in hl.get_windows() at all.
+function steps.tray_still_mapped()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ mode.hidden(a) -- mapped stays true
+ mode.toggle()
+ local while_hidden = "[" .. only("disable") .. "]"
+ mode.opened(a)
+ print(while_hidden, only("disable"), state())
+end
+function steps.tray_unlisted()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ mode.hidden(a)
+ table.remove(windows, 1)
+ mode.toggle()
+ windows[#windows + 1] = a
+ mode.opened(a)
+ print(only("disable"), state())
+end
+function steps.tray_back_while_on()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ mode.hidden(a)
+ mode.opened(a) -- back while still on
+ mode.toggle()
+ print(only("disable"), state())
+end
+function steps.tray_kept()
+ local a = add("0xa", false, 1, "Spotify")
+ mode.toggle()
+ mode.hidden(a)
+ mode.toggle()
+ mode.opened(a)
+ print(table.concat(kept_log, "|"))
+end
 function steps.tray_tiled_by_hand()
  local a = add("0xa", false, 1, "Spotify")
  mode.toggle()
@@ -232,6 +273,11 @@ function steps.reloaded()
  local was = mode.active()
  mode.toggle()
  print(tostring(was), state(), only("disable"))
+end
+function steps.reloaded_away()
+ local a = add("0xa", true, 1, "Spotify") -- back from the tray after the reload
+ mode.opened(a)
+ print(only("disable"), state())
 end
 function steps.kept()
  local a = add("0xa", false, 1, "firefox"); add("0xdialog", true, 1, "dialog")
@@ -295,6 +341,19 @@ class FloatAll(unittest.TestCase):
     def test_a_window_hidden_when_tiling_back_is_tiled_when_it_returns(self):
         self.assertEqual(self.run_step("tray_while_off"), "disable 0xb\tdisable 0xb,disable 0xa\t0xa=tile 0xb=tile")
 
+    def test_a_hidden_window_that_still_reads_mapped_is_tiled_when_it_returns(self):
+        self.assertEqual(self.run_step("tray_still_mapped"), "[]\tdisable 0xa\t0xa=tile")
+
+    def test_a_hidden_window_missing_from_the_list_is_tiled_when_it_returns(self):
+        self.assertEqual(self.run_step("tray_unlisted"), "disable 0xa\t0xa=tile")
+
+    def test_a_window_back_from_the_tray_while_on_is_tiled_with_the_rest(self):
+        self.assertEqual(self.run_step("tray_back_while_on"), "disable 0xa\t0xa=tile")
+
+    def test_a_hidden_window_is_kept_as_away_through_a_reload(self):
+        self.assertEqual(self.run_step("tray_kept").split("|"), [
+            "on 0xa=101", "on 0xa=101 away", "off 0xa=101 away", "off"])
+
     def test_a_returning_window_already_tiled_is_left_alone(self):
         self.assertEqual(self.run_step("tray_tiled_by_hand"), "[]")
 
@@ -330,6 +389,9 @@ class FloatAll(unittest.TestCase):
         # same process (an app's name can change, Spotify sets its late); one
         # that floated on its own stays floating.
         self.assertEqual(self.run_step("reloaded"), "true\t0xa=tile 0xb=float 0xc=float\tdisable 0xa")
+
+    def test_a_window_away_during_a_reload_is_still_tiled_when_it_returns(self):
+        self.assertEqual(self.run_step("reloaded_away"), "disable 0xa\t0xa=tile")
 
     def test_the_mode_is_kept_as_it_changes(self):
         self.assertEqual(self.run_step("kept").split("|"), [
