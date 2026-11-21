@@ -312,6 +312,16 @@ var overview = {
 	dragThreshold: 6
 };
 
+// The Alt + Tab switcher: the launcher's card holding a row of live window
+// previews, five across, wrapping. It appears once Alt has been held revealMs.
+var switcher = {
+	columns: 5,
+	padding: 14,
+	gap: 10,
+	revealMs: 120,
+	tile: { width: 220, preview: 124, radius: 10, padding: 6, gap: 6, icon: 16, title: 12 }
+};
+
 // The polkit dialog (Phase 6): the launcher's card with quick-panel parts.
 var lock = {
 	message: 12,

@@ -16,7 +16,8 @@ Item {
 		"../../shell/modules/overview/OverviewView.qml",
 		"../../shell/modules/session/SessionView.qml",
 		"../../shell/modules/polkit/PolkitView.qml",
-		"../../shell/modules/wallpaper/PickerView.qml"
+		"../../shell/modules/wallpaper/PickerView.qml",
+		"../../shell/modules/switcher/SwitcherView.qml"
 	]
 
 	TestCase {

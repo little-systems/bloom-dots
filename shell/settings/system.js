@@ -178,7 +178,7 @@ function badLayouts(text, known) {
 function layerRules() {
 	return [
 		'hl.layer_rule({ match = { namespace = "^bloom:(notch|dock|osd-left|osd-right|osk)$" }, blur = true, ignore_alpha = 0.2 })',
-		'hl.layer_rule({ match = { namespace = "^bloom:(launcher|session|cheatsheet|overview|polkit|wallpaper-picker)$" }, blur = true, ignore_alpha = 0.55 })'
+		'hl.layer_rule({ match = { namespace = "^bloom:(launcher|session|cheatsheet|overview|polkit|wallpaper-picker|switcher)$" }, blur = true, ignore_alpha = 0.55 })'
 	];
 }
 
